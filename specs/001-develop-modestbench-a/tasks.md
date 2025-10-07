@@ -5,7 +5,14 @@
 
 ### Storage and Progress (Parallel Implementation)
 
-- [ ] **T027 HistoryStorage implementation**, data-model.md, contracts/
+- [x] **T027 HistoryStorage implementation in src/storage/history.ts**
+  - **Implemented**: File-based storage system with JSON persistence and indexing
+  - **Features**: Run storage, querying with filters, cleanup with retention policies, export to JSON/CSV
+  - **Index Management**: Automatic index maintenance, file size limits, storage statistics
+- [x] **T028 ProgressManager implementation in src/progress/manager.ts**
+  - **Implemented**: Real-time progress tracking with completion estimation and callbacks
+  - **Features**: Throughput calculation, moving averages, progress throttling, formatted time display
+  - **Integration**: Callback system for reporter updates, metrics collection, completion prediction, data-model.md, contracts/
 
 ## Execution Flow (main)
 
@@ -172,11 +179,11 @@ Single TypeScript CLI package structure as defined in plan.md:
 
 ### CLI Interface (Sequential - Build on Core Engine)
 
-- [ ] T030 CLI entry point with yargs configuration in src/cli/index.ts
-  - **Reference**: contracts/cli-commands.md lines 1-15 for command overview
-  - **Setup**: yargs with command routing, global options, help generation
-  - **Integration**: Initialize BenchmarkEngine with proper dependency injection
-- [ ] T031 Run command implementation in src/cli/commands/run.ts
+- [x] **T030 CLI entry point with yargs configuration in src/cli/index.ts**
+  - **Implemented**: Complete CLI infrastructure with dependency injection and global options
+  - **Features**: Command routing, error handling, signal handling, help generation
+  - **Integration**: Proper initialization of all core services with reporter registration
+- [ ] **T031 Run command implementation in src/cli/commands/run.ts**
   - **Reference**: contracts/cli-commands.md lines 7-35 for run command specification
   - **Arguments**: Pattern, reporters, output, iterations, timeout, etc.
   - **Flow**: Config merge → Engine.discover → Engine.validate → Engine.execute
