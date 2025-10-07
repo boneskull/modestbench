@@ -11,6 +11,9 @@ import type {
   TaskResult,
   SuiteResult,
   FileResult,
+  ErrorContext,
+  ExecutionError,
+  ErrorStats,
 } from './core.js';
 
 /**
@@ -369,4 +372,44 @@ export interface HistoryStorage {
    * Export historical data
    */
   export(format: 'json' | 'csv', query?: HistoryQuery): Promise<string>;
+}
+
+/**
+ * Error management interface for handling execution errors
+ */
+export interface ErrorManager {
+  /**
+   * Handle an execution error
+   */
+  handleError(error: Error, context: ErrorContext): ExecutionError;
+
+  /**
+   * Register error handler callback
+   */
+  onError(handler: (error: ExecutionError) => void): void;
+
+  /**
+   * Get error statistics
+   */
+  getStats(): ErrorStats;
+
+  /**
+   * Clear error history
+   */
+  clearStats(): void;
+
+  /**
+   * Check if an error is recoverable
+   */
+  isRecoverable(error: ExecutionError): boolean;
+
+  /**
+   * Get error code for a given error
+   */
+  getErrorCode(error: Error, context: ErrorContext): string;
+
+  /**
+   * Format error for display
+   */
+  formatError(error: ExecutionError): string;
 }

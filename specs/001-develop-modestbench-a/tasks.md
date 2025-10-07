@@ -203,23 +203,35 @@ Single TypeScript CLI package structure as defined in plan.md:
 
 ## Phase 3.4: Integration (Sequential - Depends on Core Components)
 
-- [ ] T035a ProgressManager implementation in src/progress/manager.ts - Core Structure
+- [x] T035a ProgressManager implementation in src/progress/manager.ts - Core Structure
+  - **Implemented**: Real-time progress tracking with state management and callback system
+  - **Features**: Files/suites/tasks progress tracking, throughput calculation, throttled updates
   - **Reference**: contracts/core-api.md lines 75-95 for ProgressManager interface
   - **State Management**: Track files/suites/tasks progress per data-model.md lines 107-130
   - **Initialization**: Set up progress tracking for BenchmarkRun
-- [ ] T035b ProgressManager ETA calculation and time estimation
+- [x] T035b ProgressManager ETA calculation and time estimation
+  - **Implemented**: Advanced time estimation with moving averages and completion prediction
+  - **Features**: Current throughput calculation, recent timings analysis, formatted time display
   - **Reference**: contracts/core-api.md lines 97-110 for TimeEstimationEngine interface
   - **Algorithm**: Use both historical data and current patterns (from clarifications)
   - **Cache**: Load/save estimates per data-model.md lines 225-235
-- [ ] T036a HistoryStorage implementation in src/storage/history.ts - Core Operations
+- [x] T036a HistoryStorage implementation in src/storage/history.ts - Core Operations
+  - **Implemented**: File-based storage system with JSON persistence and indexing
+  - **Features**: Run storage/loading, filtering queries, index management, size limits
   - **Reference**: contracts/core-api.md lines 47-73 for HistoryStorage interface
   - **File Structure**: Use layout from data-model.md lines 215-225 (.modestbench/ directory)
   - **Operations**: saveRun, loadRun, queryRuns with filtering
-- [ ] T036b HistoryStorage cleanup and export functionality
+- [x] T036b HistoryStorage cleanup and export functionality
+  - **Implemented**: Comprehensive data management with retention policies and export capabilities
+  - **Features**: Retention policy enforcement, JSON/CSV export, storage statistics, cleanup operations
   - **Reference**: contracts/core-api.md lines 60-73 for cleanup and export methods
   - **Retention**: Store indefinitely unless manually cleared (from clarifications)
   - **Export**: Support JSON/CSV formats for historical data
-- [ ] T037 Error handling and validation throughout all components
+- [x] T037 Error handling and validation throughout all components
+  - **Implemented**: Comprehensive error management system with context tracking and categorization
+  - **Features**: ErrorManager with structured error handling, error codes, recoverability detection, statistics tracking
+  - **Integration**: Added error handling to BenchmarkEngine, CLI, and all core components with proper error context
+  - **Error Codes**: Standardized error codes (BENCH*\*, CONFIG*_, FILE\__, HIST*\*, EXEC*_, VALID\__, SYS\_\*) for programmatic handling
   - **Reference**: contracts/cli-commands.md lines 85-95 for error codes and formats
   - **Integration**: ErrorManager from contracts/core-api.md lines 260-280
   - **Graceful Degradation**: Continue execution on individual failures per plan.md

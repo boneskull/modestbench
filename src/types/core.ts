@@ -278,3 +278,72 @@ export interface ThresholdConfig {
   /** Maximum allowed 99th percentile time */
   readonly maxP99?: number;
 }
+
+/**
+ * Execution phases for error context
+ */
+export type ExecutionPhase =
+  | 'discovery'
+  | 'validation'
+  | 'loading'
+  | 'setup'
+  | 'execution'
+  | 'teardown'
+  | 'reporting'
+  | 'cleanup';
+
+/**
+ * Context information for errors
+ */
+export interface ErrorContext {
+  /** Execution phase where error occurred */
+  readonly phase: ExecutionPhase;
+  /** File being processed when error occurred */
+  readonly file?: string;
+  /** Suite being executed when error occurred */
+  readonly suite?: string;
+  /** Task being executed when error occurred */
+  readonly task?: string;
+  /** Timestamp when error occurred */
+  readonly timestamp: Date;
+  /** Additional context data */
+  readonly metadata?: Record<string, unknown>;
+}
+
+/**
+ * Structured execution error with context
+ */
+export interface ExecutionError {
+  /** Original error object */
+  readonly originalError: Error;
+  /** Error context information */
+  readonly context: ErrorContext;
+  /** Error code for programmatic handling */
+  readonly code: string;
+  /** Human-readable error message */
+  readonly message: string;
+  /** Whether the error is recoverable */
+  readonly recoverable: boolean;
+  /** Stack trace */
+  readonly stack?: string;
+  /** Timestamp when error was processed */
+  readonly processedAt: Date;
+}
+
+/**
+ * Error statistics for tracking
+ */
+export interface ErrorStats {
+  /** Total number of errors */
+  readonly total: number;
+  /** Errors grouped by execution phase */
+  readonly byPhase: Record<ExecutionPhase, number>;
+  /** Errors grouped by error type */
+  readonly byType: Record<string, number>;
+  /** Recent errors (limited list) */
+  readonly recent: readonly ExecutionError[];
+  /** First error timestamp */
+  readonly firstError?: Date;
+  /** Last error timestamp */
+  readonly lastError?: Date;
+}

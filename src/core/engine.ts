@@ -19,6 +19,9 @@ import type {
   EnvironmentInfo,
   GitInfo,
   CiInfo,
+  ErrorManager,
+  ErrorContext,
+  ExecutionPhase,
 } from '../types/index.js';
 
 /**
@@ -49,6 +52,7 @@ export interface EngineDependencies {
   readonly reporterRegistry: ReporterRegistry;
   readonly historyStorage: HistoryStorage;
   readonly progressManager: ProgressManager;
+  readonly errorManager: ErrorManager;
 }
 
 /**
@@ -60,6 +64,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
   private readonly reporterRegistry: ReporterRegistry;
   private readonly historyStorage: HistoryStorage;
   private readonly progressManager: ProgressManager;
+  private readonly errorManager: ErrorManager;
 
   constructor(dependencies: EngineDependencies) {
     this.configManager = dependencies.configManager;
@@ -67,14 +72,19 @@ export class ModestBenchEngine implements BenchmarkEngine {
     this.reporterRegistry = dependencies.reporterRegistry;
     this.historyStorage = dependencies.historyStorage;
     this.progressManager = dependencies.progressManager;
+    this.errorManager = dependencies.errorManager;
   }
 
   /**
    * Execute benchmarks with the given configuration
    */
   async execute(config: RunConfiguration): Promise<BenchmarkRun> {
+    const startTime = new Date();
+    let currentPhase: ExecutionPhase = 'discovery';
+
     try {
       // 1. Merge configuration with defaults
+      currentPhase = 'discovery';
       const mergedConfig = await this.configManager.load(
         undefined, // No specific config path for now
         config as Record<string, unknown>
@@ -86,20 +96,33 @@ export class ModestBenchEngine implements BenchmarkEngine {
         (await this.discover(mergedConfig.pattern, mergedConfig.exclude));
 
       if (files.length === 0) {
-        throw new Error('No benchmark files found matching the pattern');
+        const error = new Error(
+          'No benchmark files found matching the pattern'
+        );
+        this.errorManager.handleError(error, {
+          phase: currentPhase,
+          timestamp: new Date(),
+        });
+        throw error;
       }
 
       // 3. Validate files
+      currentPhase = 'validation';
       const validationResult = await this.validate(files);
       if (!validationResult.valid) {
-        throw new Error(
+        const error = new Error(
           `Validation failed: ${validationResult.errors.map(e => e.message).join(', ')}`
         );
+        this.errorManager.handleError(error, {
+          phase: currentPhase,
+          timestamp: new Date(),
+        });
+        throw error;
       }
 
       // 4. Initialize progress tracking
+      currentPhase = 'setup';
       const runId = this.generateRunId();
-      const startTime = new Date();
 
       // Create initial run structure for progress tracking
       const gitInfo = await this.getGitInfo();
@@ -147,9 +170,15 @@ export class ModestBenchEngine implements BenchmarkEngine {
       // 7. Return completed run
       return finalRun;
     } catch (error) {
-      throw new Error(
-        `Benchmark execution failed: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const executionError =
+        error instanceof Error ? error : new Error(String(error));
+      const handledError = this.errorManager.handleError(executionError, {
+        phase: currentPhase,
+        timestamp: new Date(),
+      });
+
+      // Re-throw the original error with more context
+      throw new Error(`Benchmark execution failed: ${handledError.message}`);
     }
   }
 
@@ -170,9 +199,17 @@ export class ModestBenchEngine implements BenchmarkEngine {
           errors.push(...result.errors);
           warnings.push(...result.warnings);
         } catch (error) {
+          const validationError =
+            error instanceof Error ? error : new Error(String(error));
+          this.errorManager.handleError(validationError, {
+            phase: 'validation',
+            file,
+            timestamp: new Date(),
+          });
+
           errors.push({
             file,
-            message: `Failed to validate file: ${error instanceof Error ? error.message : String(error)}`,
+            message: `Failed to validate file: ${validationError.message}`,
             code: 'FILE_VALIDATION_ERROR',
             severity: 'error' as const,
           });
@@ -199,9 +236,15 @@ export class ModestBenchEngine implements BenchmarkEngine {
     try {
       return await this.fileLoader.discover(pattern, exclude);
     } catch (error) {
-      throw new Error(
-        `File discovery failed: ${error instanceof Error ? error.message : String(error)}`
-      );
+      const discoveryError =
+        error instanceof Error ? error : new Error(String(error));
+      this.errorManager.handleError(discoveryError, {
+        phase: 'discovery',
+        timestamp: new Date(),
+        metadata: { pattern, exclude },
+      });
+
+      throw new Error(`File discovery failed: ${discoveryError.message}`);
     }
   }
 

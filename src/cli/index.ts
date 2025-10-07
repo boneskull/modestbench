@@ -13,6 +13,7 @@ import type {
   HistoryStorage,
   ReporterRegistry,
   ProgressManager,
+  ErrorManager,
 } from '../types/index.js';
 import { ModestBenchEngine } from '../core/engine.js';
 import { BenchmarkFileLoader } from '../core/loader.js';
@@ -25,6 +26,7 @@ import {
   CsvReporter,
 } from '../reporters/index.js';
 import { ModestBenchProgressManager } from '../progress/manager.js';
+import { ModestBenchErrorManager } from '../core/error-manager.js';
 
 // Import commands
 import { runCommand } from './commands/run.js';
@@ -57,6 +59,7 @@ export interface CliContext {
   readonly historyStorage: HistoryStorage;
   readonly reporterRegistry: ReporterRegistry;
   readonly progressManager: ProgressManager;
+  readonly errorManager: ErrorManager;
   readonly options: GlobalOptions;
 }
 
@@ -113,6 +116,9 @@ async function createCliContext(options: GlobalOptions): Promise<CliContext> {
       })
     );
 
+    // Initialize error manager
+    const errorManager = new ModestBenchErrorManager();
+
     // Initialize the main engine
     const engine = new ModestBenchEngine({
       configManager,
@@ -120,6 +126,7 @@ async function createCliContext(options: GlobalOptions): Promise<CliContext> {
       reporterRegistry,
       historyStorage,
       progressManager,
+      errorManager,
     });
 
     return {
@@ -128,6 +135,7 @@ async function createCliContext(options: GlobalOptions): Promise<CliContext> {
       historyStorage,
       reporterRegistry,
       progressManager,
+      errorManager,
       options,
     };
   } catch (error) {
