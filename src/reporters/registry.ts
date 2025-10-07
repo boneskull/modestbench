@@ -1,6 +1,6 @@
 /**
  * ModestBench Reporter Registry
- * 
+ *
  * Plugin-based system for managing benchmark output formatters.
  * Supports registration, retrieval, and lifecycle management of reporters.
  */
@@ -135,7 +135,9 @@ export abstract class BaseReporter implements Reporter {
     try {
       return await operation();
     } catch (error) {
-      await this.onError(error instanceof Error ? error : new Error(String(error)));
+      await this.onError(
+        error instanceof Error ? error : new Error(String(error))
+      );
       return null;
     }
   }
@@ -192,7 +194,9 @@ export class ModestBenchReporterRegistry implements ReporterRegistry {
     }
 
     if (missing.length > 0) {
-      throw new Error(`Unknown reporters: ${missing.join(', ')}. Available: ${Array.from(this.reporters.keys()).join(', ')}`);
+      throw new Error(
+        `Unknown reporters: ${missing.join(', ')}. Available: ${Array.from(this.reporters.keys()).join(', ')}`
+      );
     }
 
     return result;
@@ -318,7 +322,7 @@ export class CompositeReporter extends BaseReporter {
     method: keyof Reporter,
     ...args: any[]
   ): Promise<void> {
-    const promises = this.reporters.map(async (reporter) => {
+    const promises = this.reporters.map(async reporter => {
       try {
         const result = (reporter[method] as any)(...args);
         if (result && typeof result.then === 'function') {
@@ -326,7 +330,10 @@ export class CompositeReporter extends BaseReporter {
         }
       } catch (error) {
         // Handle reporter-specific errors without affecting others
-        console.error(`Reporter error in ${reporter.constructor.name}.${method}:`, error);
+        console.error(
+          `Reporter error in ${reporter.constructor.name}.${method}:`,
+          error
+        );
       }
     });
 

@@ -1,6 +1,6 @@
 /**
  * ModestBench Storage
- * 
+ *
  * Export storage implementations and related types.
  */
 

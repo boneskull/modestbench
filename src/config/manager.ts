@@ -1,6 +1,6 @@
 /**
  * ModestBench Configuration Manager
- * 
+ *
  * Handles loading, merging, and validation of configuration from multiple sources.
  * Supports CLI arguments, config files (JSON/YAML/JS/TS), and defaults.
  */
@@ -76,7 +76,10 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
   /**
    * Load configuration from various sources with precedence
    */
-  async load(configPath?: string, cliArgs?: Record<string, unknown>): Promise<ModestBenchConfig> {
+  async load(
+    configPath?: string,
+    cliArgs?: Record<string, unknown>
+  ): Promise<ModestBenchConfig> {
     try {
       // 1. Start with defaults
       let config: Partial<ModestBenchConfig> = { ...DEFAULT_CONFIG };
@@ -96,12 +99,16 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       // 4. Validate final configuration
       const validation = this.validate(config);
       if (!validation.valid) {
-        throw new Error(`Configuration validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        throw new Error(
+          `Configuration validation failed: ${validation.errors.map(e => e.message).join(', ')}`
+        );
       }
 
       return config as ModestBenchConfig;
     } catch (error) {
-      throw new Error(`Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -158,7 +165,10 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
     }
 
     if (config.pattern !== undefined) {
-      if (typeof config.pattern !== 'string' || config.pattern.trim().length === 0) {
+      if (
+        typeof config.pattern !== 'string' ||
+        config.pattern.trim().length === 0
+      ) {
         errors.push({
           file: 'configuration',
           message: 'pattern must be a non-empty string',
@@ -216,7 +226,8 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       if (config.iterations > 1000 && config.time > 60000) {
         warnings.push({
           file: 'configuration',
-          message: 'high iterations and time values may result in very long benchmark runs',
+          message:
+            'high iterations and time values may result in very long benchmark runs',
           code: 'LONG_RUNTIME_WARNING',
           severity: 'warning',
         });
@@ -247,13 +258,16 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         ...(config.tags && { tags: [...config.tags] }),
         // Deep merge for objects
         ...(config.reporterConfig && {
-          reporterConfig: { ...result.reporterConfig, ...config.reporterConfig }
+          reporterConfig: {
+            ...result.reporterConfig,
+            ...config.reporterConfig,
+          },
         }),
         ...(config.metadata && {
-          metadata: { ...result.metadata, ...config.metadata }
+          metadata: { ...result.metadata, ...config.metadata },
         }),
         ...(config.thresholds && {
-          thresholds: { ...result.thresholds, ...config.thresholds }
+          thresholds: { ...result.thresholds, ...config.thresholds },
         }),
       };
     }
@@ -271,10 +285,14 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
   /**
    * Load configuration from file
    */
-  private async loadConfigFile(configPath?: string): Promise<ConfigLoadResult | null> {
+  private async loadConfigFile(
+    configPath?: string
+  ): Promise<ConfigLoadResult | null> {
     try {
-      const filePath = configPath ? resolve(configPath) : await this.discoverConfigFile();
-      
+      const filePath = configPath
+        ? resolve(configPath)
+        : await this.discoverConfigFile();
+
       if (!filePath) {
         return null;
       }
@@ -291,23 +309,25 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
 
       const format = this.detectConfigFormat(filePath);
       const content = await readFile(filePath, 'utf-8');
-      
+
       let config: Partial<ModestBenchConfig>;
-      
+
       switch (format) {
         case 'json':
           config = JSON.parse(content);
           break;
-        
+
         case 'yaml':
           // TODO: Implement YAML parsing
           throw new Error('YAML configuration files not yet implemented');
-        
+
         case 'js':
         case 'ts':
           // TODO: Implement JS/TS module loading
-          throw new Error('JavaScript/TypeScript configuration files not yet implemented');
-        
+          throw new Error(
+            'JavaScript/TypeScript configuration files not yet implemented'
+          );
+
         default:
           throw new Error(`Unsupported config format: ${format}`);
       }
@@ -318,7 +338,9 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         format,
       };
     } catch (error) {
-      throw new Error(`Failed to load config file: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to load config file: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -344,7 +366,7 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
    */
   private detectConfigFormat(filePath: string): ConfigFormat {
     const ext = extname(filePath).toLowerCase();
-    
+
     switch (ext) {
       case '.json':
         return 'json';
@@ -368,7 +390,9 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
   /**
    * Normalize CLI arguments to configuration format
    */
-  private normalizeCliArgs(cliArgs: Record<string, unknown>): Partial<ModestBenchConfig> {
+  private normalizeCliArgs(
+    cliArgs: Record<string, unknown>
+  ): Partial<ModestBenchConfig> {
     const normalized: Record<string, unknown> = {};
 
     // Map CLI argument names to config property names
@@ -399,9 +423,13 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
     for (const [cliKey, configKey] of Object.entries(argMap)) {
       if (cliKey in cliArgs && cliArgs[cliKey] !== undefined) {
         const value = cliArgs[cliKey];
-        
+
         // Handle array arguments that might come as strings
-        if (configKey === 'exclude' || configKey === 'reporters' || configKey === 'tags') {
+        if (
+          configKey === 'exclude' ||
+          configKey === 'reporters' ||
+          configKey === 'tags'
+        ) {
           if (typeof value === 'string') {
             normalized[configKey] = value.split(',').map(s => s.trim());
           } else if (Array.isArray(value)) {

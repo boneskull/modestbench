@@ -1,7 +1,7 @@
 # Tasks: ModestBench Framework
 
 **Input**: Design documents from `/specs/001-develop-modestbench-a/`
-**Prerequisites**: plan.md (required), re  - **Field Escaping**: Proper CSV escaping with quote handling for special characters
+**Prerequisites**: plan.md (required), re - **Field Escaping**: Proper CSV escaping with quote handling for special characters
 
 ### Storage and Progress (Parallel Implementation)
 

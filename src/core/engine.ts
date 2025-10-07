@@ -1,6 +1,6 @@
 /**
  * ModestBench Core Engine
- * 
+ *
  * Main orchestrator for benchmark discovery, validation, and execution.
  * Implements the BenchmarkEngine interface with dependency injection architecture.
  */
@@ -81,10 +81,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
       );
 
       // 2. Discover files if not explicitly provided
-      const files = config.files || await this.discover(
-        mergedConfig.pattern,
-        mergedConfig.exclude
-      );
+      const files =
+        config.files ||
+        (await this.discover(mergedConfig.pattern, mergedConfig.exclude));
 
       if (files.length === 0) {
         throw new Error('No benchmark files found matching the pattern');
@@ -93,17 +92,19 @@ export class ModestBenchEngine implements BenchmarkEngine {
       // 3. Validate files
       const validationResult = await this.validate(files);
       if (!validationResult.valid) {
-        throw new Error(`Validation failed: ${validationResult.errors.map(e => e.message).join(', ')}`);
+        throw new Error(
+          `Validation failed: ${validationResult.errors.map(e => e.message).join(', ')}`
+        );
       }
 
       // 4. Initialize progress tracking
       const runId = this.generateRunId();
       const startTime = new Date();
-      
+
       // Create initial run structure for progress tracking
       const gitInfo = await this.getGitInfo();
       const ciInfo = await this.getCiInfo();
-      
+
       const initialRun: BenchmarkRun = {
         id: runId,
         files: [],
@@ -146,7 +147,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
       // 7. Return completed run
       return finalRun;
     } catch (error) {
-      throw new Error(`Benchmark execution failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Benchmark execution failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -183,7 +186,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
         files: validatedFiles,
       };
     } catch (error) {
-      throw new Error(`Validation failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Validation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -194,7 +199,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
     try {
       return await this.fileLoader.discover(pattern, exclude);
     } catch (error) {
-      throw new Error(`File discovery failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `File discovery failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -253,7 +260,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
   private async getEnvironmentInfo(): Promise<EnvironmentInfo> {
     const os = await import('node:os');
     const process = await import('node:process');
-    
+
     return {
       nodeVersion: process.version,
       platform: process.platform,
@@ -291,7 +298,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
    */
   private async getCiInfo(): Promise<CiInfo | undefined> {
     const process = await import('node:process');
-    
+
     if (!process.env.CI) {
       return undefined;
     }
@@ -300,14 +307,20 @@ export class ModestBenchEngine implements BenchmarkEngine {
     if (process.env.GITHUB_ACTIONS) {
       return {
         provider: 'GitHub Actions',
-        ...(process.env.GITHUB_RUN_NUMBER && { buildNumber: process.env.GITHUB_RUN_NUMBER }),
-        ...(process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID && {
-          buildUrl: `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+        ...(process.env.GITHUB_RUN_NUMBER && {
+          buildNumber: process.env.GITHUB_RUN_NUMBER,
         }),
-        ...(process.env.GITHUB_EVENT_NAME === 'pull_request' && process.env.GITHUB_REF_NAME && {
-          pullRequest: process.env.GITHUB_REF_NAME
+        ...(process.env.GITHUB_REPOSITORY &&
+          process.env.GITHUB_RUN_ID && {
+            buildUrl: `https://github.com/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+          }),
+        ...(process.env.GITHUB_EVENT_NAME === 'pull_request' &&
+          process.env.GITHUB_REF_NAME && {
+            pullRequest: process.env.GITHUB_REF_NAME,
+          }),
+        ...(process.env.GITHUB_REF_NAME && {
+          branch: process.env.GITHUB_REF_NAME,
         }),
-        ...(process.env.GITHUB_REF_NAME && { branch: process.env.GITHUB_REF_NAME }),
         ...(process.env.GITHUB_SHA && { commit: process.env.GITHUB_SHA }),
       };
     }

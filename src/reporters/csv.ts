@@ -1,6 +1,6 @@
 /**
  * ModestBench CSV Reporter
- * 
+ *
  * Outputs benchmark results in CSV format for data analysis and visualization.
  * Provides structured tabular data suitable for spreadsheets and statistical tools.
  */
@@ -61,15 +61,17 @@ export class CsvReporter extends BaseReporter {
   private currentFile = '';
   private currentSuite = '';
 
-  constructor(options: {
-    outputPath?: string;
-    includeHeaders?: boolean;
-    includeMetadata?: boolean;
-    delimiter?: string;
-    quote?: string;
-  } = {}) {
+  constructor(
+    options: {
+      outputPath?: string;
+      includeHeaders?: boolean;
+      includeMetadata?: boolean;
+      delimiter?: string;
+      quote?: string;
+    } = {}
+  ) {
     super('csv', options);
-    
+
     this.outputPath = options.outputPath;
     this.includeHeaders = options.includeHeaders ?? true;
     this.includeMetadata = options.includeMetadata ?? true;
@@ -139,7 +141,7 @@ export class CsvReporter extends BaseReporter {
 
   async onEnd(_run: BenchmarkRun): Promise<void> {
     const csvContent = this.generateCsv();
-    
+
     if (this.outputPath) {
       await this.writeToFile(csvContent);
     } else {
@@ -164,7 +166,7 @@ export class CsvReporter extends BaseReporter {
     }
 
     const lines: string[] = [];
-    
+
     if (this.includeHeaders) {
       lines.push(this.generateHeaders());
     }
@@ -182,7 +184,7 @@ export class CsvReporter extends BaseReporter {
   private generateHeaders(): string {
     const headers = [
       'file',
-      'suite', 
+      'suite',
       'task',
       'mean',
       'stdDev',
@@ -259,16 +261,20 @@ export class CsvReporter extends BaseReporter {
    */
   private escapeField(value: string): string {
     // If value contains delimiter, quote, or newline, wrap in quotes
-    if (value.includes(this.delimiter) || 
-        value.includes(this.quote) || 
-        value.includes('\n') || 
-        value.includes('\r')) {
-      
+    if (
+      value.includes(this.delimiter) ||
+      value.includes(this.quote) ||
+      value.includes('\n') ||
+      value.includes('\r')
+    ) {
       // Escape any existing quotes by doubling them
-      const escaped = value.replace(new RegExp(this.quote, 'g'), this.quote + this.quote);
+      const escaped = value.replace(
+        new RegExp(this.quote, 'g'),
+        this.quote + this.quote
+      );
       return this.quote + escaped + this.quote;
     }
-    
+
     return value;
   }
 
@@ -288,7 +294,9 @@ export class CsvReporter extends BaseReporter {
       // Write CSV file
       writeFileSync(this.outputPath, csvContent, 'utf8');
     } catch (error) {
-      throw new Error(`Failed to write CSV output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to write CSV output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

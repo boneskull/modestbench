@@ -1,6 +1,6 @@
 /**
  * ModestBench JSON Reporter
- * 
+ *
  * Outputs benchmark results in structured JSON format.
  * Suitable for machine processing, CI/CD integration, and data analysis.
  */
@@ -59,14 +59,16 @@ export class JsonReporter extends BaseReporter {
     taskCount: 0,
   };
 
-  constructor(options: {
-    outputPath?: string;
-    prettyPrint?: boolean;
-    includeStatistics?: boolean;
-    includeMetadata?: boolean;
-  } = {}) {
+  constructor(
+    options: {
+      outputPath?: string;
+      prettyPrint?: boolean;
+      includeStatistics?: boolean;
+      includeMetadata?: boolean;
+    } = {}
+  ) {
     super('json', options);
-    
+
     this.outputPath = options.outputPath;
     this.prettyPrint = options.prettyPrint ?? true;
     this.includeStatistics = options.includeStatistics ?? true;
@@ -106,7 +108,7 @@ export class JsonReporter extends BaseReporter {
 
   async onEnd(run: BenchmarkRun): Promise<void> {
     const output = this.buildJsonOutput(run);
-    
+
     if (this.outputPath) {
       await this.writeToFile(output);
     } else {
@@ -139,19 +141,21 @@ export class JsonReporter extends BaseReporter {
 
     if (this.includeStatistics) {
       const stats: any = {
-        averageOpsPerSecond: this.statistics.taskCount > 0 ? 
-          this.statistics.totalOpsPerSecond / this.statistics.taskCount : 0,
+        averageOpsPerSecond:
+          this.statistics.taskCount > 0
+            ? this.statistics.totalOpsPerSecond / this.statistics.taskCount
+            : 0,
         totalIterations: this.statistics.totalIterations,
       };
-      
+
       if (this.statistics.fastestTask) {
         stats.fastestTask = this.statistics.fastestTask;
       }
-      
+
       if (this.statistics.slowestTask) {
         stats.slowestTask = this.statistics.slowestTask;
       }
-      
+
       output.statistics = stats;
     }
 
@@ -195,13 +199,15 @@ export class JsonReporter extends BaseReporter {
       mkdirSync(dir, { recursive: true });
 
       // Write JSON file
-      const jsonString = this.prettyPrint ?
-        JSON.stringify(output, null, 2) :
-        JSON.stringify(output);
+      const jsonString = this.prettyPrint
+        ? JSON.stringify(output, null, 2)
+        : JSON.stringify(output);
 
       writeFileSync(this.outputPath, jsonString, 'utf8');
     } catch (error) {
-      throw new Error(`Failed to write JSON output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to write JSON output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -209,10 +215,10 @@ export class JsonReporter extends BaseReporter {
    * Write JSON output to stdout
    */
   private writeToStdout(output: JsonOutput): void {
-    const jsonString = this.prettyPrint ?
-      JSON.stringify(output, null, 2) :
-      JSON.stringify(output);
-    
+    const jsonString = this.prettyPrint
+      ? JSON.stringify(output, null, 2)
+      : JSON.stringify(output);
+
     console.log(jsonString);
   }
 
@@ -236,12 +242,18 @@ export class JsonReporter extends BaseReporter {
     this.statistics.taskCount++;
 
     // Track fastest task
-    if (!this.statistics.fastestTask || result.mean < this.statistics.fastestTask.mean) {
+    if (
+      !this.statistics.fastestTask ||
+      result.mean < this.statistics.fastestTask.mean
+    ) {
       this.statistics.fastestTask = result;
     }
 
     // Track slowest task
-    if (!this.statistics.slowestTask || result.mean > this.statistics.slowestTask.mean) {
+    if (
+      !this.statistics.slowestTask ||
+      result.mean > this.statistics.slowestTask.mean
+    ) {
       this.statistics.slowestTask = result;
     }
   }

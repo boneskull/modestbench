@@ -1,18 +1,29 @@
 /**
  * ModestBench CLI Entry Point
- * 
+ *
  * Command-line interface using yargs for command parsing and routing.
  * Provides global options, help generation, and dependency injection setup.
  */
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import type { BenchmarkEngine, ConfigurationManager, HistoryStorage, ReporterRegistry, ProgressManager } from '../types/index.js';
+import type {
+  BenchmarkEngine,
+  ConfigurationManager,
+  HistoryStorage,
+  ReporterRegistry,
+  ProgressManager,
+} from '../types/index.js';
 import { ModestBenchEngine } from '../core/engine.js';
 import { BenchmarkFileLoader } from '../core/loader.js';
 import { ModestBenchConfigurationManager } from '../config/manager.js';
 import { FileHistoryStorage } from '../storage/history.js';
-import { ModestBenchReporterRegistry, HumanReporter, JsonReporter, CsvReporter } from '../reporters/index.js';
+import {
+  ModestBenchReporterRegistry,
+  HumanReporter,
+  JsonReporter,
+  CsvReporter,
+} from '../reporters/index.js';
 import { ModestBenchProgressManager } from '../progress/manager.js';
 
 // Import commands
@@ -74,24 +85,33 @@ async function createCliContext(options: GlobalOptions): Promise<CliContext> {
     const fileLoader = new BenchmarkFileLoader();
     const historyStorage = new FileHistoryStorage(); // Use default options
     const progressManager = new ModestBenchProgressManager();
-    
+
     // Initialize and configure reporter registry
     const reporterRegistry = new ModestBenchReporterRegistry();
-    
+
     // Register built-in reporters
-    reporterRegistry.register('human', new HumanReporter({
-      color: !options.noColor,
-      verbose: options.verbose >= 2,
-    }));
-    
-    reporterRegistry.register('json', new JsonReporter({
-      prettyPrint: true,
-    }));
-    
-    reporterRegistry.register('csv', new CsvReporter({
-      includeHeaders: true,
-      includeMetadata: true,
-    }));
+    reporterRegistry.register(
+      'human',
+      new HumanReporter({
+        color: !options.noColor,
+        verbose: options.verbose >= 2,
+      })
+    );
+
+    reporterRegistry.register(
+      'json',
+      new JsonReporter({
+        prettyPrint: true,
+      })
+    );
+
+    reporterRegistry.register(
+      'csv',
+      new CsvReporter({
+        includeHeaders: true,
+        includeMetadata: true,
+      })
+    );
 
     // Initialize the main engine
     const engine = new ModestBenchEngine({
@@ -111,7 +131,10 @@ async function createCliContext(options: GlobalOptions): Promise<CliContext> {
       options,
     };
   } catch (error) {
-    console.error('Failed to initialize ModestBench:', error instanceof Error ? error.message : String(error));
+    console.error(
+      'Failed to initialize ModestBench:',
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(ExitCodes.CONFIG_ERROR);
   }
 }
@@ -164,9 +187,9 @@ function configureGlobalOptions(yargs: any): any {
 export async function main(argv?: string[]): Promise<void> {
   try {
     const args = argv || hideBin(process.argv);
-    
+
     const cli = yargs(args);
-    
+
     // Configure global options and commands
     await configureGlobalOptions(cli)
       .command(
@@ -224,9 +247,11 @@ export async function main(argv?: string[]): Promise<void> {
         }
       })
       .parse();
-
   } catch (error) {
-    console.error('Unexpected error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      'Unexpected error:',
+      error instanceof Error ? error.message : String(error)
+    );
     if (process.env.DEBUG) {
       console.error(error);
     }
@@ -248,7 +273,7 @@ function setupSignalHandlers(): void {
     process.exit(ExitCodes.SUCCESS);
   });
 
-  process.on('uncaughtException', (error) => {
+  process.on('uncaughtException', error => {
     console.error('Uncaught exception:', error);
     process.exit(ExitCodes.RUNTIME_ERROR);
   });
@@ -264,7 +289,7 @@ function setupSignalHandlers(): void {
  */
 export function cli(argv?: string[]): void {
   setupSignalHandlers();
-  main(argv).catch((error) => {
+  main(argv).catch(error => {
     console.error('CLI error:', error);
     process.exit(ExitCodes.UNKNOWN_ERROR);
   });

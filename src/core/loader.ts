@@ -1,6 +1,6 @@
 /**
  * ModestBench File Loader
- * 
+ *
  * Handles discovery, loading, and validation of benchmark files.
  * Supports glob pattern matching and file structure validation.
  */
@@ -57,7 +57,12 @@ export interface FileMetadata {
  * Implementation of FileLoader for benchmark files
  */
 export class BenchmarkFileLoader implements FileLoader {
-  private readonly supportedExtensions = new Set(['.js', '.ts', '.mjs', '.cjs']);
+  private readonly supportedExtensions = new Set([
+    '.js',
+    '.ts',
+    '.mjs',
+    '.cjs',
+  ]);
 
   /**
    * Discover benchmark files using glob patterns
@@ -70,7 +75,7 @@ export class BenchmarkFileLoader implements FileLoader {
         nodir: true,
       });
 
-      // Filter to supported file extensions  
+      // Filter to supported file extensions
       const supportedFiles = files.filter((file: string) => {
         const ext = extname(file);
         return this.supportedExtensions.has(ext);
@@ -78,7 +83,9 @@ export class BenchmarkFileLoader implements FileLoader {
 
       return supportedFiles.sort();
     } catch (error) {
-      throw new Error(`File discovery failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `File discovery failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -107,7 +114,9 @@ export class BenchmarkFileLoader implements FileLoader {
         metadata,
       };
     } catch (error) {
-      throw new Error(`Failed to load file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to load file ${filePath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -119,7 +128,9 @@ export class BenchmarkFileLoader implements FileLoader {
       const loadPromises = filePaths.map(filePath => this.load(filePath));
       return await Promise.all(loadPromises);
     } catch (error) {
-      throw new Error(`Failed to load files: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to load files: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -201,7 +212,10 @@ export class BenchmarkFileLoader implements FileLoader {
   /**
    * Watch for file changes (placeholder implementation)
    */
-  watch(pattern: string, callback: (changes: FileChange[]) => void): FileWatcher {
+  watch(
+    pattern: string,
+    callback: (changes: FileChange[]) => void
+  ): FileWatcher {
     // TODO: Implement file watching with chokidar or similar
     // For now, return a no-op watcher
     return {
@@ -214,22 +228,31 @@ export class BenchmarkFileLoader implements FileLoader {
   /**
    * Get file metadata for validation and change detection
    */
-  private async getFileMetadata(filePath: string, content: string): Promise<FileMetadata> {
+  private async getFileMetadata(
+    filePath: string,
+    content: string
+  ): Promise<FileMetadata> {
     const { stat } = await import('node:fs/promises');
     const stats = await stat(filePath);
 
     // Basic analysis of file content
     const hasDefaultExport = /export\s+default/.test(content);
-    const exportMatches = content.match(/export\s+(?:const|let|var|function|class)\s+(\w+)/g) || [];
-    const exportNames = exportMatches.map(match => {
-      const nameMatch = match.match(/export\s+(?:const|let|var|function|class)\s+(\w+)/);
-      return nameMatch?.[1];
-    }).filter((name): name is string => Boolean(name));
+    const exportMatches =
+      content.match(/export\s+(?:const|let|var|function|class)\s+(\w+)/g) || [];
+    const exportNames = exportMatches
+      .map(match => {
+        const nameMatch = match.match(
+          /export\s+(?:const|let|var|function|class)\s+(\w+)/
+        );
+        return nameMatch?.[1];
+      })
+      .filter((name): name is string => Boolean(name));
 
     // Check for benchmark-like patterns
-    const hasBenchmarks = /(?:suite|bench|test|it)\s*\(/.test(content) || 
-                         /\.add\s*\(/.test(content) ||
-                         /benchmark\s*\(/.test(content);
+    const hasBenchmarks =
+      /(?:suite|bench|test|it)\s*\(/.test(content) ||
+      /\.add\s*\(/.test(content) ||
+      /benchmark\s*\(/.test(content);
 
     return {
       size: stats.size,
@@ -266,7 +289,7 @@ export class BenchmarkFileLoader implements FileLoader {
       // Simple checks for common syntax issues
       const openBraces = (content.match(/\{/g) || []).length;
       const closeBraces = (content.match(/\}/g) || []).length;
-      
+
       if (openBraces !== closeBraces) {
         errors.push({
           file: filePath,
@@ -278,7 +301,7 @@ export class BenchmarkFileLoader implements FileLoader {
 
       const openParens = (content.match(/\(/g) || []).length;
       const closeParens = (content.match(/\)/g) || []).length;
-      
+
       if (openParens !== closeParens) {
         errors.push({
           file: filePath,
@@ -307,14 +330,16 @@ export class BenchmarkFileLoader implements FileLoader {
     warnings: ValidationWarning[]
   ): Promise<void> {
     // Check for benchmark patterns
-    const hasBenchmarkPatterns = /(?:suite|bench|test|it)\s*\(/.test(content) || 
-                                /\.add\s*\(/.test(content) ||
-                                /benchmark\s*\(/.test(content);
+    const hasBenchmarkPatterns =
+      /(?:suite|bench|test|it)\s*\(/.test(content) ||
+      /\.add\s*\(/.test(content) ||
+      /benchmark\s*\(/.test(content);
 
     if (!hasBenchmarkPatterns) {
       warnings.push({
         file: filePath,
-        message: 'No benchmark patterns found. Expected suite(), bench(), test(), it(), .add(), or benchmark() calls',
+        message:
+          'No benchmark patterns found. Expected suite(), bench(), test(), it(), .add(), or benchmark() calls',
         code: 'NO_BENCHMARKS',
         severity: 'warning',
       });
@@ -324,16 +349,21 @@ export class BenchmarkFileLoader implements FileLoader {
     if (/console\.time\(/.test(content)) {
       warnings.push({
         file: filePath,
-        message: 'Found console.time() usage. Consider using proper benchmark framework instead',
+        message:
+          'Found console.time() usage. Consider using proper benchmark framework instead',
         code: 'CONSOLE_TIMING',
         severity: 'warning',
       });
     }
 
-    if (/Date\.now\(\)/.test(content) && /Date\.now\(\).*-.*Date\.now\(\)/.test(content)) {
+    if (
+      /Date\.now\(\)/.test(content) &&
+      /Date\.now\(\).*-.*Date\.now\(\)/.test(content)
+    ) {
       warnings.push({
         file: filePath,
-        message: 'Found manual timing with Date.now(). Consider using proper benchmark framework instead',
+        message:
+          'Found manual timing with Date.now(). Consider using proper benchmark framework instead',
         code: 'MANUAL_TIMING',
         severity: 'warning',
       });
@@ -343,7 +373,8 @@ export class BenchmarkFileLoader implements FileLoader {
     if (/async\s+function/.test(content) && !/await/.test(content)) {
       warnings.push({
         file: filePath,
-        message: 'Found async function without await. Make sure async benchmarks are properly handled',
+        message:
+          'Found async function without await. Make sure async benchmarks are properly handled',
         code: 'ASYNC_WITHOUT_AWAIT',
         severity: 'warning',
       });

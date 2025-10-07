@@ -1,6 +1,6 @@
 /**
  * ModestBench Progress Manager
- * 
+ *
  * Tracks execution progress, estimates completion times, and manages
  * progress callbacks for real-time updates during benchmark runs.
  */
@@ -85,7 +85,7 @@ export class ModestBenchProgressManager implements ProgressManager {
    */
   update(updates: Partial<ProgressState>): void {
     const now = Date.now();
-    
+
     // Throttle updates to avoid excessive callbacks
     if (now - this.lastUpdate < this.updateThrottleMs) {
       return;
@@ -104,7 +104,7 @@ export class ModestBenchProgressManager implements ProgressManager {
 
     // Update metrics for completion estimation
     this.updateMetrics(now);
-    
+
     this.lastUpdate = now;
     this.notifyCallbacks();
   }
@@ -120,19 +120,23 @@ export class ModestBenchProgressManager implements ProgressManager {
    * Estimate completion time
    */
   estimateCompletion(): Date | null {
-    if (!this.metrics || this.state.totalTasks === 0 || this.state.tasksCompleted === 0) {
+    if (
+      !this.metrics ||
+      this.state.totalTasks === 0 ||
+      this.state.tasksCompleted === 0
+    ) {
       return null;
     }
 
     const remainingTasks = this.state.totalTasks - this.state.tasksCompleted;
-    
+
     if (remainingTasks <= 0) {
       return new Date(); // Already complete
     }
 
     // Calculate average throughput from recent timings
     const throughput = this.calculateThroughput();
-    
+
     if (throughput <= 0) {
       return null; // Can't estimate with no throughput data
     }
@@ -195,7 +199,10 @@ export class ModestBenchProgressManager implements ProgressManager {
     const throughput = this.calculateThroughput();
     const estimatedCompletion = this.estimateCompletion();
     const elapsedMs = Date.now() - this.metrics.startTime;
-    const remainingTasks = Math.max(0, this.state.totalTasks - this.state.tasksCompleted);
+    const remainingTasks = Math.max(
+      0,
+      this.state.totalTasks - this.state.tasksCompleted
+    );
 
     return {
       throughput,
@@ -226,12 +233,15 @@ export class ModestBenchProgressManager implements ProgressManager {
    */
   private calculatePercentage(updates: Partial<ProgressState>): number {
     const currentState = { ...this.state, ...updates };
-    
+
     if (currentState.totalTasks === 0) {
       return 0;
     }
 
-    return Math.min(100, Math.max(0, (currentState.tasksCompleted / currentState.totalTasks) * 100));
+    return Math.min(
+      100,
+      Math.max(0, (currentState.tasksCompleted / currentState.totalTasks) * 100)
+    );
   }
 
   /**
@@ -246,10 +256,10 @@ export class ModestBenchProgressManager implements ProgressManager {
     const elapsed = now - this.metrics.startTime;
     if (elapsed > 0 && this.state.tasksCompleted > 0) {
       const currentThroughput = this.state.tasksCompleted / (elapsed / 1000); // tasks per second
-      
+
       // Add to recent timings for moving average
       this.metrics.recentTimings.push(currentThroughput);
-      
+
       // Keep only the most recent timings
       if (this.metrics.recentTimings.length > this.maxRecentTimings) {
         this.metrics.recentTimings.shift();
@@ -271,7 +281,10 @@ export class ModestBenchProgressManager implements ProgressManager {
     }
 
     // Use moving average of recent throughput measurements
-    const sum = this.metrics.recentTimings.reduce((acc, timing) => acc + timing, 0);
+    const sum = this.metrics.recentTimings.reduce(
+      (acc, timing) => acc + timing,
+      0
+    );
     return sum / this.metrics.recentTimings.length;
   }
 
@@ -284,7 +297,7 @@ export class ModestBenchProgressManager implements ProgressManager {
     }
 
     const state = this.getState();
-    
+
     // Call callbacks safely with error handling
     for (const callback of this.callbacks) {
       try {
@@ -304,7 +317,7 @@ export class ModestBenchProgressManager implements ProgressManager {
   }
 
   /**
-   * Set the current suite being processed  
+   * Set the current suite being processed
    */
   setCurrentSuite(suite: string): void {
     this.update({ currentSuite: suite });
@@ -342,7 +355,10 @@ export class ModestBenchProgressManager implements ProgressManager {
    * Check if the run is complete
    */
   isComplete(): boolean {
-    return this.state.tasksCompleted >= this.state.totalTasks && this.state.totalTasks > 0;
+    return (
+      this.state.tasksCompleted >= this.state.totalTasks &&
+      this.state.totalTasks > 0
+    );
   }
 
   /**
