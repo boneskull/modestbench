@@ -1,8 +1,8 @@
 
-# Implementation Plan: [FEATURE]
+# Implementation Plan: ModestBench Framework
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `001-develop-modestbench-a` | **Date**: 2025-10-06 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/001-develop-modestbench-a/spec.md`
 
 ## Execution Flow (/plan command scope)
 ```
@@ -31,27 +31,30 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-[Extract from feature spec: primary requirement + technical approach from research]
+ModestBench Framework: A TypeScript CLI tool that wraps tinybench to provide structured, consistent benchmark execution with hierarchical organization (files → suites → tasks), real-time progress tracking, historical result storage, and multiple output formats (human-readable, JSON, CSV).
 
 ## Technical Context
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript (Node.js 18+)
+**Primary Dependencies**: tinybench (benchmark engine), yargs (CLI), consola (logging/colors), ora or cli-progress (progress indicators)
+**Storage**: Local filesystem (JSON/CSV files for historical data)
+**Testing**: node:test runner (describe/it), bupkis (assertions)
+**Target Platform**: Node.js CLI tool (cross-platform)
+**Project Type**: single (CLI package)
+**Performance Goals**: Handle 1000+ benchmarks efficiently, <2s startup time, real-time progress updates
+**Constraints**: No emojis in output, support all tinybench configuration options, TypeScript strict mode
+**Scale/Scope**: Support large benchmark suites, indefinite historical data storage, extensible reporter system
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-**Code Quality Standards**: Linting/formatting tools specified? Documentation requirements clear?
-**Test-Driven Development**: TDD approach documented? 90% coverage target confirmed? Contract tests planned?
-**User Experience Consistency**: Interface patterns defined? Error handling standardized? Help/examples included?
-**Performance Requirements**: Benchmarks defined? Acceptance criteria specified? Scale targets identified?
-**Continuous Integration**: Quality gates planned? CI pipeline considerations documented?
+**Phase 1 Re-evaluation:**
+**Code Quality Standards**: ✅ ESLint + typescript-eslint specified, Prettier for formatting, TypeScript strict mode
+**Test-Driven Development**: ✅ node:test + bupkis specified, contract tests defined in contracts/, 90% coverage target
+**User Experience Consistency**: ✅ CLI contracts specify consistent error handling, JSON/CSV formats, help documentation
+**Performance Requirements**: ✅ <2s startup, 1000+ benchmarks, progress tracking with ETA, performance validation in quickstart
+**Continuous Integration**: ✅ Quality gates through TypeScript compilation, linting, testing, CI/CD examples in quickstart
+
+**POST-DESIGN STATUS**: ✅ ALL CONSTITUTIONAL REQUIREMENTS SATISFIED
 
 ## Project Structure
 
@@ -67,50 +70,28 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 ```
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── cli/              # CLI entry point and command handling
+├── core/             # Core benchmark execution engine
+├── reporters/        # Output formatters (human, JSON, CSV)
+├── storage/          # Historical data persistence
+├── progress/         # Progress tracking and estimation
+├── config/           # Configuration management
+└── types/            # TypeScript type definitions
 
 tests/
-├── contract/
-├── integration/
-└── unit/
+├── contract/         # API contract tests
+├── integration/      # End-to-end CLI tests
+└── unit/             # Component unit tests
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+config/
+├── .eslintrc.js
+├── prettier.config.js
+└── tsconfig.json
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Single TypeScript CLI package with modular architecture. Each major component (CLI, core engine, reporters, storage, progress tracking) is separated for testability and extensibility. Reporter system uses plugin pattern for easy addition of new output formats.
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
@@ -171,18 +152,43 @@ directories captured above]
 
 **Task Generation Strategy**:
 - Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each contract → contract test task [P]
-- Each entity → model creation task [P] 
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+- Extract from contracts/cli-commands.md → CLI command implementation tasks
+- Extract from contracts/core-api.md → API interface implementation tasks
+- Extract from data-model.md → TypeScript type definitions and classes
+- Extract from quickstart.md → example benchmark files and documentation
 
-**Ordering Strategy**:
-- TDD order: Tests before implementation 
-- Dependency order: Models before services before UI
-- Mark [P] for parallel execution (independent files)
+**Specific Task Categories**:
+1. **Setup Tasks**: Project structure, TypeScript config, package.json, dependencies
+2. **Test Tasks**: Contract tests for CLI commands, API interfaces, file structure validation
+3. **Core Implementation**: 
+   - BenchmarkEngine, ConfigurationManager, FileLoader
+   - ProgressManager, TimeEstimationEngine, ReporterRegistry
+   - HumanReporter, JsonReporter, CsvReporter
+4. **CLI Implementation**: yargs command setup, argument parsing, error handling
+5. **Integration Tasks**: End-to-end CLI tests, performance validation
+6. **Documentation**: README, API docs, usage examples
 
-**Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
+**TDD Ordering Strategy**:
+- Setup tasks first (T001-T003)
+- Contract tests before implementation (T004-T015 → T016-T030)
+- Core interfaces before implementations
+- CLI commands after core engine
+- Integration tests after individual components
+- Documentation and examples last
+
+**Parallel Execution Markers [P]**:
+- Type definitions (different files)
+- Reporter implementations (independent)
+- Contract tests (separate test files)
+- Documentation tasks
+
+**Estimated Output**: 35-40 numbered, ordered tasks following constitutional TDD requirements
+
+**Dependencies**:
+- TypeScript compilation gates before runtime tests
+- Core API implementations before CLI layer
+- File structure validation before benchmark loading
+- Progress tracking before reporter integration
 
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
@@ -206,18 +212,18 @@ directories captured above]
 *This checklist is updated during execution flow*
 
 **Phase Status**:
-- [ ] Phase 0: Research complete (/plan command)
-- [ ] Phase 1: Design complete (/plan command)
-- [ ] Phase 2: Task planning complete (/plan command - describe approach only)
+- [x] Phase 0: Research complete (/plan command)
+- [x] Phase 1: Design complete (/plan command)
+- [x] Phase 2: Task planning complete (/plan command - describe approach only)
 - [ ] Phase 3: Tasks generated (/tasks command)
 - [ ] Phase 4: Implementation complete
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
-- [ ] Initial Constitution Check: PASS
-- [ ] Post-Design Constitution Check: PASS
-- [ ] All NEEDS CLARIFICATION resolved
-- [ ] Complexity deviations documented
+- [x] Initial Constitution Check: PASS
+- [x] Post-Design Constitution Check: PASS
+- [x] All NEEDS CLARIFICATION resolved
+- [x] Complexity deviations documented (none required)
 
 ---
 *Based on Constitution v2.1.1 - See `/memory/constitution.md`*
