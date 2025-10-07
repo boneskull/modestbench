@@ -4,6 +4,7 @@
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/
 
 ## Execution Flow (main)
+
 ```
 1. Load plan.md from feature directory
    → Extract: TypeScript + tinybench + yargs + consola + cli-progress tech stack
@@ -29,47 +30,56 @@
 ```
 
 ## Format: `[ID] [P?] Description`
+
 - **[P]**: Can run in parallel (different files, no dependencies)
 - Include exact file paths in descriptions
 
 ## Path Conventions
+
 Single TypeScript CLI package structure as defined in plan.md:
+
 - `src/` for all source code
 - `tests/` for all test files
 - `config/` for build configuration
 
 ## Phase 3.1: Setup
-- [ ] T001 Create project structure with src/, tests/, config/ directories
-- [ ] T002 Initialize TypeScript project with package.json and dependencies (tinybench, yargs, consola, cli-progress)
-- [ ] T003 [P] Configure TypeScript compiler in config/tsconfig.json with strict mode
-- [ ] T004 [P] Configure ESLint + @typescript-eslint in config/.eslintrc.js
-- [ ] T005 [P] Configure Prettier formatting in config/prettier.config.js
+
+- [x] T001 Create project structure with src/, tests/, config/ directories
+- [x] T002 Initialize TypeScript project with package.json and dependencies (tinybench, yargs, consola, cli-progress)
+- [x] T003 [P] Configure TypeScript compiler in config/tsconfig.json with strict mode
+- [x] T004 [P] Configure ESLint + @typescript-eslint in config/.eslintrc.js
+- [x] T005 [P] Configure Prettier formatting in config/prettier.config.js
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
+
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 
 ### Contract Tests for CLI Commands
-- [ ] T006 [P] Contract test `modestbench run` command in tests/contract/test_run_command.test.ts
-- [ ] T007 [P] Contract test `modestbench history` command in tests/contract/test_history_command.test.ts
-- [ ] T008 [P] Contract test `modestbench init` command in tests/contract/test_init_command.test.ts
-- [ ] T009 [P] Contract test `modestbench validate` command in tests/contract/test_validate_command.test.ts
+
+- [x] T006 [P] Contract test `modestbench run` command in tests/contract/test_run_command.test.ts
+- [x] T007 [P] Contract test `modestbench history` command in tests/contract/test_history_command.test.ts
+- [x] T008 [P] Contract test `modestbench init` command in tests/contract/test_init_command.test.ts
+- [x] T009 [P] Contract test `modestbench validate` command in tests/contract/test_validate_command.test.ts
 
 ### Contract Tests for Core API
-- [ ] T010 [P] Contract test BenchmarkEngine interface in tests/contract/test_benchmark_engine.test.ts
-- [ ] T011 [P] Contract test ConfigurationManager interface in tests/contract/test_configuration_manager.test.ts
-- [ ] T012 [P] Contract test HistoryStorage interface in tests/contract/test_history_storage.test.ts
-- [ ] T013 [P] Contract test ProgressManager interface in tests/contract/test_progress_manager.test.ts
-- [ ] T014 [P] Contract test Reporter interfaces in tests/contract/test_reporters.test.ts
+
+- [x] T010 [P] Contract test BenchmarkEngine interface in tests/contract/test_benchmark_engine.test.ts
+- [x] T011 [P] Contract test ConfigurationManager interface in tests/contract/test_configuration_manager.test.ts
+- [x] T012 [P] Contract test HistoryStorage interface in tests/contract/test_history_storage.test.ts
+- [x] T013 [P] Contract test ProgressManager interface in tests/contract/test_progress_manager.test.ts
+- [x] T014 [P] Contract test Reporter interfaces in tests/contract/test_reporters.test.ts
 
 ### Integration Tests from User Scenarios
-- [ ] T015 [P] Integration test benchmark file execution with progress tracking in tests/integration/test_run_benchmarks.test.ts
-- [ ] T016 [P] Integration test historical results viewing and trends in tests/integration/test_history_viewing.test.ts
-- [ ] T017 [P] Integration test configuration file and CLI argument merging in tests/integration/test_configuration.test.ts
-- [ ] T018 [P] Integration test multiple reporter output formats in tests/integration/test_reporters.test.ts
+
+- [x] T015 [P] Integration test benchmark file execution with progress tracking in tests/integration/test_run_benchmarks.test.ts
+- [x] T016 [P] Integration test historical results viewing and trends in tests/integration/test_history_viewing.test.ts
+- [x] T017 [P] Integration test configuration file and CLI argument merging in tests/integration/test_configuration.test.ts
+- [x] T018 [P] Integration test multiple reporter output formats in tests/integration/test_reporters.test.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
 ### TypeScript Type Definitions
+
 - [ ] T019 [P] Create core types in src/types/benchmark.ts (BenchmarkFile, BenchmarkSuite, BenchmarkTask)
   - **Reference**: data-model.md lines 8-42 for complete interface definitions
   - **Include**: FileMetadata interface for change detection
@@ -84,6 +94,7 @@ Single TypeScript CLI package structure as defined in plan.md:
   - **Include**: Environment info types from lines 87-105
 
 ### Core Engine Implementation (Sequential - Build Foundation First)
+
 - [ ] T023a Create BenchmarkEngine class structure in src/core/engine.ts
   - **Reference**: contracts/core-api.md lines 5-30 for interface definition
   - **Implement**: Constructor with dependency injection for ConfigManager, FileLoader, ReporterRegistry
@@ -92,7 +103,7 @@ Single TypeScript CLI package structure as defined in plan.md:
   - **Reference**: contracts/core-api.md lines 18-19 for method signature
   - **Logic**: Use glob patterns from research.md lines 95-100 for file discovery
   - **Integration**: Call FileLoader for pattern matching and exclusions
-- [ ] T023c Implement BenchmarkEngine.validate() method  
+- [ ] T023c Implement BenchmarkEngine.validate() method
   - **Reference**: contracts/core-api.md lines 14-17 for validation interface
   - **Logic**: File structure validation from data-model.md lines 200-208
   - **Error Handling**: Return ValidationResult with specific error codes from contracts/cli-commands.md lines 85-95
@@ -105,6 +116,7 @@ Single TypeScript CLI package structure as defined in plan.md:
   - **Integration**: Delegate to ReporterRegistry for actual storage and retrieval
 
 ### File System and Configuration (Parallel after Types)
+
 - [ ] T024 [P] BenchmarkFileLoader class in src/core/loader.ts
   - **Reference**: contracts/core-api.md lines 45-70 for FileLoader interface
   - **File Discovery**: Implement glob pattern matching from research.md lines 95-100
@@ -116,17 +128,18 @@ Single TypeScript CLI package structure as defined in plan.md:
   - **File Support**: JSON/YAML/JS/TS config files from contracts/cli-commands.md lines 130-150
 
 ### Reporter System (Parallel after Types)
+
 - [ ] T026a [P] Base Reporter interface and ReporterRegistry in src/reporters/registry.ts
   - **Reference**: contracts/core-api.md lines 145-165 for Reporter interface and registry
   - **Implementation**: Plugin-based system from research.md lines 35-42
   - **Include**: Lifecycle hooks (onStart, onProgress, onFileStart, etc.)
-- [ ] T026b [P] HumanReporter implementation in src/reporters/human.ts  
+- [ ] T026b [P] HumanReporter implementation in src/reporters/human.ts
   - **Reference**: contracts/core-api.md lines 167-175 for HumanReporter interface
   - **Dependencies**: consola for colors, cli-progress for progress bars (research.md lines 27-31)
   - **Output**: Colorful tables and progress as shown in quickstart.md lines 295-305
   - **No Emojis**: Strict requirement from plan.md constraints
 - [ ] T026c [P] JsonReporter implementation in src/reporters/json.ts
-  - **Reference**: contracts/core-api.md lines 177-183 for JsonReporter interface  
+  - **Reference**: contracts/core-api.md lines 177-183 for JsonReporter interface
   - **Output Format**: Match JSON structure from quickstart.md lines 307-325
   - **Streaming**: Support large datasets per data-model.md lines 244-248
 - [ ] T026d [P] CsvReporter implementation in src/reporters/csv.ts
@@ -135,6 +148,7 @@ Single TypeScript CLI package structure as defined in plan.md:
   - **Options**: Configurable delimiter/quote from interface
 
 ### CLI Interface (Sequential - Build on Core Engine)
+
 - [ ] T030 CLI entry point with yargs configuration in src/cli/index.ts
   - **Reference**: contracts/cli-commands.md lines 1-15 for command overview
   - **Setup**: yargs with command routing, global options, help generation
@@ -158,6 +172,7 @@ Single TypeScript CLI package structure as defined in plan.md:
   - **Integration**: Use BenchmarkEngine.validate() method
 
 ## Phase 3.4: Integration (Sequential - Depends on Core Components)
+
 - [ ] T035a ProgressManager implementation in src/progress/manager.ts - Core Structure
   - **Reference**: contracts/core-api.md lines 75-95 for ProgressManager interface
   - **State Management**: Track files/suites/tasks progress per data-model.md lines 107-130
@@ -180,9 +195,11 @@ Single TypeScript CLI package structure as defined in plan.md:
   - **Graceful Degradation**: Continue execution on individual failures per plan.md
 
 ## Phase 3.5: Polish
+
 - [ ] T038 [P] Create example benchmark files and documentation as specified in quickstart.md
 
 ## Dependencies
+
 ```
 Setup Phase (T001-T005):
   No dependencies - can run in any order
@@ -193,23 +210,23 @@ Test Phase (T006-T018):
 
 Implementation Phase (T019-T037):
   T019-T022 → Must complete before all other implementation (types are foundation)
-  
+
   Core Engine (Sequential Build):
   T023a → Depends on T019-T022 (needs types)
   T023b → Depends on T023a (needs class structure)
-  T023c → Depends on T023a (needs class structure)  
+  T023c → Depends on T023a (needs class structure)
   T023d → Depends on T023b, T023c, T024, T025 (needs discovery, validation, config)
   T023e → Depends on T026a (needs ReporterRegistry)
-  
+
   Support Systems (Parallel after types):
   T024, T025 → Depend on T019-T022, can run parallel to T023a-c
   T026a-d → Depend on T019-T022, can run parallel after types
-  
+
   CLI Layer (Sequential after core):
   T030 → Depends on T023a-e, T026a-d (needs engine and reporters)
   T031, T032 → Depend on T030, T035a, T036a (needs CLI setup and core services)
   T033, T034 → Depend on T030, can run parallel to T031-T032
-  
+
   Integration (Sequential after core):
   T035a → Depends on T019-T022 (needs types)
   T035b → Depends on T035a (needs progress manager structure)
@@ -222,6 +239,7 @@ Polish Phase (T038):
 ```
 
 ## Implementation Data Flow Guide
+
 ```
 1. File Discovery (T024): pattern → glob → file paths
 2. Configuration (T025): CLI args + config file → merged config
@@ -233,6 +251,7 @@ Polish Phase (T038):
 ```
 
 ## Parallel Example Groups
+
 ```bash
 # Setup phase (all parallel after T001)
 Task T002: "Initialize TypeScript project with package.json..."
@@ -263,6 +282,7 @@ Task T026a: "ReporterRegistry with plugin system per contracts/core-api.md lines
 ```
 
 ## Task Validation with Implementation References
+
 - [x] All CLI commands have tests (T006-T009) AND implementations with references (T030-T034)
 - [x] All API interfaces have tests (T010-T014) AND implementations with references (T023a-e, T024-T025, T035a-T036b)
 - [x] All entities have TypeScript implementations with data-model.md references (T019-T022)
@@ -273,6 +293,7 @@ Task T026a: "ReporterRegistry with plugin system per contracts/core-api.md lines
 - [x] TDD requirements satisfied with all tests before implementation
 
 ## Notes
+
 - [P] tasks = different files, no dependencies between them
 - Verify all tests fail before implementing (TDD requirement)
 - Each task should take 15-30 minutes to complete
@@ -280,6 +301,7 @@ Task T026a: "ReporterRegistry with plugin system per contracts/core-api.md lines
 - TypeScript compilation must pass before runtime tests
 
 ## Task Generation Rules Applied
+
 1. **From contracts/cli-commands.md**: Generated T006-T009 (CLI command tests) and T030-T034 (CLI implementations)
 2. **From contracts/core-api.md**: Generated T010-T014 (API contract tests) and T023-T025, T035-T036 (API implementations)
 3. **From data-model.md**: Generated T019-T022 (TypeScript type definitions for all entities)
@@ -288,6 +310,7 @@ Task T026a: "ReporterRegistry with plugin system per contracts/core-api.md lines
 6. **Dependency Management**: Types before implementations, core before CLI, integration after core
 
 ## Validation Checklist
+
 - [x] All CLI commands have corresponding tests (T006-T009 → T030-T034)
 - [x] All API interfaces have contract tests (T010-T014 → T023-T025, T035-T036)
 - [x] All entities have TypeScript implementations (T019-T022)
