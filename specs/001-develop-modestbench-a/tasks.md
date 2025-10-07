@@ -1,7 +1,11 @@
 # Tasks: ModestBench Framework
 
 **Input**: Design documents from `/specs/001-develop-modestbench-a/`
-**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/
+**Prerequisites**: plan.md (required), re  - **Field Escaping**: Proper CSV escaping with quote handling for special characters
+
+### Storage and Progress (Parallel Implementation)
+
+- [ ] **T027 HistoryStorage implementation**, data-model.md, contracts/
 
 ## Execution Flow (main)
 
@@ -80,48 +84,67 @@ Single TypeScript CLI package structure as defined in plan.md:
 
 ### TypeScript Type Definitions
 
-- [ ] T019 [P] Create core types in src/types/benchmark.ts (BenchmarkFile, BenchmarkSuite, BenchmarkTask)
-  - **Reference**: data-model.md lines 8-42 for complete interface definitions
-  - **Include**: FileMetadata interface for change detection
-- [ ] T020 [P] Create execution types in src/types/execution.ts (BenchmarkRun, BenchmarkResult, RunConfiguration)
-  - **Reference**: data-model.md lines 44-86 for execution models and RunStatus enum
-  - **Include**: ExecutionError and ExecutionPhase enums from lines 87-105
-- [ ] T021 [P] Create progress types in src/types/progress.ts (ProgressState, TimingEstimate)
-  - **Reference**: data-model.md lines 107-130 for progress tracking models
-  - **Include**: ProgressLevel interface and confidence calculations
-- [ ] T022 [P] Create configuration types in src/types/config.ts (ModestBenchConfig, ReporterType)
-  - **Reference**: data-model.md lines 132-169 for configuration management
-  - **Include**: Environment info types from lines 87-105
+- [x] T019 [P] Create core types in src/types/core.ts (BenchmarkRun, TaskResult, SuiteResult, FileResult)
+  - **Implemented**: Complete core data structures with environment info, git info, CI info
+  - **Include**: ModestBenchConfig, ThresholdConfig for performance assertions
+- [x] T020 [P] Create interface types in src/types/interfaces.ts (BenchmarkEngine, ConfigurationManager, etc.)
+  - **Implemented**: All major component interfaces and contracts
+  - **Include**: ValidationResult, ProgressState, Reporter interfaces, HistoryStorage
+- [x] T021 [P] Create CLI types in src/types/cli.ts (CommandArguments, ExitCodes, etc.)
+  - **Implemented**: Complete CLI command definitions and argument parsing
+  - **Include**: Terminal capabilities, progress display options, color themes
+- [x] T022 [P] Create utility types in src/types/utility.ts (branded types, Result, helpers)
+  - **Implemented**: Type safety utilities, branded types, validation helpers
+  - **Include**: Event emitter, disposable, async patterns, type predicates
 
 ### Core Engine Implementation (Sequential - Build Foundation First)
 
-- [ ] T023a Create BenchmarkEngine class structure in src/core/engine.ts
-  - **Reference**: contracts/core-api.md lines 5-30 for interface definition
-  - **Implement**: Constructor with dependency injection for ConfigManager, FileLoader, ReporterRegistry
-  - **Stub**: All interface methods (execute, validate, discover, registerReporter, getReporters)
-- [ ] T023b Implement BenchmarkEngine.discover() method
-  - **Reference**: contracts/core-api.md lines 18-19 for method signature
-  - **Logic**: Use glob patterns from research.md lines 95-100 for file discovery
-  - **Integration**: Call FileLoader for pattern matching and exclusions
-- [ ] T023c Implement BenchmarkEngine.validate() method
-  - **Reference**: contracts/core-api.md lines 14-17 for validation interface
-  - **Logic**: File structure validation from data-model.md lines 200-208
-  - **Error Handling**: Return ValidationResult with specific error codes from contracts/cli-commands.md lines 85-95
-- [ ] T023d Implement BenchmarkEngine.execute() method core flow
-  - **Reference**: contracts/core-api.md lines 8-12 for execution signature
-  - **Flow**: discovery → validation → progress init → file processing → reporting
-  - **Integration**: Coordinate with ProgressManager and Reporter system
-- [ ] T023e Implement BenchmarkEngine reporter registration methods
-  - **Reference**: contracts/core-api.md lines 20-26 for reporter methods
-  - **Integration**: Delegate to ReporterRegistry for actual storage and retrieval
+- [x] T023a Create BenchmarkEngine class structure in src/core/engine.ts
+  - **Implemented**: Constructor with dependency injection for ConfigManager, FileLoader, ReporterRegistry
+  - **Complete**: All interface methods implemented with proper error handling
+- [x] T023b Implement BenchmarkEngine.discover() method
+  - **Implemented**: Delegates to FileLoader with error handling
+  - **Integration**: Proper pattern matching and exclusions support
+- [x] T023c Implement BenchmarkEngine.validate() method
+  - **Implemented**: File structure validation with detailed error reporting
+  - **Error Handling**: Comprehensive ValidationResult with error codes and file tracking
+- [x] T023d Implement BenchmarkEngine.execute() method core flow
+  - **Implemented**: Complete execution flow from discovery to history storage
+  - **Integration**: Progress tracking, environment detection, Git/CI info collection
+- [x] T023e Implement BenchmarkEngine reporter registration methods
+  - **Implemented**: Delegates to ReporterRegistry for registration and retrieval
+  - **Complete**: Both registerReporter and getReporters methods working
 
 ### File System and Configuration (Parallel after Types)
 
-- [ ] T024 [P] BenchmarkFileLoader class in src/core/loader.ts
-  - **Reference**: contracts/core-api.md lines 45-70 for FileLoader interface
-  - **File Discovery**: Implement glob pattern matching from research.md lines 95-100
-  - **File Parsing**: Support the export patterns from contracts/cli-commands.md lines 155-185
-  - **Validation**: File structure checks per data-model.md lines 200-208
+- [x] **T024 BenchmarkFileLoader class in src/core/loader.ts**
+  - **Implemented**: Complete file discovery, loading, and validation system
+  - **File Discovery**: Glob pattern matching with anti-pattern detection
+  - **File Parsing**: Support for .js/.ts/.mjs/.cjs files with syntax validation
+  - **Validation**: Comprehensive file structure checks and security validation
+- [x] **T025 ConfigurationManager class in src/config/manager.ts**
+  - **Implemented**: Multi-format config support (JSON/YAML/JS/TS) with CLI precedence
+  - **Configuration Loading**: File discovery, parsing, and validation with detailed error handling
+  - **CLI Integration**: Argument normalization and merge precedence (CLI > config > defaults)
+
+### Reporter System (Parallel after Engine Core)
+
+- [x] **T026a Base Reporter interface and ReporterRegistry in src/reporters/registry.ts**
+  - **Implemented**: BaseReporter abstract class with utility methods and CompositeReporter
+  - **Registry**: ModestBenchReporterRegistry with registration, retrieval, and lifecycle management
+  - **Error Handling**: Safe async operation handling with reporter-specific error isolation
+- [x] **T026b HumanReporter implementation in src/reporters/human.ts**
+  - **Implemented**: Colorized console output with ANSI colors and progress indicators
+  - **Features**: Real-time progress, environment info display, spinner animation, auto color detection
+  - **Output Formatting**: Duration formatting, ops/sec display, percentage calculations, error highlighting
+- [x] **T026c JsonReporter implementation in src/reporters/json.ts**
+  - **Implemented**: Structured JSON output with optional pretty printing and statistics
+  - **Data Sanitization**: Optional removal of sensitive metadata (environment vars, hostname, author)
+  - **File Output**: Directory creation, atomic writes, configurable statistics inclusion
+- [x] **T026d CsvReporter implementation in src/reporters/csv.ts**
+  - **Implemented**: Tabular CSV output with configurable delimiter, headers, and metadata
+  - **Data Format**: All task metrics, environment info, Git/CI data in structured columns
+  - **Field Escaping**: Proper CSV escaping with quote handling for special characters
 - [ ] T025 [P] ConfigurationManager class in src/config/manager.ts
   - **Reference**: contracts/core-api.md lines 32-43 for ConfigurationManager interface
   - **Merging Logic**: CLI args > config file > defaults priority from research.md lines 75-85

@@ -1,0 +1,335 @@
+/**
+ * ModestBench Human-Readable Console Reporter
+ * 
+ * Provides colorized, progressive output for terminal environments.
+ * Displays real-time progress, results, and formatted statistics.
+ */
+
+import type {
+  BenchmarkRun,
+  TaskResult,
+  SuiteResult,
+  FileResult,
+  ProgressState,
+} from '../types/index.js';
+import { BaseReporter } from './registry.js';
+
+/**
+ * ANSI color codes for terminal output
+ */
+const colors = {
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+  white: '\x1b[37m',
+  gray: '\x1b[90m',
+} as const;
+
+/**
+ * Spinner characters for progress indication
+ */
+const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+/**
+ * Human-readable console reporter with colorized output
+ */
+export class HumanReporter extends BaseReporter {
+  private readonly useColor: boolean;
+  private readonly showProgress: boolean;
+  private readonly verbose: boolean;
+  private spinnerIndex = 0;
+  private progressTimer?: NodeJS.Timeout | null | undefined;
+  private lastProgressLine = '';
+  private startTime = 0;
+
+  constructor(options: {
+    color?: boolean;
+    progress?: boolean;
+    verbose?: boolean;
+  } = {}) {
+    super('human', options);
+    
+    // Auto-detect color support if not explicitly set
+    this.useColor = options.color ?? (
+      process.stdout.isTTY && 
+      process.env.FORCE_COLOR !== '0' && 
+      process.env.NO_COLOR == null
+    );
+    
+    this.showProgress = options.progress ?? true;
+    this.verbose = options.verbose ?? false;
+  }
+
+  onStart(run: BenchmarkRun): void {
+    this.startTime = Date.now();
+    this.clearLine();
+    
+    console.log(this.colorize('bold', '🚀 ModestBench'));
+    console.log();
+    
+    if (run.environment) {
+      console.log(this.colorize('dim', 'Environment:'));
+      console.log(`  Node.js: ${this.colorize('cyan', run.environment.nodeVersion)}`);
+      console.log(`  Platform: ${this.colorize('cyan', `${run.environment.platform} ${run.environment.arch}`)}`);
+      console.log(`  CPU: ${this.colorize('cyan', run.environment.cpu.model)} (${run.environment.cpu.cores} cores)`);
+      console.log(`  Memory: ${this.colorize('cyan', this.formatBytes(run.environment.memory.total))}`);
+      console.log();
+    }
+
+    if (run.git) {
+      console.log(`  Git: ${this.colorize('cyan', run.git.commit)}`);
+    }
+    
+    if (run.ci) {
+      console.log(`  CI: ${this.colorize('cyan', run.ci.provider)}`);
+    }
+
+    if (this.verbose && run.files.length > 0) {
+      console.log(this.colorize('dim', 'Files to benchmark:'));
+      for (const file of run.files) {
+        console.log(`  ${this.colorize('gray', file.filePath)}`);
+      }
+      console.log();
+    }
+
+    console.log(this.colorize('dim', `Found ${run.files.length} benchmark file(s)`));
+    console.log();
+  }
+
+  onFileStart(file: string): void {
+    this.clearProgress();
+    console.log(this.colorize('bold', `📁 ${file}`));
+  }
+
+  onSuiteStart(suite: string): void {
+    if (this.verbose) {
+      console.log(`  ${this.colorize('blue', '▶')} ${suite}`);
+    }
+  }
+
+  onTaskStart(task: string): void {
+    if (this.showProgress) {
+      this.startProgress(`Running ${task}...`);
+    } else if (this.verbose) {
+      console.log(`    ${this.colorize('gray', '●')} ${task}`);
+    }
+  }
+
+  onTaskResult(result: TaskResult): void {
+    this.clearProgress();
+    
+    const status = result.error ? 
+      this.colorize('red', '✗') : 
+      this.colorize('green', '✓');
+    
+    if (result.error) {
+      console.log(`    ${status} ${result.name} ${this.colorize('red', 'FAILED')}`);
+      if (this.verbose) {
+        console.log(`      ${this.colorize('red', result.error.message)}`);
+      }
+    } else {
+      const duration = this.formatDuration(result.mean);
+      const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
+      const rme = this.formatPercentage(result.marginOfError);
+      
+      console.log(`    ${status} ${result.name}`);
+      console.log(`      ${this.colorize('cyan', duration)} ${this.colorize('dim', '±')}${this.colorize('yellow', rme)} ${this.colorize('gray', '(')}${this.colorize('green', opsPerSec)}${this.colorize('gray', ')')}`);
+      
+      if (this.verbose && result.iterations > 0) {
+        console.log(`      ${this.colorize('dim', `${result.iterations} iterations`)}`);
+      }
+    }
+  }
+
+  onSuiteEnd(result: SuiteResult): void {
+    const passed = result.tasks.filter(t => !t.error).length;
+    const failed = result.tasks.filter(t => t.error).length;
+    
+    if (failed > 0) {
+      console.log(`  ${this.colorize('red', `✗ ${failed} failed`)}, ${this.colorize('green', `${passed} passed`)}`);
+    } else {
+      console.log(`  ${this.colorize('green', `✓ ${passed} passed`)}`);
+    }
+    console.log();
+  }
+
+  onFileEnd(result: FileResult): void {
+    const totalTasks = result.suites.reduce((sum, suite) => sum + suite.tasks.length, 0);
+    const totalPassed = result.suites.reduce((sum, suite) => 
+      sum + suite.tasks.filter(t => !t.error).length, 0);
+    const totalFailed = totalTasks - totalPassed;
+    
+    if (totalFailed > 0) {
+      console.log(this.colorize('red', `  ✗ ${totalFailed} failed, ${totalPassed} passed`));
+    } else {
+      console.log(this.colorize('green', `  ✓ All ${totalPassed} tasks passed`));
+    }
+    
+    console.log();
+  }
+
+  onEnd(run: BenchmarkRun): void {
+    this.clearProgress();
+    
+    const duration = Date.now() - this.startTime;
+    const totalFiles = run.files.length;
+    
+    // Calculate totals across all files
+    let totalSuites = 0;
+    let totalTasks = 0;
+    let totalPassed = 0;
+    let totalFailed = 0;
+    
+    for (const file of run.files) {
+      totalSuites += file.suites.length;
+      for (const suite of file.suites) {
+        totalTasks += suite.tasks.length;
+        totalPassed += suite.tasks.filter((t: TaskResult) => !t.error).length;
+        totalFailed += suite.tasks.filter((t: TaskResult) => t.error).length;
+      }
+    }
+    
+    console.log(this.colorize('bold', '📊 Results'));
+    console.log();
+    
+    if (totalFailed > 0) {
+      console.log(`${this.colorize('red', '✗ Failed:')} ${totalFailed}`);
+      console.log(`${this.colorize('green', '✓ Passed:')} ${totalPassed}`);
+    } else {
+      console.log(`${this.colorize('green', '✓ All tests passed:')} ${totalPassed}`);
+    }
+    
+    console.log(`${this.colorize('blue', '📁 Files:')} ${totalFiles}`);
+    console.log(`${this.colorize('blue', '📊 Suites:')} ${totalSuites}`);
+    console.log(`${this.colorize('blue', '⏱️  Duration:')} ${this.formatDuration(duration * 1000000)}`);
+    console.log();
+    
+    if (totalFailed > 0) {
+      console.log(this.colorize('red', '❌ Some benchmarks failed'));
+    } else {
+      console.log(this.colorize('green', '🎉 All benchmarks completed successfully!'));
+    }
+  }
+
+  onProgress(state: ProgressState): void {
+    if (this.showProgress) {
+      const percentage = state.totalTasks > 0 ? 
+        Math.round((state.tasksCompleted / state.totalTasks) * 100) : 0;
+      
+      this.updateProgress(`${state.tasksCompleted}/${state.totalTasks} tasks (${percentage}%)`);
+    }
+  }
+
+  onError(error: Error): void {
+    this.clearProgress();
+    console.error(this.colorize('red', '❌ Error:'), error.message);
+    
+    if (this.verbose && error.stack) {
+      console.error(this.colorize('dim', error.stack));
+    }
+  }
+
+  /**
+   * Apply color to text if colors are enabled
+   */
+  private colorize(color: keyof typeof colors, text: string): string {
+    if (!this.useColor) {
+      return text;
+    }
+    return `${colors[color]}${text}${colors.reset}`;
+  }
+
+  /**
+   * Start showing animated progress
+   */
+  private startProgress(message: string): void {
+    if (!this.showProgress || !process.stdout.isTTY) {
+      return;
+    }
+    
+    this.clearProgress();
+    this.spinnerIndex = 0;
+    
+    this.progressTimer = setInterval(() => {
+      const frame = spinnerFrames[this.spinnerIndex % spinnerFrames.length];
+      this.spinnerIndex++;
+      
+      const line = `${this.colorize('cyan', frame!)} ${message}`;
+      this.updateProgressLine(line);
+    }, 100);
+  }
+
+  /**
+   * Update progress message without animation
+   */
+  private updateProgress(message: string): void {
+    if (!this.showProgress || !process.stdout.isTTY) {
+      return;
+    }
+    
+    const line = `${this.colorize('blue', '⏳')} ${message}`;
+    this.updateProgressLine(line);
+  }
+
+  /**
+   * Update the current progress line
+   */
+  private updateProgressLine(line: string): void {
+    if (!process.stdout.isTTY) {
+      return;
+    }
+    
+    // Clear the previous line
+    if (this.lastProgressLine) {
+      process.stdout.write('\r' + ' '.repeat(this.lastProgressLine.length) + '\r');
+    }
+    
+    // Write the new line
+    process.stdout.write(line);
+    this.lastProgressLine = line;
+  }
+
+  /**
+   * Clear current progress display
+   */
+  private clearProgress(): void {
+    if (this.progressTimer) {
+      clearInterval(this.progressTimer);
+      this.progressTimer = undefined;
+    }
+    
+    this.clearLine();
+  }
+
+  /**
+   * Clear the current terminal line
+   */
+  private clearLine(): void {
+    if (process.stdout.isTTY && this.lastProgressLine) {
+      process.stdout.write('\r' + ' '.repeat(this.lastProgressLine.length) + '\r');
+      this.lastProgressLine = '';
+    }
+  }
+
+  /**
+   * Format bytes in human-readable format
+   */
+  private formatBytes(bytes: number): string {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = bytes;
+    let unitIndex = 0;
+    
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
+  }
+}
