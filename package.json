@@ -2,15 +2,16 @@
   "name": "modestbench",
   "version": "0.1.0",
   "description": "A framework which wraps around tinybench to provide structure, consistency and convenience to developers creating and maintaining benchmarks",
-  "main": "dist/cli/index.js",
+  "main": "dist/src/cli/index.js",
   "bin": {
-    "modestbench": "dist/cli/index.js"
+    "modestbench": "dist/src/cli/index.js"
   },
   "type": "module",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "node --test",
+    "test": "npm run test:base -- \"tests/**/*.test.ts\"",
+    "test:base": "node --import tsx --test",
     "test:watch": "node --test --watch",
     "lint": "eslint src tests --ext .ts",
     "lint:fix": "eslint src tests --ext .ts --fix",
@@ -28,7 +29,15 @@
     "testing"
   ],
   "author": "Christopher Hiller <boneskull@boneskull.com>",
-  "license": "MIT",
+  "license": "BlueOak-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boneskull/modestbench.git"
+  },
+  "bugs": {
+    "url": "https://github.com/boneskull/modestbench/issues"
+  },
+  "homepage": "https://github.com/boneskull/modestbench#readme",
   "dependencies": {
     "cli-progress": "^3.12.0",
     "consola": "^3.2.3",

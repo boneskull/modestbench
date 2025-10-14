@@ -67,8 +67,6 @@ export interface RunCommandArgs extends CommandArguments {
   /** Warmup iterations */
   readonly warmup?: number;
   readonly w?: number;
-  /** Run concurrently */
-  readonly concurrent?: boolean;
   /** Stop on first failure */
   readonly bail?: boolean;
   /** Files to exclude */

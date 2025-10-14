@@ -12,6 +12,8 @@ import type { CliContext } from '../index.js';
  */
 interface HistoryArguments {
   _: string[]; // Subcommand and positional args
+  subcommand?: string; // Parsed subcommand
+  args?: string[]; // Additional arguments after subcommand
   id?: string;
   id1?: string;
   id2?: string;
@@ -33,148 +35,63 @@ interface HistoryArguments {
 export const historyCommand = {
   builder: (yargs: any) => {
     return yargs
-      .command(
-        'list',
-        'List benchmark runs',
-        (yargs: any) => {
-          return yargs
-            .option('since', {
-              type: 'string',
-              description:
-                'Show runs since date (ISO 8601 or relative like "1 week ago")',
-            })
-            .option('until', {
-              type: 'string',
-              description:
-                'Show runs until date (ISO 8601 or relative like "1 day ago")',
-            })
-            .option('pattern', {
-              type: 'string',
-              description: 'Filter by benchmark name pattern',
-            })
-            .option('tags', {
-              type: 'array',
-              description: 'Filter by tags',
-            })
-            .option('limit', {
-              type: 'number',
-              description: 'Maximum number of results',
-              default: 20,
-            })
-            .option('format', {
-              type: 'string',
-              choices: ['human', 'json', 'csv'],
-              description: 'Output format',
-              default: 'human',
-            });
-        },
-        () => {}
-      )
-      .command(
-        'show <id>',
-        'Show detailed run results',
-        (yargs: any) => {
-          return yargs
-            .positional('id', {
-              describe: 'Run ID to show',
-              type: 'string',
-              demandOption: true,
-            })
-            .option('format', {
-              type: 'string',
-              choices: ['human', 'json'],
-              description: 'Output format',
-              default: 'human',
-            });
-        },
-        () => {}
-      )
-      .command(
-        'compare <id1> <id2>',
-        'Compare two benchmark runs',
-        (yargs: any) => {
-          return yargs
-            .positional('id1', {
-              describe: 'First run ID',
-              type: 'string',
-              demandOption: true,
-            })
-            .positional('id2', {
-              describe: 'Second run ID',
-              type: 'string',
-              demandOption: true,
-            })
-            .option('format', {
-              type: 'string',
-              choices: ['human', 'json'],
-              description: 'Output format',
-              default: 'human',
-            });
-        },
-        () => {}
-      )
-      .command(
-        'clean',
-        'Clean old history data',
-        (yargs: any) => {
-          return yargs
-            .option('max-age', {
-              type: 'number',
-              description: 'Maximum age in milliseconds',
-            })
-            .option('max-runs', {
-              type: 'number',
-              description: 'Maximum number of runs to keep',
-            })
-            .option('max-size', {
-              type: 'number',
-              description: 'Maximum storage size in bytes',
-            })
-            .option('confirm', {
-              type: 'boolean',
-              description: 'Skip confirmation prompt',
-              default: false,
-            });
-        },
-        () => {}
-      )
-      .command(
-        'export',
-        'Export historical data',
-        (yargs: any) => {
-          return yargs
-            .option('format', {
-              type: 'string',
-              choices: ['json', 'csv'],
-              description: 'Export format',
-              default: 'json',
-            })
-            .option('output', {
-              alias: 'o',
-              type: 'string',
-              description: 'Output file path',
-            })
-            .option('since', {
-              type: 'string',
-              description: 'Export runs since date',
-            })
-            .option('until', {
-              type: 'string',
-              description: 'Export runs until date',
-            });
-        },
-        () => {}
-      )
-      .demandCommand(1, 'You must specify a history subcommand')
+      .option('since', {
+        type: 'string',
+        description:
+          'Show runs since date (ISO 8601 or relative like "1 week ago")',
+      })
+      .option('until', {
+        type: 'string',
+        description:
+          'Show runs until date (ISO 8601 or relative like "1 day ago")',
+      })
+      .option('pattern', {
+        type: 'string',
+        description: 'Filter by benchmark name pattern',
+      })
+      .option('tags', {
+        type: 'array',
+        description: 'Filter by tags',
+      })
+      .option('limit', {
+        type: 'number',
+        description: 'Maximum number of results',
+        default: 10,
+      })
+      .option('format', {
+        type: 'string',
+        choices: ['human', 'json', 'csv'],
+        description: 'Output format',
+        default: 'human',
+      })
+      .option('maxAge', {
+        type: 'number',
+        description: 'Maximum age in days for cleanup',
+      })
+      .option('maxRuns', {
+        type: 'number',
+        description: 'Maximum number of runs to keep',
+      })
+      .option('maxSize', {
+        type: 'number',
+        description: 'Maximum storage size in bytes',
+      })
+      .option('confirm', {
+        type: 'boolean',
+        description: 'Confirm cleanup operations',
+        default: false,
+      })
+      .option('output', {
+        type: 'string',
+        description: 'Output file path',
+      })
       .example([
         ['$0 history list', 'List recent benchmark runs'],
-        ['$0 history show abc123', 'Show detailed results for run abc123'],
-        ['$0 history compare run1 run2', 'Compare two benchmark runs'],
-        ['$0 history clean --max-runs 50', 'Keep only the latest 50 runs'],
-        [
-          '$0 history export --format csv -o results.csv',
-          'Export history to CSV',
-        ],
+        ['$0 history show <run-id>', 'Show detailed results for run'],
+        ['$0 history compare <run-id1> <run-id2>', 'Compare two runs'],
+        ['$0 history trends [pattern]', 'Show performance trends'],
+        ['$0 history clean --max-runs 50', 'Keep only latest 50 runs'],
+        ['$0 history export --format csv', 'Export to CSV'],
       ]);
   },
 
@@ -183,7 +100,8 @@ export const historyCommand = {
     argv: HistoryArguments
   ): Promise<number> => {
     try {
-      const subcommand = argv._[0];
+      // Get the subcommand from yargs parsing
+      const subcommand = argv.subcommand; // yargs should populate this from <subcommand>
 
       switch (subcommand) {
         case 'list':
@@ -192,12 +110,19 @@ export const historyCommand = {
           return await handleShowCommand(context, argv);
         case 'compare':
           return await handleCompareCommand(context, argv);
+        case 'trends':
+          return await handleTrendsCommand(context, argv);
         case 'clean':
           return await handleCleanCommand(context, argv);
         case 'export':
           return await handleExportCommand(context, argv);
         default:
-          console.error(`Unknown history subcommand: ${subcommand}`);
+          console.error(
+            `Unknown history subcommand: ${subcommand || '(none)'}`
+          );
+          console.error(
+            'Available subcommands: list, show, compare, trends, clean, export'
+          );
           return 2; // Config error
       }
     } catch (error) {
@@ -205,7 +130,7 @@ export const historyCommand = {
         'History command failed:',
         error instanceof Error ? error.message : String(error)
       );
-      return 5; // Runtime error
+      return 2; // Configuration/runtime errors
     }
   },
 };
@@ -222,11 +147,27 @@ async function handleListCommand(
     const query: any = {};
 
     if (argv.since) {
-      query.since = parseDate(argv.since);
+      try {
+        query.since = parseDate(argv.since);
+      } catch (error) {
+        console.error(
+          'Invalid since date:',
+          error instanceof Error ? error.message : String(error)
+        );
+        return 2; // Invalid date format
+      }
     }
 
     if (argv.until) {
-      query.until = parseDate(argv.until);
+      try {
+        query.until = parseDate(argv.until);
+      } catch (error) {
+        console.error(
+          'Invalid until date:',
+          error instanceof Error ? error.message : String(error)
+        );
+        return 2; // Invalid date format
+      }
     }
 
     if (argv.pattern) {
@@ -244,57 +185,63 @@ async function handleListCommand(
     // Query historical runs
     const runs = await context.historyStorage.queryRuns(query);
 
-    if (runs.length === 0) {
-      if (!argv.quiet) {
-        console.log('No benchmark runs found matching criteria.');
-      }
-      return 0;
-    }
-
     // Display results based on format
     if (argv.format === 'json') {
-      console.log(
-        JSON.stringify(
-          runs.map(run => ({
-            id: run.id,
-            startTime: run.startTime,
-            duration: run.duration,
-            files: run.summary.totalFiles,
-            tasks: run.summary.totalTasks,
-            passed: run.summary.passedTasks,
-            failed: run.summary.failedTasks,
-          })),
-          null,
-          2
-        )
-      );
-    } else if (argv.format === 'csv') {
-      console.log('id,startTime,duration,files,tasks,passed,failed');
-      for (const run of runs) {
+      if (runs.length === 0) {
+        console.log('[]'); // Empty JSON array for no data
+      } else {
         console.log(
-          `${run.id},${run.startTime.toISOString()},${run.duration},${run.summary.totalFiles},${run.summary.totalTasks},${run.summary.passedTasks},${run.summary.failedTasks}`
+          JSON.stringify(
+            runs.map(run => ({
+              id: run.id,
+              startTime: run.startTime,
+              duration: run.duration,
+              files: run.summary.totalFiles,
+              tasks: run.summary.totalTasks,
+              passed: run.summary.passedTasks,
+              failed: run.summary.failedTasks,
+            })),
+            null,
+            2
+          )
         );
       }
+    } else if (argv.format === 'csv') {
+      console.log('id,startTime,duration,files,tasks,passed,failed');
+      if (runs.length > 0) {
+        for (const run of runs) {
+          console.log(
+            `${run.id},${run.startTime.toISOString()},${run.duration},${run.summary.totalFiles},${run.summary.totalTasks},${run.summary.passedTasks},${run.summary.failedTasks}`
+          );
+        }
+      }
+      // For CSV, no additional message needed - header is sufficient
     } else {
       // Human format
-      console.log('Recent benchmark runs:');
-      console.log();
-
-      for (const run of runs) {
-        const dateStr = run.startTime.toLocaleString();
-        const durationStr = `${(run.duration / 1000).toFixed(1)}s`;
-        const statusStr =
-          run.summary.failedTasks > 0
-            ? `${run.summary.passedTasks} passed, ${run.summary.failedTasks} failed`
-            : `${run.summary.passedTasks} passed`;
-
-        console.log(
-          `  ${run.id.substring(0, 8)} - ${dateStr} (${durationStr})`
-        );
-        console.log(
-          `    ${run.summary.totalFiles} files, ${run.summary.totalTasks} tasks: ${statusStr}`
-        );
+      if (runs.length === 0) {
+        if (!argv.quiet) {
+          console.log('No historical data found matching criteria.');
+        }
+      } else {
+        console.log('Recent benchmark runs:');
         console.log();
+
+        for (const run of runs) {
+          const dateStr = run.startTime.toLocaleString();
+          const durationStr = `${(run.duration / 1000).toFixed(1)}s`;
+          const statusStr =
+            run.summary.failedTasks > 0
+              ? `${run.summary.passedTasks} passed, ${run.summary.failedTasks} failed`
+              : `${run.summary.passedTasks} passed`;
+
+          console.log(
+            `  ${run.id.substring(0, 8)} - ${dateStr} (${durationStr})`
+          );
+          console.log(
+            `    ${run.summary.totalFiles} files, ${run.summary.totalTasks} tasks: ${statusStr}`
+          );
+          console.log();
+        }
       }
     }
 
@@ -316,15 +263,19 @@ async function handleShowCommand(
   argv: HistoryArguments
 ): Promise<number> {
   try {
-    if (!argv.id) {
+    // For show command, ID comes from the args after the subcommand
+    const runId = argv.args?.[0]; // yargs populates this from [args..]
+
+    if (!runId) {
       console.error('Run ID is required for show command');
+      console.error('Usage: modestbench history show <run-id>');
       return 2;
     }
 
-    const run = await context.historyStorage.loadRun(argv.id);
+    const run = await context.historyStorage.loadRun(runId);
 
     if (!run) {
-      console.error(`Run not found: ${argv.id}`);
+      console.error(`Run not found: ${runId}`);
       return 1;
     }
 
@@ -387,23 +338,28 @@ async function handleCompareCommand(
   argv: HistoryArguments
 ): Promise<number> {
   try {
-    if (!argv.id1 || !argv.id2) {
+    // For compare command, IDs come from args after the subcommand
+    const id1 = argv.args?.[0];
+    const id2 = argv.args?.[1];
+
+    if (!id1 || !id2) {
       console.error('Two run IDs are required for compare command');
+      console.error('Usage: modestbench history compare <run-id1> <run-id2>');
       return 2;
     }
 
     const [run1, run2] = await Promise.all([
-      context.historyStorage.loadRun(argv.id1),
-      context.historyStorage.loadRun(argv.id2),
+      context.historyStorage.loadRun(id1),
+      context.historyStorage.loadRun(id2),
     ]);
 
     if (!run1) {
-      console.error(`Run not found: ${argv.id1}`);
+      console.error(`Run not found: ${id1}`);
       return 1;
     }
 
     if (!run2) {
-      console.error(`Run not found: ${argv.id2}`);
+      console.error(`Run not found: ${id2}`);
       return 1;
     }
 
@@ -559,6 +515,100 @@ async function handleExportCommand(
 }
 
 /**
+ * Handle the trends subcommand
+ */
+async function handleTrendsCommand(
+  context: CliContext,
+  argv: HistoryArguments
+): Promise<number> {
+  try {
+    // Build query from command line arguments (same as list command)
+    const query: any = {};
+
+    // Get pattern from args or explicit pattern option
+    if (argv.args?.[0]) {
+      query.pattern = argv.args[0];
+    } else if (argv.pattern) {
+      query.pattern = argv.pattern;
+    }
+
+    if (argv.since) {
+      try {
+        query.since = parseDate(argv.since);
+      } catch (error) {
+        console.error(
+          'Invalid since date:',
+          error instanceof Error ? error.message : String(error)
+        );
+        return 2; // Invalid date format
+      }
+    }
+
+    if (argv.until) {
+      try {
+        query.until = parseDate(argv.until);
+      } catch (error) {
+        console.error(
+          'Invalid until date:',
+          error instanceof Error ? error.message : String(error)
+        );
+        return 2; // Invalid date format
+      }
+    }
+
+    if (argv.pattern) {
+      query.pattern = argv.pattern;
+    }
+
+    if (argv.tags && argv.tags.length > 0) {
+      query.tags = argv.tags;
+    }
+
+    if (argv.limit) {
+      query.limit = argv.limit;
+    }
+
+    // Query historical runs
+    const runs = await context.historyStorage.queryRuns(query);
+
+    if (runs.length === 0) {
+      if (!argv.quiet) {
+        console.log('No historical data found matching criteria');
+      }
+      return 0; // Success - no data is not an error
+    }
+
+    if (argv.format === 'json') {
+      // TODO: Generate trends data in JSON format
+      const trendsData = {
+        runs: runs.length,
+        timespan: {
+          start: runs[runs.length - 1]?.startTime,
+          end: runs[0]?.startTime,
+        },
+        // TODO: Add actual trend calculations
+      };
+      console.log(JSON.stringify(trendsData, null, 2));
+    } else {
+      // Human format trends
+      if (!argv.quiet) {
+        console.log(`Performance trends for ${runs.length} runs:`);
+        console.log(
+          `Time range: ${runs[runs.length - 1]?.startTime} to ${runs[0]?.startTime}`
+        );
+        // TODO: Add trend analysis and visualization
+        console.log('(Trend analysis not yet implemented)');
+      }
+    }
+
+    return 0; // Success
+  } catch (error) {
+    console.error('Error showing trends:', error);
+    return 3; // Runtime error
+  }
+}
+
+/**
  * Parse date string (ISO 8601 or relative)
  */
 function parseDate(dateStr: string): Date {
@@ -569,9 +619,8 @@ function parseDate(dateStr: string): Date {
   }
 
   // TODO: Parse relative dates like "1 week ago", "3 days ago", etc.
-  // For now, just return current date
-  console.warn(`Could not parse date "${dateStr}", using current date`);
-  return new Date();
+  // For now, throw error for invalid dates
+  throw new Error(`Invalid date format: "${dateStr}"`);
 }
 
 /**

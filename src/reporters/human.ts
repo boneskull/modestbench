@@ -109,7 +109,7 @@ export class HumanReporter extends BaseReporter {
     }
 
     console.log(
-      this.colorize('dim', `Found ${run.files.length} benchmark file(s)`)
+      this.colorize('dim', `Found ${run.summary.totalFiles} benchmark file(s)`)
     );
     console.log();
   }
@@ -120,9 +120,11 @@ export class HumanReporter extends BaseReporter {
   }
 
   onSuiteStart(suite: string): void {
-    if (this.verbose) {
-      console.log(`  ${this.colorize('blue', '▶')} ${suite}`);
-    }
+    this.clearLine();
+    console.log();
+    console.log(
+      `  ${this.colorize('blue', '▶')} ${this.colorize('bold', suite)}`
+    );
   }
 
   onTaskStart(task: string): void {
@@ -148,9 +150,9 @@ export class HumanReporter extends BaseReporter {
         console.log(`      ${this.colorize('red', result.error.message)}`);
       }
     } else {
-      const duration = this.formatDuration(result.mean);
+      const duration = this.formatDuration(result.mean * 1000000000); // Convert seconds to nanoseconds
       const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
-      const rme = this.formatPercentage(result.marginOfError);
+      const rme = this.formatPercentage(result.marginOfError * 100); // Convert decimal to percentage
 
       console.log(`    ${status} ${result.name}`);
       console.log(
@@ -253,15 +255,34 @@ export class HumanReporter extends BaseReporter {
   }
 
   onProgress(state: ProgressState): void {
-    if (this.showProgress) {
-      const percentage =
-        state.totalTasks > 0
-          ? Math.round((state.tasksCompleted / state.totalTasks) * 100)
-          : 0;
+    if (!this.showProgress) return;
 
-      this.updateProgress(
-        `${state.tasksCompleted}/${state.totalTasks} tasks (${percentage}%)`
-      );
+    const { tasksCompleted, totalTasks, elapsed, percentage } = state;
+    const progressMessage = `${tasksCompleted}/${totalTasks} tasks (${percentage}%) | Elapsed: ${Math.round(elapsed / 1000)}s`;
+
+    if (process.stdout.isTTY) {
+      // TTY mode: use progress bar (existing logic)
+      if ((this.options.verbose as number) > 0) {
+        // Verbose mode in TTY - show ETA if available
+        if (tasksCompleted > 0) {
+          const avgTimePerTask = elapsed / tasksCompleted;
+          const remainingTasks = totalTasks - tasksCompleted;
+          const etaMs = avgTimePerTask * remainingTasks;
+          const etaStr = `${Math.round(etaMs / 1000)}s`;
+          console.log(`⏳ ${progressMessage} | ETA: ${etaStr}`);
+        }
+      }
+    } else {
+      // Non-TTY mode: show progress text with ETA when available
+      if (tasksCompleted > 0) {
+        const avgTimePerTask = elapsed / tasksCompleted;
+        const remainingTasks = totalTasks - tasksCompleted;
+        const etaMs = avgTimePerTask * remainingTasks;
+        const etaStr = `${Math.round(etaMs / 1000)}s`;
+        console.log(`⏳ ${progressMessage} | ETA: ${etaStr}`);
+      } else if ((this.options.verbose as number) > 0) {
+        console.log(`⏳ ${progressMessage}`);
+      }
     }
   }
 
@@ -357,6 +378,23 @@ export class HumanReporter extends BaseReporter {
         '\r' + ' '.repeat(this.lastProgressLine.length) + '\r'
       );
       this.lastProgressLine = '';
+    }
+  }
+
+  /**
+   * Format duration in human-readable format for progress display
+   */
+  private formatTimeRemaining(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${minutes}m`;
     }
   }
 

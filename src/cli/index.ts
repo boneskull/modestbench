@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * ModestBench CLI Entry Point
  *
@@ -211,7 +212,7 @@ export async function main(argv?: string[]): Promise<void> {
         }
       )
       .command(
-        'history <subcommand>',
+        'history <subcommand> [args..]',
         'View and manage benchmark history',
         (yargs: any) => historyCommand.builder(yargs),
         async (argv: any) => {
@@ -301,4 +302,9 @@ export function cli(argv?: string[]): void {
     console.error('CLI error:', error);
     process.exit(ExitCodes.UNKNOWN_ERROR);
   });
+}
+
+// Run CLI if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  cli();
 }

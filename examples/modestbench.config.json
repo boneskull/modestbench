@@ -1,0 +1,11 @@
+{
+  "pattern": "benchmarks/**/*.bench.{js,ts}",
+  "exclude": ["node_modules/**", "dist/**"],
+  "reporters": ["human", "json"],
+  "outputDir": "./benchmark-results",
+  "iterations": 1000,
+  "warmup": 10,
+  "concurrent": false,
+  "timeout": 30000,
+  "historyLimit": 50
+}

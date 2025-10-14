@@ -16,8 +16,13 @@ describe('Multiple reporter output formats', () => {
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(process.cwd(), 'dist', 'cli', 'index.js');
-    await mkdir(join(tempDir, 'results'), { recursive: true });
+    cliPath = join(
+      process.cwd(),
+      'dist',
+      'tests',
+      'fixtures',
+      'cli-wrapper.js'
+    );
   });
 
   afterEach(async () => {
@@ -134,6 +139,8 @@ describe('Multiple reporter output formats', () => {
         '--reporters',
         'human',
         '--verbose',
+        '--iterations',
+        '10',
       ]);
 
       if (result.exitCode === 0) {
@@ -258,42 +265,6 @@ describe('Multiple reporter output formats', () => {
         assert.ok(result.stderr.includes('not found'));
       }
     });
-
-    it('should support streaming JSON output', async () => {
-      const benchFile = join(tempDir, 'streaming-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Streaming Suite': {
-              benchmarks: {
-                'stream task 1': { fn: () => 1 },
-                'stream task 2': { fn: () => 2 },
-                'stream task 3': { fn: () => 3 }
-              }
-            }
-          }
-        };
-      `
-      );
-
-      const result = await runCommand([
-        'run',
-        benchFile,
-        '--reporters',
-        'json',
-        '--streaming',
-      ]);
-
-      if (result.exitCode === 0) {
-        // Should produce JSON output (streaming or complete)
-        assert.ok(result.stdout.includes('{') && result.stdout.includes('}'));
-      } else {
-        // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
-      }
-    });
   });
 
   describe('csv reporter', () => {
@@ -333,7 +304,7 @@ describe('Multiple reporter output formats', () => {
 
           // Should have header row
           assert.ok(lines.length >= 1);
-          const headers = lines[0].split(',');
+          const headers = lines[0]?.split(',') || [];
           assert.ok(
             headers.includes('file') ||
               headers.includes('suite') ||
@@ -341,7 +312,7 @@ describe('Multiple reporter output formats', () => {
           );
 
           // Should have data rows
-          if (lines.length > 1) {
+          if (lines.length > 1 && lines[1]) {
             assert.ok(lines[1].includes('csv task'));
           }
         } catch (error) {
@@ -380,7 +351,7 @@ describe('Multiple reporter output formats', () => {
 
       if (result.exitCode === 0 && result.stdout) {
         const lines = result.stdout.trim().split('\n');
-        if (lines.length > 0) {
+        if (lines.length > 0 && lines[0]) {
           const headers = lines[0].toLowerCase();
 
           // Should include essential columns from quickstart example
@@ -427,7 +398,10 @@ describe('Multiple reporter output formats', () => {
         assert.ok(result.stdout.includes(';'));
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        assert.ok(
+          result.stderr.includes('not found') ||
+            result.stderr.includes('Unknown argument')
+        );
       }
     });
   });

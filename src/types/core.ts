@@ -233,8 +233,6 @@ export interface ModestBenchConfig {
   readonly time: number;
   /** Number of warmup iterations before measurement */
   readonly warmup: number;
-  /** Whether to run suites concurrently */
-  readonly concurrent: boolean;
   /** Timeout for individual tasks in milliseconds */
   readonly timeout: number;
   /** Whether to stop on first failure */

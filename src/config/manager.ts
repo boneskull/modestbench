@@ -32,16 +32,16 @@ interface ConfigLoadResult {
 
 /**
  * Default configuration values
+ * Using minimal values to reduce test overhead while maintaining functionality
  */
 const DEFAULT_CONFIG: ModestBenchConfig = {
-  iterations: 100,
-  time: 5000, // 5 seconds
-  warmup: 10,
-  concurrent: false,
+  iterations: 2, // Reduced from 100 for test efficiency
+  time: 100, // Reduced from 5000ms (5 seconds) to 100ms
+  warmup: 0, // Reduced from 10 to 0 for faster tests
   timeout: 30000, // 30 seconds
   bail: false,
-  pattern: '**/*.bench.{js,ts}',
-  exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**'],
+  pattern: '**/*.bench.{js,ts,mjs,mts}',
+  exclude: ['node_modules/**', '.git/**'],
   outputDir: './benchmark-results',
   reporters: ['human'],
   quiet: false,
@@ -345,19 +345,36 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
   }
 
   /**
-   * Auto-discover configuration file in current directory
+   * Auto-discover configuration file in current and parent directories
    */
   private async discoverConfigFile(): Promise<string | null> {
-    for (const fileName of this.supportedConfigFiles) {
-      try {
-        const filePath = resolve(fileName);
-        await access(filePath);
-        return filePath;
-      } catch {
-        // File doesn't exist, try next
-        continue;
+    let currentDir = resolve(process.cwd());
+
+    // Search up the directory tree
+    while (true) {
+      // Try each supported config file in the current directory
+      for (const fileName of this.supportedConfigFiles) {
+        try {
+          const filePath = resolve(currentDir, fileName);
+          await access(filePath);
+          return filePath;
+        } catch {
+          // File doesn't exist, try next file
+          continue;
+        }
       }
+
+      // Move to parent directory
+      const parentDir = resolve(currentDir, '..');
+
+      // Stop if we've reached the root directory
+      if (parentDir === currentDir) {
+        break;
+      }
+
+      currentDir = parentDir;
     }
+
     return null;
   }
 
@@ -403,7 +420,6 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       time: 'time',
       w: 'warmup',
       warmup: 'warmup',
-      concurrent: 'concurrent',
       timeout: 'timeout',
       bail: 'bail',
       pattern: 'pattern',

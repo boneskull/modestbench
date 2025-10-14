@@ -6,7 +6,8 @@
  */
 
 import { resolve } from 'node:path';
-import type { CliContext, ExitCodes } from '../index.js';
+import type { CliContext } from '../index.js';
+import { ExitCodes } from '../../types/cli.js';
 
 /**
  * Run command arguments interface
@@ -19,7 +20,6 @@ interface RunArguments {
   iterations?: number;
   time?: number;
   warmup?: number;
-  concurrent?: boolean;
   bail?: boolean;
   exclude?: string[];
   timeout?: number;
@@ -49,6 +49,13 @@ export const runCommand = {
         type: 'array',
         description: 'Output reporters to use (human,json,csv)',
         default: ['human'],
+        coerce: (value: string | string[]) => {
+          // Handle comma-separated values
+          if (Array.isArray(value)) {
+            return value.flatMap(v => v.split(',').map(s => s.trim()));
+          }
+          return value.split(',').map(s => s.trim());
+        },
       })
       .option('output', {
         alias: 'o',
@@ -70,19 +77,22 @@ export const runCommand = {
         type: 'number',
         description: 'Number of warmup iterations',
       })
-      .option('concurrent', {
-        type: 'boolean',
-        description: 'Run suites in parallel',
-        default: false,
-      })
       .option('bail', {
+        alias: 'b',
+        description: 'Stop on first failure',
         type: 'boolean',
-        description: 'Stop on first benchmark failure',
         default: false,
       })
       .option('exclude', {
         type: 'array',
         description: 'Exclude patterns (comma-separated)',
+        coerce: (value: string | string[]) => {
+          // Handle comma-separated values
+          if (Array.isArray(value)) {
+            return value.flatMap(v => v.split(',').map(s => s.trim()));
+          }
+          return value.split(',').map(s => s.trim());
+        },
       })
       .option('timeout', {
         type: 'number',
@@ -99,84 +109,119 @@ export const runCommand = {
         ['$0 run "src/**/*.bench.js"', 'Run specific pattern'],
         ['$0 run --reporters json,csv', 'Use multiple reporters'],
         ['$0 run --iterations 1000', 'Set iteration count'],
-        ['$0 run --concurrent --bail', 'Run parallel with fail-fast'],
+        ['$0 run --bail', 'Stop on first failure'],
       ]);
   },
 
   handler: async (context: CliContext, argv: RunArguments): Promise<number> => {
+    // Check if JSON reporter is being used (need quiet output for clean JSON)
+    const isUsingJsonReporter = argv.reporters?.includes('json') ?? false;
+    const shouldBeQuiet = argv.quiet || isUsingJsonReporter;
+
     try {
       // Step 1: Load and merge configuration
-      console.log('Loading configuration...');
+      if (!shouldBeQuiet) {
+        console.error('Loading configuration...');
+      }
       const config = await loadConfiguration(context, argv);
 
       // Step 2: Configure reporters
-      console.log('Setting up reporters...');
-      const reporters = await setupReporters(context, argv);
+      if (!shouldBeQuiet) {
+        console.error('Setting up reporters...');
+      }
+      const reporters = await setupReporters(context, config, shouldBeQuiet);
 
       // Step 3: Discovery phase
-      console.log('Discovering benchmark files...');
+      if (!shouldBeQuiet) {
+        console.error('Discovering benchmark files...');
+      }
       const discoveredFiles = await context.engine.discover(
         config.pattern,
         config.exclude
       );
 
-      if (discoveredFiles.length === 0) {
-        console.error(
-          'No benchmark files found matching pattern:',
-          config.pattern
-        );
-        return 3; // Discovery error
+      if (!shouldBeQuiet) {
+        console.error(`Found ${discoveredFiles.length} benchmark file(s)`);
       }
-
-      console.log(`Found ${discoveredFiles.length} benchmark file(s)`);
 
       // Step 4: Validation phase
-      console.log('Validating benchmark files...');
+      if (!shouldBeQuiet) {
+        console.error('Validating benchmark files...');
+      }
       const validationResult = await context.engine.validate(discoveredFiles);
 
-      if (!validationResult.valid) {
-        console.error('Validation failed:');
-        for (const error of validationResult.errors) {
-          console.error(`  ${error.code}: ${error.message}`);
-          if (error.file) {
-            console.error(`    File: ${error.file}`);
+      if (validationResult.warnings.length > 0) {
+        if (!shouldBeQuiet) {
+          console.error('Validation warnings:');
+          for (const warning of validationResult.warnings) {
+            console.error(`  ${warning.code}: ${warning.message}`);
           }
         }
-        return 4; // Validation error
       }
 
-      if (validationResult.warnings.length > 0 && !argv.quiet) {
-        console.warn('Validation warnings:');
-        for (const warning of validationResult.warnings) {
-          console.warn(`  ${warning.code}: ${warning.message}`);
+      if (!validationResult.valid) {
+        if (!shouldBeQuiet) {
+          console.error('Validation errors:');
+          for (const error of validationResult.errors) {
+            console.error(`  ${error.code}: ${error.message}`);
+          }
         }
-        console.log();
+        return ExitCodes.ValidationError;
       }
 
       // Step 5: Execution phase
-      console.log('Starting benchmark execution...');
+      if (!shouldBeQuiet) {
+        console.error('Starting benchmark execution...');
+      }
+
       const runConfig = {
         ...config,
         files: discoveredFiles,
         cwd: argv.cwd,
       };
 
-      const executionResult = await context.engine.execute(runConfig);
-
-      // Step 6: Handle results and determine exit code
-      return handleResults(executionResult, argv);
-    } catch (error) {
-      console.error(
-        'Run command failed:',
-        error instanceof Error ? error.message : String(error)
+      const executionResult = await context.engine.execute(
+        runConfig,
+        reporters
       );
 
-      if (argv.verbose && error instanceof Error && error.stack) {
-        console.error('Stack trace:');
-        console.error(error.stack);
+      // Step 6: Results handling
+      const exitCode = handleResults(executionResult, argv, shouldBeQuiet);
+
+      if (!shouldBeQuiet) {
+        console.error('Run completed successfully!');
+        console.error(
+          `Total tasks: ${executionResult.summary?.totalTasks ?? 0}, Failed: ${executionResult.summary?.failedTasks ?? 0}`
+        );
       }
 
-      return 5; // Runtime error
+      return exitCode;
+    } catch (error) {
+      if (!shouldBeQuiet) {
+        console.error(
+          `Error: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+
+      // Return appropriate exit code based on error type
+      if (error instanceof Error) {
+        if (
+          error.message.includes('Configuration error') ||
+          error.message.includes('Config file not found') ||
+          error.message.includes('Failed to load config')
+        ) {
+          return ExitCodes.ConfigurationError;
+        }
+        if (
+          error.message.includes('No files found') ||
+          error.message.includes('No benchmark files found') ||
+          error.message.includes('File discovery')
+        ) {
+          return ExitCodes.FileDiscoveryError;
+        }
+      }
+
+      return ExitCodes.GeneralError;
     }
   },
 };
@@ -199,7 +244,6 @@ async function loadConfiguration(context: CliContext, argv: RunArguments) {
     if (argv.iterations) cliArgs.iterations = argv.iterations;
     if (argv.time) cliArgs.time = argv.time;
     if (argv.warmup !== undefined) cliArgs.warmup = argv.warmup;
-    if (argv.concurrent !== undefined) cliArgs.concurrent = argv.concurrent;
     if (argv.bail !== undefined) cliArgs.bail = argv.bail;
     if (argv.exclude) cliArgs.exclude = argv.exclude;
     if (argv.timeout) cliArgs.timeout = argv.timeout;
@@ -218,12 +262,16 @@ async function loadConfiguration(context: CliContext, argv: RunArguments) {
 }
 
 /**
- * Setup and configure reporters based on arguments
+ * Setup and configure reporters based on configuration
  */
-async function setupReporters(context: CliContext, argv: RunArguments) {
+async function setupReporters(
+  context: CliContext,
+  config: { reporters?: string[]; outputDir?: string },
+  shouldBeQuiet: boolean
+) {
   try {
     const reporters = [];
-    const requestedReporters = argv.reporters || ['human'];
+    const requestedReporters = config.reporters || ['human'];
 
     for (const reporterName of requestedReporters) {
       const reporter = context.reporterRegistry.get(reporterName);
@@ -239,13 +287,13 @@ async function setupReporters(context: CliContext, argv: RunArguments) {
     }
 
     // Configure output paths for file-based reporters
-    if (argv.output) {
-      const outputDir = resolve(argv.cwd, argv.output);
-
+    if (config.outputDir) {
       // TODO: Configure output paths for reporters that support it
       // This would require extending the reporter interface or using options
       // For now, we'll use the configured output directory in the config
-      console.log(`Output directory configured: ${outputDir}`);
+      if (!shouldBeQuiet) {
+        console.error(`Output directory configured: ${config.outputDir}`);
+      }
     }
 
     return reporters;
@@ -259,21 +307,20 @@ async function setupReporters(context: CliContext, argv: RunArguments) {
 /**
  * Handle execution results and determine appropriate exit code
  */
-function handleResults(executionResult: any, argv: RunArguments): number {
-  // TODO: Once we have proper execution result types, implement this properly
-  console.log('Execution completed');
-  console.log('Result:', typeof executionResult);
+function handleResults(
+  executionResult: any,
+  argv: RunArguments,
+  shouldBeQuiet: boolean
+): number {
+  // The reporters should handle displaying results
+  // This function only determines the exit code
 
-  // For now, return success
-  // In the real implementation, we would:
-  // - Check if any benchmarks failed
-  // - Return 1 if there were failures
-  // - Return 0 if all passed
-  // - Display summary information unless quiet mode
-
-  if (!argv.quiet) {
-    console.log('Run completed successfully!');
+  // Determine exit code based on results
+  if (executionResult && executionResult.summary) {
+    return executionResult.summary.failedTasks > 0
+      ? ExitCodes.GeneralError
+      : ExitCodes.Success;
   }
 
-  return 0; // Success
+  return ExitCodes.Success;
 }

@@ -6,7 +6,7 @@
  */
 
 import { glob } from 'glob';
-import { readFile, access } from 'node:fs/promises';
+import { readFile, access, stat } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import type {
   ValidationResult,
@@ -90,28 +90,50 @@ export class BenchmarkFileLoader implements FileLoader {
   }
 
   /**
-   * Load and parse a single benchmark file
+   * Load a single benchmark file
    */
   async load(filePath: string): Promise<BenchmarkFile> {
     try {
-      // Check file existence
-      await access(filePath);
+      // Validate file first
+      const validation = await this.validate(filePath);
+      if (!validation.valid) {
+        throw new Error(
+          `Invalid benchmark file: ${validation.errors.map(e => e.message).join(', ')}`
+        );
+      }
 
       // Read file content
       const content = await readFile(filePath, 'utf-8');
 
-      // Get file metadata
-      const metadata = await this.getFileMetadata(filePath, content);
+      // Get file stats for metadata
+      const stats = await stat(filePath);
 
-      // Load the module (for now, just return the structure)
-      // TODO: Implement actual module loading with dynamic import
-      const exports = {}; // Placeholder
+      // Load the module using dynamic import
+      const module = await import(filePath);
+      const exports = module.default || module;
+
+      // Analyze exports for metadata
+      const hasDefaultExport = module.default !== undefined;
+      const exportNames = Object.keys(module);
+      const hasBenchmarks =
+        exports &&
+        typeof exports === 'object' &&
+        exports.suites &&
+        typeof exports.suites === 'object' &&
+        Object.keys(exports.suites).length > 0;
 
       return {
-        filePath: resolve(filePath),
+        filePath,
         content,
         exports,
-        metadata,
+        metadata: {
+          size: stats.size,
+          mtime: stats.mtime,
+          isValid: validation.valid,
+          hasDefaultExport,
+          hasBenchmarks,
+          exportNames,
+        },
       };
     } catch (error) {
       throw new Error(
@@ -333,13 +355,17 @@ export class BenchmarkFileLoader implements FileLoader {
     const hasBenchmarkPatterns =
       /(?:suite|bench|test|it)\s*\(/.test(content) ||
       /\.add\s*\(/.test(content) ||
-      /benchmark\s*\(/.test(content);
+      /benchmark\s*\(/.test(content) ||
+      // Check for declarative structure patterns
+      /suites\s*:\s*\{/.test(content) ||
+      /benchmarks\s*:\s*\{/.test(content) ||
+      /export\s+default\s+\{[\s\S]*suites/.test(content);
 
     if (!hasBenchmarkPatterns) {
       warnings.push({
         file: filePath,
         message:
-          'No benchmark patterns found. Expected suite(), bench(), test(), it(), .add(), or benchmark() calls',
+          'No benchmark patterns found. Expected suite(), bench(), test(), it(), .add(), benchmark() calls, or declarative structure with suites/benchmarks',
         code: 'NO_BENCHMARKS',
         severity: 'warning',
       });

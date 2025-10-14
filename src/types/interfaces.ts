@@ -74,7 +74,10 @@ export interface BenchmarkEngine {
   /**
    * Execute benchmarks with the given configuration
    */
-  execute(config: RunConfiguration): Promise<BenchmarkRun>;
+  execute(
+    config: RunConfiguration,
+    reporters?: Reporter[]
+  ): Promise<BenchmarkRun>;
 
   /**
    * Validate benchmark files
@@ -186,6 +189,11 @@ export interface ProgressManager {
    * Clean up progress tracking resources
    */
   cleanup(): void;
+
+  /**
+   * Force an immediate progress update (bypassing throttling)
+   */
+  forceUpdate(): void;
 }
 
 /**

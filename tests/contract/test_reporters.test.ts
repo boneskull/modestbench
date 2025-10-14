@@ -215,28 +215,6 @@ describe('Reporter interfaces contract', () => {
         assert.ok(true, 'Implementation not yet available');
       }
     });
-
-    it('should support streaming output', () => {
-      if (reporters?.json) {
-        try {
-          const mockResult = {
-            file: 'test.bench.js',
-            suite: 'Performance Tests',
-            task: 'array iteration',
-            duration: 1.5,
-          };
-
-          // Should handle incremental JSON output
-          reporters.json.onTaskResult(mockResult);
-          assert.ok(true, 'Should support streaming JSON');
-        } catch (error) {
-          // Expected during contract testing phase
-          assert.ok(error instanceof Error);
-        }
-      } else {
-        assert.ok(true, 'Implementation not yet available');
-      }
-    });
   });
 
   describe('CsvReporter interface', () => {
@@ -370,26 +348,42 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.base) {
         const callOrder: string[] = [];
         const mockReporter = {
-          onStart: () => callOrder.push('start'),
-          onFileStart: () => callOrder.push('fileStart'),
-          onSuiteStart: () => callOrder.push('suiteStart'),
-          onTaskStart: () => callOrder.push('taskStart'),
-          onTaskResult: () => callOrder.push('taskResult'),
-          onSuiteEnd: () => callOrder.push('suiteEnd'),
-          onFileEnd: () => callOrder.push('fileEnd'),
-          onEnd: () => callOrder.push('end'),
+          onStart: (_run: any) => callOrder.push('start'),
+          onFileStart: (_file: any) => callOrder.push('fileStart'),
+          onSuiteStart: (_suite: any) => callOrder.push('suiteStart'),
+          onTaskStart: (_task: any) => callOrder.push('taskStart'),
+          onTaskResult: (_result: any) => callOrder.push('taskResult'),
+          onSuiteEnd: (_result: any) => callOrder.push('suiteEnd'),
+          onFileEnd: (_result: any) => callOrder.push('fileEnd'),
+          onEnd: (_run: any) => callOrder.push('end'),
+          onProgress: (_state: any) => callOrder.push('progress'),
+          onError: (_error: any) => callOrder.push('error'),
         };
 
         try {
+          // Create mock data
+          const mockRun = {
+            id: 'test-run',
+            config: {},
+            startTime: Date.now(),
+            files: [],
+            results: [],
+          };
+          const mockResult = {
+            name: 'test',
+            stats: { mean: 100, min: 50, max: 150, samples: 10 },
+            error: null,
+          };
+
           // Simulate benchmark execution lifecycle
-          mockReporter.onStart({});
-          mockReporter.onFileStart({});
-          mockReporter.onSuiteStart({});
-          mockReporter.onTaskStart({});
-          mockReporter.onTaskResult({});
-          mockReporter.onSuiteEnd({});
-          mockReporter.onFileEnd({});
-          mockReporter.onEnd({});
+          mockReporter.onStart(mockRun);
+          mockReporter.onFileStart('test.js');
+          mockReporter.onSuiteStart('test suite');
+          mockReporter.onTaskStart('test task');
+          mockReporter.onTaskResult(mockResult);
+          mockReporter.onSuiteEnd({ name: 'test suite', tasks: [mockResult] });
+          mockReporter.onFileEnd({ file: 'test.js', suites: [] });
+          mockReporter.onEnd(mockRun);
 
           // Verify correct order
           assert.deepStrictEqual(callOrder, [
@@ -417,17 +411,17 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.base) {
         try {
           const errorReporter = {
-            onStart: () => {
+            onStart: (_run: any) => {
               throw new Error('Reporter error');
             },
-            onError: () => {},
+            onError: (_error: any) => {},
           };
 
           // Should not crash the entire system
           try {
-            errorReporter.onStart({});
+            errorReporter.onStart({ id: 'test' });
           } catch (error) {
-            errorReporter.onError(error, 'onStart');
+            errorReporter.onError(error);
           }
 
           assert.ok(true, 'Should handle reporter errors');

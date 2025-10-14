@@ -45,16 +45,18 @@ export class ModestBenchProgressManager implements ProgressManager {
    * Initialize progress tracking for a benchmark run
    */
   initialize(run: BenchmarkRun): void {
-    // Calculate totals from the run structure
-    let totalFiles = run.files.length;
-    let totalSuites = 0;
-    let totalTasks = 0;
+    // Use summary totals if available (from pre-calculation), otherwise calculate from files
+    let totalFiles = run.summary?.totalFiles ?? run.files.length;
+    let totalSuites = run.summary?.totalSuites ?? 0;
+    let totalTasks = run.summary?.totalTasks ?? 0;
 
-    // If we have detailed run information, calculate actual totals
-    for (const file of run.files) {
-      for (const suite of file.suites) {
-        totalSuites++;
-        totalTasks += suite.tasks.length;
+    // If we don't have summary data and have detailed run information, calculate actual totals
+    if (!run.summary?.totalTasks && run.files.length > 0) {
+      for (const file of run.files) {
+        for (const suite of file.suites) {
+          totalSuites++;
+          totalTasks += suite.tasks.length;
+        }
       }
     }
 
@@ -289,27 +291,17 @@ export class ModestBenchProgressManager implements ProgressManager {
   }
 
   /**
-   * Notify all registered callbacks of progress changes
+   * Notify all registered callbacks of state changes
    */
   private notifyCallbacks(): void {
-    if (this.callbacks.length === 0) {
-      return;
-    }
-
-    const state = this.getState();
-
-    // Call callbacks safely with error handling
     for (const callback of this.callbacks) {
       try {
-        callback(state);
+        callback(this.state);
       } catch (error) {
-        // Log callback errors but don't stop progress tracking
-        console.error('Progress callback error:', error);
+        console.error('Error in progress callback:', error);
       }
     }
-  }
-
-  /**
+  } /**
    * Set the current file being processed
    */
   setCurrentFile(file: string): void {

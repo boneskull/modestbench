@@ -16,7 +16,13 @@ describe('modestbench init command', () => {
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(process.cwd(), 'dist', 'cli', 'index.js');
+    cliPath = join(
+      process.cwd(),
+      'dist',
+      'tests',
+      'fixtures',
+      'cli-wrapper.js'
+    );
   });
 
   afterEach(async () => {

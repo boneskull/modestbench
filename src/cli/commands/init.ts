@@ -15,7 +15,7 @@ import type { CliContext } from '../index.js';
 interface InitArguments {
   type: 'basic' | 'advanced' | 'library';
   examples: boolean;
-  config: 'json' | 'yaml' | 'js' | 'ts';
+  configType: 'json' | 'yaml' | 'js' | 'ts';
   cwd: string;
   force?: boolean;
   quiet?: boolean;
@@ -48,7 +48,6 @@ const PROJECT_TEMPLATES = {
       pattern: 'benchmarks/**/*.bench.{js,ts}',
       reporters: ['human', 'json'],
       outputDir: './benchmark-results',
-      concurrent: true,
     },
   },
   library: {
@@ -62,7 +61,6 @@ const PROJECT_TEMPLATES = {
       pattern: 'benchmarks/**/*.bench.{js,ts}',
       reporters: ['human', 'json', 'csv'],
       outputDir: './benchmark-results',
-      concurrent: true,
       bail: false,
     },
   },
@@ -72,6 +70,40 @@ const PROJECT_TEMPLATES = {
  * Example benchmark files
  */
 const EXAMPLE_BENCHMARKS = {
+  example: {
+    filename: 'example.bench.js',
+    content: `/**
+ * Example Benchmark File
+ * 
+ * This is a simple example demonstrating basic benchmarking setup.
+ */
+
+export default {
+  name: 'Example Benchmarks',
+  
+  benchmarks: {
+    'simple addition': {
+      fn() {
+        return 1 + 1;
+      }
+    },
+
+    'array creation': {
+      fn() {
+        return Array.from({ length: 100 }, (_, i) => i);
+      }
+    },
+
+    'string manipulation': {
+      fn() {
+        return 'Hello, World!'.toUpperCase();
+      }
+    }
+  }
+};
+`,
+  },
+
   arrayMethods: {
     filename: 'array-methods.bench.js',
     content: `/**
@@ -209,7 +241,7 @@ export const initCommand = {
         description: 'Include example benchmark files',
         default: true,
       })
-      .option('config', {
+      .option('config-type', {
         type: 'string',
         description: 'Configuration file format',
         choices: ['json', 'yaml', 'js', 'ts'],
@@ -253,7 +285,7 @@ export const initCommand = {
           console.error(
             'Project files already exist. Use --force to overwrite.'
           );
-          return 2;
+          return 1; // Already initialized
         }
       }
 
@@ -311,7 +343,7 @@ export const initCommand = {
  * Check for existing files that would conflict
  */
 async function checkForConflicts(argv: InitArguments): Promise<boolean> {
-  const filesToCheck = ['modestbench.config.' + argv.config, 'benchmarks'];
+  const filesToCheck = ['modestbench.config.' + argv.configType, 'benchmarks'];
 
   for (const file of filesToCheck) {
     try {
@@ -358,7 +390,7 @@ async function createConfigFile(
   configOptions: any,
   argv: InitArguments
 ): Promise<void> {
-  const filename = `modestbench.config.${argv.config}`;
+  const filename = `modestbench.config.${argv.configType}`;
   const filePath = resolve(argv.cwd, filename);
 
   if (!argv.quiet) {
@@ -367,7 +399,7 @@ async function createConfigFile(
 
   let content: string;
 
-  switch (argv.config) {
+  switch (argv.configType) {
     case 'json':
       content = JSON.stringify(configOptions, null, 2);
       break;
@@ -391,7 +423,7 @@ export default config;
       break;
 
     default:
-      throw new Error(`Unsupported config format: ${argv.config}`);
+      throw new Error(`Unsupported config format: ${argv.configType}`);
   }
 
   try {

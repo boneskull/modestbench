@@ -82,7 +82,6 @@ describe('ConfigurationManager interface contract', () => {
         const cliArgs = {
           reporters: ['json'],
           output: 'results/',
-          concurrent: true,
         };
 
         try {
@@ -159,14 +158,14 @@ describe('ConfigurationManager interface contract', () => {
       if (configManager) {
         const config1 = { reporters: ['human'] };
         const config2 = { output: './results' };
-        const config3 = { concurrent: true };
+        const config3 = { bail: true };
 
         try {
           const merged = configManager.merge(config1, config2, config3);
           assert.ok(typeof merged === 'object');
           assert.ok('reporters' in merged);
           assert.ok('output' in merged);
-          assert.ok('concurrent' in merged);
+          assert.ok('bail' in merged);
         } catch (error) {
           // Expected during contract testing phase
           assert.ok(error instanceof Error);

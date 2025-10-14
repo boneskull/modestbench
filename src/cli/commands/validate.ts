@@ -12,13 +12,14 @@ import type { ValidationResult } from '../../types/interfaces.js';
  * Validate command arguments interface
  */
 interface ValidateArguments {
-  patterns: string[];
+  pattern: string[];
   fix?: boolean;
   strict?: boolean;
   format: 'human' | 'json';
   cwd: string;
   quiet?: boolean;
   verbose?: boolean;
+  config?: string;
 }
 
 /**
@@ -66,11 +67,6 @@ interface ValidationStats {
 export const validateCommand = {
   builder: (yargs: any) => {
     return yargs
-      .positional('patterns', {
-        describe: 'Benchmark file patterns to validate',
-        type: 'array',
-        default: [],
-      })
       .option('fix', {
         type: 'boolean',
         description: 'Automatically fix issues where possible',
@@ -86,6 +82,16 @@ export const validateCommand = {
         description: 'Output format',
         choices: ['human', 'json'],
         default: 'human',
+      })
+      .option('quiet', {
+        type: 'boolean',
+        description: 'Minimal output',
+        default: false,
+      })
+      .option('verbose', {
+        type: 'boolean',
+        description: 'Detailed output',
+        default: false,
       })
       .example([
         ['$0 validate', 'Validate all benchmark files'],
@@ -105,10 +111,43 @@ export const validateCommand = {
     try {
       const { configManager, engine } = context;
 
-      // Load and merge configuration
-      const config = await configManager.load(argv.cwd);
+      // Load and merge configuration - handle gracefully for validation
+      let config;
+      try {
+        config = await configManager.load(argv.config);
+      } catch (configError) {
+        // If specific config file was requested and failed, that's a config error
+        if (argv.config) {
+          if (argv.format === 'json') {
+            console.log(
+              JSON.stringify(
+                {
+                  success: false,
+                  error: `Configuration error: ${configError instanceof Error ? configError.message : String(configError)}`,
+                  stats: createEmptyStats(),
+                  results: [],
+                },
+                null,
+                2
+              )
+            );
+          } else {
+            console.error(
+              'Configuration error:',
+              configError instanceof Error
+                ? configError.message
+                : String(configError)
+            );
+          }
+          return 2; // Configuration errors
+        }
+
+        // If no config file specified, use defaults for validation
+        config = { pattern: '**/*.bench.{js,ts,mjs}' };
+      }
+
       const patterns =
-        argv.patterns.length > 0 ? argv.patterns : [config.pattern];
+        argv.pattern.length > 0 ? argv.pattern : [config.pattern];
 
       if (!argv.quiet) {
         console.log('Validating benchmark files...');
@@ -149,7 +188,7 @@ export const validateCommand = {
           );
           console.log('');
           console.log('Patterns searched:');
-          patterns.forEach(pattern => console.log(`  - ${pattern}`));
+          patterns.forEach((pattern: string) => console.log(`  - ${pattern}`));
         }
         return 3; // Discovery error
       }
@@ -237,7 +276,7 @@ export const validateCommand = {
 
       // Return appropriate exit code
       if (hasErrors) {
-        return 4; // Validation error
+        return 1; // Validation failures
       } else if (stats.warnings > 0 && !argv.quiet) {
         console.log('⚠️  Validation completed with warnings.');
         return 0;
@@ -273,7 +312,7 @@ export const validateCommand = {
         }
       }
 
-      return 5; // Runtime error
+      return 2; // Configuration/runtime errors
     }
   },
 };

@@ -16,7 +16,13 @@ describe('modestbench run command', () => {
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(process.cwd(), 'dist', 'cli', 'index.js');
+    cliPath = join(
+      process.cwd(),
+      'dist',
+      'tests',
+      'fixtures',
+      'cli-wrapper.js'
+    );
   });
 
   afterEach(async () => {
@@ -69,11 +75,6 @@ describe('modestbench run command', () => {
       assert.ok(
         result.stdout.includes('--warmup') || result.stdout.includes('-w')
       );
-    });
-
-    it('should support --concurrent option', async () => {
-      const result = await runCommand(['run', '--help']);
-      assert.ok(result.stdout.includes('--concurrent'));
     });
 
     it('should support --bail option', async () => {

@@ -1,0 +1,27 @@
+# .github/workflows/benchmarks.yml
+name: Performance Benchmarks
+on: [push, pull_request]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Run Benchmarks
+        run: |
+          modestbench run \
+            --reporters json,csv \
+            --output ./benchmark-results
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: ./benchmark-results/
