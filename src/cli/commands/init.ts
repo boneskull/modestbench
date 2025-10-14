@@ -1,24 +1,26 @@
 /**
  * ModestBench Init Command
  *
- * Initialize a new benchmark project with configuration files,
- * directory structure, and optional example benchmark files.
+ * Initialize a new benchmark project with configuration files, directory
+ * structure, and optional example benchmark files.
  */
 
-import { writeFile, mkdir, access } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import { access, mkdir, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { type Argv } from 'yargs';
+
 import type { CliContext } from '../index.js';
 
 /**
  * Init command arguments interface
  */
 interface InitArguments {
-  type: 'basic' | 'advanced' | 'library';
-  examples: boolean;
-  configType: 'json' | 'yaml' | 'js' | 'ts';
+  configType: 'js' | 'json' | 'ts' | 'yaml';
   cwd: string;
+  examples: boolean;
   force?: boolean;
   quiet?: boolean;
+  type: 'advanced' | 'basic' | 'library';
   verbose?: boolean;
 }
 
@@ -26,43 +28,43 @@ interface InitArguments {
  * Project templates for different initialization types
  */
 const PROJECT_TEMPLATES = {
-  basic: {
-    name: 'Basic Project',
-    description: 'Simple benchmark setup for small projects',
-    directories: ['benchmarks'],
-    configOptions: {
-      iterations: 100,
-      time: 5000,
-      pattern: 'benchmarks/**/*.bench.{js,ts}',
-      reporters: ['human'],
-    },
-  },
   advanced: {
-    name: 'Advanced Project',
-    description: 'Feature-rich setup with multiple reporters and configuration',
-    directories: ['benchmarks', 'benchmark-results'],
     configOptions: {
       iterations: 1000,
-      time: 10000,
-      warmup: 50,
+      outputDir: './benchmark-results',
       pattern: 'benchmarks/**/*.bench.{js,ts}',
       reporters: ['human', 'json'],
-      outputDir: './benchmark-results',
+      time: 10000,
+      warmup: 50,
     },
+    description: 'Feature-rich setup with multiple reporters and configuration',
+    directories: ['benchmarks', 'benchmark-results'],
+    name: 'Advanced Project',
+  },
+  basic: {
+    configOptions: {
+      iterations: 100,
+      pattern: 'benchmarks/**/*.bench.{js,ts}',
+      reporters: ['human'],
+      time: 5000,
+    },
+    description: 'Simple benchmark setup for small projects',
+    directories: ['benchmarks'],
+    name: 'Basic Project',
   },
   library: {
-    name: 'Library Project',
-    description: 'Optimized for library performance testing',
-    directories: ['benchmarks', 'benchmarks/suites', 'benchmark-results'],
     configOptions: {
+      bail: false,
       iterations: 5000,
-      time: 15000,
-      warmup: 100,
+      outputDir: './benchmark-results',
       pattern: 'benchmarks/**/*.bench.{js,ts}',
       reporters: ['human', 'json', 'csv'],
-      outputDir: './benchmark-results',
-      bail: false,
+      time: 15000,
+      warmup: 100,
     },
+    description: 'Optimized for library performance testing',
+    directories: ['benchmarks', 'benchmarks/suites', 'benchmark-results'],
+    name: 'Library Project',
   },
 } as const;
 
@@ -70,51 +72,16 @@ const PROJECT_TEMPLATES = {
  * Example benchmark files
  */
 const EXAMPLE_BENCHMARKS = {
-  example: {
-    filename: 'example.bench.js',
-    content: `/**
- * Example Benchmark File
- * 
- * This is a simple example demonstrating basic benchmarking setup.
- */
-
-export default {
-  name: 'Example Benchmarks',
-  
-  benchmarks: {
-    'simple addition': {
-      fn() {
-        return 1 + 1;
-      }
-    },
-
-    'array creation': {
-      fn() {
-        return Array.from({ length: 100 }, (_, i) => i);
-      }
-    },
-
-    'string manipulation': {
-      fn() {
-        return 'Hello, World!'.toUpperCase();
-      }
-    }
-  }
-};
-`,
-  },
-
   arrayMethods: {
-    filename: 'array-methods.bench.js',
     content: `/**
  * Array Methods Performance Benchmark
- * 
+ *
  * Compares performance of different array iteration methods.
  */
 
 export default {
   name: 'Array Methods',
-  
+
   setup() {
     // Setup data for benchmarks
     this.smallArray = Array.from({ length: 100 }, (_, i) => i);
@@ -172,19 +139,53 @@ export default {
   }
 };
 `,
+    filename: 'array-methods.bench.js',
+  },
+
+  example: {
+    content: `/**
+ * Example Benchmark File
+ *
+ * This is a simple example demonstrating basic benchmarking setup.
+ */
+
+export default {
+  name: 'Example Benchmarks',
+
+  benchmarks: {
+    'simple addition': {
+      fn() {
+        return 1 + 1;
+      }
+    },
+
+    'array creation': {
+      fn() {
+        return Array.from({ length: 100 }, (_, i) => i);
+      }
+    },
+
+    'string manipulation': {
+      fn() {
+        return 'Hello, World!'.toUpperCase();
+      }
+    }
+  }
+};
+`,
+    filename: 'example.bench.js',
   },
 
   stringOperations: {
-    filename: 'string-operations.bench.js',
     content: `/**
  * String Operations Performance Benchmark
- * 
+ *
  * Tests various string manipulation techniques.
  */
 
 export default {
   name: 'String Operations',
-  
+
   setup() {
     this.baseString = 'Hello, World!';
     this.longString = 'Lorem ipsum '.repeat(1000);
@@ -224,33 +225,34 @@ export default {
   }
 };
 `,
+    filename: 'string-operations.bench.js',
   },
 } as const;
 
 export const initCommand = {
-  builder: (yargs: any) => {
+  builder: (yargs: Argv) => {
     return yargs
       .positional('type', {
-        describe: 'Type of project to initialize',
-        type: 'string',
         choices: ['basic', 'advanced', 'library'],
         default: 'basic',
+        describe: 'Type of project to initialize',
+        type: 'string',
       })
       .option('examples', {
-        type: 'boolean',
-        description: 'Include example benchmark files',
         default: true,
+        description: 'Include example benchmark files',
+        type: 'boolean',
       })
       .option('config-type', {
-        type: 'string',
-        description: 'Configuration file format',
         choices: ['json', 'yaml', 'js', 'ts'],
         default: 'json',
+        description: 'Configuration file format',
+        type: 'string',
       })
       .option('force', {
-        type: 'boolean',
-        description: 'Overwrite existing files',
         default: false,
+        description: 'Overwrite existing files',
+        type: 'boolean',
       })
       .example([
         ['$0 init', 'Initialize a basic project'],
@@ -267,7 +269,7 @@ export const initCommand = {
 
   handler: async (
     context: CliContext,
-    argv: InitArguments
+    argv: InitArguments,
   ): Promise<number> => {
     try {
       const template = PROJECT_TEMPLATES[argv.type];
@@ -283,7 +285,7 @@ export const initCommand = {
         const hasConflicts = await checkForConflicts(argv);
         if (hasConflicts) {
           console.error(
-            'Project files already exist. Use --force to overwrite.'
+            'Project files already exist. Use --force to overwrite.',
           );
           return 1; // Already initialized
         }
@@ -311,14 +313,14 @@ export const initCommand = {
           console.log('  1. Run example benchmarks: modestbench run');
         } else {
           console.log(
-            '  1. Create your first benchmark file in the benchmarks/ directory'
+            '  1. Create your first benchmark file in the benchmarks/ directory',
           );
         }
         console.log('  2. Customize configuration in your config file');
         console.log('  3. Add your own benchmark suites');
         console.log();
         console.log(
-          'Documentation: https://github.com/your-org/modestbench#readme'
+          'Documentation: https://github.com/your-org/modestbench#readme',
         );
       }
 
@@ -326,7 +328,7 @@ export const initCommand = {
     } catch (error) {
       console.error(
         'Init command failed:',
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
       );
 
       if (argv.verbose && error instanceof Error && error.stack) {
@@ -342,7 +344,7 @@ export const initCommand = {
 /**
  * Check for existing files that would conflict
  */
-async function checkForConflicts(argv: InitArguments): Promise<boolean> {
+const checkForConflicts = async (argv: InitArguments): Promise<boolean> => {
   const filesToCheck = ['modestbench.config.' + argv.configType, 'benchmarks'];
 
   for (const file of filesToCheck) {
@@ -355,119 +357,12 @@ async function checkForConflicts(argv: InitArguments): Promise<boolean> {
   }
 
   return false;
-}
-
-/**
- * Create directory structure
- */
-async function createDirectories(
-  directories: readonly string[],
-  argv: InitArguments
-): Promise<void> {
-  if (!argv.quiet) {
-    console.log('Creating directories...');
-  }
-
-  for (const dir of directories) {
-    const dirPath = resolve(argv.cwd, dir);
-    try {
-      await mkdir(dirPath, { recursive: true });
-      if (argv.verbose) {
-        console.log(`  ✓ ${dir}/`);
-      }
-    } catch (error) {
-      throw new Error(
-        `Failed to create directory ${dir}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-}
-
-/**
- * Create configuration file
- */
-async function createConfigFile(
-  configOptions: any,
-  argv: InitArguments
-): Promise<void> {
-  const filename = `modestbench.config.${argv.configType}`;
-  const filePath = resolve(argv.cwd, filename);
-
-  if (!argv.quiet) {
-    console.log(`Creating configuration file: ${filename}`);
-  }
-
-  let content: string;
-
-  switch (argv.configType) {
-    case 'json':
-      content = JSON.stringify(configOptions, null, 2);
-      break;
-
-    case 'yaml':
-      // Simple YAML generation (could use a proper YAML library)
-      content = generateSimpleYaml(configOptions);
-      break;
-
-    case 'js':
-      content = `module.exports = ${JSON.stringify(configOptions, null, 2)};\\n`;
-      break;
-
-    case 'ts':
-      content = `import type { ModestBenchConfig } from 'modestbench';
-
-const config: ModestBenchConfig = ${JSON.stringify(configOptions, null, 2)};
-
-export default config;
-`;
-      break;
-
-    default:
-      throw new Error(`Unsupported config format: ${argv.configType}`);
-  }
-
-  try {
-    await writeFile(filePath, content, 'utf8');
-    if (argv.verbose) {
-      console.log(`  ✓ ${filename}`);
-    }
-  } catch (error) {
-    throw new Error(
-      `Failed to create config file: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
-
-/**
- * Create example benchmark files
- */
-async function createExampleBenchmarks(argv: InitArguments): Promise<void> {
-  if (!argv.quiet) {
-    console.log('Creating example benchmarks...');
-  }
-
-  const benchmarksDir = resolve(argv.cwd, 'benchmarks');
-
-  for (const [name, example] of Object.entries(EXAMPLE_BENCHMARKS)) {
-    const filePath = join(benchmarksDir, example.filename);
-
-    try {
-      await writeFile(filePath, example.content, 'utf8');
-      if (argv.verbose) {
-        console.log(`  ✓ ${example.filename}`);
-      }
-    } catch (error) {
-      throw new Error(
-        `Failed to create example ${name}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-}
+};
 
 /**
  * Create additional project files
  */
-async function createAdditionalFiles(argv: InitArguments): Promise<void> {
+const createAdditionalFiles = async (argv: InitArguments): Promise<void> => {
   if (!argv.quiet) {
     console.log('Creating additional files...');
   }
@@ -501,7 +396,7 @@ Thumbs.db
     if (argv.verbose) {
       console.log('  ✓ .gitignore');
     }
-  } catch (error) {
+  } catch {
     // Non-critical, just warn
     console.warn('Warning: Could not create .gitignore file');
   }
@@ -543,16 +438,123 @@ Create new benchmark files in the \`benchmarks/\` directory. See the examples fo
     if (argv.verbose) {
       console.log('  ✓ README.md');
     }
-  } catch (error) {
+  } catch {
     // Non-critical, just warn
     console.warn('Warning: Could not create README.md file');
   }
-}
+};
+
+/**
+ * Create configuration file
+ */
+const createConfigFile = async (
+  configOptions: any,
+  argv: InitArguments,
+): Promise<void> => {
+  const filename = `modestbench.config.${argv.configType}`;
+  const filePath = resolve(argv.cwd, filename);
+
+  if (!argv.quiet) {
+    console.log(`Creating configuration file: ${filename}`);
+  }
+
+  let content: string;
+
+  switch (argv.configType) {
+    case 'js':
+      content = `module.exports = ${JSON.stringify(configOptions, null, 2)};\\n`;
+      break;
+
+    case 'json':
+      content = JSON.stringify(configOptions, null, 2);
+      break;
+
+    case 'ts':
+      content = `import type { ModestBenchConfig } from 'modestbench';
+
+const config: ModestBenchConfig = ${JSON.stringify(configOptions, null, 2)};
+
+export default config;
+`;
+      break;
+
+    case 'yaml':
+      // Simple YAML generation (could use a proper YAML library)
+      content = generateSimpleYaml(configOptions);
+      break;
+
+    default:
+      throw new Error(`Unsupported config format: ${argv.configType}`);
+  }
+
+  try {
+    await writeFile(filePath, content, 'utf8');
+    if (argv.verbose) {
+      console.log(`  ✓ ${filename}`);
+    }
+  } catch (error) {
+    throw new Error(
+      `Failed to create config file: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+};
+
+/**
+ * Create directory structure
+ */
+const createDirectories = async (
+  directories: readonly string[],
+  argv: InitArguments,
+): Promise<void> => {
+  if (!argv.quiet) {
+    console.log('Creating directories...');
+  }
+
+  for (const dir of directories) {
+    const dirPath = resolve(argv.cwd, dir);
+    try {
+      await mkdir(dirPath, { recursive: true });
+      if (argv.verbose) {
+        console.log(`  ✓ ${dir}/`);
+      }
+    } catch (error) {
+      throw new Error(
+        `Failed to create directory ${dir}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+};
+
+/**
+ * Create example benchmark files
+ */
+const createExampleBenchmarks = async (argv: InitArguments): Promise<void> => {
+  if (!argv.quiet) {
+    console.log('Creating example benchmarks...');
+  }
+
+  const benchmarksDir = resolve(argv.cwd, 'benchmarks');
+
+  for (const [name, example] of Object.entries(EXAMPLE_BENCHMARKS)) {
+    const filePath = join(benchmarksDir, example.filename);
+
+    try {
+      await writeFile(filePath, example.content, 'utf8');
+      if (argv.verbose) {
+        console.log(`  ✓ ${example.filename}`);
+      }
+    } catch (error) {
+      throw new Error(
+        `Failed to create example ${name}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+};
 
 /**
  * Generate simple YAML from object (basic implementation)
  */
-function generateSimpleYaml(obj: any, indent = 0): string {
+const generateSimpleYaml = (obj: any, indent = 0): string => {
   const spaces = ' '.repeat(indent);
   let yaml = '';
 
@@ -571,4 +573,4 @@ function generateSimpleYaml(obj: any, indent = 0): string {
   }
 
   return yaml;
-}
+};

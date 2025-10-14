@@ -1,84 +1,84 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { spawn, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
-import { mkdtemp, rm, access } from 'node:fs/promises';
+import { access, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { runCommand } from '../util.js';
 
 /**
- * Contract tests for `modestbench init` command
- * Reference: contracts/cli-commands.md lines 64-82
+ * Contract tests for `modestbench init` command Reference:
+ * contracts/cli-commands.md lines 64-82
  */
 
 describe('modestbench init command', () => {
   let tempDir: string;
-  let cliPath: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(
-      process.cwd(),
-      'dist',
-      'tests',
-      'fixtures',
-      'cli-wrapper.js'
-    );
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { force: true, recursive: true });
   });
 
   describe('CLI options', () => {
     it('should support --config-type option', async () => {
-      const result = await runCommand(['init', '--help']);
+      const result = await runCommand(['init', '--help'], tempDir);
       assert.ok(
         result.stdout.includes('--config-type') ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --examples option', async () => {
-      const result = await runCommand(['init', '--help']);
+      const result = await runCommand(['init', '--help'], tempDir);
       assert.ok(
         result.stdout.includes('--examples') ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --force option', async () => {
       const result = await runCommand(['init', '--help']);
       assert.ok(
-        result.stdout.includes('--force') || result.stderr.includes('not found')
+        result.stdout.includes('--force') ||
+          result.stderr.includes('not found'),
       );
     });
   });
 
   describe('config file formats', () => {
     it('should support json config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'json']);
+      const result = await runCommand(
+        ['init', '--config-type', 'json'],
+        tempDir,
+      );
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should support yaml config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'yaml']);
+      const result = await runCommand(
+        ['init', '--config-type', 'yaml'],
+        tempDir,
+      );
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should support js config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'js']);
+      const result = await runCommand(['init', '--config-type', 'js'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should support ts config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'ts']);
+      const result = await runCommand(['init', '--config-type', 'ts'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
 
   describe('file generation', () => {
     it('should create modestbench.config.json by default', async () => {
-      const result = await runCommand(['init']);
+      const result = await runCommand(['init'], tempDir);
       if (result.exitCode === 0) {
         // Check if config file was created
         try {
@@ -94,7 +94,7 @@ describe('modestbench init command', () => {
     });
 
     it('should create example files when --examples is specified', async () => {
-      const result = await runCommand(['init', '--examples']);
+      const result = await runCommand(['init', '--examples'], tempDir);
       if (result.exitCode === 0) {
         // Check if example benchmark file was created
         try {
@@ -112,99 +112,62 @@ describe('modestbench init command', () => {
 
   describe('exit codes', () => {
     it('should exit with code 0 for successful initialization', async () => {
-      const result = await runCommand(['init']);
+      const result = await runCommand(['init'], tempDir);
       assert.ok(result.exitCode === 0 || result.stderr.includes('not found'));
     });
 
     it('should exit with code 1 when project already initialized without --force', async () => {
       // First init
-      await runCommand(['init']);
+      await runCommand(['init'], tempDir);
       // Second init without force should fail
-      const result = await runCommand(['init']);
+      const result = await runCommand(['init'], tempDir);
       assert.ok(result.exitCode === 1 || result.stderr.includes('not found'));
     });
 
     it('should exit with code 0 when project already initialized with --force', async () => {
       // First init
-      await runCommand(['init']);
+      await runCommand(['init'], tempDir);
       // Second init with force should succeed
-      const result = await runCommand(['init', '--force']);
+      const result = await runCommand(['init', '--force'], tempDir);
       assert.ok(result.exitCode === 0 || result.stderr.includes('not found'));
     });
 
     it('should exit with code 2 for permission errors', async () => {
       // This is hard to test without actual permission issues
-      const result = await runCommand(['init', '--help']);
+      const result = await runCommand(['init', '--help'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
 
   describe('generated config file names', () => {
     it('should create .json file for json config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'json']);
+      const result = await runCommand(
+        ['init', '--config-type', 'json'],
+        tempDir,
+      );
       // Check that it would create modestbench.config.json
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should create .yaml file for yaml config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'yaml']);
+      const result = await runCommand(
+        ['init', '--config-type', 'yaml'],
+        tempDir,
+      );
       // Check that it would create modestbench.config.yaml
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should create .js file for js config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'js']);
+      const result = await runCommand(['init', '--config-type', 'js'], tempDir);
       // Check that it would create modestbench.config.js
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should create .ts file for ts config type', async () => {
-      const result = await runCommand(['init', '--config-type', 'ts']);
+      const result = await runCommand(['init', '--config-type', 'ts'], tempDir);
       // Check that it would create modestbench.config.ts
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
-
-  /**
-   * Helper function to run CLI commands and capture output
-   */
-  async function runCommand(args: string[]): Promise<{
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-  }> {
-    return new Promise(resolve => {
-      const child: ChildProcess = spawn('node', [cliPath, ...args], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: tempDir,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout?.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code: number | null) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code ?? -1,
-        });
-      });
-
-      child.on('error', (error: Error) => {
-        resolve({
-          stdout,
-          stderr: stderr + error.message,
-          exitCode: -1,
-        });
-      });
-    });
-  }
 });

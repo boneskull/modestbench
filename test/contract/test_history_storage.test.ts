@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { describe, it } from 'node:test';
 
 /**
  * Contract tests for HistoryStorage interface
@@ -69,20 +69,20 @@ describe('HistoryStorage interface contract', () => {
     it('should accept BenchmarkRun parameter', async () => {
       if (historyStorage) {
         const mockRun = {
-          id: 'test-run-123',
-          timestamp: new Date(),
           configuration: {
+            config: {},
             files: ['test.bench.js'],
             reporters: ['human'],
-            config: {},
           },
+          duration: 1000,
           environment: {
             node: process.version,
             platform: process.platform,
           },
+          id: 'test-run-123',
           results: [],
-          duration: 1000,
           status: 'completed',
+          timestamp: new Date(),
         };
 
         try {
@@ -101,8 +101,8 @@ describe('HistoryStorage interface contract', () => {
       if (historyStorage) {
         const mockRun = {
           id: 'test-run-123',
-          timestamp: new Date(),
           status: 'completed',
+          timestamp: new Date(),
         };
 
         const promise = historyStorage.saveRun(mockRun);
@@ -159,9 +159,9 @@ describe('HistoryStorage interface contract', () => {
     it('should accept HistoryQuery parameter', async () => {
       if (historyStorage) {
         const query = {
-          since: new Date('2025-01-01'),
-          pattern: '*.bench.js',
           limit: 10,
+          pattern: '*.bench.js',
+          since: new Date('2025-01-01'),
         };
 
         try {
@@ -272,8 +272,8 @@ describe('HistoryStorage interface contract', () => {
     it('should accept RetentionPolicy parameter', async () => {
       if (historyStorage) {
         const policy = {
-          maxRuns: 100,
           maxAge: 30, // days
+          maxRuns: 100,
           maxSize: 1024 * 1024 * 100, // 100MB
         };
 
@@ -349,8 +349,8 @@ describe('HistoryStorage interface contract', () => {
     it('should accept optional query parameter', async () => {
       if (historyStorage) {
         const query = {
-          since: new Date('2025-01-01'),
           limit: 10,
+          since: new Date('2025-01-01'),
         };
 
         try {

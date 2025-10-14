@@ -5,14 +5,14 @@
  * This file re-exports all types from the individual type modules.
  */
 
-// Core data types
-export * from './core.js';
-
-// Interface contracts
-export * from './interfaces.js';
-
 // CLI-specific types
 export * from './cli.js';
+
+// Core data types
+export type * from './core.js';
+
+// Interface contracts
+export type * from './interfaces.js';
 
 // Utility types and helpers
 export * from './utility.js';

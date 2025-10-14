@@ -1,32 +1,25 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { spawn, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { runCommand } from '../util.js';
 
 /**
- * Contract tests for `modestbench validate` command
- * Reference: contracts/cli-commands.md lines 84-110
+ * Contract tests for `modestbench validate` command Reference:
+ * contracts/cli-commands.md lines 84-110
  */
 
 describe('modestbench validate command', () => {
   let tempDir: string;
-  let cliPath: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(
-      process.cwd(),
-      'dist',
-      'tests',
-      'fixtures',
-      'cli-wrapper.js'
-    );
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { force: true, recursive: true });
   });
 
   describe('validation types', () => {
@@ -35,7 +28,7 @@ describe('modestbench validate command', () => {
       const invalidFile = join(tempDir, 'invalid.bench.js');
       await writeFile(invalidFile, 'invalid javascript syntax {');
 
-      const result = await runCommand(['validate', invalidFile]);
+      const result = await runCommand(['validate', invalidFile], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
@@ -44,10 +37,10 @@ describe('modestbench validate command', () => {
       const wrongStructure = join(tempDir, 'wrong.bench.js');
       await writeFile(
         wrongStructure,
-        'export default { wrongProperty: true };'
+        'export default { wrongProperty: true };',
       );
 
-      const result = await runCommand(['validate', wrongStructure]);
+      const result = await runCommand(['validate', wrongStructure], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
@@ -56,7 +49,7 @@ describe('modestbench validate command', () => {
       const invalidConfig = join(tempDir, 'modestbench.config.json');
       await writeFile(invalidConfig, '{ invalid json');
 
-      const result = await runCommand(['validate', '--config', invalidConfig]);
+      const result = await runCommand(['validate', '--config', invalidConfig], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
@@ -71,10 +64,10 @@ describe('modestbench validate command', () => {
           name: 'Deps test',
           benchmarks: [{ name: 'test', fn: () => nonexistent() }]
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['validate', depFile]);
+      const result = await runCommand(['validate', depFile], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
@@ -91,45 +84,46 @@ describe('modestbench validate command', () => {
             { name: 'test', fn: () => { return 1; } }
           ]
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['validate', benchFile]);
+      const result = await runCommand(['validate', benchFile], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should validate all benchmark files when no files specified', async () => {
-      const result = await runCommand(['validate']);
+      const result = await runCommand(['validate'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should validate using glob patterns', async () => {
-      const result = await runCommand(['validate', '**/*.bench.js']);
+      const result = await runCommand(['validate', '**/*.bench.js'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
 
   describe('CLI options', () => {
     it('should support --config option for config file validation', async () => {
-      const result = await runCommand(['validate', '--help']);
+      const result = await runCommand(['validate', '--help'], tempDir);
       assert.ok(
         result.stdout.includes('--config') ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --quiet option for minimal output', async () => {
-      const result = await runCommand(['validate', '--help']);
+      const result = await runCommand(['validate', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('--quiet') || result.stderr.includes('not found')
+        result.stdout.includes('--quiet') ||
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --verbose option for detailed output', async () => {
-      const result = await runCommand(['validate', '--help']);
+      const result = await runCommand(['validate', '--help'], tempDir);
       assert.ok(
         result.stdout.includes('--verbose') ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
   });
@@ -146,10 +140,10 @@ describe('modestbench validate command', () => {
             { name: 'test', fn: () => { return 1; } }
           ]
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['validate', validFile]);
+      const result = await runCommand(['validate', validFile], tempDir);
       assert.ok(result.exitCode === 0 || result.stderr.includes('not found'));
     });
 
@@ -157,7 +151,7 @@ describe('modestbench validate command', () => {
       const invalidFile = join(tempDir, 'invalid.bench.js');
       await writeFile(invalidFile, 'invalid content');
 
-      const result = await runCommand(['validate', invalidFile]);
+      const result = await runCommand(['validate', invalidFile], tempDir);
       assert.ok(result.exitCode === 1 || result.stderr.includes('not found'));
     });
 
@@ -188,76 +182,34 @@ describe('modestbench validate command', () => {
         export default {
           name: 'Anti-pattern Benchmark',
           benchmarks: [
-            { 
-              name: 'blocking sync operation', 
-              fn: () => { 
+            {
+              name: 'blocking sync operation',
+              fn: () => {
                 // Simulated blocking operation
                 const start = Date.now();
                 while (Date.now() - start < 100) { /* block */ }
-              } 
+              }
             }
           ]
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['validate', antiPatternFile]);
+      const result = await runCommand(['validate', antiPatternFile], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
 
   describe('output format', () => {
     it('should provide detailed error messages', async () => {
-      const result = await runCommand(['validate', '--help']);
+      const result = await runCommand(['validate', '--help'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should show validation summary', async () => {
-      const result = await runCommand(['validate', '--help']);
+      const result = await runCommand(['validate', '--help'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
 
-  /**
-   * Helper function to run CLI commands and capture output
-   */
-  async function runCommand(args: string[]): Promise<{
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-  }> {
-    return new Promise(resolve => {
-      const child: ChildProcess = spawn('node', [cliPath, ...args], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: tempDir,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout?.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code: number | null) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code ?? -1,
-        });
-      });
-
-      child.on('error', (error: Error) => {
-        resolve({
-          stdout,
-          stderr: stderr + error.message,
-          exitCode: -1,
-        });
-      });
-    });
-  }
 });

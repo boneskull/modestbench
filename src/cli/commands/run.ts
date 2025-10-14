@@ -1,108 +1,111 @@
 /**
  * ModestBench Run Command
  *
- * Execute benchmark files with configuration and reporting.
- * Main entry point for running benchmarks with real-time progress.
+ * Execute benchmark files with configuration and reporting. Main entry point
+ * for running benchmarks with real-time progress.
  */
 
 import { resolve } from 'node:path';
+import { type Argv } from 'yargs';
+
 import type { CliContext } from '../index.js';
+
 import { ExitCodes } from '../../types/cli.js';
 
 /**
  * Run command arguments interface
  */
 interface RunArguments {
-  pattern: string[];
-  config?: string;
-  reporters: string[];
-  output?: string;
-  iterations?: number;
-  time?: number;
-  warmup?: number;
   bail?: boolean;
-  exclude?: string[];
-  timeout?: number;
-  quiet?: boolean;
-  verbose?: boolean;
+  config?: string;
   cwd: string;
-  noColor?: boolean;
+  exclude?: string[];
+  iterations?: number;
   json?: boolean;
+  noColor?: boolean;
+  output?: string;
+  pattern: string[];
+  quiet?: boolean;
+  reporters: string[];
+  time?: number;
+  timeout?: number;
+  verbose?: boolean;
+  warmup?: number;
 }
 
 export const runCommand = {
-  builder: (yargs: any) => {
+  builder: (yargs: Argv) => {
     return yargs
       .positional('pattern', {
-        describe: 'Glob patterns for benchmark files',
-        type: 'string',
         array: true,
         default: ['**/*.bench.{js,ts}'],
+        describe: 'Glob patterns for benchmark files',
+        type: 'string',
       })
       .option('config', {
         alias: 'c',
-        type: 'string',
         description: 'Path to configuration file',
+        type: 'string',
       })
       .option('reporters', {
         alias: 'r',
-        type: 'array',
-        description: 'Output reporters to use (human,json,csv)',
-        default: ['human'],
         coerce: (value: string | string[]) => {
           // Handle comma-separated values
           if (Array.isArray(value)) {
-            return value.flatMap(v => v.split(',').map(s => s.trim()));
+            return value.flatMap((v) => v.split(',').map((s) => s.trim()));
           }
-          return value.split(',').map(s => s.trim());
+          return value.split(',').map((s) => s.trim());
         },
+        default: ['human'],
+        description: 'Output reporters to use (human,json,csv)',
+        type: 'array',
       })
       .option('output', {
         alias: 'o',
-        type: 'string',
         description: 'Output directory for reports',
+        type: 'string',
       })
       .option('iterations', {
         alias: 'i',
-        type: 'number',
         description: 'Number of iterations per benchmark',
+        type: 'number',
       })
       .option('time', {
         alias: 't',
-        type: 'number',
         description: 'Time budget per benchmark in milliseconds',
+        type: 'number',
       })
       .option('warmup', {
         alias: 'w',
-        type: 'number',
         description: 'Number of warmup iterations',
+        type: 'number',
       })
       .option('bail', {
         alias: 'b',
+        default: false,
         description: 'Stop on first failure',
         type: 'boolean',
-        default: false,
       })
       .option('exclude', {
-        type: 'array',
-        description: 'Exclude patterns (comma-separated)',
         coerce: (value: string | string[]) => {
           // Handle comma-separated values
           if (Array.isArray(value)) {
-            return value.flatMap(v => v.split(',').map(s => s.trim()));
+            return value.flatMap((v) => v.split(',').map((s) => s.trim()));
           }
-          return value.split(',').map(s => s.trim());
+          return value.split(',').map((s) => s.trim());
         },
+        description: 'Exclude patterns (comma-separated)',
+        type: 'array',
       })
       .option('timeout', {
-        type: 'number',
         description: 'Timeout per benchmark in milliseconds',
+        type: 'number',
       })
       .option('quiet', {
         alias: 'q',
-        type: 'boolean',
-        description: 'Minimal output',
         default: false,
+        description: 'Minimal output',
+        type: 'boolean',
       })
       .example([
         ['$0 run', 'Run all benchmark files'],
@@ -137,7 +140,7 @@ export const runCommand = {
       }
       const discoveredFiles = await context.engine.discover(
         config.pattern,
-        config.exclude
+        config.exclude,
       );
 
       if (!shouldBeQuiet) {
@@ -176,13 +179,13 @@ export const runCommand = {
 
       const runConfig = {
         ...config,
-        files: discoveredFiles,
         cwd: argv.cwd,
+        files: discoveredFiles,
       };
 
       const executionResult = await context.engine.execute(
         runConfig,
-        reporters
+        reporters,
       );
 
       // Step 6: Results handling
@@ -191,7 +194,7 @@ export const runCommand = {
       if (!shouldBeQuiet) {
         console.error('Run completed successfully!');
         console.error(
-          `Total tasks: ${executionResult.summary?.totalTasks ?? 0}, Failed: ${executionResult.summary?.failedTasks ?? 0}`
+          `Total tasks: ${executionResult.summary?.totalTasks ?? 0}, Failed: ${executionResult.summary?.failedTasks ?? 0}`,
         );
       }
 
@@ -199,7 +202,7 @@ export const runCommand = {
     } catch (error) {
       if (!shouldBeQuiet) {
         console.error(
-          `Error: ${error instanceof Error ? error.message : String(error)}`
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
 
@@ -227,9 +230,30 @@ export const runCommand = {
 };
 
 /**
+ * Handle execution results and determine appropriate exit code
+ */
+const handleResults = (
+  executionResult: any,
+  argv: RunArguments,
+  shouldBeQuiet: boolean,
+): number => {
+  // The reporters should handle displaying results
+  // This function only determines the exit code
+
+  // Determine exit code based on results
+  if (executionResult && executionResult.summary) {
+    return executionResult.summary.failedTasks > 0
+      ? ExitCodes.GeneralError
+      : ExitCodes.Success;
+  }
+
+  return ExitCodes.Success;
+};
+
+/**
  * Load and merge configuration from various sources
  */
-async function loadConfiguration(context: CliContext, argv: RunArguments) {
+const loadConfiguration = async (context: CliContext, argv: RunArguments) => {
   try {
     // Create CLI arguments object for configuration merger
     const cliArgs: Record<string, unknown> = {};
@@ -239,16 +263,36 @@ async function loadConfiguration(context: CliContext, argv: RunArguments) {
       cliArgs.pattern =
         argv.pattern.length === 1 ? argv.pattern[0] : argv.pattern;
     }
-    if (argv.reporters) cliArgs.reporters = argv.reporters;
-    if (argv.output) cliArgs.outputDir = resolve(argv.cwd, argv.output);
-    if (argv.iterations) cliArgs.iterations = argv.iterations;
-    if (argv.time) cliArgs.time = argv.time;
-    if (argv.warmup !== undefined) cliArgs.warmup = argv.warmup;
-    if (argv.bail !== undefined) cliArgs.bail = argv.bail;
-    if (argv.exclude) cliArgs.exclude = argv.exclude;
-    if (argv.timeout) cliArgs.timeout = argv.timeout;
-    if (argv.quiet !== undefined) cliArgs.quiet = argv.quiet;
-    if (argv.verbose !== undefined) cliArgs.verbose = argv.verbose;
+    if (argv.reporters) {
+      cliArgs.reporters = argv.reporters;
+    }
+    if (argv.output) {
+      cliArgs.outputDir = resolve(argv.cwd, argv.output);
+    }
+    if (argv.iterations) {
+      cliArgs.iterations = argv.iterations;
+    }
+    if (argv.time) {
+      cliArgs.time = argv.time;
+    }
+    if (argv.warmup !== undefined) {
+      cliArgs.warmup = argv.warmup;
+    }
+    if (argv.bail !== undefined) {
+      cliArgs.bail = argv.bail;
+    }
+    if (argv.exclude) {
+      cliArgs.exclude = argv.exclude;
+    }
+    if (argv.timeout) {
+      cliArgs.timeout = argv.timeout;
+    }
+    if (argv.quiet !== undefined) {
+      cliArgs.quiet = argv.quiet;
+    }
+    if (argv.verbose !== undefined) {
+      cliArgs.verbose = argv.verbose;
+    }
 
     // Load configuration with CLI argument precedence
     const config = await context.configManager.load(argv.config, cliArgs);
@@ -256,19 +300,19 @@ async function loadConfiguration(context: CliContext, argv: RunArguments) {
     return config;
   } catch (error) {
     throw new Error(
-      `Configuration error: ${error instanceof Error ? error.message : String(error)}`
+      `Configuration error: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-}
+};
 
 /**
  * Setup and configure reporters based on configuration
  */
-async function setupReporters(
+const setupReporters = async (
   context: CliContext,
-  config: { reporters?: string[]; outputDir?: string },
-  shouldBeQuiet: boolean
-) {
+  config: { outputDir?: string; reporters?: string[] },
+  shouldBeQuiet: boolean,
+) => {
   try {
     const reporters = [];
     const requestedReporters = config.reporters || ['human'];
@@ -277,10 +321,10 @@ async function setupReporters(
       const reporter = context.reporterRegistry.get(reporterName);
       if (!reporter) {
         const availableReporters = Object.keys(
-          context.reporterRegistry.getAll()
+          context.reporterRegistry.getAll(),
         );
         throw new Error(
-          `Unknown reporter: ${reporterName}. Available: ${availableReporters.join(', ')}`
+          `Unknown reporter: ${reporterName}. Available: ${availableReporters.join(', ')}`,
         );
       }
       reporters.push(reporter);
@@ -299,28 +343,7 @@ async function setupReporters(
     return reporters;
   } catch (error) {
     throw new Error(
-      `Reporter setup error: ${error instanceof Error ? error.message : String(error)}`
+      `Reporter setup error: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-}
-
-/**
- * Handle execution results and determine appropriate exit code
- */
-function handleResults(
-  executionResult: any,
-  argv: RunArguments,
-  shouldBeQuiet: boolean
-): number {
-  // The reporters should handle displaying results
-  // This function only determines the exit code
-
-  // Determine exit code based on results
-  if (executionResult && executionResult.summary) {
-    return executionResult.summary.failedTasks > 0
-      ? ExitCodes.GeneralError
-      : ExitCodes.Success;
-  }
-
-  return ExitCodes.Success;
-}
+};

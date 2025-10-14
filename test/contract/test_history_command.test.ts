@@ -1,116 +1,114 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { spawn, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { runCommand } from '../util.js';
 
 /**
- * Contract tests for `modestbench history` command
- * Reference: contracts/cli-commands.md lines 37-62
+ * Contract tests for `modestbench history` command Reference:
+ * contracts/cli-commands.md lines 37-62
  */
 
 describe('modestbench history command', () => {
   let tempDir: string;
-  let cliPath: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(
-      process.cwd(),
-      'dist',
-      'tests',
-      'fixtures',
-      'cli-wrapper.js'
-    );
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { force: true, recursive: true });
   });
 
   describe('sub-commands', () => {
     it('should support list sub-command', async () => {
-      const result = await runCommand(['history', 'list', '--help']);
+      const result = await runCommand(['history', 'list', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('list') || result.stderr.includes('not found')
+        result.stdout.includes('list') || result.stderr.includes('not found'),
       );
     });
 
     it('should support show sub-command', async () => {
-      const result = await runCommand(['history', 'show', '--help']);
+      const result = await runCommand(['history', 'show', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('show') || result.stderr.includes('not found')
+        result.stdout.includes('show') || result.stderr.includes('not found'),
       );
     });
 
     it('should support compare sub-command', async () => {
-      const result = await runCommand(['history', 'compare', '--help']);
+      const result = await runCommand(
+        ['history', 'compare', '--help'],
+        tempDir,
+      );
       assert.ok(
-        result.stdout.includes('compare') || result.stderr.includes('not found')
+        result.stdout.includes('compare') ||
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support trends sub-command', async () => {
-      const result = await runCommand(['history', 'trends', '--help']);
+      const result = await runCommand(['history', 'trends', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('trends') || result.stderr.includes('not found')
+        result.stdout.includes('trends') || result.stderr.includes('not found'),
       );
     });
 
     it('should support clean sub-command', async () => {
-      const result = await runCommand(['history', 'clean', '--help']);
+      const result = await runCommand(['history', 'clean', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('clean') || result.stderr.includes('not found')
+        result.stdout.includes('clean') || result.stderr.includes('not found'),
       );
     });
   });
 
   describe('CLI options', () => {
     it('should support --limit/-l option', async () => {
-      const result = await runCommand(['history', 'list', '--help']);
+      const result = await runCommand(['history', 'list', '--help'], tempDir);
       assert.ok(
         result.stdout.includes('--limit') ||
           result.stdout.includes('-l') ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --since option', async () => {
-      const result = await runCommand(['history', 'list', '--help']);
+      const result = await runCommand(['history', 'list', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('--since') || result.stderr.includes('not found')
+        result.stdout.includes('--since') ||
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --format/-f option', async () => {
-      const result = await runCommand(['history', 'list', '--help']);
+      const result = await runCommand(['history', 'list', '--help'], tempDir);
       assert.ok(
         result.stdout.includes('--format') ||
           result.stdout.includes('-f') ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --pattern option', async () => {
-      const result = await runCommand(['history', 'list', '--help']);
+      const result = await runCommand(['history', 'list', '--help'], tempDir);
       assert.ok(
         result.stdout.includes('--pattern') ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
 
     it('should support --tags option', async () => {
-      const result = await runCommand(['history', 'list', '--help']);
+      const result = await runCommand(['history', 'list', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('--tags') || result.stderr.includes('not found')
+        result.stdout.includes('--tags') || result.stderr.includes('not found'),
       );
     });
   });
 
   describe('exit codes', () => {
     it('should exit with code 0 for successful operations', async () => {
-      const result = await runCommand(['history', '--help']);
+      const result = await runCommand(['history', '--help'], tempDir);
       // Will fail until implementation exists, but should define the contract
       assert.ok(result.exitCode === 0 || result.stderr.includes('not found'));
     });
@@ -126,7 +124,7 @@ describe('modestbench history command', () => {
       assert.ok(
         result.exitCode === 0 ||
           result.exitCode === 1 ||
-          result.stderr.includes('not found')
+          result.stderr.includes('not found'),
       );
     });
 
@@ -143,31 +141,43 @@ describe('modestbench history command', () => {
 
     it('should exit with code 3 for data corruption', async () => {
       // This is harder to test without implementation, but contract should be defined
-      const result = await runCommand(['history', '--help']);
+      const result = await runCommand(['history', '--help'], tempDir);
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
 
   describe('output formats', () => {
     it('should support table format', async () => {
-      const result = await runCommand(['history', 'list', '--format', 'table']);
+      const result = await runCommand(
+        ['history', 'list', '--format', 'table'],
+        tempDir,
+      );
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should support json format', async () => {
-      const result = await runCommand(['history', 'list', '--format', 'json']);
+      const result = await runCommand(
+        ['history', 'list', '--format', 'json'],
+        tempDir,
+      );
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
 
     it('should support csv format', async () => {
-      const result = await runCommand(['history', 'list', '--format', 'csv']);
+      const result = await runCommand(
+        ['history', 'list', '--format', 'csv'],
+        tempDir,
+      );
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
 
   describe('show command with run-id', () => {
     it('should accept run-id argument for show command', async () => {
-      const result = await runCommand(['history', 'show', 'test-run-id']);
+      const result = await runCommand(
+        ['history', 'show', 'test-run-id'],
+        tempDir,
+      );
       assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
     });
   });
@@ -186,53 +196,10 @@ describe('modestbench history command', () => {
 
   describe('default limit', () => {
     it('should use default limit of 10', async () => {
-      const result = await runCommand(['history', 'list', '--help']);
+      const result = await runCommand(['history', 'list', '--help'], tempDir);
       assert.ok(
-        result.stdout.includes('10') || result.stderr.includes('not found')
+        result.stdout.includes('10') || result.stderr.includes('not found'),
       );
     });
   });
-
-  /**
-   * Helper function to run CLI commands and capture output
-   */
-  async function runCommand(args: string[]): Promise<{
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-  }> {
-    return new Promise(resolve => {
-      const child: ChildProcess = spawn('node', [cliPath, ...args], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: tempDir,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout?.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code: number | null) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code ?? -1,
-        });
-      });
-
-      child.on('error', (error: Error) => {
-        resolve({
-          stdout,
-          stderr: stderr + error.message,
-          exitCode: -1,
-        });
-      });
-    });
-  }
 });

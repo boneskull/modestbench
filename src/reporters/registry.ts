@@ -5,77 +5,28 @@
  * Supports registration, retrieval, and lifecycle management of reporters.
  */
 
+import type { ReporterRegistry } from '../core/engine.js';
 import type {
-  Reporter,
   BenchmarkRun,
-  TaskResult,
-  SuiteResult,
   FileResult,
   ProgressState,
+  Reporter,
+  SuiteResult,
+  TaskResult,
 } from '../types/index.js';
-import type { ReporterRegistry } from '../core/engine.js';
 
 /**
  * Base abstract reporter class providing common functionality
  */
 export abstract class BaseReporter implements Reporter {
   protected readonly name: string;
+
   protected readonly options: Record<string, unknown>;
 
   constructor(name: string, options: Record<string, unknown> = {}) {
     this.name = name;
     this.options = options;
   }
-
-  /**
-   * Called when benchmark run starts
-   */
-  abstract onStart(run: BenchmarkRun): void | Promise<void>;
-
-  /**
-   * Called when a file starts execution
-   */
-  abstract onFileStart(file: string): void | Promise<void>;
-
-  /**
-   * Called when a suite starts execution
-   */
-  abstract onSuiteStart(suite: string): void | Promise<void>;
-
-  /**
-   * Called when a task starts execution
-   */
-  abstract onTaskStart(task: string): void | Promise<void>;
-
-  /**
-   * Called when a task completes
-   */
-  abstract onTaskResult(result: TaskResult): void | Promise<void>;
-
-  /**
-   * Called when a suite completes
-   */
-  abstract onSuiteEnd(result: SuiteResult): void | Promise<void>;
-
-  /**
-   * Called when a file completes
-   */
-  abstract onFileEnd(result: FileResult): void | Promise<void>;
-
-  /**
-   * Called when benchmark run completes
-   */
-  abstract onEnd(run: BenchmarkRun): void | Promise<void>;
-
-  /**
-   * Called for progress updates
-   */
-  abstract onProgress(state: ProgressState): void | Promise<void>;
-
-  /**
-   * Called when an error occurs
-   */
-  abstract onError(error: Error): void | Promise<void>;
 
   /**
    * Get reporter name
@@ -90,6 +41,56 @@ export abstract class BaseReporter implements Reporter {
   getOptions(): Record<string, unknown> {
     return { ...this.options };
   }
+
+  /**
+   * Called when benchmark run completes
+   */
+  abstract onEnd(run: BenchmarkRun): Promise<void> | void;
+
+  /**
+   * Called when an error occurs
+   */
+  abstract onError(error: Error): Promise<void> | void;
+
+  /**
+   * Called when a file completes
+   */
+  abstract onFileEnd(result: FileResult): Promise<void> | void;
+
+  /**
+   * Called when a file starts execution
+   */
+  abstract onFileStart(file: string): Promise<void> | void;
+
+  /**
+   * Called for progress updates
+   */
+  abstract onProgress(state: ProgressState): Promise<void> | void;
+
+  /**
+   * Called when benchmark run starts
+   */
+  abstract onStart(run: BenchmarkRun): Promise<void> | void;
+
+  /**
+   * Called when a suite completes
+   */
+  abstract onSuiteEnd(result: SuiteResult): Promise<void> | void;
+
+  /**
+   * Called when a suite starts execution
+   */
+  abstract onSuiteStart(suite: string): Promise<void> | void;
+
+  /**
+   * Called when a task completes
+   */
+  abstract onTaskResult(result: TaskResult): Promise<void> | void;
+
+  /**
+   * Called when a task starts execution
+   */
+  abstract onTaskStart(task: string): Promise<void> | void;
 
   /**
    * Utility method to format duration in human-readable format
@@ -131,7 +132,7 @@ export abstract class BaseReporter implements Reporter {
   /**
    * Utility method to safely handle async operations
    */
-  protected async safeAsync<T>(operation: () => Promise<T>): Promise<T | null> {
+  protected async safeAsync<T>(operation: () => Promise<T>): Promise<null | T> {
     try {
       return await operation();
     } catch (error) {
@@ -144,19 +145,119 @@ export abstract class BaseReporter implements Reporter {
 }
 
 /**
+ * Composite reporter that broadcasts events to multiple reporters
+ */
+export class CompositeReporter extends BaseReporter {
+  private readonly reporters: Reporter[];
+
+  constructor(reporters: Reporter[]) {
+    super('composite', {});
+    this.reporters = [...reporters];
+  }
+
+  /**
+   * Add a reporter to the composite
+   */
+  addReporter(reporter: Reporter): void {
+    this.reporters.push(reporter);
+  }
+
+  /**
+   * Get all reporters in the composite
+   */
+  getReporters(): Reporter[] {
+    return [...this.reporters];
+  }
+
+  async onEnd(run: BenchmarkRun): Promise<void> {
+    await this.broadcastAsync('onEnd', run);
+  }
+
+  async onError(error: Error): Promise<void> {
+    await this.broadcastAsync('onError', error);
+  }
+
+  async onFileEnd(result: FileResult): Promise<void> {
+    await this.broadcastAsync('onFileEnd', result);
+  }
+
+  async onFileStart(file: string): Promise<void> {
+    await this.broadcastAsync('onFileStart', file);
+  }
+
+  async onProgress(state: ProgressState): Promise<void> {
+    await this.broadcastAsync('onProgress', state);
+  }
+
+  async onStart(run: BenchmarkRun): Promise<void> {
+    await this.broadcastAsync('onStart', run);
+  }
+
+  async onSuiteEnd(result: SuiteResult): Promise<void> {
+    await this.broadcastAsync('onSuiteEnd', result);
+  }
+
+  async onSuiteStart(suite: string): Promise<void> {
+    await this.broadcastAsync('onSuiteStart', suite);
+  }
+
+  async onTaskResult(result: TaskResult): Promise<void> {
+    await this.broadcastAsync('onTaskResult', result);
+  }
+
+  async onTaskStart(task: string): Promise<void> {
+    await this.broadcastAsync('onTaskStart', task);
+  }
+
+  /**
+   * Remove a reporter from the composite
+   */
+  removeReporter(reporter: Reporter): boolean {
+    const index = this.reporters.indexOf(reporter);
+    if (index >= 0) {
+      this.reporters.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Broadcast an event to all reporters with error handling
+   */
+  private async broadcastAsync(
+    method: keyof Reporter,
+    ...args: any[]
+  ): Promise<void> {
+    const promises = this.reporters.map(async reporter => {
+      try {
+        const result = (reporter[method] as any)(...args);
+        if (result && typeof result.then === 'function') {
+          await result;
+        }
+      } catch (error) {
+        // Handle reporter-specific errors without affecting others
+        console.error(
+          `Reporter error in ${reporter.constructor.name}.${method}:`,
+          error
+        );
+      }
+    });
+
+    await Promise.all(promises);
+  }
+}
+
+/**
  * Reporter registry implementation for managing multiple reporters
  */
 export class ModestBenchReporterRegistry implements ReporterRegistry {
   private readonly reporters: Map<string, Reporter> = new Map();
 
   /**
-   * Register a reporter with a unique name
+   * Clear all registered reporters
    */
-  register(name: string, reporter: Reporter): void {
-    if (this.reporters.has(name)) {
-      throw new Error(`Reporter with name "${name}" is already registered`);
-    }
-    this.reporters.set(name, reporter);
+  clear(): void {
+    this.reporters.clear();
   }
 
   /**
@@ -203,6 +304,13 @@ export class ModestBenchReporterRegistry implements ReporterRegistry {
   }
 
   /**
+   * Get list of registered reporter names
+   */
+  getNames(): string[] {
+    return Array.from(this.reporters.keys());
+  }
+
+  /**
    * Check if a reporter is registered
    */
   has(name: string): boolean {
@@ -210,24 +318,13 @@ export class ModestBenchReporterRegistry implements ReporterRegistry {
   }
 
   /**
-   * Unregister a reporter
+   * Register a reporter with a unique name
    */
-  unregister(name: string): boolean {
-    return this.reporters.delete(name);
-  }
-
-  /**
-   * Clear all registered reporters
-   */
-  clear(): void {
-    this.reporters.clear();
-  }
-
-  /**
-   * Get list of registered reporter names
-   */
-  getNames(): string[] {
-    return Array.from(this.reporters.keys());
+  register(name: string, reporter: Reporter): void {
+    if (this.reporters.has(name)) {
+      throw new Error(`Reporter with name "${name}" is already registered`);
+    }
+    this.reporters.set(name, reporter);
   }
 
   /**
@@ -236,107 +333,11 @@ export class ModestBenchReporterRegistry implements ReporterRegistry {
   size(): number {
     return this.reporters.size;
   }
-}
-
-/**
- * Composite reporter that broadcasts events to multiple reporters
- */
-export class CompositeReporter extends BaseReporter {
-  private readonly reporters: Reporter[];
-
-  constructor(reporters: Reporter[]) {
-    super('composite', {});
-    this.reporters = [...reporters];
-  }
-
-  async onStart(run: BenchmarkRun): Promise<void> {
-    await this.broadcastAsync('onStart', run);
-  }
-
-  async onFileStart(file: string): Promise<void> {
-    await this.broadcastAsync('onFileStart', file);
-  }
-
-  async onSuiteStart(suite: string): Promise<void> {
-    await this.broadcastAsync('onSuiteStart', suite);
-  }
-
-  async onTaskStart(task: string): Promise<void> {
-    await this.broadcastAsync('onTaskStart', task);
-  }
-
-  async onTaskResult(result: TaskResult): Promise<void> {
-    await this.broadcastAsync('onTaskResult', result);
-  }
-
-  async onSuiteEnd(result: SuiteResult): Promise<void> {
-    await this.broadcastAsync('onSuiteEnd', result);
-  }
-
-  async onFileEnd(result: FileResult): Promise<void> {
-    await this.broadcastAsync('onFileEnd', result);
-  }
-
-  async onEnd(run: BenchmarkRun): Promise<void> {
-    await this.broadcastAsync('onEnd', run);
-  }
-
-  async onProgress(state: ProgressState): Promise<void> {
-    await this.broadcastAsync('onProgress', state);
-  }
-
-  async onError(error: Error): Promise<void> {
-    await this.broadcastAsync('onError', error);
-  }
 
   /**
-   * Add a reporter to the composite
+   * Unregister a reporter
    */
-  addReporter(reporter: Reporter): void {
-    this.reporters.push(reporter);
-  }
-
-  /**
-   * Remove a reporter from the composite
-   */
-  removeReporter(reporter: Reporter): boolean {
-    const index = this.reporters.indexOf(reporter);
-    if (index >= 0) {
-      this.reporters.splice(index, 1);
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Get all reporters in the composite
-   */
-  getReporters(): Reporter[] {
-    return [...this.reporters];
-  }
-
-  /**
-   * Broadcast an event to all reporters with error handling
-   */
-  private async broadcastAsync(
-    method: keyof Reporter,
-    ...args: any[]
-  ): Promise<void> {
-    const promises = this.reporters.map(async reporter => {
-      try {
-        const result = (reporter[method] as any)(...args);
-        if (result && typeof result.then === 'function') {
-          await result;
-        }
-      } catch (error) {
-        // Handle reporter-specific errors without affecting others
-        console.error(
-          `Reporter error in ${reporter.constructor.name}.${method}:`,
-          error
-        );
-      }
-    });
-
-    await Promise.all(promises);
+  unregister(name: string): boolean {
+    return this.reporters.delete(name);
   }
 }

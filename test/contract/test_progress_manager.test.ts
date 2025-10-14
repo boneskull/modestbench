@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { describe, it } from 'node:test';
 
 /**
  * Contract tests for ProgressManager interface
@@ -69,17 +69,17 @@ describe('ProgressManager interface contract', () => {
     it('should accept BenchmarkRun parameter', () => {
       if (progressManager) {
         const mockRun = {
-          id: 'test-run-123',
-          timestamp: new Date(),
           configuration: {
+            config: {},
             files: ['test.bench.js'],
             reporters: ['human'],
-            config: {},
           },
-          environment: {},
-          results: [],
           duration: 0,
+          environment: {},
+          id: 'test-run-123',
+          results: [],
           status: 'pending',
+          timestamp: new Date(),
         };
 
         try {
@@ -356,8 +356,8 @@ describe('ProgressManager interface contract', () => {
         try {
           progressManager.update({
             currentFile: 'test1.bench.js',
-            totalFiles: 3,
             filesCompleted: 0,
+            totalFiles: 3,
           });
 
           const state = progressManager.getState();
@@ -378,8 +378,8 @@ describe('ProgressManager interface contract', () => {
         try {
           progressManager.update({
             currentSuite: 'Performance Tests',
-            totalSuites: 5,
             suitesCompleted: 2,
+            totalSuites: 5,
           });
 
           const state = progressManager.getState();
@@ -400,8 +400,8 @@ describe('ProgressManager interface contract', () => {
         try {
           progressManager.update({
             currentTask: 'array iteration',
-            totalTasks: 10,
             tasksCompleted: 7,
+            totalTasks: 10,
           });
 
           const state = progressManager.getState();
@@ -423,8 +423,8 @@ describe('ProgressManager interface contract', () => {
       if (progressManager) {
         try {
           progressManager.update({
-            totalFiles: -1,
             filesCompleted: 'invalid',
+            totalFiles: -1,
           } as any);
 
           // Should either accept and normalize or throw descriptive error

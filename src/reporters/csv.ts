@@ -6,67 +6,77 @@
  */
 
 import { writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+
 import type {
   BenchmarkRun,
-  TaskResult,
-  SuiteResult,
   FileResult,
   ProgressState,
+  SuiteResult,
+  TaskResult,
 } from '../types/index.js';
+
 import { BaseReporter } from './registry.js';
 
 /**
  * CSV column definitions for task results
  */
 interface CsvRow {
+  readonly arch: string;
+  readonly ciProvider?: string | undefined;
+  readonly cpuCores: number;
+  readonly cpuModel: string;
+  readonly error?: string | undefined;
   readonly file: string;
-  readonly suite: string;
-  readonly task: string;
-  readonly mean: number;
-  readonly stdDev: number;
-  readonly min: number;
-  readonly max: number;
+  readonly gitBranch?: string | undefined;
+  readonly gitCommit?: string | undefined;
   readonly iterations: number;
-  readonly opsPerSecond: number;
   readonly marginOfError: number;
-  readonly variance: number;
+  readonly max: number;
+  readonly mean: number;
+  readonly min: number;
+  readonly nodeVersion: string;
+  readonly opsPerSecond: number;
   readonly p95: number;
   readonly p99: number;
-  readonly error?: string | undefined;
-  readonly timestamp: string;
-  readonly nodeVersion: string;
   readonly platform: string;
-  readonly arch: string;
-  readonly cpuModel: string;
-  readonly cpuCores: number;
+  readonly stdDev: number;
+  readonly suite: string;
+  readonly task: string;
+  readonly timestamp: string;
   readonly totalMemory: number;
-  readonly gitCommit?: string | undefined;
-  readonly gitBranch?: string | undefined;
-  readonly ciProvider?: string | undefined;
+  readonly variance: number;
 }
 
 /**
  * CSV reporter for structured tabular output
  */
 export class CsvReporter extends BaseReporter {
-  private readonly outputPath?: string | undefined;
-  private readonly includeHeaders: boolean;
-  private readonly includeMetadata: boolean;
-  private readonly delimiter: string;
-  private readonly quote: string;
-  private rows: CsvRow[] = [];
-  private currentRun?: BenchmarkRun;
   private currentFile = '';
+
+  private currentRun?: BenchmarkRun;
+
   private currentSuite = '';
+
+  private readonly delimiter: string;
+
+  private readonly includeHeaders: boolean;
+
+  private readonly includeMetadata: boolean;
+
+  private readonly outputPath?: string | undefined;
+
+  private readonly quote: string;
+
+  private rows: CsvRow[] = [];
 
   constructor(
     options: {
-      outputPath?: string;
+      delimiter?: string;
       includeHeaders?: boolean;
       includeMetadata?: boolean;
-      delimiter?: string;
+      outputPath?: string;
       quote?: string;
     } = {}
   ) {
@@ -79,64 +89,46 @@ export class CsvReporter extends BaseReporter {
     this.quote = options.quote ?? '"';
   }
 
-  onStart(run: BenchmarkRun): void {
-    this.currentRun = run;
-    this.rows = [];
+  /**
+   * Check if headers are included
+   */
+  areHeadersIncluded(): boolean {
+    return this.includeHeaders;
   }
 
-  onFileStart(file: string): void {
-    this.currentFile = file;
+  /**
+   * Get the delimiter character
+   */
+  getDelimiter(): string {
+    return this.delimiter;
   }
 
-  onSuiteStart(suite: string): void {
-    this.currentSuite = suite;
+  /**
+   * Get the output path (if configured)
+   */
+  getOutputPath(): string | undefined {
+    return this.outputPath;
   }
 
-  onTaskStart(_task: string): void {
-    // No-op for CSV reporter
+  /**
+   * Get the quote character
+   */
+  getQuote(): string {
+    return this.quote;
   }
 
-  onTaskResult(result: TaskResult): void {
-    if (!this.currentRun) {
-      return;
-    }
-
-    const row: CsvRow = {
-      file: this.currentFile,
-      suite: this.currentSuite,
-      task: result.name,
-      mean: result.mean,
-      stdDev: result.stdDev,
-      min: result.min,
-      max: result.max,
-      iterations: result.iterations,
-      opsPerSecond: result.opsPerSecond,
-      marginOfError: result.marginOfError,
-      variance: result.variance,
-      p95: result.p95,
-      p99: result.p99,
-      error: result.error?.message,
-      timestamp: new Date().toISOString(),
-      nodeVersion: this.currentRun.environment.nodeVersion,
-      platform: this.currentRun.environment.platform,
-      arch: this.currentRun.environment.arch,
-      cpuModel: this.currentRun.environment.cpu.model,
-      cpuCores: this.currentRun.environment.cpu.cores,
-      totalMemory: this.currentRun.environment.memory.total,
-      gitCommit: this.currentRun.git?.commit,
-      gitBranch: this.currentRun.git?.branch,
-      ciProvider: this.currentRun.ci?.provider,
-    };
-
-    this.rows.push(row);
+  /**
+   * Get the number of rows collected
+   */
+  getRowCount(): number {
+    return this.rows.length;
   }
 
-  onSuiteEnd(_result: SuiteResult): void {
-    // No-op for CSV reporter
-  }
-
-  onFileEnd(_result: FileResult): void {
-    // No-op for CSV reporter
+  /**
+   * Check if metadata is included
+   */
+  isMetadataIncluded(): boolean {
+    return this.includeMetadata;
   }
 
   async onEnd(_run: BenchmarkRun): Promise<void> {
@@ -149,12 +141,94 @@ export class CsvReporter extends BaseReporter {
     }
   }
 
+  onError(error: Error): void {
+    console.error('CSV Reporter Error:', error.message);
+  }
+
+  onFileEnd(_result: FileResult): void {
+    // No-op for CSV reporter
+  }
+
+  onFileStart(file: string): void {
+    this.currentFile = file;
+  }
+
   onProgress(_state: ProgressState): void {
     // No-op for CSV reporter
   }
 
-  onError(error: Error): void {
-    console.error('CSV Reporter Error:', error.message);
+  onStart(run: BenchmarkRun): void {
+    this.currentRun = run;
+    this.rows = [];
+  }
+
+  onSuiteEnd(_result: SuiteResult): void {
+    // No-op for CSV reporter
+  }
+
+  onSuiteStart(suite: string): void {
+    this.currentSuite = suite;
+  }
+
+  onTaskResult(result: TaskResult): void {
+    if (!this.currentRun) {
+      return;
+    }
+
+    const row: CsvRow = {
+      arch: this.currentRun.environment.arch,
+      ciProvider: this.currentRun.ci?.provider,
+      cpuCores: this.currentRun.environment.cpu.cores,
+      cpuModel: this.currentRun.environment.cpu.model,
+      error: result.error?.message,
+      file: this.currentFile,
+      gitBranch: this.currentRun.git?.branch,
+      gitCommit: this.currentRun.git?.commit,
+      iterations: result.iterations,
+      marginOfError: result.marginOfError,
+      max: result.max,
+      mean: result.mean,
+      min: result.min,
+      nodeVersion: this.currentRun.environment.nodeVersion,
+      opsPerSecond: result.opsPerSecond,
+      p95: result.p95,
+      p99: result.p99,
+      platform: this.currentRun.environment.platform,
+      stdDev: result.stdDev,
+      suite: this.currentSuite,
+      task: result.name,
+      timestamp: new Date().toISOString(),
+      totalMemory: this.currentRun.environment.memory.total,
+      variance: result.variance,
+    };
+
+    this.rows.push(row);
+  }
+
+  onTaskStart(_task: string): void {
+    // No-op for CSV reporter
+  }
+
+  /**
+   * Escape a field value for CSV format
+   */
+  private escapeField(value: string): string {
+    // If value contains delimiter, quote, or newline, wrap in quotes
+    if (
+      value.includes(this.delimiter) ||
+      value.includes(this.quote) ||
+      value.includes('\n') ||
+      value.includes('\r')
+    ) {
+      // Escape any existing quotes by doubling them
+      const escaped = value.replace(
+        new RegExp(this.quote, 'g'),
+        this.quote + this.quote
+      );
+      return this.quote + escaped + this.quote;
+    }
+
+    return value;
   }
 
   /**
@@ -257,28 +331,6 @@ export class CsvReporter extends BaseReporter {
   }
 
   /**
-   * Escape a field value for CSV format
-   */
-  private escapeField(value: string): string {
-    // If value contains delimiter, quote, or newline, wrap in quotes
-    if (
-      value.includes(this.delimiter) ||
-      value.includes(this.quote) ||
-      value.includes('\n') ||
-      value.includes('\r')
-    ) {
-      // Escape any existing quotes by doubling them
-      const escaped = value.replace(
-        new RegExp(this.quote, 'g'),
-        this.quote + this.quote
-      );
-      return this.quote + escaped + this.quote;
-    }
-
-    return value;
-  }
-
-  /**
    * Write CSV content to file
    */
   private async writeToFile(csvContent: string): Promise<void> {
@@ -305,47 +357,5 @@ export class CsvReporter extends BaseReporter {
    */
   private writeToStdout(csvContent: string): void {
     console.log(csvContent);
-  }
-
-  /**
-   * Get the output path (if configured)
-   */
-  getOutputPath(): string | undefined {
-    return this.outputPath;
-  }
-
-  /**
-   * Check if headers are included
-   */
-  areHeadersIncluded(): boolean {
-    return this.includeHeaders;
-  }
-
-  /**
-   * Check if metadata is included
-   */
-  isMetadataIncluded(): boolean {
-    return this.includeMetadata;
-  }
-
-  /**
-   * Get the delimiter character
-   */
-  getDelimiter(): string {
-    return this.delimiter;
-  }
-
-  /**
-   * Get the quote character
-   */
-  getQuote(): string {
-    return this.quote;
-  }
-
-  /**
-   * Get the number of rows collected
-   */
-  getRowCount(): number {
-    return this.rows.length;
   }
 }

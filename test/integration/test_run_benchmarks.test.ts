@@ -1,9 +1,10 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { spawn, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
-import { mkdtemp, writeFile, rm, mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { runCommand } from '../util.js';
 
 /**
  * Integration tests for benchmark file execution with progress tracking
@@ -12,22 +13,14 @@ import { tmpdir } from 'node:os';
 
 describe('Benchmark execution with progress tracking', () => {
   let tempDir: string;
-  let cliPath: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(
-      process.cwd(),
-      'dist',
-      'tests',
-      'fixtures',
-      'cli-wrapper.js'
-    );
     await mkdir(join(tempDir, 'benchmarks'), { recursive: true });
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { force: true, recursive: true });
   });
 
   describe('basic benchmark execution', () => {
@@ -36,7 +29,7 @@ describe('Benchmark execution with progress tracking', () => {
       const benchFile = join(
         tempDir,
         'benchmarks',
-        'array-operations.bench.js'
+        'array-operations.bench.js',
       );
       await writeFile(
         benchFile,
@@ -53,7 +46,7 @@ describe('Benchmark execution with progress tracking', () => {
                     }
                   }
                 },
-                
+
                 'Array.unshift()': {
                   fn: () => {
                     const arr = [];
@@ -66,7 +59,7 @@ describe('Benchmark execution with progress tracking', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -80,10 +73,11 @@ describe('Benchmark execution with progress tracking', () => {
       assert.strictEqual(result.exitCode, 0);
       assert.ok(
         result.stdout.includes('Array Operations') ||
-          result.stdout.includes('progress')
+          result.stdout.includes('progress'),
       );
       assert.ok(
-        result.stdout.includes('ops/sec') || result.stdout.includes('benchmark')
+        result.stdout.includes('ops/sec') ||
+          result.stdout.includes('benchmark'),
       );
     });
 
@@ -107,7 +101,7 @@ describe('Benchmark execution with progress tracking', () => {
               }
             }
           };
-        `
+        `,
         );
       }
 
@@ -121,7 +115,7 @@ describe('Benchmark execution with progress tracking', () => {
       // Should execute successfully and show progress across files
       assert.strictEqual(result.exitCode, 0);
       assert.ok(
-        result.stdout.includes('progress') || result.stdout.includes('%')
+        result.stdout.includes('progress') || result.stdout.includes('%'),
       );
     });
 
@@ -156,7 +150,7 @@ describe('Benchmark execution with progress tracking', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -170,7 +164,7 @@ describe('Benchmark execution with progress tracking', () => {
       // Should execute successfully and show ETA or time estimates during execution
       assert.strictEqual(result.exitCode, 0);
       assert.ok(
-        result.stdout.includes('ETA') || result.stdout.includes('estimated')
+        result.stdout.includes('ETA') || result.stdout.includes('estimated'),
       );
     });
   });
@@ -198,15 +192,15 @@ describe('Benchmark execution with progress tracking', () => {
             }
           }
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['run', benchFile, '--verbose']);
+      const result = await runCommand(['run', benchFile, '--verbose'], tempDir);
 
       // Should execute successfully and show suite progress
       assert.strictEqual(result.exitCode, 0);
       assert.ok(
-        result.stdout.includes('Suite 1') && result.stdout.includes('Suite 2')
+        result.stdout.includes('Suite 1') && result.stdout.includes('Suite 2'),
       );
     });
   });
@@ -231,16 +225,16 @@ describe('Benchmark execution with progress tracking', () => {
             }
           }
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['run', benchFile]);
+      const result = await runCommand(['run', benchFile], tempDir);
 
       // Should execute successfully and show progress indicators
       assert.strictEqual(result.exitCode, 0);
       assert.ok(
         result.stdout.includes('progress') ||
-          result.stdout.includes('completed')
+          result.stdout.includes('completed'),
       );
     });
   });
@@ -258,11 +252,11 @@ describe('Benchmark execution with progress tracking', () => {
                 // Suite setup
                 global.testData = Array.from({length: 1000}, (_, i) => i);
               },
-              
+
               teardown: () => {
                 delete global.testData;
               },
-              
+
               benchmarks: {
                 'process data': {
                   fn: () => {
@@ -273,10 +267,10 @@ describe('Benchmark execution with progress tracking', () => {
             }
           }
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['run', benchFile, '--verbose']);
+      const result = await runCommand(['run', benchFile, '--verbose'], tempDir);
 
       // Setup/teardown is not implemented yet - should fail
       assert.notStrictEqual(result.exitCode, 0);
@@ -285,7 +279,7 @@ describe('Benchmark execution with progress tracking', () => {
           result.stdout.includes('FAILED') ||
           result.stderr.includes('Some benchmarks failed') ||
           result.stderr.includes('setup') ||
-          result.stderr.includes('teardown')
+          result.stderr.includes('teardown'),
       );
     });
   });
@@ -307,10 +301,10 @@ describe('Benchmark execution with progress tracking', () => {
             }
           }
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['run', benchFile]);
+      const result = await runCommand(['run', benchFile], tempDir);
 
       // Should complete with exit code 1 (failures) but continue execution
       assert.ok(result.exitCode === 1 || result.stderr.includes('not found'));
@@ -318,52 +312,10 @@ describe('Benchmark execution with progress tracking', () => {
       if (result.exitCode === 1) {
         // Should show progress for successful tasks
         assert.ok(
-          result.stdout.includes('good task') || result.stderr.includes('error')
+          result.stdout.includes('good task') ||
+            result.stderr.includes('error'),
         );
       }
     });
   });
-
-  /**
-   * Helper function to run CLI commands and capture output
-   */
-  async function runCommand(args: string[]): Promise<{
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-  }> {
-    return new Promise(resolve => {
-      const child: ChildProcess = spawn('node', [cliPath, ...args], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: tempDir,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout?.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code: number | null) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code ?? -1,
-        });
-      });
-
-      child.on('error', (error: Error) => {
-        resolve({
-          stdout,
-          stderr: stderr + error.message,
-          exitCode: -1,
-        });
-      });
-    });
-  }
 });

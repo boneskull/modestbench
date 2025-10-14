@@ -6,8 +6,8 @@
  */
 
 export { ModestBenchEngine } from './engine.js';
-export { BenchmarkFileLoader } from './loader.js';
-export { ModestBenchErrorManager } from './error-manager.js';
-
 // Re-export types that are commonly needed
 export type { EngineDependencies } from './engine.js';
+export { ModestBenchErrorManager } from './error-manager.js';
+
+export { BenchmarkFileLoader } from './loader.js';

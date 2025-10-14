@@ -1,32 +1,25 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { spawn, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { runCommand } from '../util.js';
 
 /**
- * Integration tests for configuration file and CLI argument merging
- * Reference: quickstart.md configuration examples and CLI priority
+ * Integration tests for configuration file and CLI argument merging Reference:
+ * quickstart.md configuration examples and CLI priority
  */
 
 describe('Configuration file and CLI argument merging', () => {
   let tempDir: string;
-  let cliPath: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(
-      process.cwd(),
-      'dist',
-      'tests',
-      'fixtures',
-      'cli-wrapper.js'
-    );
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { force: true, recursive: true });
   });
 
   describe('configuration file loading', () => {
@@ -36,14 +29,14 @@ describe('Configuration file and CLI argument merging', () => {
         configFile,
         JSON.stringify(
           {
-            reporters: ['json', 'csv'],
-            output: './results',
             iterations: 10,
+            output: './results',
+            reporters: ['json', 'csv'],
             warmup: 5,
           },
           null,
-          2
-        )
+          2,
+        ),
       );
 
       const benchFile = join(tempDir, 'test.bench.js');
@@ -66,7 +59,7 @@ describe('Configuration file and CLI argument merging', () => {
       }
     }
   }
-};`
+};`,
       );
 
       const result = await runCommand([
@@ -80,11 +73,11 @@ describe('Configuration file and CLI argument merging', () => {
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.includes('Config Test') || result.stdout.includes('json'),
-        'Should show config test results'
+        'Should show config test results',
       );
     });
 
@@ -99,7 +92,7 @@ reporters:
 output: ./yaml-results
 iterations: 10
 warmup: false
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -124,7 +117,7 @@ module.exports = {
   iterations: 10,
   warmup: 10
 };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -149,7 +142,7 @@ export default {
   iterations: 10,
   warmup: 15
 };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -170,10 +163,10 @@ export default {
       await writeFile(
         configFile,
         JSON.stringify({
-          reporters: ['human'],
           iterations: 10,
           output: './config-output',
-        })
+          reporters: ['human'],
+        }),
       );
 
       const benchFile = join(tempDir, 'precedence.bench.js');
@@ -184,7 +177,7 @@ export default {
           suites: {
             'Precedence Test': {
               benchmarks: {
-                'precedence task': { 
+                'precedence task': {
                   fn: () => {
                     let result = 0;
                     for (let i = 0; i < 500; i++) {
@@ -197,7 +190,7 @@ export default {
             }
           }
         };
-      `
+      `,
       );
 
       // CLI args should override config file
@@ -218,11 +211,11 @@ export default {
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.includes('Precedence Test'),
-        'Should show benchmark results'
+        'Should show benchmark results',
       );
     });
 
@@ -233,7 +226,7 @@ export default {
         JSON.stringify({
           reporters: ['json'],
           warmup: 8,
-        })
+        }),
       );
 
       const benchFile = join(tempDir, 'defaults.bench.js');
@@ -244,7 +237,7 @@ export default {
           suites: {
             'Defaults Test': {
               benchmarks: {
-                'default task': { 
+                'default task': {
                   fn: () => {
                     let total = 0;
                     for (let i = 0; i < 300; i++) {
@@ -257,7 +250,7 @@ export default {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -271,11 +264,11 @@ export default {
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.includes('Defaults Test'),
-        'Should show benchmark results'
+        'Should show benchmark results',
       );
     });
   });
@@ -287,11 +280,11 @@ export default {
       await writeFile(
         globalConfig,
         JSON.stringify({
-          reporters: ['human'],
           iterations: 10,
-          warmup: false,
           output: './global-output',
-        })
+          reporters: ['human'],
+          warmup: false,
+        }),
       );
 
       // Create project config
@@ -299,10 +292,10 @@ export default {
       await writeFile(
         projectConfig,
         JSON.stringify({
-          reporters: ['json'],
           iterations: 10,
+          reporters: ['json'],
           // warmup and output should inherit from global
-        })
+        }),
       );
 
       const benchFile = join(tempDir, 'merge.bench.js');
@@ -313,7 +306,7 @@ export default {
           suites: {
             'Merge Test': {
               benchmarks: {
-                'merge task': { 
+                'merge task': {
                   fn: () => {
                     let value = 0;
                     for (let i = 0; i < 400; i++) {
@@ -326,7 +319,7 @@ export default {
             }
           }
         };
-      `
+      `,
       );
 
       // CLI should override both
@@ -346,11 +339,11 @@ export default {
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.includes('Merge Test'),
-        'Should show benchmark results'
+        'Should show benchmark results',
       );
     });
   });
@@ -360,7 +353,10 @@ export default {
       const invalidConfig = join(tempDir, 'invalid.config.json');
       await writeFile(invalidConfig, '{ invalid json syntax');
 
-      const result = await runCommand(['run', '--config', invalidConfig]);
+      const result = await runCommand(
+        ['run', '--config', invalidConfig],
+        tempDir,
+      );
 
       // Should report configuration error
       assert.ok(result.exitCode === 2 || result.stderr.includes('not found'));
@@ -371,13 +367,16 @@ export default {
       await writeFile(
         invalidConfig,
         JSON.stringify({
-          reporters: 'not-an-array',
           iterations: -1,
           output: null,
-        })
+          reporters: 'not-an-array',
+        }),
       );
 
-      const result = await runCommand(['run', '--config', invalidConfig]);
+      const result = await runCommand(
+        ['run', '--config', invalidConfig],
+        tempDir,
+      );
 
       // Should report validation errors
       assert.ok(result.exitCode === 2 || result.stderr.includes('not found'));
@@ -413,7 +412,7 @@ module.exports = {
     verbose: false
   }
 };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -435,9 +434,9 @@ module.exports = {
       await writeFile(
         globalConfig,
         JSON.stringify({
-          reporters: ['human'],
           iterations: 10,
-        })
+          reporters: ['human'],
+        }),
       );
 
       const benchFile = join(tempDir, 'inline-config.bench.js');
@@ -452,7 +451,7 @@ module.exports = {
           suites: {
             'Inline Config Test': {
               benchmarks: {
-                'inline task': { 
+                'inline task': {
                   fn: () => {
                     let result = 0;
                     for (let i = 0; i < 250; i++) {
@@ -465,7 +464,7 @@ module.exports = {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -482,7 +481,7 @@ module.exports = {
         // This feature may not be implemented yet, expect reasonable error
         assert.ok(
           result.stderr.includes('not found') || result.exitCode !== 0,
-          'Should handle inline config gracefully'
+          'Should handle inline config gracefully',
         );
       }
     });
@@ -499,7 +498,7 @@ module.exports = {
                 iterations: 10
               },
               benchmarks: {
-                'fast task': { 
+                'fast task': {
                   fn: () => {
                     let sum = 0;
                     for (let i = 0; i < 200; i++) {
@@ -515,7 +514,7 @@ module.exports = {
                 iterations: 10
               },
               benchmarks: {
-                'slow task': { 
+                'slow task': {
                   fn: () => {
                     let product = 1;
                     for (let i = 1; i < 50; i++) {
@@ -528,22 +527,22 @@ module.exports = {
             }
           }
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['run', benchFile]);
+      const result = await runCommand(['run', benchFile], tempDir);
 
       if (result.exitCode === 0) {
         // Should use suite-specific configuration
         assert.ok(
           result.stdout.includes('Fast Suite') &&
-            result.stdout.includes('Slow Suite')
+            result.stdout.includes('Slow Suite'),
         );
       } else {
         // This feature may not be implemented yet, expect reasonable error
         assert.ok(
           result.stderr.includes('not found') || result.exitCode !== 0,
-          'Should handle suite-level config gracefully'
+          'Should handle suite-level config gracefully',
         );
       }
     });
@@ -556,9 +555,9 @@ module.exports = {
       await writeFile(
         autoConfig,
         JSON.stringify({
-          reporters: ['human'],
           iterations: 10,
-        })
+          reporters: ['human'],
+        }),
       );
 
       const benchFile = join(tempDir, 'auto-discover.bench.js');
@@ -569,7 +568,7 @@ module.exports = {
           suites: {
             'Auto Discover Test': {
               benchmarks: {
-                'auto task': { 
+                'auto task': {
                   fn: () => {
                     let fibonacci = [0, 1];
                     for (let i = 2; i < 30; i++) {
@@ -582,21 +581,21 @@ module.exports = {
             }
           }
         };
-      `
+      `,
       );
 
       // Should automatically find and use config file
-      const result = await runCommand(['run', benchFile]);
+      const result = await runCommand(['run', benchFile], tempDir);
 
       // Should auto-discover config file and succeed
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.includes('Auto Discover Test'),
-        'Should show benchmark results'
+        'Should show benchmark results',
       );
     });
 
@@ -610,9 +609,9 @@ module.exports = {
       await writeFile(
         rootConfig,
         JSON.stringify({
-          reporters: ['json'],
           iterations: 10,
-        })
+          reporters: ['json'],
+        }),
       );
 
       // Create benchmark in subdirectory
@@ -624,7 +623,7 @@ module.exports = {
           suites: {
             'Nested Test': {
               benchmarks: {
-                'nested task': { 
+                'nested task': {
                   fn: () => {
                     let matrix = [[1, 2], [3, 4]];
                     let sum = 0;
@@ -638,7 +637,7 @@ module.exports = {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand(['run', benchFile], subDir);
@@ -647,66 +646,12 @@ module.exports = {
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.includes('Nested Test'),
-        'Should show benchmark results'
+        'Should show benchmark results',
       );
     });
   });
-
-  /**
-   * Helper function to run CLI commands and capture output
-   */
-  async function runCommand(
-    args: string[],
-    cwd?: string
-  ): Promise<{
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-  }> {
-    return new Promise(resolve => {
-      const child: ChildProcess = spawn('node', [cliPath, ...args], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: cwd || tempDir,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout?.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code: number | null) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code ?? -1,
-        });
-      });
-
-      child.on('error', (error: Error) => {
-        resolve({
-          stdout,
-          stderr: stderr + error.message,
-          exitCode: -1,
-        });
-      });
-    });
-  }
-
-  async function mkdir(
-    path: string,
-    options?: { recursive?: boolean }
-  ): Promise<void> {
-    const { mkdir: fsMkdir } = await import('node:fs/promises');
-    await fsMkdir(path, options);
-  }
 });

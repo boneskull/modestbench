@@ -1,33 +1,26 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { spawn, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
-import { mkdtemp, writeFile, rm, mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { runCommand } from '../util.js';
 
 /**
- * Integration tests for historical results viewing and trends
- * Reference: quickstart.md history commands and data persistence
+ * Integration tests for historical results viewing and trends Reference:
+ * quickstart.md history commands and data persistence
  */
 
 describe('Historical results viewing and trends', () => {
   let tempDir: string;
-  let cliPath: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(
-      process.cwd(),
-      'dist',
-      'tests',
-      'fixtures',
-      'cli-wrapper.js'
-    );
     await mkdir(join(tempDir, '.modestbench'), { recursive: true });
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { force: true, recursive: true });
   });
 
   describe('history list command', () => {
@@ -46,19 +39,19 @@ describe('Historical results viewing and trends', () => {
             }
           }
         };
-      `
+      `,
       );
 
       // Run benchmark to create history
-      await runCommand(['run', benchFile]);
+      await runCommand(['run', benchFile], tempDir);
 
       // Then list history
-      const result = await runCommand(['history', 'list']);
+      const result = await runCommand(['history', 'list'], tempDir);
 
       if (result.exitCode === 0) {
         // Should show list of runs
         assert.ok(
-          result.stdout.includes('run') || result.stdout.includes('Test Suite')
+          result.stdout.includes('run') || result.stdout.includes('Test Suite'),
         );
       } else {
         // Implementation doesn't exist yet
@@ -91,7 +84,10 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should support limiting results', async () => {
-      const result = await runCommand(['history', 'list', '--limit', '5']);
+      const result = await runCommand(
+        ['history', 'list', '--limit', '5'],
+        tempDir,
+      );
 
       // Should limit number of results
       assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
@@ -127,10 +123,10 @@ describe('Historical results viewing and trends', () => {
             }
           }
         };
-      `
+      `,
       );
 
-      await runCommand(['run', benchFile]);
+      await runCommand(['run', benchFile], tempDir);
 
       // Get run ID and show details
       const listResult = await runCommand([
@@ -146,10 +142,13 @@ describe('Historical results viewing and trends', () => {
           const runId = data.runs?.[0]?.id;
 
           if (runId) {
-            const showResult = await runCommand(['history', 'show', runId]);
+            const showResult = await runCommand(
+              ['history', 'show', runId],
+              tempDir,
+            );
             assert.ok(
               showResult.stdout.includes('Detailed Suite') ||
-                showResult.stderr.includes('not found')
+                showResult.stderr.includes('not found'),
             );
           }
         } catch {
@@ -163,7 +162,10 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should handle invalid run IDs gracefully', async () => {
-      const result = await runCommand(['history', 'show', 'invalid-run-id']);
+      const result = await runCommand(
+        ['history', 'show', 'invalid-run-id'],
+        tempDir,
+      );
 
       // Should return appropriate error code
       assert.ok(result.exitCode === 1 || result.stderr.includes('not found'));
@@ -186,12 +188,12 @@ describe('Historical results viewing and trends', () => {
             }
           }
         };
-      `
+      `,
       );
 
       // Run twice to get two runs
-      await runCommand(['run', benchFile]);
-      await runCommand(['run', benchFile]);
+      await runCommand(['run', benchFile], tempDir);
+      await runCommand(['run', benchFile], tempDir);
 
       // Get run IDs
       const listResult = await runCommand([
@@ -217,7 +219,7 @@ describe('Historical results viewing and trends', () => {
             ]);
             assert.ok(
               compareResult.stdout.includes('comparison') ||
-                compareResult.stderr.includes('not found')
+                compareResult.stderr.includes('not found'),
             );
           }
         } catch {
@@ -231,7 +233,10 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should show performance differences', async () => {
-      const result = await runCommand(['history', 'compare', 'run-1', 'run-2']);
+      const result = await runCommand(
+        ['history', 'compare', 'run-1', 'run-2'],
+        tempDir,
+      );
 
       // Should show differences between runs
       assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
@@ -240,20 +245,20 @@ describe('Historical results viewing and trends', () => {
 
   describe('history trends command', () => {
     it('should show performance trends over time', async () => {
-      const result = await runCommand(['history', 'trends']);
+      const result = await runCommand(['history', 'trends'], tempDir);
 
       // CLI should work and show trend analysis
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.toLowerCase().includes('trend') ||
           result.stdout.toLowerCase().includes('performance') ||
           result.stdout.includes('No historical data') ||
           result.stdout.includes('not yet implemented'),
-        'Should show trend analysis, no data message, or not implemented message'
+        'Should show trend analysis, no data message, or not implemented message',
       );
     });
 
@@ -295,7 +300,7 @@ describe('Historical results viewing and trends', () => {
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.toLowerCase().includes('cleaned') ||
@@ -303,7 +308,7 @@ describe('Historical results viewing and trends', () => {
           result.stdout.includes('No historical data') ||
           result.stdout.includes('0 entries') ||
           result.stdout.includes('0 runs'),
-        'Should show clean operation result'
+        'Should show clean operation result',
       );
     });
 
@@ -320,7 +325,10 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should clean by count limit', async () => {
-      const result = await runCommand(['history', 'clean', '--max-runs', '50']);
+      const result = await runCommand(
+        ['history', 'clean', '--max-runs', '50'],
+        tempDir,
+      );
 
       // Should clean based on run count
       assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
@@ -329,13 +337,16 @@ describe('Historical results viewing and trends', () => {
 
   describe('output formats for history', () => {
     it('should support table format', async () => {
-      const result = await runCommand(['history', 'list', '--format', 'human']);
+      const result = await runCommand(
+        ['history', 'list', '--format', 'human'],
+        tempDir,
+      );
 
       // CLI should work and output human format (table) or no data message
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       assert.ok(
         result.stdout.includes('│') ||
@@ -343,18 +354,21 @@ describe('Historical results viewing and trends', () => {
           result.stdout.includes('No historical data') ||
           result.stdout.includes('No matching') ||
           result.stdout.length === 0, // Empty output acceptable
-        'Should show human format or no data message'
+        'Should show human format or no data message',
       );
     });
 
     it('should support JSON format', async () => {
-      const result = await runCommand(['history', 'list', '--format', 'json']);
+      const result = await runCommand(
+        ['history', 'list', '--format', 'json'],
+        tempDir,
+      );
 
       // CLI should work and output JSON format or empty result
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       if (result.stdout.trim()) {
         try {
@@ -371,20 +385,23 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should support CSV format', async () => {
-      const result = await runCommand(['history', 'list', '--format', 'csv']);
+      const result = await runCommand(
+        ['history', 'list', '--format', 'csv'],
+        tempDir,
+      );
 
       // CLI should work and output CSV format or empty result
       assert.strictEqual(
         result.exitCode,
         0,
-        `Command failed: ${result.stderr}`
+        `Command failed: ${result.stderr}`,
       );
       // Should output CSV format (with commas) or be empty if no data
       assert.ok(
         result.stdout.includes(',') ||
           result.stdout.length === 0 ||
           result.stdout.includes('No historical'),
-        'Should show CSV format or no data message'
+        'Should show CSV format or no data message',
       );
     });
   });
@@ -404,27 +421,27 @@ describe('Historical results viewing and trends', () => {
             }
           }
         };
-      `
+      `,
       );
 
       // Run benchmark
-      await runCommand(['run', benchFile]);
+      await runCommand(['run', benchFile], tempDir);
 
       // Check that history exists
-      const historyResult = await runCommand(['history', 'list']);
+      const historyResult = await runCommand(['history', 'list'], tempDir);
 
       // CLI should work even if no historical data exists
       assert.strictEqual(
         historyResult.exitCode,
         0,
-        `Command failed: ${historyResult.stderr}`
+        `Command failed: ${historyResult.stderr}`,
       );
       assert.ok(
         historyResult.stdout.includes('Persistent Suite') ||
           historyResult.stdout.includes('run') ||
           historyResult.stdout.includes('No historical data') ||
           historyResult.stdout.includes('No matching'),
-        'Should show history data or no data message'
+        'Should show history data or no data message',
       );
     });
 
@@ -435,14 +452,14 @@ describe('Historical results viewing and trends', () => {
       const historyFile = join(historyDir, 'runs.json');
       await writeFile(historyFile, '{ invalid json');
 
-      const result = await runCommand(['history', 'list']);
+      const result = await runCommand(['history', 'list'], tempDir);
 
       // Should handle corruption gracefully with error exit code or clean recovery
       assert.ok(
         result.exitCode === 3 ||
           result.stderr.includes('corruption') ||
           result.exitCode === 0, // Might gracefully handle and reset corrupted data
-        'Should handle corrupted data gracefully'
+        'Should handle corrupted data gracefully',
       );
     });
   });
@@ -482,47 +499,4 @@ describe('Historical results viewing and trends', () => {
       assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
     });
   });
-
-  /**
-   * Helper function to run CLI commands and capture output
-   */
-  async function runCommand(args: string[]): Promise<{
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-  }> {
-    return new Promise(resolve => {
-      const child: ChildProcess = spawn('node', [cliPath, ...args], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: tempDir,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout?.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code: number | null) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code ?? -1,
-        });
-      });
-
-      child.on('error', (error: Error) => {
-        resolve({
-          stdout,
-          stderr: stderr + error.message,
-          exitCode: -1,
-        });
-      });
-    });
-  }
 });

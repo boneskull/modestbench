@@ -1,27 +1,50 @@
 /**
  * ModestBench File Loader
  *
- * Handles discovery, loading, and validation of benchmark files.
- * Supports glob pattern matching and file structure validation.
+ * Handles discovery, loading, and validation of benchmark files. Supports glob
+ * pattern matching and file structure validation.
  */
 
 import { glob } from 'glob';
-import { readFile, access, stat } from 'node:fs/promises';
-import { resolve, extname } from 'node:path';
+import { access, readFile, stat } from 'node:fs/promises';
+import { extname } from 'node:path';
+
 import type {
-  ValidationResult,
   ValidationError,
+  ValidationResult,
   ValidationWarning,
 } from '../types/index.js';
 import type { FileLoader } from './engine.js';
 
 /**
+ * Benchmark file structure after parsing
+ */
+export interface BenchmarkFile {
+  readonly content: string;
+  readonly exports: unknown;
+  readonly filePath: string;
+  readonly metadata: FileMetadata;
+}
+
+/**
  * File change notification for watch functionality
  */
 export interface FileChange {
-  readonly type: 'added' | 'modified' | 'deleted';
   readonly filePath: string;
   readonly timestamp: Date;
+  readonly type: 'added' | 'deleted' | 'modified';
+}
+
+/**
+ * File metadata for change detection and validation
+ */
+export interface FileMetadata {
+  readonly exportNames: string[];
+  readonly hasBenchmarks: boolean;
+  readonly hasDefaultExport: boolean;
+  readonly isValid: boolean;
+  readonly mtime: Date;
+  readonly size: number;
 }
 
 /**
@@ -32,36 +55,14 @@ export interface FileWatcher {
 }
 
 /**
- * Benchmark file structure after parsing
- */
-export interface BenchmarkFile {
-  readonly filePath: string;
-  readonly content: string;
-  readonly exports: unknown;
-  readonly metadata: FileMetadata;
-}
-
-/**
- * File metadata for change detection and validation
- */
-export interface FileMetadata {
-  readonly size: number;
-  readonly mtime: Date;
-  readonly isValid: boolean;
-  readonly hasDefaultExport: boolean;
-  readonly hasBenchmarks: boolean;
-  readonly exportNames: string[];
-}
-
-/**
  * Implementation of FileLoader for benchmark files
  */
 export class BenchmarkFileLoader implements FileLoader {
   private readonly supportedExtensions = new Set([
-    '.js',
-    '.ts',
-    '.mjs',
     '.cjs',
+    '.js',
+    '.mjs',
+    '.ts',
   ]);
 
   /**
@@ -70,8 +71,8 @@ export class BenchmarkFileLoader implements FileLoader {
   async discover(pattern: string, exclude: string[] = []): Promise<string[]> {
     try {
       const files = await glob(pattern, {
-        ignore: exclude,
         absolute: true,
+        ignore: exclude,
         nodir: true,
       });
 
@@ -84,7 +85,7 @@ export class BenchmarkFileLoader implements FileLoader {
       return supportedFiles.sort();
     } catch (error) {
       throw new Error(
-        `File discovery failed: ${error instanceof Error ? error.message : String(error)}`
+        `File discovery failed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -98,7 +99,7 @@ export class BenchmarkFileLoader implements FileLoader {
       const validation = await this.validate(filePath);
       if (!validation.valid) {
         throw new Error(
-          `Invalid benchmark file: ${validation.errors.map(e => e.message).join(', ')}`
+          `Invalid benchmark file: ${validation.errors.map((e) => e.message).join(', ')}`,
         );
       }
 
@@ -123,21 +124,21 @@ export class BenchmarkFileLoader implements FileLoader {
         Object.keys(exports.suites).length > 0;
 
       return {
-        filePath,
         content,
         exports,
+        filePath,
         metadata: {
-          size: stats.size,
-          mtime: stats.mtime,
-          isValid: validation.valid,
-          hasDefaultExport,
-          hasBenchmarks,
           exportNames,
+          hasBenchmarks,
+          hasDefaultExport,
+          isValid: validation.valid,
+          mtime: stats.mtime,
+          size: stats.size,
         },
       };
     } catch (error) {
       throw new Error(
-        `Failed to load file ${filePath}: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to load file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -147,11 +148,11 @@ export class BenchmarkFileLoader implements FileLoader {
    */
   async loadAll(filePaths: string[]): Promise<BenchmarkFile[]> {
     try {
-      const loadPromises = filePaths.map(filePath => this.load(filePath));
+      const loadPromises = filePaths.map((filePath) => this.load(filePath));
       return await Promise.all(loadPromises);
     } catch (error) {
       throw new Error(
-        `Failed to load files: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to load files: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -169,21 +170,21 @@ export class BenchmarkFileLoader implements FileLoader {
         await access(filePath);
       } catch {
         errors.push({
+          code: 'FILE_NOT_FOUND',
           file: filePath,
           message: 'File does not exist',
-          code: 'FILE_NOT_FOUND',
           severity: 'error',
         });
-        return { valid: false, errors, warnings, files: [] };
+        return { errors, files: [], valid: false, warnings };
       }
 
       // Check file extension
       const ext = extname(filePath);
       if (!this.supportedExtensions.has(ext)) {
         errors.push({
+          code: 'UNSUPPORTED_EXTENSION',
           file: filePath,
           message: `Unsupported file extension: ${ext}. Supported extensions: ${Array.from(this.supportedExtensions).join(', ')}`,
-          code: 'UNSUPPORTED_EXTENSION',
           severity: 'error',
         });
       }
@@ -194,12 +195,12 @@ export class BenchmarkFileLoader implements FileLoader {
         content = await readFile(filePath, 'utf-8');
       } catch (error) {
         errors.push({
+          code: 'FILE_READ_ERROR',
           file: filePath,
           message: `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
-          code: 'FILE_READ_ERROR',
           severity: 'error',
         });
-        return { valid: false, errors, warnings, files: [filePath] };
+        return { errors, files: [filePath], valid: false, warnings };
       }
 
       // Basic syntax validation
@@ -209,24 +210,24 @@ export class BenchmarkFileLoader implements FileLoader {
       await this.validateStructure(filePath, content, errors, warnings);
 
       return {
-        valid: errors.length === 0,
         errors,
-        warnings,
         files: [filePath],
+        valid: errors.length === 0,
+        warnings,
       };
     } catch (error) {
       errors.push({
+        code: 'VALIDATION_ERROR',
         file: filePath,
         message: `Validation failed: ${error instanceof Error ? error.message : String(error)}`,
-        code: 'VALIDATION_ERROR',
         severity: 'error',
       });
 
       return {
-        valid: false,
         errors,
-        warnings,
         files: [filePath],
+        valid: false,
+        warnings,
       };
     }
   }
@@ -236,7 +237,7 @@ export class BenchmarkFileLoader implements FileLoader {
    */
   watch(
     pattern: string,
-    callback: (changes: FileChange[]) => void
+    callback: (changes: FileChange[]) => void,
   ): FileWatcher {
     // TODO: Implement file watching with chokidar or similar
     // For now, return a no-op watcher
@@ -252,7 +253,7 @@ export class BenchmarkFileLoader implements FileLoader {
    */
   private async getFileMetadata(
     filePath: string,
-    content: string
+    content: string,
   ): Promise<FileMetadata> {
     const { stat } = await import('node:fs/promises');
     const stats = await stat(filePath);
@@ -262,9 +263,9 @@ export class BenchmarkFileLoader implements FileLoader {
     const exportMatches =
       content.match(/export\s+(?:const|let|var|function|class)\s+(\w+)/g) || [];
     const exportNames = exportMatches
-      .map(match => {
+      .map((match) => {
         const nameMatch = match.match(
-          /export\s+(?:const|let|var|function|class)\s+(\w+)/
+          /export\s+(?:const|let|var|function|class)\s+(\w+)/,
         );
         return nameMatch?.[1];
       })
@@ -277,69 +278,13 @@ export class BenchmarkFileLoader implements FileLoader {
       /benchmark\s*\(/.test(content);
 
     return {
-      size: stats.size,
-      mtime: stats.mtime,
-      isValid: true, // Will be set based on validation
-      hasDefaultExport,
-      hasBenchmarks,
       exportNames,
+      hasBenchmarks,
+      hasDefaultExport,
+      isValid: true, // Will be set based on validation
+      mtime: stats.mtime,
+      size: stats.size,
     };
-  }
-
-  /**
-   * Validate JavaScript/TypeScript syntax
-   */
-  private async validateSyntax(
-    filePath: string,
-    content: string,
-    errors: ValidationError[],
-    warnings: ValidationWarning[]
-  ): Promise<void> {
-    // Basic syntax checks
-    if (content.trim().length === 0) {
-      warnings.push({
-        file: filePath,
-        message: 'File is empty',
-        code: 'EMPTY_FILE',
-        severity: 'warning',
-      });
-      return;
-    }
-
-    // Check for basic JavaScript/TypeScript syntax errors
-    try {
-      // Simple checks for common syntax issues
-      const openBraces = (content.match(/\{/g) || []).length;
-      const closeBraces = (content.match(/\}/g) || []).length;
-
-      if (openBraces !== closeBraces) {
-        errors.push({
-          file: filePath,
-          message: `Mismatched braces: ${openBraces} open, ${closeBraces} close`,
-          code: 'SYNTAX_ERROR',
-          severity: 'error',
-        });
-      }
-
-      const openParens = (content.match(/\(/g) || []).length;
-      const closeParens = (content.match(/\)/g) || []).length;
-
-      if (openParens !== closeParens) {
-        errors.push({
-          file: filePath,
-          message: `Mismatched parentheses: ${openParens} open, ${closeParens} close`,
-          code: 'SYNTAX_ERROR',
-          severity: 'error',
-        });
-      }
-    } catch (error) {
-      errors.push({
-        file: filePath,
-        message: `Syntax validation failed: ${error instanceof Error ? error.message : String(error)}`,
-        code: 'SYNTAX_VALIDATION_ERROR',
-        severity: 'error',
-      });
-    }
   }
 
   /**
@@ -349,7 +294,7 @@ export class BenchmarkFileLoader implements FileLoader {
     filePath: string,
     content: string,
     errors: ValidationError[],
-    warnings: ValidationWarning[]
+    warnings: ValidationWarning[],
   ): Promise<void> {
     // Check for benchmark patterns
     const hasBenchmarkPatterns =
@@ -363,10 +308,10 @@ export class BenchmarkFileLoader implements FileLoader {
 
     if (!hasBenchmarkPatterns) {
       warnings.push({
+        code: 'NO_BENCHMARKS',
         file: filePath,
         message:
           'No benchmark patterns found. Expected suite(), bench(), test(), it(), .add(), benchmark() calls, or declarative structure with suites/benchmarks',
-        code: 'NO_BENCHMARKS',
         severity: 'warning',
       });
     }
@@ -374,10 +319,10 @@ export class BenchmarkFileLoader implements FileLoader {
     // Check for anti-patterns
     if (/console\.time\(/.test(content)) {
       warnings.push({
+        code: 'CONSOLE_TIMING',
         file: filePath,
         message:
           'Found console.time() usage. Consider using proper benchmark framework instead',
-        code: 'CONSOLE_TIMING',
         severity: 'warning',
       });
     }
@@ -387,10 +332,10 @@ export class BenchmarkFileLoader implements FileLoader {
       /Date\.now\(\).*-.*Date\.now\(\)/.test(content)
     ) {
       warnings.push({
+        code: 'MANUAL_TIMING',
         file: filePath,
         message:
           'Found manual timing with Date.now(). Consider using proper benchmark framework instead',
-        code: 'MANUAL_TIMING',
         severity: 'warning',
       });
     }
@@ -398,11 +343,67 @@ export class BenchmarkFileLoader implements FileLoader {
     // Check for async patterns without proper handling
     if (/async\s+function/.test(content) && !/await/.test(content)) {
       warnings.push({
+        code: 'ASYNC_WITHOUT_AWAIT',
         file: filePath,
         message:
           'Found async function without await. Make sure async benchmarks are properly handled',
-        code: 'ASYNC_WITHOUT_AWAIT',
         severity: 'warning',
+      });
+    }
+  }
+
+  /**
+   * Validate JavaScript/TypeScript syntax
+   */
+  private async validateSyntax(
+    filePath: string,
+    content: string,
+    errors: ValidationError[],
+    warnings: ValidationWarning[],
+  ): Promise<void> {
+    // Basic syntax checks
+    if (content.trim().length === 0) {
+      warnings.push({
+        code: 'EMPTY_FILE',
+        file: filePath,
+        message: 'File is empty',
+        severity: 'warning',
+      });
+      return;
+    }
+
+    // Check for basic JavaScript/TypeScript syntax errors
+    try {
+      // Simple checks for common syntax issues
+      const openBraces = (content.match(/\{/g) || []).length;
+      const closeBraces = (content.match(/\}/g) || []).length;
+
+      if (openBraces !== closeBraces) {
+        errors.push({
+          code: 'SYNTAX_ERROR',
+          file: filePath,
+          message: `Mismatched braces: ${openBraces} open, ${closeBraces} close`,
+          severity: 'error',
+        });
+      }
+
+      const openParens = (content.match(/\(/g) || []).length;
+      const closeParens = (content.match(/\)/g) || []).length;
+
+      if (openParens !== closeParens) {
+        errors.push({
+          code: 'SYNTAX_ERROR',
+          file: filePath,
+          message: `Mismatched parentheses: ${openParens} open, ${closeParens} close`,
+          severity: 'error',
+        });
+      }
+    } catch (error) {
+      errors.push({
+        code: 'SYNTAX_VALIDATION_ERROR',
+        file: filePath,
+        message: `Syntax validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        severity: 'error',
       });
     }
   }

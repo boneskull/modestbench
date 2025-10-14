@@ -1,26 +1,40 @@
 {
   "name": "modestbench",
   "version": "0.1.0",
+  "type": "module",
   "description": "A framework which wraps around tinybench to provide structure, consistency and convenience to developers creating and maintaining benchmarks",
-  "main": "dist/src/cli/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boneskull/modestbench.git"
+  },
+  "homepage": "https://github.com/boneskull/modestbench#readme",
+  "bugs": {
+    "url": "https://github.com/boneskull/modestbench/issues"
+  },
+  "author": "Christopher Hiller <boneskull@boneskull.com>",
+  "license": "BlueOak-1.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "bin": {
     "modestbench": "dist/src/cli/index.js"
   },
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "test": "npm run test:base -- \"tests/**/*.test.ts\"",
-    "test:base": "node --import tsx --test",
-    "test:watch": "node --test --watch",
-    "lint": "eslint src tests --ext .ts",
-    "lint:fix": "eslint src tests --ext .ts --fix",
-    "format": "prettier --write src tests",
-    "format:check": "prettier --check src tests",
-    "clean": "rm -rf dist",
-    "prepare": "npm run build",
-    "prepack": "npm run clean && npm run build"
+  "main": "./dist/src/cli/index.cjs",
+  "types": "./dist/src/cli/index.d.cts",
+  "module": "./dist/src/cli/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/src/cli/index.d.cts",
+      "import": "./dist/src/cli/index.js",
+      "require": "./dist/src/cli/index.cjs"
+    }
   },
+  "files": [
+    "CHANGELOG.md",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "keywords": [
     "benchmark",
     "tinybench",
@@ -28,16 +42,22 @@
     "cli",
     "testing"
   ],
-  "author": "Christopher Hiller <boneskull@boneskull.com>",
-  "license": "BlueOak-1.0.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/boneskull/modestbench.git"
+  "scripts": {
+    "build": "zshy",
+    "clean": "rm -rf dist",
+    "commitlint": "commitlint",
+    "dev": "zshy --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:staged": "lint-staged",
+    "prepack": "npm run clean && npm run build",
+    "prepare": "husky; npm run build",
+    "test": "npm run test:base -- \"test/**/*.test.ts\"",
+    "test:base": "node --import tsx --test",
+    "test:watch": "node --test --watch"
   },
-  "bugs": {
-    "url": "https://github.com/boneskull/modestbench/issues"
-  },
-  "homepage": "https://github.com/boneskull/modestbench#readme",
   "dependencies": {
     "cli-progress": "^3.12.0",
     "consola": "^3.2.3",
@@ -46,21 +66,102 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@commitlint/cli": "20.1.0",
+    "@commitlint/config-conventional": "20.0.0",
+    "@eslint/js": "9.37.0",
+    "@stylistic/eslint-plugin": "5.4.0",
+    "@types/node": "24.7.0",
+    "@types/slug": "5.0.9",
+    "@types/wallabyjs": "0.0.15",
     "@types/yargs": "^17.0.33",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "bupkis": "^0.3.0",
-    "eslint": "^8.0.0",
-    "prettier": "^3.0.0",
-    "typescript": "^5.0.0"
+    "@typescript-eslint/typescript-estree": "8.46.0",
+    "@typescript-eslint/utils": "8.46.0",
+    "c8": "10.1.3",
+    "cspell": "9.2.1",
+    "escape-string-regexp": "5.0.0",
+    "eslint": "9.37.0",
+    "eslint-plugin-jsonc": "2.21.0",
+    "eslint-plugin-perfectionist": "4.15.1",
+    "expect-type": "1.2.2",
+    "fast-check": "4.3.0",
+    "globals": "16.4.0",
+    "husky": "9.1.7",
+    "knip": "5.64.2",
+    "lint-staged": "16.2.3",
+    "markdownlint-cli2": "0.18.1",
+    "markdownlint-cli2-formatter-pretty": "0.0.8",
+    "npm-run-all2": "8.0.4",
+    "prettier": "3.6.2",
+    "prettier-plugin-jsdoc": "1.3.3",
+    "prettier-plugin-pkg": "0.21.2",
+    "prettier-plugin-sort-json": "4.1.1",
+    "tinybench": "5.0.1",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.0",
+    "zshy": "^0.4.3"
   },
-  "engines": {
-    "node": ">=18.0.0"
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ]
+  "knip": {
+    "ignoreDependencies": [
+      "@types/wallabyjs",
+      "markdownlint-cli2-formatter-pretty"
+    ],
+    "ignore": [
+      ".wallaby.js",
+      "**/*.cts",
+      "**/*.d.ts",
+      "site/media/**/*"
+    ],
+    "tags": [
+      "-knipignore"
+    ],
+    "node": {
+      "entry": [
+        "test/**/*.test.ts",
+        "src/assertion/index.ts",
+        "src/index.ts",
+        "src/types.ts",
+        "src/util.ts",
+        "src/schema.ts",
+        "src/guards.ts",
+        "src/diff.ts"
+      ]
+    }
+  },
+  "lint-staged": {
+    "*.{ts,cts,js,cjs,yml,json5}": [
+      "eslint --fix",
+      "prettier --write",
+      "cspell"
+    ],
+    "**/!(package-lock).json": [
+      "eslint --fix",
+      "prettier --write",
+      "cspell"
+    ],
+    "**/!(.github/prompts)/*.md": [
+      "prettier --write",
+      "cspell"
+    ]
+  },
+  "prettier": {
+    "jsdocCommentLineStrategy": "keep",
+    "jsdocPreferCodeFences": true,
+    "plugins": [
+      "prettier-plugin-jsdoc",
+      "prettier-plugin-pkg",
+      "prettier-plugin-sort-json"
+    ],
+    "singleQuote": true,
+    "tsdoc": true
+  },
+  "zshy": {
+    "exports": {
+      ".": "./src/cli/index.ts"
+    }
+  }
 }

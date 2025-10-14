@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { describe, it } from 'node:test';
 
 /**
  * Contract tests for ConfigurationManager interface
@@ -80,8 +80,8 @@ describe('ConfigurationManager interface contract', () => {
     it('should load configuration with CLI args', async () => {
       if (configManager) {
         const cliArgs = {
-          reporters: ['json'],
           output: 'results/',
+          reporters: ['json'],
         };
 
         try {
@@ -119,8 +119,8 @@ describe('ConfigurationManager interface contract', () => {
     it('should validate partial configuration', () => {
       if (configManager) {
         const partialConfig = {
-          reporters: ['human', 'json'],
           output: './results',
+          reporters: ['human', 'json'],
         };
 
         try {
@@ -319,9 +319,9 @@ describe('ConfigurationManager interface contract', () => {
     it('should handle invalid configuration data', () => {
       if (configManager) {
         const invalidConfig = {
-          reporters: 'not-an-array',
-          output: 123,
           invalid: true,
+          output: 123,
+          reporters: 'not-an-array',
         };
 
         try {

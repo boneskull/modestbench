@@ -21,6 +21,7 @@ ignores:
   - 'docs/**/*.md'
   - '.specify/templates/**/*.md'
   - 'specs/**/*.md'
+  - '.claude-skills/**/*.md'
 outputFormatters:
   - - 'markdownlint-cli2-formatter-pretty'
     - appendLink: true

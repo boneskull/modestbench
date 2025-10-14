@@ -7,28 +7,29 @@
 
 import type {
   BenchmarkRun,
-  TaskResult,
-  SuiteResult,
   FileResult,
   ProgressState,
+  SuiteResult,
+  TaskResult,
 } from '../types/index.js';
+
 import { BaseReporter } from './registry.js';
 
 /**
  * ANSI color codes for terminal output
  */
 const colors = {
-  reset: '\x1b[0m',
-  bold: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
   blue: '\x1b[34m',
-  magenta: '\x1b[35m',
+  bold: '\x1b[1m',
   cyan: '\x1b[36m',
-  white: '\x1b[37m',
+  dim: '\x1b[2m',
   gray: '\x1b[90m',
+  green: '\x1b[32m',
+  magenta: '\x1b[35m',
+  red: '\x1b[31m',
+  reset: '\x1b[0m',
+  white: '\x1b[37m',
+  yellow: '\x1b[33m',
 } as const;
 
 /**
@@ -40,13 +41,19 @@ const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '
  * Human-readable console reporter with colorized output
  */
 export class HumanReporter extends BaseReporter {
-  private readonly useColor: boolean;
-  private readonly showProgress: boolean;
-  private readonly verbose: boolean;
-  private spinnerIndex = 0;
-  private progressTimer?: NodeJS.Timeout | null | undefined;
   private lastProgressLine = '';
+
+  private progressTimer?: NodeJS.Timeout | null | undefined;
+
+  private readonly showProgress: boolean;
+
+  private spinnerIndex = 0;
+
   private startTime = 0;
+
+  private readonly useColor: boolean;
+
+  private readonly verbose: boolean;
 
   constructor(
     options: {
@@ -66,143 +73,6 @@ export class HumanReporter extends BaseReporter {
 
     this.showProgress = options.progress ?? true;
     this.verbose = options.verbose ?? false;
-  }
-
-  onStart(run: BenchmarkRun): void {
-    this.startTime = Date.now();
-    this.clearLine();
-
-    console.log(this.colorize('bold', '🚀 ModestBench'));
-    console.log();
-
-    if (run.environment) {
-      console.log(this.colorize('dim', 'Environment:'));
-      console.log(
-        `  Node.js: ${this.colorize('cyan', run.environment.nodeVersion)}`
-      );
-      console.log(
-        `  Platform: ${this.colorize('cyan', `${run.environment.platform} ${run.environment.arch}`)}`
-      );
-      console.log(
-        `  CPU: ${this.colorize('cyan', run.environment.cpu.model)} (${run.environment.cpu.cores} cores)`
-      );
-      console.log(
-        `  Memory: ${this.colorize('cyan', this.formatBytes(run.environment.memory.total))}`
-      );
-      console.log();
-    }
-
-    if (run.git) {
-      console.log(`  Git: ${this.colorize('cyan', run.git.commit)}`);
-    }
-
-    if (run.ci) {
-      console.log(`  CI: ${this.colorize('cyan', run.ci.provider)}`);
-    }
-
-    if (this.verbose && run.files.length > 0) {
-      console.log(this.colorize('dim', 'Files to benchmark:'));
-      for (const file of run.files) {
-        console.log(`  ${this.colorize('gray', file.filePath)}`);
-      }
-      console.log();
-    }
-
-    console.log(
-      this.colorize('dim', `Found ${run.summary.totalFiles} benchmark file(s)`)
-    );
-    console.log();
-  }
-
-  onFileStart(file: string): void {
-    this.clearProgress();
-    console.log(this.colorize('bold', `📁 ${file}`));
-  }
-
-  onSuiteStart(suite: string): void {
-    this.clearLine();
-    console.log();
-    console.log(
-      `  ${this.colorize('blue', '▶')} ${this.colorize('bold', suite)}`
-    );
-  }
-
-  onTaskStart(task: string): void {
-    if (this.showProgress) {
-      this.startProgress(`Running ${task}...`);
-    } else if (this.verbose) {
-      console.log(`    ${this.colorize('gray', '●')} ${task}`);
-    }
-  }
-
-  onTaskResult(result: TaskResult): void {
-    this.clearProgress();
-
-    const status = result.error
-      ? this.colorize('red', '✗')
-      : this.colorize('green', '✓');
-
-    if (result.error) {
-      console.log(
-        `    ${status} ${result.name} ${this.colorize('red', 'FAILED')}`
-      );
-      if (this.verbose) {
-        console.log(`      ${this.colorize('red', result.error.message)}`);
-      }
-    } else {
-      const duration = this.formatDuration(result.mean * 1000000000); // Convert seconds to nanoseconds
-      const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
-      const rme = this.formatPercentage(result.marginOfError * 100); // Convert decimal to percentage
-
-      console.log(`    ${status} ${result.name}`);
-      console.log(
-        `      ${this.colorize('cyan', duration)} ${this.colorize('dim', '±')}${this.colorize('yellow', rme)} ${this.colorize('gray', '(')}${this.colorize('green', opsPerSec)}${this.colorize('gray', ')')}`
-      );
-
-      if (this.verbose && result.iterations > 0) {
-        console.log(
-          `      ${this.colorize('dim', `${result.iterations} iterations`)}`
-        );
-      }
-    }
-  }
-
-  onSuiteEnd(result: SuiteResult): void {
-    const passed = result.tasks.filter(t => !t.error).length;
-    const failed = result.tasks.filter(t => t.error).length;
-
-    if (failed > 0) {
-      console.log(
-        `  ${this.colorize('red', `✗ ${failed} failed`)}, ${this.colorize('green', `${passed} passed`)}`
-      );
-    } else {
-      console.log(`  ${this.colorize('green', `✓ ${passed} passed`)}`);
-    }
-    console.log();
-  }
-
-  onFileEnd(result: FileResult): void {
-    const totalTasks = result.suites.reduce(
-      (sum, suite) => sum + suite.tasks.length,
-      0
-    );
-    const totalPassed = result.suites.reduce(
-      (sum, suite) => sum + suite.tasks.filter(t => !t.error).length,
-      0
-    );
-    const totalFailed = totalTasks - totalPassed;
-
-    if (totalFailed > 0) {
-      console.log(
-        this.colorize('red', `  ✗ ${totalFailed} failed, ${totalPassed} passed`)
-      );
-    } else {
-      console.log(
-        this.colorize('green', `  ✓ All ${totalPassed} tasks passed`)
-      );
-    }
-
-    console.log();
   }
 
   onEnd(run: BenchmarkRun): void {
@@ -254,10 +124,48 @@ export class HumanReporter extends BaseReporter {
     }
   }
 
-  onProgress(state: ProgressState): void {
-    if (!this.showProgress) return;
+  onError(error: Error): void {
+    this.clearProgress();
+    console.error(this.colorize('red', '❌ Error:'), error.message);
 
-    const { tasksCompleted, totalTasks, elapsed, percentage } = state;
+    if (this.verbose && error.stack) {
+      console.error(this.colorize('dim', error.stack));
+    }
+  }
+
+  onFileEnd(result: FileResult): void {
+    const totalTasks = result.suites.reduce(
+      (sum, suite) => sum + suite.tasks.length,
+      0
+    );
+    const totalPassed = result.suites.reduce(
+      (sum, suite) => sum + suite.tasks.filter(t => !t.error).length,
+      0
+    );
+    const totalFailed = totalTasks - totalPassed;
+
+    if (totalFailed > 0) {
+      console.log(
+        this.colorize('red', `  ✗ ${totalFailed} failed, ${totalPassed} passed`)
+      );
+    } else {
+      console.log(
+        this.colorize('green', `  ✓ All ${totalPassed} tasks passed`)
+      );
+    }
+
+    console.log();
+  }
+
+  onFileStart(file: string): void {
+    this.clearProgress();
+    console.log(this.colorize('bold', `📁 ${file}`));
+  }
+
+  onProgress(state: ProgressState): void {
+    if (!this.showProgress) {return;}
+
+    const { elapsed, percentage, tasksCompleted, totalTasks } = state;
     const progressMessage = `${tasksCompleted}/${totalTasks} tasks (${percentage}%) | Elapsed: ${Math.round(elapsed / 1000)}s`;
 
     if (process.stdout.isTTY) {
@@ -286,13 +194,136 @@ export class HumanReporter extends BaseReporter {
     }
   }
 
-  onError(error: Error): void {
-    this.clearProgress();
-    console.error(this.colorize('red', '❌ Error:'), error.message);
+  onStart(run: BenchmarkRun): void {
+    this.startTime = Date.now();
+    this.clearLine();
 
-    if (this.verbose && error.stack) {
-      console.error(this.colorize('dim', error.stack));
+    console.log(this.colorize('bold', '🚀 ModestBench'));
+    console.log();
+
+    if (run.environment) {
+      console.log(this.colorize('dim', 'Environment:'));
+      console.log(
+        `  Node.js: ${this.colorize('cyan', run.environment.nodeVersion)}`
+      );
+      console.log(
+        `  Platform: ${this.colorize('cyan', `${run.environment.platform} ${run.environment.arch}`)}`
+      );
+      console.log(
+        `  CPU: ${this.colorize('cyan', run.environment.cpu.model)} (${run.environment.cpu.cores} cores)`
+      );
+      console.log(
+        `  Memory: ${this.colorize('cyan', this.formatBytes(run.environment.memory.total))}`
+      );
+      console.log();
     }
+
+    if (run.git) {
+      console.log(`  Git: ${this.colorize('cyan', run.git.commit)}`);
+    }
+
+    if (run.ci) {
+      console.log(`  CI: ${this.colorize('cyan', run.ci.provider)}`);
+    }
+
+    if (this.verbose && run.files.length > 0) {
+      console.log(this.colorize('dim', 'Files to benchmark:'));
+      for (const file of run.files) {
+        console.log(`  ${this.colorize('gray', file.filePath)}`);
+      }
+      console.log();
+    }
+
+    console.log(
+      this.colorize('dim', `Found ${run.summary.totalFiles} benchmark file(s)`)
+    );
+    console.log();
+  }
+
+  onSuiteEnd(result: SuiteResult): void {
+    const passed = result.tasks.filter(t => !t.error).length;
+    const failed = result.tasks.filter(t => t.error).length;
+
+    if (failed > 0) {
+      console.log(
+        `  ${this.colorize('red', `✗ ${failed} failed`)}, ${this.colorize('green', `${passed} passed`)}`
+      );
+    } else {
+      console.log(`  ${this.colorize('green', `✓ ${passed} passed`)}`);
+    }
+    console.log();
+  }
+
+  onSuiteStart(suite: string): void {
+    this.clearLine();
+    console.log();
+    console.log(
+      `  ${this.colorize('blue', '▶')} ${this.colorize('bold', suite)}`
+    );
+  }
+
+  onTaskResult(result: TaskResult): void {
+    this.clearProgress();
+
+    const status = result.error
+      ? this.colorize('red', '✗')
+      : this.colorize('green', '✓');
+
+    if (result.error) {
+      console.log(
+        `    ${status} ${result.name} ${this.colorize('red', 'FAILED')}`
+      );
+      if (this.verbose) {
+        console.log(`      ${this.colorize('red', result.error.message)}`);
+      }
+    } else {
+      const duration = this.formatDuration(result.mean * 1000000000); // Convert seconds to nanoseconds
+      const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
+      const rme = this.formatPercentage(result.marginOfError * 100); // Convert decimal to percentage
+
+      console.log(`    ${status} ${result.name}`);
+      console.log(
+        `      ${this.colorize('cyan', duration)} ${this.colorize('dim', '±')}${this.colorize('yellow', rme)} ${this.colorize('gray', '(')}${this.colorize('green', opsPerSec)}${this.colorize('gray', ')')}`
+      );
+
+      if (this.verbose && result.iterations > 0) {
+        console.log(
+          `      ${this.colorize('dim', `${result.iterations} iterations`)}`
+        );
+      }
+    }
+  }
+
+  onTaskStart(task: string): void {
+    if (this.showProgress) {
+      this.startProgress(`Running ${task}...`);
+    } else if (this.verbose) {
+      console.log(`    ${this.colorize('gray', '●')} ${task}`);
+    }
+  }
+
+  /**
+   * Clear the current terminal line
+   */
+  private clearLine(): void {
+    if (process.stdout.isTTY && this.lastProgressLine) {
+      process.stdout.write(
+        '\r' + ' '.repeat(this.lastProgressLine.length) + '\r'
+      );
+      this.lastProgressLine = '';
+    }
+  }
+
+  /**
+   * Clear current progress display
+   */
+  private clearProgress(): void {
+    if (this.progressTimer) {
+      clearInterval(this.progressTimer);
+      this.progressTimer = undefined;
+    }
+
+    this.clearLine();
   }
 
   /**
@@ -303,6 +334,39 @@ export class HumanReporter extends BaseReporter {
       return text;
     }
     return `${colors[color]}${text}${colors.reset}`;
+  }
+
+  /**
+   * Format bytes in human-readable format
+   */
+  private formatBytes(bytes: number): string {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = bytes;
+    let unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
+  }
+
+  /**
+   * Format duration in human-readable format for progress display
+   */
+  private formatTimeRemaining(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    } else if (seconds < 3600) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      return `${hours}h ${minutes}m`;
+    }
   }
 
   /**
@@ -355,62 +419,5 @@ export class HumanReporter extends BaseReporter {
     // Write the new line
     process.stdout.write(line);
     this.lastProgressLine = line;
-  }
-
-  /**
-   * Clear current progress display
-   */
-  private clearProgress(): void {
-    if (this.progressTimer) {
-      clearInterval(this.progressTimer);
-      this.progressTimer = undefined;
-    }
-
-    this.clearLine();
-  }
-
-  /**
-   * Clear the current terminal line
-   */
-  private clearLine(): void {
-    if (process.stdout.isTTY && this.lastProgressLine) {
-      process.stdout.write(
-        '\r' + ' '.repeat(this.lastProgressLine.length) + '\r'
-      );
-      this.lastProgressLine = '';
-    }
-  }
-
-  /**
-   * Format duration in human-readable format for progress display
-   */
-  private formatTimeRemaining(seconds: number): string {
-    if (seconds < 60) {
-      return `${seconds}s`;
-    } else if (seconds < 3600) {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds % 60;
-      return `${minutes}m ${remainingSeconds}s`;
-    } else {
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      return `${hours}h ${minutes}m`;
-    }
-  }
-
-  /**
-   * Format bytes in human-readable format
-   */
-  private formatBytes(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 }

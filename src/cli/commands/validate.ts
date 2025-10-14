@@ -5,93 +5,93 @@
  * Provides detailed reporting of issues and suggestions for fixes.
  */
 
-import type { CliContext } from '../index.js';
 import type { ValidationResult } from '../../types/interfaces.js';
-
-/**
- * Validate command arguments interface
- */
-interface ValidateArguments {
-  pattern: string[];
-  fix?: boolean;
-  strict?: boolean;
-  format: 'human' | 'json';
-  cwd: string;
-  quiet?: boolean;
-  verbose?: boolean;
-  config?: string;
-}
-
-/**
- * Validation issue severity levels
- */
-type ValidationSeverity = 'error' | 'warning' | 'info';
+import type { CliContext } from '../index.js';
 
 /**
  * Enhanced validation result with detailed information
  */
 interface DetailedValidationResult {
   file: string;
-  valid: boolean;
+  fixable: boolean;
   issues: ValidationIssue[];
   suggestions: string[];
-  fixable: boolean;
+  valid: boolean;
+}
+
+/**
+ * Validate command arguments interface
+ */
+interface ValidateArguments {
+  config?: string;
+  cwd: string;
+  fix?: boolean;
+  format: 'human' | 'json';
+  pattern: string[];
+  quiet?: boolean;
+  strict?: boolean;
+  verbose?: boolean;
 }
 
 /**
  * Individual validation issue
  */
 interface ValidationIssue {
-  severity: ValidationSeverity;
   code: string;
-  message: string;
-  line?: number;
   column?: number;
   context?: string;
   fixable?: boolean;
+  line?: number;
+  message: string;
+  severity: ValidationSeverity;
 }
+
+/**
+ * Validation issue severity levels
+ */
+type ValidationSeverity = 'error' | 'info' | 'warning';
 
 /**
  * Validation statistics
  */
 interface ValidationStats {
+  errors: number;
+  fixableIssues: number;
+  infos: number;
+  invalidFiles: number;
   totalFiles: number;
   validFiles: number;
-  invalidFiles: number;
-  errors: number;
   warnings: number;
-  infos: number;
-  fixableIssues: number;
 }
 
 export const validateCommand = {
   builder: (yargs: any) => {
     return yargs
       .option('fix', {
-        type: 'boolean',
-        description: 'Automatically fix issues where possible',
         default: false,
+        description: 'Automatically fix issues where possible',
+        type: 'boolean',
       })
       .option('strict', {
-        type: 'boolean',
-        description: 'Enable strict validation (treat warnings as errors)',
         default: false,
+        description: 'Enable strict validation (treat warnings as errors)',
+        type: 'boolean',
       })
       .option('format', {
-        type: 'string',
-        description: 'Output format',
         choices: ['human', 'json'],
         default: 'human',
+        description: 'Output format',
+        type: 'string',
       })
       .option('quiet', {
-        type: 'boolean',
-        description: 'Minimal output',
         default: false,
+        description: 'Minimal output',
+        type: 'boolean',
       })
       .option('verbose', {
-        type: 'boolean',
-        description: 'Detailed output',
         default: false,
+        description: 'Detailed output',
+        type: 'boolean',
       })
       .example([
         ['$0 validate', 'Validate all benchmark files'],
@@ -122,10 +122,10 @@ export const validateCommand = {
             console.log(
               JSON.stringify(
                 {
-                  success: false,
                   error: `Configuration error: ${configError instanceof Error ? configError.message : String(configError)}`,
-                  stats: createEmptyStats(),
                   results: [],
+                  stats: createEmptyStats(),
+                  success: false,
                 },
                 null,
                 2
@@ -173,10 +173,10 @@ export const validateCommand = {
           console.log(
             JSON.stringify(
               {
-                success: false,
                 message: 'No benchmark files found',
-                stats: createEmptyStats(),
                 results: [],
+                stats: createEmptyStats(),
+                success: false,
               },
               null,
               2
@@ -227,17 +227,17 @@ export const validateCommand = {
           // Create error result for files that fail to validate
           const errorResult: DetailedValidationResult = {
             file,
-            valid: false,
+            fixable: false,
             issues: [
               {
-                severity: 'error',
                 code: 'VALIDATION_FAILED',
-                message: error instanceof Error ? error.message : String(error),
                 fixable: false,
+                message: error instanceof Error ? error.message : String(error),
+                severity: 'error',
               },
             ],
             suggestions: ['Check file syntax and structure'],
-            fixable: false,
+            valid: false,
           };
           validationResults.push(errorResult);
           hasErrors = true;
@@ -260,14 +260,14 @@ export const validateCommand = {
 
       if (argv.format === 'json') {
         const output = {
-          success: !hasErrors,
-          stats,
-          results: validationResults,
           config: {
-            strict: argv.strict,
             autoFix: argv.fix,
             patterns,
+            strict: argv.strict,
           },
+          results: validationResults,
+          stats,
+          success: !hasErrors,
         };
         console.log(JSON.stringify(output, null, 2));
       } else {
@@ -291,10 +291,10 @@ export const validateCommand = {
         console.log(
           JSON.stringify(
             {
-              success: false,
               error: error instanceof Error ? error.message : String(error),
-              stats: createEmptyStats(),
               results: [],
+              stats: createEmptyStats(),
+              success: false,
             },
             null,
             2
@@ -318,190 +318,20 @@ export const validateCommand = {
 };
 
 /**
- * Enhance basic validation result with detailed analysis
- */
-async function enhanceValidationResult(
-  file: string,
-  basicResult: ValidationResult,
-  argv: ValidateArguments
-): Promise<DetailedValidationResult> {
-  const issues: ValidationIssue[] = [];
-  const suggestions: string[] = [];
-  let fixable = false;
-
-  // Convert basic validation errors to detailed issues
-  if (!basicResult.valid && basicResult.errors) {
-    for (const error of basicResult.errors) {
-      const issueData: ValidationIssue = {
-        severity: 'error',
-        code: error.code,
-        message: error.message,
-        fixable: false,
-      };
-      if (error.line !== undefined) issueData.line = error.line;
-      if (error.column !== undefined) issueData.column = error.column;
-      issues.push(issueData);
-    }
-  }
-
-  // Add additional static analysis (basic implementation)
-  try {
-    const additionalIssues = await performStaticAnalysis(file, argv);
-    issues.push(...additionalIssues.issues);
-    suggestions.push(...additionalIssues.suggestions);
-    if (additionalIssues.fixable) {
-      fixable = true;
-    }
-  } catch {
-    // Static analysis failed, add warning
-    issues.push({
-      severity: 'warning',
-      code: 'STATIC_ANALYSIS_FAILED',
-      message: 'Could not perform static analysis on file',
-      fixable: false,
-    });
-  }
-
-  return {
-    file,
-    valid:
-      basicResult.valid &&
-      issues.filter(i => i.severity === 'error').length === 0,
-    issues,
-    suggestions,
-    fixable,
-  };
-}
-
-/**
- * Perform static analysis on benchmark file
- */
-async function performStaticAnalysis(
-  file: string,
-  argv: ValidateArguments
-): Promise<{
-  issues: ValidationIssue[];
-  suggestions: string[];
-  fixable: boolean;
-}> {
-  const issues: ValidationIssue[] = [];
-  const suggestions: string[] = [];
-  let fixable = false;
-
-  try {
-    const { readFile } = await import('node:fs/promises');
-    const content = await readFile(file, 'utf8');
-
-    // Check for common issues
-    const lines = content.split('\n');
-
-    // Check for export default
-    if (!content.includes('export default')) {
-      issues.push({
-        severity: 'error',
-        code: 'MISSING_EXPORT',
-        message: 'Benchmark file must have a default export',
-        fixable: false,
-      });
-      suggestions.push(
-        'Add "export default { ... }" to define your benchmark suite'
-      );
-    }
-
-    // Check for benchmark structure
-    if (!content.includes('benchmarks:') && !content.includes('benchmarks ')) {
-      issues.push({
-        severity: 'error',
-        code: 'MISSING_BENCHMARKS',
-        message: 'No benchmarks property found',
-        fixable: false,
-      });
-      suggestions.push(
-        'Add a "benchmarks" object with your benchmark functions'
-      );
-    }
-
-    // Check for async/await usage without proper handling
-    if (content.includes('await ') && !content.includes('async ')) {
-      issues.push({
-        severity: 'warning',
-        code: 'ASYNC_WITHOUT_DECLARATION',
-        message: 'Found await without async function declaration',
-        fixable: true,
-      });
-      fixable = true;
-    }
-
-    // Check for console.log in benchmark functions (performance impact)
-    if (content.includes('console.log')) {
-      issues.push({
-        severity: 'warning',
-        code: 'CONSOLE_IN_BENCHMARK',
-        message:
-          'Console logging in benchmarks can affect performance measurements',
-        fixable: true,
-      });
-      suggestions.push(
-        'Remove console.log statements from benchmark functions'
-      );
-      fixable = true;
-    }
-
-    // Check for very short function names (readability)
-    const shortNameRegex = /['"]([a-z]{1,2})['"]\\s*:/gi;
-    const shortNames = content.match(shortNameRegex);
-    if (shortNames && shortNames.length > 0) {
-      issues.push({
-        severity: 'info',
-        code: 'SHORT_BENCHMARK_NAMES',
-        message: 'Consider using more descriptive benchmark names',
-        fixable: false,
-      });
-      suggestions.push(
-        'Use descriptive names for better result interpretation'
-      );
-    }
-
-    // Check for missing name property
-    if (!content.includes('name:') && !content.includes('name ')) {
-      issues.push({
-        severity: 'warning',
-        code: 'MISSING_NAME',
-        message: 'Benchmark suite should have a descriptive name',
-        fixable: true,
-      });
-      suggestions.push(
-        'Add a "name" property to describe your benchmark suite'
-      );
-      fixable = true;
-    }
-  } catch (error) {
-    issues.push({
-      severity: 'error',
-      code: 'FILE_READ_ERROR',
-      message: `Could not read file: ${error instanceof Error ? error.message : String(error)}`,
-      fixable: false,
-    });
-  }
-
-  return { issues, suggestions, fixable };
-}
-
-/**
  * Apply automatic fixes to validation issues
  */
 async function applyAutoFixes(
   results: DetailedValidationResult[],
   argv: ValidateArguments
-): Promise<{ fixed: number; files: number }> {
+): Promise<{ files: number; fixed: number; }> {
   let totalFixed = 0;
   let filesFixed = 0;
 
   for (const result of results) {
-    if (!result.fixable) continue;
+    if (!result.fixable) {continue;}
 
     const fixableIssues = result.issues.filter(issue => issue.fixable);
-    if (fixableIssues.length === 0) continue;
+    if (fixableIssues.length === 0) {continue;}
 
     try {
       const fixes = await applyFileFixes(result.file, fixableIssues, argv);
@@ -524,7 +354,7 @@ async function applyAutoFixes(
     }
   }
 
-  return { fixed: totalFixed, files: filesFixed };
+  return { files: filesFixed, fixed: totalFixed };
 }
 
 /**
@@ -580,13 +410,13 @@ async function applyFileFixes(
  */
 function calculateStats(results: DetailedValidationResult[]): ValidationStats {
   const stats: ValidationStats = {
+    errors: 0,
+    fixableIssues: 0,
+    infos: 0,
+    invalidFiles: 0,
     totalFiles: results.length,
     validFiles: 0,
-    invalidFiles: 0,
-    errors: 0,
     warnings: 0,
-    infos: 0,
-    fixableIssues: 0,
   };
 
   for (const result of results) {
@@ -601,11 +431,11 @@ function calculateStats(results: DetailedValidationResult[]): ValidationStats {
         case 'error':
           stats.errors++;
           break;
-        case 'warning':
-          stats.warnings++;
-          break;
         case 'info':
           stats.infos++;
+          break;
+        case 'warning':
+          stats.warnings++;
           break;
       }
 
@@ -616,6 +446,21 @@ function calculateStats(results: DetailedValidationResult[]): ValidationStats {
   }
 
   return stats;
+}
+
+/**
+ * Create empty statistics object
+ */
+function createEmptyStats(): ValidationStats {
+  return {
+    errors: 0,
+    fixableIssues: 0,
+    infos: 0,
+    invalidFiles: 0,
+    totalFiles: 0,
+    validFiles: 0,
+    warnings: 0,
+  };
 }
 
 /**
@@ -657,8 +502,8 @@ async function displayHumanOutput(
       for (const issue of result.issues) {
         const severityIcon = {
           error: '❌',
-          warning: '⚠️ ',
           info: 'ℹ️ ',
+          warning: '⚠️ ',
         }[issue.severity];
 
         const fixableIndicator = issue.fixable ? ' [fixable]' : '';
@@ -693,16 +538,171 @@ async function displayHumanOutput(
 }
 
 /**
- * Create empty statistics object
+ * Enhance basic validation result with detailed analysis
  */
-function createEmptyStats(): ValidationStats {
+async function enhanceValidationResult(
+  file: string,
+  basicResult: ValidationResult,
+  argv: ValidateArguments
+): Promise<DetailedValidationResult> {
+  const issues: ValidationIssue[] = [];
+  const suggestions: string[] = [];
+  let fixable = false;
+
+  // Convert basic validation errors to detailed issues
+  if (!basicResult.valid && basicResult.errors) {
+    for (const error of basicResult.errors) {
+      const issueData: ValidationIssue = {
+        code: error.code,
+        fixable: false,
+        message: error.message,
+        severity: 'error',
+      };
+      if (error.line !== undefined) {issueData.line = error.line;}
+      if (error.column !== undefined) {issueData.column = error.column;}
+      issues.push(issueData);
+    }
+  }
+
+  // Add additional static analysis (basic implementation)
+  try {
+    const additionalIssues = await performStaticAnalysis(file, argv);
+    issues.push(...additionalIssues.issues);
+    suggestions.push(...additionalIssues.suggestions);
+    if (additionalIssues.fixable) {
+      fixable = true;
+    }
+  } catch {
+    // Static analysis failed, add warning
+    issues.push({
+      code: 'STATIC_ANALYSIS_FAILED',
+      fixable: false,
+      message: 'Could not perform static analysis on file',
+      severity: 'warning',
+    });
+  }
+
   return {
-    totalFiles: 0,
-    validFiles: 0,
-    invalidFiles: 0,
-    errors: 0,
-    warnings: 0,
-    infos: 0,
-    fixableIssues: 0,
+    file,
+    fixable,
+    issues,
+    suggestions,
+    valid:
+      basicResult.valid &&
+      issues.filter(i => i.severity === 'error').length === 0,
   };
+}
+
+/**
+ * Perform static analysis on benchmark file
+ */
+async function performStaticAnalysis(
+  file: string,
+  argv: ValidateArguments
+): Promise<{
+  fixable: boolean;
+  issues: ValidationIssue[];
+  suggestions: string[];
+}> {
+  const issues: ValidationIssue[] = [];
+  const suggestions: string[] = [];
+  let fixable = false;
+
+  try {
+    const { readFile } = await import('node:fs/promises');
+    const content = await readFile(file, 'utf8');
+
+    // Check for common issues
+    const lines = content.split('\n');
+
+    // Check for export default
+    if (!content.includes('export default')) {
+      issues.push({
+        code: 'MISSING_EXPORT',
+        fixable: false,
+        message: 'Benchmark file must have a default export',
+        severity: 'error',
+      });
+      suggestions.push(
+        'Add "export default { ... }" to define your benchmark suite'
+      );
+    }
+
+    // Check for benchmark structure
+    if (!content.includes('benchmarks:') && !content.includes('benchmarks ')) {
+      issues.push({
+        code: 'MISSING_BENCHMARKS',
+        fixable: false,
+        message: 'No benchmarks property found',
+        severity: 'error',
+      });
+      suggestions.push(
+        'Add a "benchmarks" object with your benchmark functions'
+      );
+    }
+
+    // Check for async/await usage without proper handling
+    if (content.includes('await ') && !content.includes('async ')) {
+      issues.push({
+        code: 'ASYNC_WITHOUT_DECLARATION',
+        fixable: true,
+        message: 'Found await without async function declaration',
+        severity: 'warning',
+      });
+      fixable = true;
+    }
+
+    // Check for console.log in benchmark functions (performance impact)
+    if (content.includes('console.log')) {
+      issues.push({
+        code: 'CONSOLE_IN_BENCHMARK',
+        fixable: true,
+        message:
+          'Console logging in benchmarks can affect performance measurements',
+        severity: 'warning',
+      });
+      suggestions.push(
+        'Remove console.log statements from benchmark functions'
+      );
+      fixable = true;
+    }
+
+    // Check for very short function names (readability)
+    const shortNameRegex = /['"]([a-z]{1,2})['"]\\s*:/gi;
+    const shortNames = content.match(shortNameRegex);
+    if (shortNames && shortNames.length > 0) {
+      issues.push({
+        code: 'SHORT_BENCHMARK_NAMES',
+        fixable: false,
+        message: 'Consider using more descriptive benchmark names',
+        severity: 'info',
+      });
+      suggestions.push(
+        'Use descriptive names for better result interpretation'
+      );
+    }
+
+    // Check for missing name property
+    if (!content.includes('name:') && !content.includes('name ')) {
+      issues.push({
+        code: 'MISSING_NAME',
+        fixable: true,
+        message: 'Benchmark suite should have a descriptive name',
+        severity: 'warning',
+      });
+      suggestions.push(
+        'Add a "name" property to describe your benchmark suite'
+      );
+      fixable = true;
+    }
+  } catch (error) {
+    issues.push({
+      code: 'FILE_READ_ERROR',
+      fixable: false,
+      message: `Could not read file: ${error instanceof Error ? error.message : String(error)}`,
+      severity: 'error',
+    });
+  }
+
+  return { fixable, issues, suggestions };
 }

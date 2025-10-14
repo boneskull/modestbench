@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { describe, it } from 'node:test';
 
 /**
  * Contract tests for Reporter interfaces
@@ -118,8 +118,8 @@ describe('Reporter interfaces contract', () => {
         try {
           const mockRun = {
             id: 'test-run-123',
-            timestamp: new Date(),
             status: 'running',
+            timestamp: new Date(),
           };
 
           // Should format output for human consumption
@@ -138,12 +138,12 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.human) {
         try {
           const mockResult = {
-            file: 'test.bench.js',
-            suite: 'Performance Tests',
-            task: 'array iteration',
             duration: 1.5,
+            file: 'test.bench.js',
             hz: 1000000,
             stats: {},
+            suite: 'Performance Tests',
+            task: 'array iteration',
           };
 
           // Should include ANSI color codes or formatted output
@@ -162,10 +162,10 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.human) {
         try {
           const mockProgress = {
-            totalFiles: 5,
-            filesCompleted: 2,
             currentFile: 'test.bench.js',
+            filesCompleted: 2,
             percentage: 40,
+            totalFiles: 5,
           };
 
           // Should render progress bar
@@ -197,8 +197,8 @@ describe('Reporter interfaces contract', () => {
         try {
           const mockRun = {
             id: 'test-run-123',
-            timestamp: new Date(),
             results: [],
+            timestamp: new Date(),
           };
 
           // Should output JSON
@@ -232,11 +232,11 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.csv) {
         try {
           const mockResult = {
+            duration: 1.5,
             file: 'test.bench.js',
+            hz: 1000000,
             suite: 'Performance Tests',
             task: 'array iteration',
-            duration: 1.5,
-            hz: 1000000,
           };
 
           // Should output CSV
@@ -326,8 +326,8 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.registry) {
         try {
           const mockReporter = {
-            onStart: () => {},
             onEnd: () => {},
+            onStart: () => {},
           };
 
           reporters.registry.register('test', mockReporter);
@@ -348,31 +348,31 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.base) {
         const callOrder: string[] = [];
         const mockReporter = {
-          onStart: (_run: any) => callOrder.push('start'),
-          onFileStart: (_file: any) => callOrder.push('fileStart'),
-          onSuiteStart: (_suite: any) => callOrder.push('suiteStart'),
-          onTaskStart: (_task: any) => callOrder.push('taskStart'),
-          onTaskResult: (_result: any) => callOrder.push('taskResult'),
-          onSuiteEnd: (_result: any) => callOrder.push('suiteEnd'),
-          onFileEnd: (_result: any) => callOrder.push('fileEnd'),
           onEnd: (_run: any) => callOrder.push('end'),
-          onProgress: (_state: any) => callOrder.push('progress'),
           onError: (_error: any) => callOrder.push('error'),
+          onFileEnd: (_result: any) => callOrder.push('fileEnd'),
+          onFileStart: (_file: any) => callOrder.push('fileStart'),
+          onProgress: (_state: any) => callOrder.push('progress'),
+          onStart: (_run: any) => callOrder.push('start'),
+          onSuiteEnd: (_result: any) => callOrder.push('suiteEnd'),
+          onSuiteStart: (_suite: any) => callOrder.push('suiteStart'),
+          onTaskResult: (_result: any) => callOrder.push('taskResult'),
+          onTaskStart: (_task: any) => callOrder.push('taskStart'),
         };
 
         try {
           // Create mock data
           const mockRun = {
-            id: 'test-run',
             config: {},
-            startTime: Date.now(),
             files: [],
+            id: 'test-run',
             results: [],
+            startTime: Date.now(),
           };
           const mockResult = {
-            name: 'test',
-            stats: { mean: 100, min: 50, max: 150, samples: 10 },
             error: null,
+            name: 'test',
+            stats: { max: 150, mean: 100, min: 50, samples: 10 },
           };
 
           // Simulate benchmark execution lifecycle
@@ -411,10 +411,10 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.base) {
         try {
           const errorReporter = {
+            onError: (_error: any) => {},
             onStart: (_run: any) => {
               throw new Error('Reporter error');
             },
-            onError: (_error: any) => {},
           };
 
           // Should not crash the entire system

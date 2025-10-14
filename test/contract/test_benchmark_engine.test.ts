@@ -1,5 +1,5 @@
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { describe, it } from 'node:test';
 
 /**
  * Contract tests for BenchmarkEngine interface
@@ -65,9 +65,9 @@ describe('BenchmarkEngine interface contract', () => {
     it('should accept RunConfiguration parameter', async () => {
       if (engine) {
         const config = {
+          config: {},
           files: ['test.bench.js'],
           reporters: ['human'],
-          config: {},
         };
 
         try {
@@ -85,9 +85,9 @@ describe('BenchmarkEngine interface contract', () => {
     it('should return Promise<BenchmarkRun>', async () => {
       if (engine) {
         const config = {
+          config: {},
           files: ['test.bench.js'],
           reporters: ['human'],
-          config: {},
         };
 
         const promise = engine.execute(config);
@@ -200,9 +200,9 @@ describe('BenchmarkEngine interface contract', () => {
       if (engine) {
         const mockReporter = {
           name: 'test',
-          onStart: () => {},
-          onResult: () => {},
           onEnd: () => {},
+          onResult: () => {},
+          onStart: () => {},
         };
 
         try {

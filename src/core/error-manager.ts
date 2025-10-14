@@ -1,15 +1,15 @@
 /**
  * ModestBench Error Manager
  *
- * Handles execution errors with context tracking, categorization,
- * and provides structured error information for graceful degradation.
+ * Handles execution errors with context tracking, categorization, and provides
+ * structured error information for graceful degradation.
  */
 
 import type {
-  ErrorManager,
   ErrorContext,
-  ExecutionError,
+  ErrorManager,
   ErrorStats,
+  ExecutionError,
   ExecutionPhase,
 } from '../types/index.js';
 
@@ -33,26 +33,21 @@ const ERROR_CODES = {
   CONFIG_001: 'Invalid configuration file',
   CONFIG_002: 'Missing required option',
 
-  // File system errors
-  FILE_001: 'File not found',
-  FILE_002: 'Permission denied',
-  FILE_003: 'Invalid file format',
-
-  // History storage errors
-  HIST_001: 'History data corruption',
-  HIST_002: 'Disk space insufficient',
-  HIST_003: 'Index corruption',
-
   // Execution errors
   EXEC_001: 'Task execution failed',
   EXEC_002: 'Setup function failed',
   EXEC_003: 'Teardown function failed',
-  EXEC_004: 'Memory leak detected',
 
-  // Validation errors
-  VALID_001: 'Schema validation failed',
-  VALID_002: 'Type validation failed',
-  VALID_003: 'Range validation failed',
+  EXEC_004: 'Memory leak detected',
+  // File system errors
+  FILE_001: 'File not found',
+  FILE_002: 'Permission denied',
+
+  FILE_003: 'Invalid file format',
+  // History storage errors
+  HIST_001: 'History data corruption',
+  HIST_002: 'Disk space insufficient',
+  HIST_003: 'Index corruption',
 
   // System errors
   SYS_001: 'Out of memory',
@@ -61,6 +56,11 @@ const ERROR_CODES = {
 
   // Unknown errors
   UNKNOWN: 'Unknown error',
+  // Validation errors
+  VALID_001: 'Schema validation failed',
+  VALID_002: 'Type validation failed',
+
+  VALID_003: 'Range validation failed',
 } as const;
 
 /**
@@ -78,125 +78,11 @@ const RECOVERABLE_ERRORS = new Set([
  * Default error manager implementation
  */
 export class ModestBenchErrorManager implements ErrorManager {
-  private handlers: ErrorHandler[] = [];
   private errors: ExecutionError[] = [];
+
+  private handlers: ErrorHandler[] = [];
+
   private readonly maxRecentErrors = 50;
-
-  /**
-   * Handle an execution error
-   */
-  handleError(error: Error, context: ErrorContext): ExecutionError {
-    const code = this.getErrorCode(error, context);
-    const recoverable = this.isRecoverableByCode(code);
-
-    const executionError: ExecutionError = {
-      originalError: error,
-      context,
-      code,
-      message: this.createMessage(error, context, code),
-      recoverable,
-      processedAt: new Date(),
-    };
-
-    // Add stack if available
-    if (error.stack) {
-      (executionError as any).stack = error.stack;
-    }
-
-    // Store error for statistics
-    this.errors.push(executionError);
-
-    // Keep only recent errors to prevent memory leaks
-    if (this.errors.length > this.maxRecentErrors * 2) {
-      this.errors = this.errors.slice(-this.maxRecentErrors);
-    }
-
-    // Notify handlers
-    for (const handler of this.handlers) {
-      try {
-        handler(executionError);
-      } catch (handlerError) {
-        // Don't let handler errors break error handling
-        console.error('Error in error handler:', handlerError);
-      }
-    }
-
-    return executionError;
-  }
-
-  /**
-   * Register error handler callback
-   */
-  onError(handler: ErrorHandler): void {
-    this.handlers.push(handler);
-  }
-
-  /**
-   * Remove error handler
-   */
-  removeHandler(handler: ErrorHandler): boolean {
-    const index = this.handlers.indexOf(handler);
-    if (index >= 0) {
-      this.handlers.splice(index, 1);
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Get error statistics
-   */
-  getStats(): ErrorStats {
-    const byPhase: Record<ExecutionPhase, number> = {
-      discovery: 0,
-      validation: 0,
-      loading: 0,
-      setup: 0,
-      execution: 0,
-      teardown: 0,
-      reporting: 0,
-      cleanup: 0,
-    };
-
-    const byType: Record<string, number> = {};
-    let firstError: Date | undefined;
-    let lastError: Date | undefined;
-
-    for (const error of this.errors) {
-      // Count by phase
-      byPhase[error.context.phase]++;
-
-      // Count by type (error code)
-      const type = error.code;
-      byType[type] = (byType[type] || 0) + 1;
-
-      // Track timestamps
-      const timestamp = error.processedAt;
-      if (!firstError || timestamp < firstError) {
-        firstError = timestamp;
-      }
-      if (!lastError || timestamp > lastError) {
-        lastError = timestamp;
-      }
-    }
-
-    const result: ErrorStats = {
-      total: this.errors.length,
-      byPhase,
-      byType,
-      recent: this.errors.slice(-this.maxRecentErrors),
-    };
-
-    // Add optional timestamps only if they exist
-    if (firstError) {
-      (result as any).firstError = firstError;
-    }
-    if (lastError) {
-      (result as any).lastError = lastError;
-    }
-
-    return result;
-  }
 
   /**
    * Clear error history
@@ -206,10 +92,32 @@ export class ModestBenchErrorManager implements ErrorManager {
   }
 
   /**
-   * Check if an error is recoverable
+   * Format error for display
    */
-  isRecoverable(error: ExecutionError): boolean {
-    return error.recoverable;
+  formatError(error: ExecutionError): string {
+    const { code, context, message } = error;
+
+    let formatted = `[${code}] ${message}`;
+
+    // Add context information
+    const contextParts: string[] = [];
+    if (context.file) {
+      contextParts.push(`file: ${context.file}`);
+    }
+    if (context.suite) {
+      contextParts.push(`suite: ${context.suite}`);
+    }
+    if (context.task) {
+      contextParts.push(`task: ${context.task}`);
+    }
+
+    if (contextParts.length > 0) {
+      formatted += ` (${contextParts.join(', ')})`;
+    }
+
+    formatted += ` at ${context.timestamp.toISOString()}`;
+
+    return formatted;
   }
 
   /**
@@ -290,32 +198,10 @@ export class ModestBenchErrorManager implements ErrorManager {
   }
 
   /**
-   * Format error for display
+   * Get error count by phase
    */
-  formatError(error: ExecutionError): string {
-    const { context, code, message } = error;
-
-    let formatted = `[${code}] ${message}`;
-
-    // Add context information
-    const contextParts: string[] = [];
-    if (context.file) {
-      contextParts.push(`file: ${context.file}`);
-    }
-    if (context.suite) {
-      contextParts.push(`suite: ${context.suite}`);
-    }
-    if (context.task) {
-      contextParts.push(`task: ${context.task}`);
-    }
-
-    if (contextParts.length > 0) {
-      formatted += ` (${contextParts.join(', ')})`;
-    }
-
-    formatted += ` at ${context.timestamp.toISOString()}`;
-
-    return formatted;
+  getErrorCountByPhase(phase: ExecutionPhase): number {
+    return this.errors.filter((error) => error.context.phase === phase).length;
   }
 
   /**
@@ -333,26 +219,135 @@ export class ModestBenchErrorManager implements ErrorManager {
   }
 
   /**
-   * Get error count by phase
-   */
-  getErrorCountByPhase(phase: ExecutionPhase): number {
-    return this.errors.filter(error => error.context.phase === phase).length;
-  }
-
-  /**
    * Get recent errors for a specific phase
    */
   getRecentErrorsForPhase(phase: ExecutionPhase, limit = 10): ExecutionError[] {
     return this.errors
-      .filter(error => error.context.phase === phase)
+      .filter((error) => error.context.phase === phase)
       .slice(-limit);
   }
 
   /**
-   * Check if error is recoverable by code
+   * Get error statistics
    */
-  private isRecoverableByCode(code: string): boolean {
-    return RECOVERABLE_ERRORS.has(code);
+  getStats(): ErrorStats {
+    const byPhase: Record<ExecutionPhase, number> = {
+      cleanup: 0,
+      discovery: 0,
+      execution: 0,
+      loading: 0,
+      reporting: 0,
+      setup: 0,
+      teardown: 0,
+      validation: 0,
+    };
+
+    const byType: Record<string, number> = {};
+    let firstError: Date | undefined;
+    let lastError: Date | undefined;
+
+    for (const error of this.errors) {
+      // Count by phase
+      byPhase[error.context.phase]++;
+
+      // Count by type (error code)
+      const type = error.code;
+      byType[type] = (byType[type] || 0) + 1;
+
+      // Track timestamps
+      const timestamp = error.processedAt;
+      if (!firstError || timestamp < firstError) {
+        firstError = timestamp;
+      }
+      if (!lastError || timestamp > lastError) {
+        lastError = timestamp;
+      }
+    }
+
+    const result: ErrorStats = {
+      byPhase,
+      byType,
+      recent: this.errors.slice(-this.maxRecentErrors),
+      total: this.errors.length,
+    };
+
+    // Add optional timestamps only if they exist
+    if (firstError) {
+      (result as any).firstError = firstError;
+    }
+    if (lastError) {
+      (result as any).lastError = lastError;
+    }
+
+    return result;
+  }
+
+  /**
+   * Handle an execution error
+   */
+  handleError(error: Error, context: ErrorContext): ExecutionError {
+    const code = this.getErrorCode(error, context);
+    const recoverable = this.isRecoverableByCode(code);
+
+    const executionError: ExecutionError = {
+      code,
+      context,
+      message: this.createMessage(error, context, code),
+      originalError: error,
+      processedAt: new Date(),
+      recoverable,
+    };
+
+    // Add stack if available
+    if (error.stack) {
+      (executionError as any).stack = error.stack;
+    }
+
+    // Store error for statistics
+    this.errors.push(executionError);
+
+    // Keep only recent errors to prevent memory leaks
+    if (this.errors.length > this.maxRecentErrors * 2) {
+      this.errors = this.errors.slice(-this.maxRecentErrors);
+    }
+
+    // Notify handlers
+    for (const handler of this.handlers) {
+      try {
+        handler(executionError);
+      } catch (handlerError) {
+        // Don't let handler errors break error handling
+        console.error('Error in error handler:', handlerError);
+      }
+    }
+
+    return executionError;
+  }
+
+  /**
+   * Check if an error is recoverable
+   */
+  isRecoverable(error: ExecutionError): boolean {
+    return error.recoverable;
+  }
+
+  /**
+   * Register error handler callback
+   */
+  onError(handler: ErrorHandler): void {
+    this.handlers.push(handler);
+  }
+
+  /**
+   * Remove error handler
+   */
+  removeHandler(handler: ErrorHandler): boolean {
+    const index = this.handlers.indexOf(handler);
+    if (index >= 0) {
+      this.handlers.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -361,7 +356,7 @@ export class ModestBenchErrorManager implements ErrorManager {
   private createMessage(
     error: Error,
     context: ErrorContext,
-    code: string
+    code: string,
   ): string {
     const baseMessage = this.getErrorDescription(code);
     const originalMessage = error.message;
@@ -376,5 +371,12 @@ export class ModestBenchErrorManager implements ErrorManager {
     }
 
     return baseMessage;
+  }
+
+  /**
+   * Check if error is recoverable by code
+   */
+  private isRecoverableByCode(code: string): boolean {
+    return RECOVERABLE_ERRORS.has(code);
   }
 }

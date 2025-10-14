@@ -1,9 +1,11 @@
 /**
  * ModestBench History Command
  *
- * View and manage benchmark run history with subcommands for
- * listing, showing, comparing, and cleaning historical data.
+ * View and manage benchmark run history with subcommands for listing, showing,
+ * comparing, and cleaning historical data.
  */
+
+import { type Argv } from 'yargs';
 
 import type { CliContext } from '../index.js';
 
@@ -12,78 +14,78 @@ import type { CliContext } from '../index.js';
  */
 interface HistoryArguments {
   _: string[]; // Subcommand and positional args
-  subcommand?: string; // Parsed subcommand
   args?: string[]; // Additional arguments after subcommand
+  confirm?: boolean;
+  format?: 'csv' | 'human' | 'json';
   id?: string;
   id1?: string;
   id2?: string;
-  since?: string;
-  until?: string;
-  pattern?: string;
-  tags?: string[];
   limit?: number;
-  format?: 'human' | 'json' | 'csv';
-  output?: string;
   maxAge?: number;
   maxRuns?: number;
   maxSize?: number;
-  confirm?: boolean;
-  verbose?: boolean;
+  output?: string;
+  pattern?: string;
   quiet?: boolean;
+  since?: string;
+  subcommand?: string; // Parsed subcommand
+  tags?: string[];
+  until?: string;
+  verbose?: boolean;
 }
 
 export const historyCommand = {
-  builder: (yargs: any) => {
+  builder: (yargs: Argv) => {
     return yargs
       .option('since', {
-        type: 'string',
         description:
           'Show runs since date (ISO 8601 or relative like "1 week ago")',
+        type: 'string',
       })
       .option('until', {
-        type: 'string',
         description:
           'Show runs until date (ISO 8601 or relative like "1 day ago")',
+        type: 'string',
       })
       .option('pattern', {
-        type: 'string',
         description: 'Filter by benchmark name pattern',
+        type: 'string',
       })
       .option('tags', {
-        type: 'array',
         description: 'Filter by tags',
+        type: 'array',
       })
       .option('limit', {
-        type: 'number',
-        description: 'Maximum number of results',
         default: 10,
+        description: 'Maximum number of results',
+        type: 'number',
       })
       .option('format', {
-        type: 'string',
         choices: ['human', 'json', 'csv'],
-        description: 'Output format',
         default: 'human',
+        description: 'Output format',
+        type: 'string',
       })
       .option('maxAge', {
-        type: 'number',
         description: 'Maximum age in days for cleanup',
+        type: 'number',
       })
       .option('maxRuns', {
-        type: 'number',
         description: 'Maximum number of runs to keep',
+        type: 'number',
       })
       .option('maxSize', {
-        type: 'number',
         description: 'Maximum storage size in bytes',
+        type: 'number',
       })
       .option('confirm', {
-        type: 'boolean',
-        description: 'Confirm cleanup operations',
         default: false,
+        description: 'Confirm cleanup operations',
+        type: 'boolean',
       })
       .option('output', {
-        type: 'string',
         description: 'Output file path',
+        type: 'string',
       })
       .example([
         ['$0 history list', 'List recent benchmark runs'],
@@ -97,38 +99,38 @@ export const historyCommand = {
 
   handler: async (
     context: CliContext,
-    argv: HistoryArguments
+    argv: HistoryArguments,
   ): Promise<number> => {
     try {
       // Get the subcommand from yargs parsing
       const subcommand = argv.subcommand; // yargs should populate this from <subcommand>
 
       switch (subcommand) {
+        case 'clean':
+          return await handleCleanCommand(context, argv);
+        case 'compare':
+          return await handleCompareCommand(context, argv);
+        case 'export':
+          return await handleExportCommand(context, argv);
         case 'list':
           return await handleListCommand(context, argv);
         case 'show':
           return await handleShowCommand(context, argv);
-        case 'compare':
-          return await handleCompareCommand(context, argv);
         case 'trends':
           return await handleTrendsCommand(context, argv);
-        case 'clean':
-          return await handleCleanCommand(context, argv);
-        case 'export':
-          return await handleExportCommand(context, argv);
         default:
           console.error(
-            `Unknown history subcommand: ${subcommand || '(none)'}`
+            `Unknown history subcommand: ${subcommand || '(none)'}`,
           );
           console.error(
-            'Available subcommands: list, show, compare, trends, clean, export'
+            'Available subcommands: list, show, compare, trends, clean, export',
           );
           return 2; // Config error
       }
     } catch (error) {
       console.error(
         'History command failed:',
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
       );
       return 2; // Configuration/runtime errors
     }
@@ -136,186 +138,82 @@ export const historyCommand = {
 };
 
 /**
- * Handle the list subcommand
+ * Format bytes in human-readable format
  */
-async function handleListCommand(
-  context: CliContext,
-  argv: HistoryArguments
-): Promise<number> {
-  try {
-    // Build query from command line arguments
-    const query: any = {};
+const formatBytes = (bytes: number): string => {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = bytes;
+  let unitIndex = 0;
 
-    if (argv.since) {
-      try {
-        query.since = parseDate(argv.since);
-      } catch (error) {
-        console.error(
-          'Invalid since date:',
-          error instanceof Error ? error.message : String(error)
-        );
-        return 2; // Invalid date format
-      }
-    }
-
-    if (argv.until) {
-      try {
-        query.until = parseDate(argv.until);
-      } catch (error) {
-        console.error(
-          'Invalid until date:',
-          error instanceof Error ? error.message : String(error)
-        );
-        return 2; // Invalid date format
-      }
-    }
-
-    if (argv.pattern) {
-      query.pattern = argv.pattern;
-    }
-
-    if (argv.tags && argv.tags.length > 0) {
-      query.tags = argv.tags;
-    }
-
-    if (argv.limit) {
-      query.limit = argv.limit;
-    }
-
-    // Query historical runs
-    const runs = await context.historyStorage.queryRuns(query);
-
-    // Display results based on format
-    if (argv.format === 'json') {
-      if (runs.length === 0) {
-        console.log('[]'); // Empty JSON array for no data
-      } else {
-        console.log(
-          JSON.stringify(
-            runs.map(run => ({
-              id: run.id,
-              startTime: run.startTime,
-              duration: run.duration,
-              files: run.summary.totalFiles,
-              tasks: run.summary.totalTasks,
-              passed: run.summary.passedTasks,
-              failed: run.summary.failedTasks,
-            })),
-            null,
-            2
-          )
-        );
-      }
-    } else if (argv.format === 'csv') {
-      console.log('id,startTime,duration,files,tasks,passed,failed');
-      if (runs.length > 0) {
-        for (const run of runs) {
-          console.log(
-            `${run.id},${run.startTime.toISOString()},${run.duration},${run.summary.totalFiles},${run.summary.totalTasks},${run.summary.passedTasks},${run.summary.failedTasks}`
-          );
-        }
-      }
-      // For CSV, no additional message needed - header is sufficient
-    } else {
-      // Human format
-      if (runs.length === 0) {
-        if (!argv.quiet) {
-          console.log('No historical data found matching criteria.');
-        }
-      } else {
-        console.log('Recent benchmark runs:');
-        console.log();
-
-        for (const run of runs) {
-          const dateStr = run.startTime.toLocaleString();
-          const durationStr = `${(run.duration / 1000).toFixed(1)}s`;
-          const statusStr =
-            run.summary.failedTasks > 0
-              ? `${run.summary.passedTasks} passed, ${run.summary.failedTasks} failed`
-              : `${run.summary.passedTasks} passed`;
-
-          console.log(
-            `  ${run.id.substring(0, 8)} - ${dateStr} (${durationStr})`
-          );
-          console.log(
-            `    ${run.summary.totalFiles} files, ${run.summary.totalTasks} tasks: ${statusStr}`
-          );
-          console.log();
-        }
-      }
-    }
-
-    return 0;
-  } catch (error) {
-    console.error(
-      'Failed to list history:',
-      error instanceof Error ? error.message : String(error)
-    );
-    return 5;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
   }
-}
+
+  return `${size.toFixed(1)} ${units[unitIndex]}`;
+};
 
 /**
- * Handle the show subcommand
+ * Handle the clean subcommand
  */
-async function handleShowCommand(
+const handleCleanCommand = async (
   context: CliContext,
-  argv: HistoryArguments
-): Promise<number> {
+  argv: HistoryArguments,
+): Promise<number> => {
   try {
-    // For show command, ID comes from the args after the subcommand
-    const runId = argv.args?.[0]; // yargs populates this from [args..]
+    // Build retention policy from arguments
+    const policy: any = {};
 
-    if (!runId) {
-      console.error('Run ID is required for show command');
-      console.error('Usage: modestbench history show <run-id>');
+    if (argv.maxAge) {
+      policy.maxAge = argv.maxAge;
+    }
+    if (argv.maxRuns) {
+      policy.maxRuns = argv.maxRuns;
+    }
+    if (argv.maxSize) {
+      policy.maxSize = argv.maxSize;
+    }
+
+    if (Object.keys(policy).length === 0) {
+      console.error(
+        'At least one cleanup criterion must be specified (--max-age, --max-runs, or --max-size)',
+      );
       return 2;
     }
 
-    const run = await context.historyStorage.loadRun(runId);
-
-    if (!run) {
-      console.error(`Run not found: ${runId}`);
-      return 1;
+    // Show what would be cleaned unless confirmed
+    if (!argv.confirm) {
+      console.log(
+        'This will clean up historical data based on the following policy:',
+      );
+      if (policy.maxAge) {
+        console.log(`  - Remove runs older than ${policy.maxAge}ms`);
+      }
+      if (policy.maxRuns) {
+        console.log(`  - Keep only the latest ${policy.maxRuns} runs`);
+      }
+      if (policy.maxSize) {
+        console.log(
+          `  - Remove runs until storage is under ${policy.maxSize} bytes`,
+        );
+      }
+      console.log();
+      console.log('Use --confirm to proceed with cleanup.');
+      return 0;
     }
 
-    if (argv.format === 'json') {
-      console.log(JSON.stringify(run, null, 2));
-    } else {
-      // Human format
-      console.log(`Benchmark Run: ${run.id}`);
-      console.log(`Date: ${run.startTime.toLocaleString()}`);
-      console.log(`Duration: ${(run.duration / 1000).toFixed(1)}s`);
-      console.log(
-        `Environment: Node.js ${run.environment.nodeVersion} on ${run.environment.platform}`
-      );
+    // Perform cleanup
+    const result = await context.historyStorage.cleanup(policy);
 
-      if (run.git) {
-        console.log(`Git: ${run.git.branch}@${run.git.commit.substring(0, 8)}`);
-      }
+    if (!argv.quiet) {
+      console.log(`Cleanup completed:`);
+      console.log(`  Removed ${result.removedRuns} run(s)`);
+      console.log(`  Freed ${formatBytes(result.freedBytes)} of storage`);
 
-      console.log();
-      console.log('Summary:');
-      console.log(`  Files: ${run.summary.totalFiles}`);
-      console.log(`  Suites: ${run.summary.totalSuites}`);
-      console.log(`  Tasks: ${run.summary.totalTasks}`);
-      console.log(`  Passed: ${run.summary.passedTasks}`);
-      console.log(`  Failed: ${run.summary.failedTasks}`);
-
-      // TODO: Show detailed file/suite/task results
-      console.log();
-      console.log('Detailed results:');
-      for (const file of run.files) {
-        console.log(`  📁 ${file.filePath}`);
-        for (const suite of file.suites) {
-          console.log(`    📊 ${suite.name}`);
-          for (const task of suite.tasks) {
-            const status = task.error ? '❌' : '✅';
-            const timing = task.error
-              ? 'failed'
-              : `${(task.mean / 1000000).toFixed(2)}ms`;
-            console.log(`      ${status} ${task.name} - ${timing}`);
-          }
+      if (argv.verbose && result.removedFiles.length > 0) {
+        console.log(`  Removed files:`);
+        for (const file of result.removedFiles) {
+          console.log(`    ${file}`);
         }
       }
     }
@@ -323,20 +221,20 @@ async function handleShowCommand(
     return 0;
   } catch (error) {
     console.error(
-      'Failed to show run:',
-      error instanceof Error ? error.message : String(error)
+      'Failed to clean history:',
+      error instanceof Error ? error.message : String(error),
     );
     return 5;
   }
-}
+};
 
 /**
  * Handle the compare subcommand
  */
-async function handleCompareCommand(
+const handleCompareCommand = async (
   context: CliContext,
-  argv: HistoryArguments
-): Promise<number> {
+  argv: HistoryArguments,
+): Promise<number> => {
   try {
     // For compare command, IDs come from args after the subcommand
     const id1 = argv.args?.[0];
@@ -379,16 +277,16 @@ async function handleCompareCommand(
 
       console.log('Summary comparison:');
       console.log(
-        `  Files: ${run1.summary.totalFiles} vs ${run2.summary.totalFiles}`
+        `  Files: ${run1.summary.totalFiles} vs ${run2.summary.totalFiles}`,
       );
       console.log(
-        `  Tasks: ${run1.summary.totalTasks} vs ${run2.summary.totalTasks}`
+        `  Tasks: ${run1.summary.totalTasks} vs ${run2.summary.totalTasks}`,
       );
       console.log(
-        `  Passed: ${run1.summary.passedTasks} vs ${run2.summary.passedTasks}`
+        `  Passed: ${run1.summary.passedTasks} vs ${run2.summary.passedTasks}`,
       );
       console.log(
-        `  Failed: ${run1.summary.failedTasks} vs ${run2.summary.failedTasks}`
+        `  Failed: ${run1.summary.failedTasks} vs ${run2.summary.failedTasks}`,
       );
 
       // TODO: Add detailed performance comparison
@@ -400,96 +298,34 @@ async function handleCompareCommand(
   } catch (error) {
     console.error(
       'Failed to compare runs:',
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     return 5;
   }
-}
-
-/**
- * Handle the clean subcommand
- */
-async function handleCleanCommand(
-  context: CliContext,
-  argv: HistoryArguments
-): Promise<number> {
-  try {
-    // Build retention policy from arguments
-    const policy: any = {};
-
-    if (argv.maxAge) policy.maxAge = argv.maxAge;
-    if (argv.maxRuns) policy.maxRuns = argv.maxRuns;
-    if (argv.maxSize) policy.maxSize = argv.maxSize;
-
-    if (Object.keys(policy).length === 0) {
-      console.error(
-        'At least one cleanup criterion must be specified (--max-age, --max-runs, or --max-size)'
-      );
-      return 2;
-    }
-
-    // Show what would be cleaned unless confirmed
-    if (!argv.confirm) {
-      console.log(
-        'This will clean up historical data based on the following policy:'
-      );
-      if (policy.maxAge)
-        console.log(`  - Remove runs older than ${policy.maxAge}ms`);
-      if (policy.maxRuns)
-        console.log(`  - Keep only the latest ${policy.maxRuns} runs`);
-      if (policy.maxSize)
-        console.log(
-          `  - Remove runs until storage is under ${policy.maxSize} bytes`
-        );
-      console.log();
-      console.log('Use --confirm to proceed with cleanup.');
-      return 0;
-    }
-
-    // Perform cleanup
-    const result = await context.historyStorage.cleanup(policy);
-
-    if (!argv.quiet) {
-      console.log(`Cleanup completed:`);
-      console.log(`  Removed ${result.removedRuns} run(s)`);
-      console.log(`  Freed ${formatBytes(result.freedBytes)} of storage`);
-
-      if (argv.verbose && result.removedFiles.length > 0) {
-        console.log(`  Removed files:`);
-        for (const file of result.removedFiles) {
-          console.log(`    ${file}`);
-        }
-      }
-    }
-
-    return 0;
-  } catch (error) {
-    console.error(
-      'Failed to clean history:',
-      error instanceof Error ? error.message : String(error)
-    );
-    return 5;
-  }
-}
+};
 
 /**
  * Handle the export subcommand
  */
-async function handleExportCommand(
+const handleExportCommand = async (
   context: CliContext,
-  argv: HistoryArguments
-): Promise<number> {
+  argv: HistoryArguments,
+): Promise<number> => {
   try {
     const format = argv.format || 'json';
 
     // Build query for export
     const query: any = {};
-    if (argv.since) query.since = parseDate(argv.since);
-    if (argv.until) query.until = parseDate(argv.until);
+    if (argv.since) {
+      query.since = parseDate(argv.since);
+    }
+    if (argv.until) {
+      query.until = parseDate(argv.until);
+    }
 
     const exportData = await context.historyStorage.export(
-      format as 'json' | 'csv',
-      query
+      format as 'csv' | 'json',
+      query,
     );
 
     if (argv.output) {
@@ -508,19 +344,214 @@ async function handleExportCommand(
   } catch (error) {
     console.error(
       'Failed to export history:',
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     return 5;
   }
-}
+};
+
+/**
+ * Handle the list subcommand
+ */
+const handleListCommand = async (
+  context: CliContext,
+  argv: HistoryArguments,
+): Promise<number> => {
+  try {
+    // Build query from command line arguments
+    const query: any = {};
+
+    if (argv.since) {
+      try {
+        query.since = parseDate(argv.since);
+      } catch (error) {
+        console.error(
+          'Invalid since date:',
+          error instanceof Error ? error.message : String(error),
+        );
+        return 2; // Invalid date format
+      }
+    }
+
+    if (argv.until) {
+      try {
+        query.until = parseDate(argv.until);
+      } catch (error) {
+        console.error(
+          'Invalid until date:',
+          error instanceof Error ? error.message : String(error),
+        );
+        return 2; // Invalid date format
+      }
+    }
+
+    if (argv.pattern) {
+      query.pattern = argv.pattern;
+    }
+
+    if (argv.tags && argv.tags.length > 0) {
+      query.tags = argv.tags;
+    }
+
+    if (argv.limit) {
+      query.limit = argv.limit;
+    }
+
+    // Query historical runs
+    const runs = await context.historyStorage.queryRuns(query);
+
+    // Display results based on format
+    if (argv.format === 'json') {
+      if (runs.length === 0) {
+        console.log('[]'); // Empty JSON array for no data
+      } else {
+        console.log(
+          JSON.stringify(
+            runs.map((run) => ({
+              duration: run.duration,
+              failed: run.summary.failedTasks,
+              files: run.summary.totalFiles,
+              id: run.id,
+              passed: run.summary.passedTasks,
+              startTime: run.startTime,
+              tasks: run.summary.totalTasks,
+            })),
+            null,
+            2,
+          ),
+        );
+      }
+    } else if (argv.format === 'csv') {
+      console.log('id,startTime,duration,files,tasks,passed,failed');
+      if (runs.length > 0) {
+        for (const run of runs) {
+          console.log(
+            `${run.id},${run.startTime.toISOString()},${run.duration},${run.summary.totalFiles},${run.summary.totalTasks},${run.summary.passedTasks},${run.summary.failedTasks}`,
+          );
+        }
+      }
+      // For CSV, no additional message needed - header is sufficient
+    } else {
+      // Human format
+      if (runs.length === 0) {
+        if (!argv.quiet) {
+          console.log('No historical data found matching criteria.');
+        }
+      } else {
+        console.log('Recent benchmark runs:');
+        console.log();
+
+        for (const run of runs) {
+          const dateStr = run.startTime.toLocaleString();
+          const durationStr = `${(run.duration / 1000).toFixed(1)}s`;
+          const statusStr =
+            run.summary.failedTasks > 0
+              ? `${run.summary.passedTasks} passed, ${run.summary.failedTasks} failed`
+              : `${run.summary.passedTasks} passed`;
+
+          console.log(
+            `  ${run.id.substring(0, 8)} - ${dateStr} (${durationStr})`,
+          );
+          console.log(
+            `    ${run.summary.totalFiles} files, ${run.summary.totalTasks} tasks: ${statusStr}`,
+          );
+          console.log();
+        }
+      }
+    }
+
+    return 0;
+  } catch (error) {
+    console.error(
+      'Failed to list history:',
+      error instanceof Error ? error.message : String(error),
+    );
+    return 5;
+  }
+};
+
+/**
+ * Handle the show subcommand
+ */
+const handleShowCommand = async (
+  context: CliContext,
+  argv: HistoryArguments,
+): Promise<number> => {
+  try {
+    // For show command, ID comes from the args after the subcommand
+    const runId = argv.args?.[0]; // yargs populates this from [args..]
+
+    if (!runId) {
+      console.error('Run ID is required for show command');
+      console.error('Usage: modestbench history show <run-id>');
+      return 2;
+    }
+
+    const run = await context.historyStorage.loadRun(runId);
+
+    if (!run) {
+      console.error(`Run not found: ${runId}`);
+      return 1;
+    }
+
+    if (argv.format === 'json') {
+      console.log(JSON.stringify(run, null, 2));
+    } else {
+      // Human format
+      console.log(`Benchmark Run: ${run.id}`);
+      console.log(`Date: ${run.startTime.toLocaleString()}`);
+      console.log(`Duration: ${(run.duration / 1000).toFixed(1)}s`);
+      console.log(
+        `Environment: Node.js ${run.environment.nodeVersion} on ${run.environment.platform}`,
+      );
+
+      if (run.git) {
+        console.log(`Git: ${run.git.branch}@${run.git.commit.substring(0, 8)}`);
+      }
+
+      console.log();
+      console.log('Summary:');
+      console.log(`  Files: ${run.summary.totalFiles}`);
+      console.log(`  Suites: ${run.summary.totalSuites}`);
+      console.log(`  Tasks: ${run.summary.totalTasks}`);
+      console.log(`  Passed: ${run.summary.passedTasks}`);
+      console.log(`  Failed: ${run.summary.failedTasks}`);
+
+      // TODO: Show detailed file/suite/task results
+      console.log();
+      console.log('Detailed results:');
+      for (const file of run.files) {
+        console.log(`  📁 ${file.filePath}`);
+        for (const suite of file.suites) {
+          console.log(`    📊 ${suite.name}`);
+          for (const task of suite.tasks) {
+            const status = task.error ? '❌' : '✅';
+            const timing = task.error
+              ? 'failed'
+              : `${(task.mean / 1000000).toFixed(2)}ms`;
+            console.log(`      ${status} ${task.name} - ${timing}`);
+          }
+        }
+      }
+    }
+
+    return 0;
+  } catch (error) {
+    console.error(
+      'Failed to show run:',
+      error instanceof Error ? error.message : String(error),
+    );
+    return 5;
+  }
+};
 
 /**
  * Handle the trends subcommand
  */
-async function handleTrendsCommand(
+const handleTrendsCommand = async (
   context: CliContext,
-  argv: HistoryArguments
-): Promise<number> {
+  argv: HistoryArguments,
+): Promise<number> => {
   try {
     // Build query from command line arguments (same as list command)
     const query: any = {};
@@ -538,7 +569,7 @@ async function handleTrendsCommand(
       } catch (error) {
         console.error(
           'Invalid since date:',
-          error instanceof Error ? error.message : String(error)
+          error instanceof Error ? error.message : String(error),
         );
         return 2; // Invalid date format
       }
@@ -550,7 +581,7 @@ async function handleTrendsCommand(
       } catch (error) {
         console.error(
           'Invalid until date:',
-          error instanceof Error ? error.message : String(error)
+          error instanceof Error ? error.message : String(error),
         );
         return 2; // Invalid date format
       }
@@ -583,8 +614,8 @@ async function handleTrendsCommand(
       const trendsData = {
         runs: runs.length,
         timespan: {
-          start: runs[runs.length - 1]?.startTime,
           end: runs[0]?.startTime,
+          start: runs[runs.length - 1]?.startTime,
         },
         // TODO: Add actual trend calculations
       };
@@ -594,7 +625,7 @@ async function handleTrendsCommand(
       if (!argv.quiet) {
         console.log(`Performance trends for ${runs.length} runs:`);
         console.log(
-          `Time range: ${runs[runs.length - 1]?.startTime} to ${runs[0]?.startTime}`
+          `Time range: ${runs[runs.length - 1]?.startTime} to ${runs[0]?.startTime}`,
         );
         // TODO: Add trend analysis and visualization
         console.log('(Trend analysis not yet implemented)');
@@ -606,12 +637,12 @@ async function handleTrendsCommand(
     console.error('Error showing trends:', error);
     return 3; // Runtime error
   }
-}
+};
 
 /**
  * Parse date string (ISO 8601 or relative)
  */
-function parseDate(dateStr: string): Date {
+const parseDate = (dateStr: string): Date => {
   // Try parsing as ISO 8601 first
   const isoDate = new Date(dateStr);
   if (!isNaN(isoDate.getTime())) {
@@ -621,20 +652,4 @@ function parseDate(dateStr: string): Date {
   // TODO: Parse relative dates like "1 week ago", "3 days ago", etc.
   // For now, throw error for invalid dates
   throw new Error(`Invalid date format: "${dateStr}"`);
-}
-
-/**
- * Format bytes in human-readable format
- */
-function formatBytes(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let size = bytes;
-  let unitIndex = 0;
-
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-
-  return `${size.toFixed(1)} ${units[unitIndex]}`;
-}
+};

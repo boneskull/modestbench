@@ -7,70 +7,24 @@
 
 import type {
   BenchmarkRun,
-  ModestBenchConfig,
-  TaskResult,
-  SuiteResult,
-  FileResult,
   ErrorContext,
-  ExecutionError,
   ErrorStats,
+  ExecutionError,
+  FileResult,
+  ModestBenchConfig,
+  SuiteResult,
+  TaskResult,
 } from './core.js';
-
-/**
- * Configuration for a benchmark run execution
- */
-export interface RunConfiguration extends Partial<ModestBenchConfig> {
-  /** Files to execute (overrides pattern discovery) */
-  readonly files?: string[];
-  /** Working directory for execution */
-  readonly cwd?: string;
-  /** Environment variables to set */
-  readonly env?: Record<string, string>;
-}
-
-/**
- * Result of a validation operation
- */
-export interface ValidationResult {
-  /** Whether validation passed */
-  readonly valid: boolean;
-  /** Validation errors found */
-  readonly errors: ValidationError[];
-  /** Validation warnings */
-  readonly warnings: ValidationWarning[];
-  /** Files that were validated */
-  readonly files: string[];
-}
-
-/**
- * A validation error
- */
-export interface ValidationError {
-  /** File where error occurred */
-  readonly file: string;
-  /** Line number where error occurred */
-  readonly line?: number;
-  /** Column number where error occurred */
-  readonly column?: number;
-  /** Error message */
-  readonly message: string;
-  /** Error code for programmatic handling */
-  readonly code: string;
-  /** Severity level */
-  readonly severity: 'error' | 'warning';
-}
-
-/**
- * A validation warning
- */
-export interface ValidationWarning extends ValidationError {
-  readonly severity: 'warning';
-}
 
 /**
  * Main benchmark engine interface
  */
 export interface BenchmarkEngine {
+  /**
+   * Discover benchmark files matching patterns
+   */
+  discover(pattern: string, exclude?: string[]): Promise<string[]>;
+
   /**
    * Execute benchmarks with the given configuration
    */
@@ -80,14 +34,9 @@ export interface BenchmarkEngine {
   ): Promise<BenchmarkRun>;
 
   /**
-   * Validate benchmark files
+   * Get all registered reporters
    */
-  validate(files: string[]): Promise<ValidationResult>;
-
-  /**
-   * Discover benchmark files matching patterns
-   */
-  discover(pattern: string, exclude?: string[]): Promise<string[]>;
+  getReporters(): Record<string, Reporter>;
 
   /**
    * Register a reporter for benchmark output
@@ -95,15 +44,32 @@ export interface BenchmarkEngine {
   registerReporter(name: string, reporter: Reporter): void;
 
   /**
-   * Get all registered reporters
+   * Validate benchmark files
    */
-  getReporters(): Record<string, Reporter>;
+  validate(files: string[]): Promise<ValidationResult>;
+}
+
+/**
+ * Result of a cleanup operation
+ */
+export interface CleanupResult {
+  /** Amount of disk space freed in bytes */
+  readonly freedBytes: number;
+  /** Files that were removed */
+  readonly removedFiles: string[];
+  /** Number of runs removed */
+  readonly removedRuns: number;
 }
 
 /**
  * Configuration management interface
  */
 export interface ConfigurationManager {
+  /**
+   * Get default configuration values
+   */
+  getDefaults(): ModestBenchConfig;
+
   /**
    * Load configuration from various sources
    */
@@ -113,162 +79,14 @@ export interface ConfigurationManager {
   ): Promise<ModestBenchConfig>;
 
   /**
-   * Validate a configuration object
-   */
-  validate(config: Partial<ModestBenchConfig>): ValidationResult;
-
-  /**
    * Merge multiple configuration objects with precedence
    */
   merge(...configs: Partial<ModestBenchConfig>[]): ModestBenchConfig;
 
   /**
-   * Get default configuration values
+   * Validate a configuration object
    */
-  getDefaults(): ModestBenchConfig;
-}
-
-/**
- * Progress tracking state
- */
-export interface ProgressState {
-  /** Current file being processed */
-  readonly currentFile?: string;
-  /** Current suite being processed */
-  readonly currentSuite?: string;
-  /** Current task being processed */
-  readonly currentTask?: string;
-  /** Number of files completed */
-  readonly filesCompleted: number;
-  /** Total number of files */
-  readonly totalFiles: number;
-  /** Number of suites completed */
-  readonly suitesCompleted: number;
-  /** Total number of suites */
-  readonly totalSuites: number;
-  /** Number of tasks completed */
-  readonly tasksCompleted: number;
-  /** Total number of tasks */
-  readonly totalTasks: number;
-  /** Elapsed time in milliseconds */
-  readonly elapsed: number;
-  /** Progress percentage (0-100) */
-  readonly percentage: number;
-}
-
-/**
- * Progress management interface
- */
-export interface ProgressManager {
-  /**
-   * Initialize progress tracking for a benchmark run
-   */
-  initialize(run: BenchmarkRun): void;
-
-  /**
-   * Update progress state
-   */
-  update(state: Partial<ProgressState>): void;
-
-  /**
-   * Get current progress state
-   */
-  getState(): ProgressState;
-
-  /**
-   * Estimate completion time
-   */
-  estimateCompletion(): Date | null;
-
-  /**
-   * Register a callback for progress updates
-   */
-  onProgress(callback: (state: ProgressState) => void): void;
-
-  /**
-   * Clean up progress tracking resources
-   */
-  cleanup(): void;
-
-  /**
-   * Force an immediate progress update (bypassing throttling)
-   */
-  forceUpdate(): void;
-}
-
-/**
- * Base reporter interface for benchmark output
- */
-export interface Reporter {
-  /**
-   * Called when benchmark run starts
-   */
-  onStart(run: BenchmarkRun): void | Promise<void>;
-
-  /**
-   * Called when a file starts execution
-   */
-  onFileStart(file: string): void | Promise<void>;
-
-  /**
-   * Called when a suite starts execution
-   */
-  onSuiteStart(suite: string): void | Promise<void>;
-
-  /**
-   * Called when a task starts execution
-   */
-  onTaskStart(task: string): void | Promise<void>;
-
-  /**
-   * Called when a task completes
-   */
-  onTaskResult(result: TaskResult): void | Promise<void>;
-
-  /**
-   * Called when a suite completes
-   */
-  onSuiteEnd(result: SuiteResult): void | Promise<void>;
-
-  /**
-   * Called when a file completes
-   */
-  onFileEnd(result: FileResult): void | Promise<void>;
-
-  /**
-   * Called when benchmark run completes
-   */
-  onEnd(run: BenchmarkRun): void | Promise<void>;
-
-  /**
-   * Called for progress updates
-   */
-  onProgress(state: ProgressState): void | Promise<void>;
-
-  /**
-   * Called when an error occurs
-   */
-  onError(error: Error): void | Promise<void>;
-}
-
-/**
- * Human-readable reporter interface
- */
-export interface HumanReporter extends Reporter {
-  /** Uses colors and formatting for terminal output */
-  readonly supportsColor: boolean;
-  /** Displays progress bars */
-  readonly showProgress: boolean;
-}
-
-/**
- * JSON output reporter interface
- */
-export interface JsonReporter extends Reporter {
-  /** Supports streaming output */
-  readonly streaming: boolean;
-  /** Pretty-print JSON output */
-  readonly prettyPrint: boolean;
+  validate(config: Partial<ModestBenchConfig>): ValidationResult;
 }
 
 /**
@@ -282,14 +100,249 @@ export interface CsvReporter extends Reporter {
 }
 
 /**
+ * Error management interface for handling execution errors
+ */
+export interface ErrorManager {
+  /**
+   * Clear error history
+   */
+  clearStats(): void;
+
+  /**
+   * Format error for display
+   */
+  formatError(error: ExecutionError): string;
+
+  /**
+   * Get error code for a given error
+   */
+  getErrorCode(error: Error, context: ErrorContext): string;
+
+  /**
+   * Get error statistics
+   */
+  getStats(): ErrorStats;
+
+  /**
+   * Handle an execution error
+   */
+  handleError(error: Error, context: ErrorContext): ExecutionError;
+
+  /**
+   * Check if an error is recoverable
+   */
+  isRecoverable(error: ExecutionError): boolean;
+
+  /**
+   * Register error handler callback
+   */
+  onError(handler: (error: ExecutionError) => void): void;
+}
+
+/**
+ * Query interface for historical benchmark data
+ */
+export interface HistoryQuery {
+  /** Maximum number of results */
+  readonly limit?: number;
+  /** Results offset for pagination */
+  readonly offset?: number;
+  /** Pattern to match benchmark names */
+  readonly pattern?: string;
+  /** Start date for filtering */
+  readonly since?: Date;
+  /** Sort order */
+  readonly sort?: 'asc' | 'desc';
+  /** Field to sort by */
+  readonly sortBy?: 'date' | 'duration' | 'name';
+  /** Tags to filter by */
+  readonly tags?: string[];
+  /** End date for filtering */
+  readonly until?: Date;
+}
+
+/**
+ * Historical data storage interface
+ */
+export interface HistoryStorage {
+  /**
+   * Clean up old data according to retention policy
+   */
+  cleanup(policy: RetentionPolicy): Promise<CleanupResult>;
+
+  /**
+   * Export historical data
+   */
+  export(format: 'csv' | 'json', query?: HistoryQuery): Promise<string>;
+
+  /**
+   * Get index of all stored runs
+   */
+  getIndex(): Promise<Array<{ date: Date; id: string; summary: string }>>;
+
+  /**
+   * Load a specific benchmark run
+   */
+  loadRun(id: string): Promise<BenchmarkRun | null>;
+
+  /**
+   * Query historical runs
+   */
+  queryRuns(query: HistoryQuery): Promise<BenchmarkRun[]>;
+
+  /**
+   * Save a benchmark run to storage
+   */
+  saveRun(run: BenchmarkRun): Promise<void>;
+}
+
+/**
+ * Human-readable reporter interface
+ */
+export interface HumanReporter extends Reporter {
+  /** Displays progress bars */
+  readonly showProgress: boolean;
+  /** Uses colors and formatting for terminal output */
+  readonly supportsColor: boolean;
+}
+
+/**
+ * JSON output reporter interface
+ */
+export interface JsonReporter extends Reporter {
+  /** Pretty-print JSON output */
+  readonly prettyPrint: boolean;
+  /** Supports streaming output */
+  readonly streaming: boolean;
+}
+
+/**
+ * Progress management interface
+ */
+export interface ProgressManager {
+  /**
+   * Clean up progress tracking resources
+   */
+  cleanup(): void;
+
+  /**
+   * Estimate completion time
+   */
+  estimateCompletion(): Date | null;
+
+  /**
+   * Force an immediate progress update (bypassing throttling)
+   */
+  forceUpdate(): void;
+
+  /**
+   * Get current progress state
+   */
+  getState(): ProgressState;
+
+  /**
+   * Initialize progress tracking for a benchmark run
+   */
+  initialize(run: BenchmarkRun): void;
+
+  /**
+   * Register a callback for progress updates
+   */
+  onProgress(callback: (state: ProgressState) => void): void;
+
+  /**
+   * Update progress state
+   */
+  update(state: Partial<ProgressState>): void;
+}
+
+/**
+ * Progress tracking state
+ */
+export interface ProgressState {
+  /** Current file being processed */
+  readonly currentFile?: string;
+  /** Current suite being processed */
+  readonly currentSuite?: string;
+  /** Current task being processed */
+  readonly currentTask?: string;
+  /** Elapsed time in milliseconds */
+  readonly elapsed: number;
+  /** Number of files completed */
+  readonly filesCompleted: number;
+  /** Progress percentage (0-100) */
+  readonly percentage: number;
+  /** Number of suites completed */
+  readonly suitesCompleted: number;
+  /** Number of tasks completed */
+  readonly tasksCompleted: number;
+  /** Total number of files */
+  readonly totalFiles: number;
+  /** Total number of suites */
+  readonly totalSuites: number;
+  /** Total number of tasks */
+  readonly totalTasks: number;
+}
+
+/**
+ * Base reporter interface for benchmark output
+ */
+export interface Reporter {
+  /**
+   * Called when benchmark run completes
+   */
+  onEnd(run: BenchmarkRun): Promise<void> | void;
+
+  /**
+   * Called when an error occurs
+   */
+  onError(error: Error): Promise<void> | void;
+
+  /**
+   * Called when a file completes
+   */
+  onFileEnd(result: FileResult): Promise<void> | void;
+
+  /**
+   * Called when a file starts execution
+   */
+  onFileStart(file: string): Promise<void> | void;
+
+  /**
+   * Called for progress updates
+   */
+  onProgress(state: ProgressState): Promise<void> | void;
+
+  /**
+   * Called when benchmark run starts
+   */
+  onStart(run: BenchmarkRun): Promise<void> | void;
+
+  /**
+   * Called when a suite completes
+   */
+  onSuiteEnd(result: SuiteResult): Promise<void> | void;
+
+  /**
+   * Called when a suite starts execution
+   */
+  onSuiteStart(suite: string): Promise<void> | void;
+
+  /**
+   * Called when a task completes
+   */
+  onTaskResult(result: TaskResult): Promise<void> | void;
+
+  /**
+   * Called when a task starts execution
+   */
+  onTaskStart(task: string): Promise<void> | void;
+}
+
+/**
  * Reporter registry interface
  */
 export interface ReporterRegistry {
-  /**
-   * Register a reporter
-   */
-  register(name: string, reporter: Reporter): void;
-
   /**
    * Get a reporter by name
    */
@@ -299,40 +352,11 @@ export interface ReporterRegistry {
    * Get all registered reporters
    */
   getAll(): Record<string, Reporter>;
-}
 
-/**
- * Query interface for historical benchmark data
- */
-export interface HistoryQuery {
-  /** Start date for filtering */
-  readonly since?: Date;
-  /** End date for filtering */
-  readonly until?: Date;
-  /** Pattern to match benchmark names */
-  readonly pattern?: string;
-  /** Tags to filter by */
-  readonly tags?: string[];
-  /** Maximum number of results */
-  readonly limit?: number;
-  /** Results offset for pagination */
-  readonly offset?: number;
-  /** Sort order */
-  readonly sort?: 'asc' | 'desc';
-  /** Field to sort by */
-  readonly sortBy?: 'date' | 'duration' | 'name';
-}
-
-/**
- * Result of a cleanup operation
- */
-export interface CleanupResult {
-  /** Number of runs removed */
-  readonly removedRuns: number;
-  /** Amount of disk space freed in bytes */
-  readonly freedBytes: number;
-  /** Files that were removed */
-  readonly removedFiles: string[];
+  /**
+   * Register a reporter
+   */
+  register(name: string, reporter: Reporter): void;
 }
 
 /**
@@ -348,76 +372,52 @@ export interface RetentionPolicy {
 }
 
 /**
- * Historical data storage interface
+ * Configuration for a benchmark run execution
  */
-export interface HistoryStorage {
-  /**
-   * Save a benchmark run to storage
-   */
-  saveRun(run: BenchmarkRun): Promise<void>;
-
-  /**
-   * Load a specific benchmark run
-   */
-  loadRun(id: string): Promise<BenchmarkRun | null>;
-
-  /**
-   * Query historical runs
-   */
-  queryRuns(query: HistoryQuery): Promise<BenchmarkRun[]>;
-
-  /**
-   * Get index of all stored runs
-   */
-  getIndex(): Promise<Array<{ id: string; date: Date; summary: string }>>;
-
-  /**
-   * Clean up old data according to retention policy
-   */
-  cleanup(policy: RetentionPolicy): Promise<CleanupResult>;
-
-  /**
-   * Export historical data
-   */
-  export(format: 'json' | 'csv', query?: HistoryQuery): Promise<string>;
+export interface RunConfiguration extends Partial<ModestBenchConfig> {
+  /** Working directory for execution */
+  readonly cwd?: string;
+  /** Environment variables to set */
+  readonly env?: Record<string, string>;
+  /** Files to execute (overrides pattern discovery) */
+  readonly files?: string[];
 }
 
 /**
- * Error management interface for handling execution errors
+ * A validation error
  */
-export interface ErrorManager {
-  /**
-   * Handle an execution error
-   */
-  handleError(error: Error, context: ErrorContext): ExecutionError;
+export interface ValidationError {
+  /** Error code for programmatic handling */
+  readonly code: string;
+  /** Column number where error occurred */
+  readonly column?: number;
+  /** File where error occurred */
+  readonly file: string;
+  /** Line number where error occurred */
+  readonly line?: number;
+  /** Error message */
+  readonly message: string;
+  /** Severity level */
+  readonly severity: 'error' | 'warning';
+}
 
-  /**
-   * Register error handler callback
-   */
-  onError(handler: (error: ExecutionError) => void): void;
+/**
+ * Result of a validation operation
+ */
+export interface ValidationResult {
+  /** Validation errors found */
+  readonly errors: ValidationError[];
+  /** Files that were validated */
+  readonly files: string[];
+  /** Whether validation passed */
+  readonly valid: boolean;
+  /** Validation warnings */
+  readonly warnings: ValidationWarning[];
+}
 
-  /**
-   * Get error statistics
-   */
-  getStats(): ErrorStats;
-
-  /**
-   * Clear error history
-   */
-  clearStats(): void;
-
-  /**
-   * Check if an error is recoverable
-   */
-  isRecoverable(error: ExecutionError): boolean;
-
-  /**
-   * Get error code for a given error
-   */
-  getErrorCode(error: Error, context: ErrorContext): string;
-
-  /**
-   * Format error for display
-   */
-  formatError(error: ExecutionError): string;
+/**
+ * A validation warning
+ */
+export interface ValidationWarning extends ValidationError {
+  readonly severity: 'warning';
 }

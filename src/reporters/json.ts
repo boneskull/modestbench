@@ -6,15 +6,17 @@
  */
 
 import { writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+
 import type {
   BenchmarkRun,
-  TaskResult,
-  SuiteResult,
   FileResult,
   ProgressState,
+  SuiteResult,
+  TaskResult,
 } from '../types/index.js';
+
 import { BaseReporter } from './registry.js';
 
 /**
@@ -23,17 +25,17 @@ import { BaseReporter } from './registry.js';
 interface JsonOutput {
   /** ModestBench metadata */
   readonly meta: {
-    readonly version: string;
-    readonly timestamp: string;
     readonly format: 'modestbench-json';
+    readonly timestamp: string;
+    readonly version: string;
   };
   /** Complete benchmark run data */
   readonly run: BenchmarkRun;
   /** Additional computed statistics */
   statistics?: {
+    averageOpsPerSecond?: number;
     fastestTask?: TaskResult;
     slowestTask?: TaskResult;
-    averageOpsPerSecond?: number;
     totalIterations?: number;
   };
 }
@@ -42,29 +44,34 @@ interface JsonOutput {
  * JSON reporter for structured output
  */
 export class JsonReporter extends BaseReporter {
-  private readonly outputPath?: string | undefined;
-  private readonly prettyPrint: boolean;
-  private readonly includeStatistics: boolean;
-  private readonly includeMetadata: boolean;
   private currentRun?: BenchmarkRun;
+
+  private readonly includeMetadata: boolean;
+
+  private readonly includeStatistics: boolean;
+
+  private readonly outputPath?: string | undefined;
+
+  private readonly prettyPrint: boolean;
+
   private statistics: {
     fastestTask?: TaskResult;
     slowestTask?: TaskResult;
+    taskCount: number;
     totalIterations: number;
     totalOpsPerSecond: number;
-    taskCount: number;
   } = {
+    taskCount: 0,
     totalIterations: 0,
     totalOpsPerSecond: 0,
-    taskCount: 0,
   };
 
   constructor(
     options: {
+      includeMetadata?: boolean;
+      includeStatistics?: boolean;
       outputPath?: string;
       prettyPrint?: boolean;
-      includeStatistics?: boolean;
-      includeMetadata?: boolean;
     } = {}
   ) {
     super('json', options);
@@ -75,35 +82,32 @@ export class JsonReporter extends BaseReporter {
     this.includeMetadata = options.includeMetadata ?? true;
   }
 
-  onStart(run: BenchmarkRun): void {
-    this.currentRun = run;
-    this.resetStatistics();
+  /**
+   * Check if statistics are included
+   */
+  areStatisticsIncluded(): boolean {
+    return this.includeStatistics;
   }
 
-  onFileStart(_file: string): void {
-    // No-op for JSON reporter
+  /**
+   * Get the output path (if configured)
+   */
+  getOutputPath(): string | undefined {
+    return this.outputPath;
   }
 
-  onSuiteStart(_suite: string): void {
-    // No-op for JSON reporter
+  /**
+   * Check if metadata is included
+   */
+  isMetadataIncluded(): boolean {
+    return this.includeMetadata;
   }
 
-  onTaskStart(_task: string): void {
-    // No-op for JSON reporter
-  }
-
-  onTaskResult(result: TaskResult): void {
-    if (!result.error) {
-      this.updateStatistics(result);
-    }
-  }
-
-  onSuiteEnd(_result: SuiteResult): void {
-    // No-op for JSON reporter
-  }
-
-  onFileEnd(_result: FileResult): void {
-    // No-op for JSON reporter
+  /**
+   * Check if pretty printing is enabled
+   */
+  isPrettyPrintEnabled(): boolean {
+    return this.prettyPrint;
   }
 
   async onEnd(run: BenchmarkRun): Promise<void> {
@@ -116,14 +120,45 @@ export class JsonReporter extends BaseReporter {
     }
   }
 
-  onProgress(_state: ProgressState): void {
-    // No-op for JSON reporter - we don't output progress in JSON format
-  }
-
   onError(error: Error): void {
     // For JSON reporter, we'll include errors in the final output
     // but we can also log to stderr for immediate feedback
     console.error('JSON Reporter Error:', error.message);
+  }
+
+  onFileEnd(_result: FileResult): void {
+    // No-op for JSON reporter
+  }
+
+  onFileStart(_file: string): void {
+    // No-op for JSON reporter
+  }
+
+  onProgress(_state: ProgressState): void {
+    // No-op for JSON reporter - we don't output progress in JSON format
+  }
+
+  onStart(run: BenchmarkRun): void {
+    this.currentRun = run;
+    this.resetStatistics();
+  }
+
+  onSuiteEnd(_result: SuiteResult): void {
+    // No-op for JSON reporter
+  }
+
+  onSuiteStart(_suite: string): void {
+    // No-op for JSON reporter
+  }
+
+  onTaskResult(result: TaskResult): void {
+    if (!result.error) {
+      this.updateStatistics(result);
+    }
+  }
+
+  onTaskStart(_task: string): void {
+    // No-op for JSON reporter
   }
 
   /**
@@ -132,9 +167,9 @@ export class JsonReporter extends BaseReporter {
   private buildJsonOutput(run: BenchmarkRun): JsonOutput {
     const output: JsonOutput = {
       meta: {
-        version: '0.1.0', // TODO: Get from package.json
-        timestamp: new Date().toISOString(),
         format: 'modestbench-json',
+        timestamp: new Date().toISOString(),
+        version: '0.1.0', // TODO: Get from package.json
       },
       run: this.includeMetadata ? run : this.sanitizeRun(run),
     };
@@ -163,6 +198,17 @@ export class JsonReporter extends BaseReporter {
   }
 
   /**
+   * Reset statistics tracking
+   */
+  private resetStatistics(): void {
+    this.statistics = {
+      taskCount: 0,
+      totalIterations: 0,
+      totalOpsPerSecond: 0,
+    };
+  }
+
+  /**
    * Remove potentially sensitive metadata from run data
    */
   private sanitizeRun(run: BenchmarkRun): BenchmarkRun {
@@ -183,6 +229,31 @@ export class JsonReporter extends BaseReporter {
     }
 
     return sanitized;
+  }
+
+  /**
+   * Update running statistics with a task result
+   */
+  private updateStatistics(result: TaskResult): void {
+    this.statistics.totalIterations += result.iterations;
+    this.statistics.totalOpsPerSecond += result.opsPerSecond;
+    this.statistics.taskCount++;
+
+    // Track fastest task
+    if (
+      !this.statistics.fastestTask ||
+      result.mean < this.statistics.fastestTask.mean
+    ) {
+      this.statistics.fastestTask = result;
+    }
+
+    // Track slowest task
+    if (
+      !this.statistics.slowestTask ||
+      result.mean > this.statistics.slowestTask.mean
+    ) {
+      this.statistics.slowestTask = result;
+    }
   }
 
   /**
@@ -220,69 +291,5 @@ export class JsonReporter extends BaseReporter {
       : JSON.stringify(output);
 
     console.log(jsonString);
-  }
-
-  /**
-   * Reset statistics tracking
-   */
-  private resetStatistics(): void {
-    this.statistics = {
-      totalIterations: 0,
-      totalOpsPerSecond: 0,
-      taskCount: 0,
-    };
-  }
-
-  /**
-   * Update running statistics with a task result
-   */
-  private updateStatistics(result: TaskResult): void {
-    this.statistics.totalIterations += result.iterations;
-    this.statistics.totalOpsPerSecond += result.opsPerSecond;
-    this.statistics.taskCount++;
-
-    // Track fastest task
-    if (
-      !this.statistics.fastestTask ||
-      result.mean < this.statistics.fastestTask.mean
-    ) {
-      this.statistics.fastestTask = result;
-    }
-
-    // Track slowest task
-    if (
-      !this.statistics.slowestTask ||
-      result.mean > this.statistics.slowestTask.mean
-    ) {
-      this.statistics.slowestTask = result;
-    }
-  }
-
-  /**
-   * Get the output path (if configured)
-   */
-  getOutputPath(): string | undefined {
-    return this.outputPath;
-  }
-
-  /**
-   * Check if pretty printing is enabled
-   */
-  isPrettyPrintEnabled(): boolean {
-    return this.prettyPrint;
-  }
-
-  /**
-   * Check if statistics are included
-   */
-  areStatisticsIncluded(): boolean {
-    return this.includeStatistics;
-  }
-
-  /**
-   * Check if metadata is included
-   */
-  isMetadataIncluded(): boolean {
-    return this.includeMetadata;
   }
 }

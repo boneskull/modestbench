@@ -1,32 +1,25 @@
-import { describe, it, beforeEach, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { spawn, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
-import { mkdtemp, writeFile, rm, mkdir, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, it } from 'node:test';
+
+import { runCommand } from '../util.js';
 
 /**
- * Integration tests for multiple reporter output formats
- * Reference: quickstart.md output format examples
+ * Integration tests for multiple reporter output formats Reference:
+ * quickstart.md output format examples
  */
 
 describe('Multiple reporter output formats', () => {
   let tempDir: string;
-  let cliPath: string;
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
-    cliPath = join(
-      process.cwd(),
-      'dist',
-      'tests',
-      'fixtures',
-      'cli-wrapper.js'
-    );
   });
 
   afterEach(async () => {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempDir, { force: true, recursive: true });
   });
 
   describe('human reporter', () => {
@@ -45,7 +38,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -60,7 +53,7 @@ describe('Multiple reporter output formats', () => {
         assert.ok(
           result.stdout.includes('ops/sec') ||
             result.stdout.includes('fastest') ||
-            result.stdout.includes('Human Output Test')
+            result.stdout.includes('Human Output Test'),
         );
 
         // Should contain table-like formatting (from quickstart example)
@@ -69,7 +62,7 @@ describe('Multiple reporter output formats', () => {
             result.stdout.includes('┌') ||
             result.stdout.includes('└') ||
             result.stdout.includes('|') ||
-            result.stdout.includes('-')
+            result.stdout.includes('-'),
         );
       } else {
         // Implementation doesn't exist yet
@@ -93,7 +86,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -108,7 +101,7 @@ describe('Multiple reporter output formats', () => {
         assert.ok(
           result.stdout.includes('%') ||
             result.stdout.includes('█') ||
-            result.stdout.includes('progress')
+            result.stdout.includes('progress'),
         );
       } else {
         // Implementation doesn't exist yet
@@ -130,7 +123,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -149,7 +142,7 @@ describe('Multiple reporter output formats', () => {
           result.stdout.includes('±') ||
             result.stdout.includes('mean') ||
             result.stdout.includes('stddev') ||
-            result.stdout.includes('%')
+            result.stdout.includes('%'),
         );
       } else {
         // Implementation doesn't exist yet
@@ -173,7 +166,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const outputFile = join(tempDir, 'results', 'results.json');
@@ -220,7 +213,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Metadata Suite': {
               benchmarks: {
-                'metadata task': { 
+                'metadata task': {
                   fn: () => 123,
                   tags: ['performance', 'unit']
                 }
@@ -228,7 +221,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -257,7 +250,7 @@ describe('Multiple reporter output formats', () => {
         } catch {
           // JSON parsing failed - might be streaming or incomplete
           assert.ok(
-            result.stdout.includes('json') || result.stdout.includes('{')
+            result.stdout.includes('json') || result.stdout.includes('{'),
           );
         }
       } else {
@@ -283,7 +276,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const outputFile = join(tempDir, 'results', 'results.csv');
@@ -308,7 +301,7 @@ describe('Multiple reporter output formats', () => {
           assert.ok(
             headers.includes('file') ||
               headers.includes('suite') ||
-              headers.includes('task')
+              headers.includes('task'),
           );
 
           // Should have data rows
@@ -320,7 +313,7 @@ describe('Multiple reporter output formats', () => {
           if (result.stdout) {
             assert.ok(result.stdout.includes(','));
             assert.ok(
-              result.stdout.includes('file') || result.stdout.includes('suite')
+              result.stdout.includes('file') || result.stdout.includes('suite'),
             );
           }
         }
@@ -344,10 +337,10 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
-      const result = await runCommand(['run', benchFile, '--reporters', 'csv']);
+      const result = await runCommand(['run', benchFile, '--reporters', 'csv'], tempDir);
 
       if (result.exitCode === 0 && result.stdout) {
         const lines = result.stdout.trim().split('\n');
@@ -381,7 +374,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -400,7 +393,7 @@ describe('Multiple reporter output formats', () => {
         // Implementation doesn't exist yet
         assert.ok(
           result.stderr.includes('not found') ||
-            result.stderr.includes('Unknown argument')
+            result.stderr.includes('Unknown argument'),
         );
       }
     });
@@ -421,7 +414,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -437,7 +430,7 @@ describe('Multiple reporter output formats', () => {
         // Should have human output in stdout
         assert.ok(
           result.stdout.includes('Multi Reporter Test') ||
-            result.stdout.includes('ops')
+            result.stdout.includes('ops'),
         );
 
         // Should create json and csv files
@@ -452,7 +445,7 @@ describe('Multiple reporter output formats', () => {
         } catch {
           // Files might not exist if implementation not ready
           assert.ok(
-            result.stdout.length > 0 || result.stderr.includes('not found')
+            result.stdout.length > 0 || result.stderr.includes('not found'),
           );
         }
       } else {
@@ -475,7 +468,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -511,7 +504,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const outputDir = join(tempDir, 'nested', 'output', 'dir');
@@ -532,7 +525,7 @@ describe('Multiple reporter output formats', () => {
         } catch {
           // Directory creation might not be implemented
           assert.ok(
-            result.stderr.includes('not found') || result.stdout.length > 0
+            result.stderr.includes('not found') || result.stdout.length > 0,
           );
         }
       } else {
@@ -555,11 +548,12 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       // Create existing file
       const existingFile = join(tempDir, 'results', 'results.json');
+      await mkdir(join(tempDir, 'results'), { recursive: true });
       await writeFile(existingFile, '{"existing": true}');
 
       const result = await runCommand([
@@ -589,7 +583,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -621,7 +615,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       // Try to write to read-only location (should fail gracefully)
@@ -652,7 +646,7 @@ describe('Multiple reporter output formats', () => {
             }
           }
         };
-      `
+      `,
       );
 
       const result = await runCommand([
@@ -667,46 +661,4 @@ describe('Multiple reporter output formats', () => {
     });
   });
 
-  /**
-   * Helper function to run CLI commands and capture output
-   */
-  async function runCommand(args: string[]): Promise<{
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-  }> {
-    return new Promise(resolve => {
-      const child: ChildProcess = spawn('node', [cliPath, ...args], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        cwd: tempDir,
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout?.on('data', (data: Buffer) => {
-        stdout += data.toString();
-      });
-
-      child.stderr?.on('data', (data: Buffer) => {
-        stderr += data.toString();
-      });
-
-      child.on('close', (code: number | null) => {
-        resolve({
-          stdout,
-          stderr,
-          exitCode: code ?? -1,
-        });
-      });
-
-      child.on('error', (error: Error) => {
-        resolve({
-          stdout,
-          stderr: stderr + error.message,
-          exitCode: -1,
-        });
-      });
-    });
-  }
 });

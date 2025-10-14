@@ -1,4 +1,21 @@
 {
-  "extends": "./config/tsconfig.json",
-  "include": ["src/**/*", "tests/**/*", "cli/**/*"]
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "module": "nodenext",
+    "moduleDetection": "force",
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "stripInternal": true,
+    "target": "esnext",
+    "types": ["node"],
+    "verbatimModuleSyntax": false
+  }
 }
