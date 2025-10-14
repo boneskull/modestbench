@@ -143,3 +143,4 @@ vite.config.ts.timestamp-*
 # Temporary/debugging files
 .tmp/
 .claude-skills
+.modestbench
