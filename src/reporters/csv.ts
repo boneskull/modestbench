@@ -2,7 +2,8 @@
  * ModestBench CSV Reporter
  *
  * Outputs benchmark results in CSV format for data analysis and visualization.
- * Provides structured tabular data suitable for spreadsheets and statistical tools.
+ * Provides structured tabular data suitable for spreadsheets and statistical
+ * tools.
  */
 
 import { writeFileSync } from 'node:fs';
@@ -78,7 +79,7 @@ export class CsvReporter extends BaseReporter {
       includeMetadata?: boolean;
       outputPath?: string;
       quote?: string;
-    } = {}
+    } = {},
   ) {
     super('csv', options);
 
@@ -223,7 +224,7 @@ export class CsvReporter extends BaseReporter {
       // Escape any existing quotes by doubling them
       const escaped = value.replace(
         new RegExp(this.quote, 'g'),
-        this.quote + this.quote
+        this.quote + this.quote,
       );
       return this.quote + escaped + this.quote;
     }
@@ -284,11 +285,11 @@ export class CsvReporter extends BaseReporter {
         'totalMemory',
         'gitCommit',
         'gitBranch',
-        'ciProvider'
+        'ciProvider',
       );
     }
 
-    return headers.map(h => this.escapeField(h)).join(this.delimiter);
+    return headers.map((h) => this.escapeField(h)).join(this.delimiter);
   }
 
   /**
@@ -323,11 +324,11 @@ export class CsvReporter extends BaseReporter {
         (row.totalMemory ?? 0).toString(),
         row.gitCommit || '',
         row.gitBranch || '',
-        row.ciProvider || ''
+        row.ciProvider || '',
       );
     }
 
-    return values.map(v => this.escapeField(v)).join(this.delimiter);
+    return values.map((v) => this.escapeField(v)).join(this.delimiter);
   }
 
   /**
@@ -347,7 +348,7 @@ export class CsvReporter extends BaseReporter {
       writeFileSync(this.outputPath, csvContent, 'utf8');
     } catch (error) {
       throw new Error(
-        `Failed to write CSV output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to write CSV output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

@@ -15,7 +15,7 @@ import { ExitCodes } from '../../types/cli.js';
 /**
  * Run command options interface
  */
-export interface RunOptions {
+interface RunOptions {
   bail?: boolean | undefined;
   config?: string | undefined;
   cwd: string;
@@ -156,7 +156,7 @@ export const handleRunCommand = async (
 /**
  * Handle execution results and determine appropriate exit code
  */
-export const handleResults = (
+const handleResults = (
   executionResult: BenchmarkRun,
   _options: RunOptions,
   _shouldBeQuiet: boolean,
@@ -177,10 +177,7 @@ export const handleResults = (
 /**
  * Load and merge configuration from various sources
  */
-export const loadConfiguration = async (
-  context: CliContext,
-  options: RunOptions,
-) => {
+const loadConfiguration = async (context: CliContext, options: RunOptions) => {
   try {
     // Create CLI arguments object for configuration merger
     const cliArgs: Record<string, unknown> = {};
@@ -235,7 +232,7 @@ export const loadConfiguration = async (
 /**
  * Setup and configure reporters based on configuration
  */
-export const setupReporters = async (
+const setupReporters = async (
   context: CliContext,
   config: { outputDir?: string; reporters?: string[] },
   shouldBeQuiet: boolean,

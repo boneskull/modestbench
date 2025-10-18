@@ -1,8 +1,9 @@
 /**
  * ModestBench Interface Types
  *
- * Defines the contract interfaces for all major components in the ModestBench system.
- * These interfaces establish the public APIs that implementations must satisfy.
+ * Defines the contract interfaces for all major components in the ModestBench
+ * system. These interfaces establish the public APIs that implementations must
+ * satisfy.
  */
 
 import type {
@@ -30,7 +31,7 @@ export interface BenchmarkEngine {
    */
   execute(
     config: RunConfiguration,
-    reporters?: Reporter[]
+    reporters?: Reporter[],
   ): Promise<BenchmarkRun>;
 
   /**
@@ -75,7 +76,7 @@ export interface ConfigurationManager {
    */
   load(
     configPath?: string,
-    cliArgs?: Record<string, unknown>
+    cliArgs?: Record<string, unknown>,
   ): Promise<ModestBenchConfig>;
 
   /**

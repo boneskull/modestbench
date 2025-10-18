@@ -1,8 +1,8 @@
 /**
  * ModestBench CLI Types
  *
- * Defines types specific to the command-line interface, including command definitions,
- * argument parsing, and CLI-specific configuration structures.
+ * Defines types specific to the command-line interface, including command
+ * definitions, argument parsing, and CLI-specific configuration structures.
  */
 
 /**

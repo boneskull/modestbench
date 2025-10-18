@@ -8,7 +8,7 @@ export default {
           },
           fn: async () => {
             // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1));
+            await new Promise((resolve) => setTimeout(resolve, 1));
             return { data: 'response' };
           },
         },
@@ -20,7 +20,7 @@ export default {
         },
 
         'setTimeout Promise': {
-          fn: () => new Promise(resolve => setTimeout(resolve, 0)),
+          fn: () => new Promise((resolve) => setTimeout(resolve, 0)),
         },
       },
     },

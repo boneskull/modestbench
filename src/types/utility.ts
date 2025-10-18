@@ -278,8 +278,8 @@ export interface ResourceUsage {
  * Result type for operations that can fail
  */
 export type Result<T, E = Error> =
-  | { readonly data: T; readonly success: true; }
-  | { readonly error: E; readonly success: false; };
+  | { readonly data: T; readonly success: true }
+  | { readonly error: E; readonly success: false };
 
 /**
  * Run identifier

@@ -29,7 +29,7 @@ export interface BenchmarkFile {
 /**
  * File change notification for watch functionality
  */
-export interface FileChange {
+interface FileChange {
   readonly filePath: string;
   readonly timestamp: Date;
   readonly type: 'added' | 'deleted' | 'modified';
@@ -38,7 +38,7 @@ export interface FileChange {
 /**
  * File metadata for change detection and validation
  */
-export interface FileMetadata {
+interface FileMetadata {
   readonly exportNames: string[];
   readonly hasBenchmarks: boolean;
   readonly hasDefaultExport: boolean;
@@ -50,7 +50,7 @@ export interface FileMetadata {
 /**
  * File watcher interface
  */
-export interface FileWatcher {
+interface FileWatcher {
   close(): void;
 }
 

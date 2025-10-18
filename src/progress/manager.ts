@@ -1,8 +1,8 @@
 /**
  * ModestBench Progress Manager
  *
- * Tracks execution progress, estimates completion times, and manages
- * progress callbacks for real-time updates during benchmark runs.
+ * Tracks execution progress, estimates completion times, and manages progress
+ * callbacks for real-time updates during benchmark runs.
  */
 
 import type {
@@ -156,7 +156,7 @@ export class ModestBenchProgressManager implements ProgressManager {
     const elapsedMs = Date.now() - this.metrics.startTime;
     const remainingTasks = Math.max(
       0,
-      this.state.totalTasks - this.state.tasksCompleted
+      this.state.totalTasks - this.state.tasksCompleted,
     );
 
     return {
@@ -333,7 +333,10 @@ export class ModestBenchProgressManager implements ProgressManager {
 
     return Math.min(
       100,
-      Math.max(0, (currentState.tasksCompleted / currentState.totalTasks) * 100)
+      Math.max(
+        0,
+        (currentState.tasksCompleted / currentState.totalTasks) * 100,
+      ),
     );
   }
 
@@ -348,7 +351,7 @@ export class ModestBenchProgressManager implements ProgressManager {
     // Use moving average of recent throughput measurements
     const sum = this.metrics.recentTimings.reduce(
       (acc, timing) => acc + timing,
-      0
+      0,
     );
     return sum / this.metrics.recentTimings.length;
   }

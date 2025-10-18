@@ -9,20 +9,6 @@ import type { ValidationResult } from '../../types/interfaces.js';
 import type { CliContext } from '../index.js';
 
 /**
- * Validate command options interface
- */
-export interface ValidateOptions {
-  config?: string | undefined;
-  cwd: string;
-  fix?: boolean | undefined;
-  format: 'human' | 'json';
-  pattern: string[];
-  quiet?: boolean | undefined;
-  strict?: boolean | undefined;
-  verbose?: boolean | undefined;
-}
-
-/**
  * Enhanced validation result with detailed information
  */
 interface DetailedValidationResult {
@@ -31,6 +17,20 @@ interface DetailedValidationResult {
   issues: ValidationIssue[];
   suggestions: string[];
   valid: boolean;
+}
+
+/**
+ * Validate command options interface
+ */
+interface ValidateOptions {
+  config?: string | undefined;
+  cwd: string;
+  fix?: boolean | undefined;
+  format: 'human' | 'json';
+  pattern: string[];
+  quiet?: boolean | undefined;
+  strict?: boolean | undefined;
+  verbose?: boolean | undefined;
 }
 
 /**

@@ -13,7 +13,7 @@ import type { CliContext } from '../index.js';
 /**
  * Init command options interface
  */
-export interface InitOptions {
+interface InitOptions {
   configType: 'js' | 'json' | 'ts' | 'yaml';
   cwd: string;
   examples: boolean;

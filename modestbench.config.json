@@ -1,17 +1,16 @@
 {
-  "pattern": "examples/**/*.bench.{js,ts}",
-  "exclude": ["node_modules/**", "dist/**", "coverage/**"],
-  "reporters": ["human", "json"],
-  "outputDir": "./benchmark-results",
-  "iterations": 1000,
-  "time": 5000,
-  "warmup": 50,
-  "concurrent": false,
-  "timeout": 30000,
   "bail": false,
+  "concurrent": false,
+  "exclude": ["node_modules/**", "dist/**", "coverage/**"],
+  "iterations": 1000,
+  "metadata": {
+    "project": "ModestBench Examples",
+    "version": "1.0.0",
+    "description": "Demonstration benchmarks for ModestBench framework"
+  },
+  "outputDir": "./benchmark-results",
+  "pattern": "examples/**/*.bench.{js,ts}",
   "quiet": false,
-  "verbose": false,
-  "tags": [],
   "reporterConfig": {
     "human": {
       "colors": true,
@@ -26,15 +25,16 @@
       "includeMetadata": true
     }
   },
-  "metadata": {
-    "project": "ModestBench Examples",
-    "version": "1.0.0",
-    "description": "Demonstration benchmarks for ModestBench framework"
-  },
+  "reporters": ["human", "json"],
+  "tags": [],
   "thresholds": {
     "maxMean": 1000000,
     "maxStdDev": 100000,
     "minOpsPerSecond": 1000,
     "maxMarginOfError": 5.0
-  }
+  },
+  "time": 5000,
+  "timeout": 30000,
+  "verbose": false,
+  "warmup": 50
 }

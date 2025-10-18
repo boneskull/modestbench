@@ -32,18 +32,6 @@ import type {
 import type { BenchmarkFile } from './loader.js';
 
 /**
- * Dependencies required by the BenchmarkEngine
- */
-export interface EngineDependencies {
-  readonly configManager: ConfigurationManager;
-  readonly errorManager: ErrorManager;
-  readonly fileLoader: FileLoader;
-  readonly historyStorage: HistoryStorage;
-  readonly progressManager: ProgressManager;
-  readonly reporterRegistry: ReporterRegistry;
-}
-
-/**
  * File loader interface for benchmark discovery and loading
  */
 export interface FileLoader {
@@ -89,6 +77,18 @@ interface BenchmarkTask {
   fn: () => Promise<void> | void;
   metadata?: Record<string, unknown>;
   tags?: string[];
+}
+
+/**
+ * Dependencies required by the BenchmarkEngine
+ */
+interface EngineDependencies {
+  readonly configManager: ConfigurationManager;
+  readonly errorManager: ErrorManager;
+  readonly fileLoader: FileLoader;
+  readonly historyStorage: HistoryStorage;
+  readonly progressManager: ProgressManager;
+  readonly reporterRegistry: ReporterRegistry;
 }
 
 /**

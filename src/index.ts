@@ -27,6 +27,7 @@ export { JsonReporter } from './reporters/json.js';
 
 export {
   BaseReporter,
+  CompositeReporter,
   ModestBenchReporterRegistry,
 } from './reporters/registry.js';
 

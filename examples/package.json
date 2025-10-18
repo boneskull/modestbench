@@ -1,24 +1,24 @@
 {
   "name": "modestbench-examples",
   "version": "1.0.0",
+  "type": "module",
   "description": "Example benchmark files for ModestBench framework",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "benchmark": "modestbench run",
-    "benchmark:basic": "modestbench run benchmarks/array-operations.bench.js",
     "benchmark:advanced": "modestbench run benchmarks/advanced-operations.bench.js",
-    "benchmark:async": "modestbench run benchmarks/async-operations.bench.js",
-    "benchmark:tips": "modestbench run benchmarks/performance-tips.bench.js",
-    "benchmark:json": "modestbench run --reporters json --output ./results",
-    "benchmark:csv": "modestbench run --reporters csv --output ./results",
     "benchmark:all": "modestbench run --reporters human,json,csv --output ./results",
+    "benchmark:async": "modestbench run benchmarks/async-operations.bench.js",
+    "benchmark:basic": "modestbench run benchmarks/array-operations.bench.js",
+    "benchmark:csv": "modestbench run --reporters csv --output ./results",
+    "benchmark:json": "modestbench run --reporters json --output ./results",
+    "benchmark:tips": "modestbench run benchmarks/performance-tips.bench.js",
     "check-performance": "node scripts/check-performance.js",
     "validate": "modestbench validate"
   },
   "devDependencies": {
     "modestbench": "^0.1.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "type": "module"
+  }
 }

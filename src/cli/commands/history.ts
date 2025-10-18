@@ -11,7 +11,7 @@ import type { CliContext } from '../index.js';
 /**
  * History command options interface
  */
-export interface HistoryOptions {
+interface HistoryOptions {
   args?: string[] | undefined; // Additional arguments after subcommand
   confirm?: boolean | undefined;
   cwd: string;
