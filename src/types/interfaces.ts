@@ -24,7 +24,7 @@ export interface BenchmarkEngine {
   /**
    * Discover benchmark files matching patterns
    */
-  discover(pattern: string, exclude?: string[]): Promise<string[]>;
+  discover(pattern: string | string[], exclude?: string[]): Promise<string[]>;
 
   /**
    * Execute benchmarks with the given configuration

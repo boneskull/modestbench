@@ -225,8 +225,8 @@ export interface ModestBenchConfig {
   readonly metadata: Record<string, unknown>;
   /** Output directory for reports */
   readonly outputDir: string;
-  /** Pattern for discovering benchmark files */
-  readonly pattern: string;
+  /** Pattern(s) for discovering benchmark files */
+  readonly pattern: string | string[];
   /** Whether to run in quiet mode */
   readonly quiet: boolean;
   /** Configuration for specific reporters */

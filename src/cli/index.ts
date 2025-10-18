@@ -226,6 +226,14 @@ export const main = async (
             .example([
               ['$0 run', 'Run all benchmark files'],
               ['$0 run "src/**/*.bench.js"', 'Run specific pattern'],
+              [
+                '$0 run file1.bench.js file2.bench.js',
+                'Run multiple specific files',
+              ],
+              [
+                '$0 run "benchmarks/*.bench.js" "tests/*.bench.js"',
+                'Run multiple patterns',
+              ],
               ['$0 run --reporters json,csv', 'Use multiple reporters'],
               ['$0 run --iterations 1000', 'Set iteration count'],
               ['$0 run --bail', 'Stop on first failure'],

@@ -180,14 +180,36 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
     }
 
     if (config.pattern !== undefined) {
-      if (
+      // Pattern can be a string or an array of strings
+      if (Array.isArray(config.pattern)) {
+        if (config.pattern.length === 0) {
+          errors.push({
+            code: 'INVALID_PATTERN',
+            file: 'configuration',
+            message: 'pattern array must not be empty',
+            severity: 'error',
+          });
+        } else if (
+          !config.pattern.every(
+            (p) => typeof p === 'string' && p.trim().length > 0,
+          )
+        ) {
+          errors.push({
+            code: 'INVALID_PATTERN',
+            file: 'configuration',
+            message:
+              'pattern array must contain only non-empty strings',
+            severity: 'error',
+          });
+        }
+      } else if (
         typeof config.pattern !== 'string' ||
         config.pattern.trim().length === 0
       ) {
         errors.push({
           code: 'INVALID_PATTERN',
           file: 'configuration',
-          message: 'pattern must be a non-empty string',
+          message: 'pattern must be a non-empty string or array of strings',
           severity: 'error',
         });
       }

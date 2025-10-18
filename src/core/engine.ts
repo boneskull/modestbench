@@ -119,9 +119,12 @@ export class ModestBenchEngine implements BenchmarkEngine {
   }
 
   /**
-   * Discover benchmark files matching the pattern
+   * Discover benchmark files matching the pattern(s)
    */
-  async discover(pattern: string, exclude?: string[]): Promise<string[]> {
+  async discover(
+    pattern: string | string[],
+    exclude?: string[],
+  ): Promise<string[]> {
     try {
       return await this.fileLoader.discover(pattern, exclude);
     } catch (error) {

@@ -110,7 +110,11 @@ export const handleValidateCommand = async (
     }
 
     const patterns =
-      options.pattern.length > 0 ? options.pattern : [config.pattern];
+      options.pattern.length > 0
+        ? options.pattern
+        : Array.isArray(config.pattern)
+          ? config.pattern
+          : [config.pattern];
 
     if (!options.quiet) {
       console.log('Validating benchmark files...');
