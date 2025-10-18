@@ -1,0 +1,26 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:js-app',
+    ':enableVulnerabilityAlerts',
+    ':semanticCommits',
+    'group:linters',
+    'group:definitelyTyped',
+    'security:minimumReleaseAgeNpm',
+    'helpers:pinGitHubActionDigests',
+    ':configMigration',
+    ':automergeDigest',
+    ':automergeMinor',
+  ],
+  labels: ['dependencies'],
+  ignorePaths: [
+    '**/node_modules/**',
+    '**/test/**',
+    '**/demo/**',
+    '**/example*/**',
+  ],
+  lockFileMaintenance: {
+    enabled: true,
+    automerge: true,
+  },
+}
