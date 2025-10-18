@@ -5,8 +5,15 @@
  * structure, and optional example benchmark files.
  */
 
-import { access, mkdir, writeFile } from 'node:fs/promises';
+import {
+  access,
+  appendFile,
+  mkdir,
+  readFile,
+  writeFile,
+} from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { createInterface } from 'node:readline';
 
 import type { CliContext } from '../index.js';
 
@@ -21,6 +28,7 @@ interface InitOptions {
   quiet?: boolean | undefined;
   type: 'advanced' | 'basic' | 'library';
   verbose?: boolean | undefined;
+  yes?: boolean | undefined;
 }
 
 /**
@@ -229,6 +237,25 @@ export default {
 } as const;
 
 /**
+ * Prompt user for confirmation with Y/n default to Yes
+ */
+const promptUser = async (question: string): Promise<boolean> => {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      rl.close();
+      const normalized = answer.trim().toLowerCase();
+      // Default to Yes if empty or starts with 'y'
+      resolve(normalized === '' || normalized === 'y' || normalized === 'yes');
+    });
+  });
+};
+
+/**
  * Handle init command
  */
 export const handleInitCommand = async (
@@ -324,15 +351,14 @@ const checkForConflicts = async (options: InitOptions): Promise<boolean> => {
 };
 
 /**
- * Create additional project files
+ * Handle .gitignore file creation or modification
  */
-const createAdditionalFiles = async (options: InitOptions): Promise<void> => {
-  if (!options.quiet) {
-    console.log('Creating additional files...');
-  }
+const handleGitignore = async (options: InitOptions): Promise<void> => {
+  const gitignorePath = resolve(options.cwd, '.gitignore');
+  const modestbenchEntry = '.modestbench/';
 
-  // Create .gitignore
-  const gitignoreContent = `# ModestBench
+  // Default .gitignore content for new files
+  const defaultGitignoreContent = `# ModestBench
 benchmark-results/
 .modestbench/
 
@@ -355,15 +381,107 @@ Thumbs.db
 `;
 
   try {
-    const gitignorePath = resolve(options.cwd, '.gitignore');
-    await writeFile(gitignorePath, gitignoreContent, 'utf8');
-    if (options.verbose) {
-      console.log('  ✓ .gitignore');
+    // Check if .gitignore exists
+    let gitignoreExists = false;
+    try {
+      await access(gitignorePath);
+      gitignoreExists = true;
+    } catch {
+      // File doesn't exist
     }
-  } catch {
+
+    if (!gitignoreExists) {
+      // Create new .gitignore with full content
+      await writeFile(gitignorePath, defaultGitignoreContent, 'utf8');
+      if (options.verbose) {
+        console.log('  ✓ .gitignore');
+      }
+      return;
+    }
+
+    // File exists, check if .modestbench/ is already present
+    const existingContent = await readFile(gitignorePath, 'utf8');
+
+    // Check if .modestbench/ is already in the file
+    const hasModestbenchEntry = existingContent
+      .split('\n')
+      .some((line) => line.trim() === modestbenchEntry);
+
+    if (hasModestbenchEntry) {
+      // Already has the entry, nothing to do
+      if (options.verbose) {
+        console.log('  ✓ .gitignore (already contains .modestbench/)');
+      }
+      return;
+    }
+
+    // Determine if we should prompt or auto-add
+    let shouldAdd = false;
+
+    if (options.yes || options.quiet) {
+      // Auto-accept in non-interactive mode
+      shouldAdd = true;
+    } else {
+      // Prompt the user
+      console.log();
+      console.log(
+        'The .modestbench/ directory stores benchmark history and should typically',
+      );
+      console.log('not be committed to version control.');
+      console.log();
+
+      shouldAdd = await promptUser(
+        'Would you like to add .modestbench/ to .gitignore? (Y/n) ',
+      );
+    }
+
+    if (shouldAdd) {
+      // Append .modestbench/ to existing .gitignore
+      let contentToAppend = '';
+
+      // Ensure file ends with newline
+      if (!existingContent.endsWith('\n')) {
+        contentToAppend += '\n';
+      }
+
+      // Add a blank line if the file doesn't end with one
+      if (!existingContent.endsWith('\n\n') && existingContent.trim() !== '') {
+        contentToAppend += '\n';
+      }
+
+      // Add comment and entry
+      contentToAppend += '# ModestBench history\n';
+      contentToAppend += modestbenchEntry + '\n';
+
+      await appendFile(gitignorePath, contentToAppend, 'utf8');
+
+      if (options.verbose || !options.quiet) {
+        console.log('  ✓ Added .modestbench/ to .gitignore');
+      }
+    } else {
+      if (options.verbose) {
+        console.log('  ⊘ Skipped adding .modestbench/ to .gitignore');
+      }
+    }
+  } catch (error) {
     // Non-critical, just warn
-    console.warn('Warning: Could not create .gitignore file');
+    console.warn(
+      'Warning: Could not create/modify .gitignore file:',
+      error instanceof Error ? error.message : String(error),
+    );
   }
+};
+
+/**
+ * Create additional project files
+ */
+const createAdditionalFiles = async (options: InitOptions): Promise<void> => {
+  if (!options.quiet) {
+    console.log('Creating additional files...');
+  }
+
+  // Handle .gitignore
+  await handleGitignore(options);
 
   // Create README.md
   const readmeContent = `# Benchmark Project

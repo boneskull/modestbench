@@ -385,6 +385,18 @@ export const main = async (
               description: 'Overwrite existing files',
               type: 'boolean',
             })
+            .option('yes', {
+              alias: 'y',
+              default: false,
+              description: 'Accept all prompts automatically',
+              type: 'boolean',
+            })
+            .option('quiet', {
+              alias: 'q',
+              default: false,
+              description: 'Minimal output',
+              type: 'boolean',
+            })
             .example([
               ['$0 init', 'Initialize a basic project'],
               [
@@ -407,6 +419,7 @@ export const main = async (
             quiet: Boolean(argv.quiet),
             type: argv.type,
             verbose: argv.verbose >= 2,
+            yes: argv.yes,
           });
           process.exit(exitCode);
         },

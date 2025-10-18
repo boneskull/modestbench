@@ -10,7 +10,7 @@
  */
 
 import { expect, expectAsync } from 'bupkis';
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
@@ -334,6 +334,89 @@ describe('modestbench init command - integration', () => {
         'and',
         'to contain',
         'node_modules/',
+      );
+    });
+
+    it('should include .modestbench/ in new .gitignore', async () => {
+      await runCommand(['init', '--no-examples'], tempDir);
+
+      const gitignorePath = join(tempDir, '.gitignore');
+      const content = await readFile(gitignorePath, 'utf8');
+
+      expect(content, 'to contain', '.modestbench/');
+    });
+
+    it('should append .modestbench/ to existing .gitignore with --yes flag', async () => {
+      const gitignorePath = join(tempDir, '.gitignore');
+
+      // Create existing .gitignore without .modestbench/
+      await writeFile(gitignorePath, 'node_modules/\n*.log\n', 'utf8');
+
+      // Run init with --yes to auto-accept prompt
+      await runCommand(['init', '--yes', '--no-examples'], tempDir);
+
+      const content = await readFile(gitignorePath, 'utf8');
+
+      // Should contain original content
+      expect(content, 'to contain', 'node_modules/');
+      expect(content, 'to contain', '*.log');
+
+      // Should contain newly added .modestbench/
+      expect(content, 'to contain', '.modestbench/');
+      expect(content, 'to contain', '# ModestBench history');
+    });
+
+    it('should append .modestbench/ to existing .gitignore with --quiet flag', async () => {
+      const gitignorePath = join(tempDir, '.gitignore');
+
+      // Create existing .gitignore without .modestbench/
+      await writeFile(gitignorePath, 'node_modules/\n', 'utf8');
+
+      // Run init with --quiet to auto-accept prompt
+      await runCommand(['init', '--quiet', '--no-examples'], tempDir);
+
+      const content = await readFile(gitignorePath, 'utf8');
+
+      // Should contain newly added .modestbench/
+      expect(content, 'to contain', '.modestbench/');
+    });
+
+    it('should not duplicate .modestbench/ if already present', async () => {
+      const gitignorePath = join(tempDir, '.gitignore');
+
+      // Create existing .gitignore with .modestbench/ already in it
+      await writeFile(
+        gitignorePath,
+        'node_modules/\n.modestbench/\n*.log\n',
+        'utf8',
+      );
+
+      // Run init with --yes
+      await runCommand(['init', '--yes', '--no-examples'], tempDir);
+
+      const content = await readFile(gitignorePath, 'utf8');
+
+      // Count occurrences of .modestbench/
+      const matches = content.match(/\.modestbench\//g);
+      expect(matches?.length, 'to equal', 1);
+    });
+
+    it('should format appended .modestbench/ with proper newlines', async () => {
+      const gitignorePath = join(tempDir, '.gitignore');
+
+      // Create existing .gitignore without trailing newline
+      await writeFile(gitignorePath, 'node_modules/', 'utf8');
+
+      // Run init with --yes
+      await runCommand(['init', '--yes', '--no-examples'], tempDir);
+
+      const content = await readFile(gitignorePath, 'utf8');
+
+      // Should have proper formatting
+      expect(
+        content,
+        'to contain',
+        'node_modules/\n\n# ModestBench history\n.modestbench/\n',
       );
     });
 
