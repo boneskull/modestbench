@@ -58,7 +58,7 @@ export default {
 };
 ```
 
-### Run Benchmarks
+### Running Your First Benchmarks
 
 ```bash
 # Run all benchmarks
@@ -70,7 +70,7 @@ modestbench run --iterations 5000 --reporters human,json
 
 ### View Results
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Modestbench Results                     │
 ├─────────────────────────────────────────────────────────────┤

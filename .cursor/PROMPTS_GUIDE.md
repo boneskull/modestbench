@@ -22,7 +22,7 @@ All workflow prompts are now available in `.cursor/prompts/` and can be referenc
 
 ### Starting a New Feature
 
-```
+```text
 @specify Create a CSV export feature for benchmark results
 ```
 
@@ -34,7 +34,7 @@ This will:
 
 ### Clarifying Ambiguities
 
-```
+```text
 @clarify
 ```
 
@@ -46,7 +46,7 @@ This will:
 
 ### Creating Implementation Plan
 
-```
+```text
 @plan
 ```
 
@@ -58,7 +58,7 @@ This will:
 
 ### Generating Tasks
 
-```
+```text
 @tasks
 ```
 
@@ -70,7 +70,7 @@ This will:
 
 ### Executing Implementation
 
-```
+```text
 @implement
 ```
 
@@ -82,7 +82,7 @@ This will:
 
 ### Analyzing Consistency
 
-```
+```text
 @analyze
 ```
 
@@ -94,7 +94,7 @@ This will:
 
 ### Updating Constitution
 
-```
+```text
 @constitution Add a new principle about API versioning
 ```
 

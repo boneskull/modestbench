@@ -7,14 +7,17 @@
 **Purpose**: Execute benchmark files and display results in real-time
 
 **Signature**:
+
 ```bash
 modestbench run [pattern] [options]
 ```
 
 **Arguments**:
+
 - `pattern` (optional): Glob pattern for benchmark files (default: `**/*.bench.{js,ts}`)
 
 **Options**:
+
 - `--config, -c <file>`: Path to configuration file
 - `--reporters, -r <types>`: Comma-separated list of reporters (human,json,csv)
 - `--output, -o <dir>`: Output directory for reports
@@ -29,12 +32,14 @@ modestbench run [pattern] [options]
 - `--verbose, -v`: Detailed output
 
 **Exit Codes**:
+
 - `0`: All benchmarks completed successfully
 - `1`: Benchmark failures occurred
 - `2`: Configuration or validation error
 - `3`: File discovery error
 
 **Output Formats**:
+
 - **Human**: Colorful progress bars, real-time results, summary tables
 - **JSON**: Machine-readable structured data
 - **CSV**: Spreadsheet-compatible tabular data
@@ -46,11 +51,13 @@ modestbench run [pattern] [options]
 **Purpose**: Display and analyze historical benchmark results
 
 **Signature**:
+
 ```bash
 modestbench history [command] [options]
 ```
 
 **Sub-commands**:
+
 - `list`: Show list of previous runs
 - `show <run-id>`: Display detailed results for specific run
 - `compare <run-id1> <run-id2>`: Compare two runs
@@ -58,6 +65,7 @@ modestbench history [command] [options]
 - `clean`: Remove old historical data
 
 **Options**:
+
 - `--limit, -l <num>`: Limit number of results (default: 10)
 - `--since <date>`: Show results since date (ISO format)
 - `--format, -f <type>`: Output format (table,json,csv)
@@ -65,6 +73,7 @@ modestbench history [command] [options]
 - `--tags <tags>`: Filter by benchmark tags
 
 **Exit Codes**:
+
 - `0`: History operation completed successfully
 - `1`: No matching results found
 - `2`: Invalid date format or filter
@@ -77,20 +86,24 @@ modestbench history [command] [options]
 **Purpose**: Set up ModestBench configuration and example files
 
 **Signature**:
+
 ```bash
 modestbench init [options]
 ```
 
 **Options**:
+
 - `--config-type <type>`: Configuration format (json,yaml,js,ts)
 - `--examples`: Create example benchmark files
 - `--force`: Overwrite existing configuration
 
 **Generated Files**:
+
 - `modestbench.config.json` (or specified format)
 - `benchmarks/example.bench.js` (if --examples specified)
 
 **Exit Codes**:
+
 - `0`: Initialization completed successfully
 - `1`: Project already initialized (without --force)
 - `2`: Permission error creating files
@@ -102,18 +115,22 @@ modestbench init [options]
 **Purpose**: Check benchmark files for syntax and structure errors
 
 **Signature**:
+
 ```bash
 modestbench validate [pattern] [options]
 ```
 
 **Arguments**:
+
 - `pattern` (optional): Glob pattern for files to validate
 
 **Options**:
+
 - `--strict`: Strict validation mode
 - `--fix`: Automatically fix common issues
 
 **Validation Checks**:
+
 - File syntax (JavaScript/TypeScript)
 - Benchmark structure (suites, tasks)
 - Configuration validity
@@ -121,6 +138,7 @@ modestbench validate [pattern] [options]
 - Performance anti-patterns
 
 **Exit Codes**:
+
 - `0`: All files valid
 - `1`: Validation errors found
 - `2`: File access errors
@@ -128,6 +146,7 @@ modestbench validate [pattern] [options]
 ## Error Handling Contract
 
 ### Error Message Format
+
 ```typescript
 interface ErrorMessage {
   type: 'error' | 'warning' | 'info';
@@ -140,6 +159,7 @@ interface ErrorMessage {
 ```
 
 ### Common Error Codes
+
 - `BENCH_001`: Benchmark file syntax error
 - `BENCH_002`: Invalid benchmark structure
 - `BENCH_003`: Missing dependency
@@ -153,6 +173,7 @@ interface ErrorMessage {
 - `HIST_002`: Disk space insufficient
 
 ### Progress Updates
+
 ```typescript
 interface ProgressUpdate {
   phase: ExecutionPhase;
@@ -167,10 +188,10 @@ interface ProgressUpdate {
 ## Configuration File Contract
 
 ### JSON Schema
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
   "properties": {
     "pattern": {
       "type": "string",
@@ -214,11 +235,13 @@ interface ProgressUpdate {
       "type": ["integer", "null"],
       "minimum": 1
     }
-  }
+  },
+  "type": "object"
 }
 ```
 
 ### Environment Variable Overrides
+
 - `MODESTBENCH_CONFIG`: Path to configuration file
 - `MODESTBENCH_REPORTERS`: Comma-separated reporter list
 - `MODESTBENCH_OUTPUT_DIR`: Output directory
@@ -228,22 +251,23 @@ interface ProgressUpdate {
 ## File Discovery Contract
 
 ### Benchmark File Structure
+
 ```typescript
 // Expected export structure for benchmark files
 export default {
   // File-level configuration (optional)
   config?: Partial<TinybenchConfig>;
-  
+
   // Benchmark suites
   suites: {
     [suiteName: string]: {
       // Suite-level configuration (optional)
       config?: Partial<TinybenchConfig>;
-      
+
       // Setup/teardown hooks (optional)
       setup?: () => void | Promise<void>;
       teardown?: () => void | Promise<void>;
-      
+
       // Benchmark tasks
       benchmarks: {
         [taskName: string]: {
@@ -258,11 +282,14 @@ export default {
 ```
 
 ### Alternative Export Patterns
+
 ```typescript
 // Function-based export
 export default function defineBenchmarks() {
   return {
-    suites: { /* ... */ }
+    suites: {
+      /* ... */
+    },
   };
 }
 
@@ -270,33 +297,48 @@ export default function defineBenchmarks() {
 import { suite, benchmark } from 'modestbench';
 
 suite('Array Operations', () => {
-  benchmark('push', () => { /* ... */ });
-  benchmark('unshift', () => { /* ... */ });
+  benchmark('push', () => {
+    /* ... */
+  });
+  benchmark('unshift', () => {
+    /* ... */
+  });
 });
 ```
 
 ## Reporter Interface Contract
 
 ### Base Reporter Interface
+
 ```typescript
 interface Reporter {
   name: string;
-  
+
   // Lifecycle hooks
   onStart(run: BenchmarkRun): void | Promise<void>;
   onProgress(update: ProgressUpdate): void | Promise<void>;
   onFileStart(file: BenchmarkFile): void | Promise<void>;
-  onFileComplete(file: BenchmarkFile, results: BenchmarkResult[]): void | Promise<void>;
+  onFileComplete(
+    file: BenchmarkFile,
+    results: BenchmarkResult[],
+  ): void | Promise<void>;
   onSuiteStart(suite: BenchmarkSuite): void | Promise<void>;
-  onSuiteComplete(suite: BenchmarkSuite, results: BenchmarkResult[]): void | Promise<void>;
+  onSuiteComplete(
+    suite: BenchmarkSuite,
+    results: BenchmarkResult[],
+  ): void | Promise<void>;
   onTaskStart(task: BenchmarkTask): void | Promise<void>;
-  onTaskComplete(task: BenchmarkTask, result: BenchmarkResult): void | Promise<void>;
+  onTaskComplete(
+    task: BenchmarkTask,
+    result: BenchmarkResult,
+  ): void | Promise<void>;
   onComplete(run: BenchmarkRun): void | Promise<void>;
   onError(error: ExecutionError): void | Promise<void>;
 }
 ```
 
 ### Output Streams
+
 - **stdout**: Primary output (results, progress)
 - **stderr**: Errors, warnings, debug information
 - **Files**: JSON/CSV output written to files when specified

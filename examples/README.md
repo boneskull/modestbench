@@ -4,7 +4,7 @@ This directory contains comprehensive examples demonstrating the ModestBench fra
 
 ## Directory Structure
 
-```
+```text
 examples/
 ├── benchmarks/                    # Example benchmark files
 │   ├── array-operations.bench.js  # Basic array operations from quickstart
@@ -109,15 +109,15 @@ Performance optimization examples showing:
 
 ```json
 {
-  "pattern": "benchmarks/**/*.bench.{js,ts}",
-  "exclude": ["node_modules/**", "dist/**"],
-  "reporters": ["human", "json"],
-  "outputDir": "./benchmark-results",
-  "iterations": 1000,
-  "warmup": true,
   "concurrent": false,
+  "exclude": ["node_modules/**", "dist/**"],
+  "historyLimit": 50,
+  "iterations": 1000,
+  "outputDir": "./benchmark-results",
+  "pattern": "benchmarks/**/*.bench.{js,ts}",
+  "reporters": ["human", "json"],
   "timeout": 30000,
-  "historyLimit": 50
+  "warmup": true
 }
 ```
 
@@ -141,7 +141,7 @@ export default config;
 
 ### Human-Readable Output
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     ModestBench Results                     │
 ├─────────────────────────────────────────────────────────────┤
@@ -157,12 +157,6 @@ export default config;
 
 ```json
 {
-  "run": {
-    "id": "run-2025-10-06-001",
-    "timestamp": "2025-10-06T10:30:00.000Z",
-    "duration": 15420,
-    "status": "completed"
-  },
   "results": [
     {
       "file": "array-operations.bench.js",
@@ -177,7 +171,13 @@ export default config;
         "stdDev": 0.00002
       }
     }
-  ]
+  ],
+  "run": {
+    "id": "run-2025-10-06-001",
+    "timestamp": "2025-10-06T10:30:00.000Z",
+    "duration": 15420,
+    "status": "completed"
+  }
 }
 ```
 

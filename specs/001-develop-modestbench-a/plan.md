@@ -1,10 +1,10 @@
-
 # Implementation Plan: ModestBench Framework
 
 **Branch**: `001-develop-modestbench-a` | **Date**: 2025-10-06 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/001-develop-modestbench-a/spec.md`
 
 ## Execution Flow (/plan command scope)
+
 ```
 1. Load feature spec from Input path
    → If not found: ERROR "No feature spec at {path}"
@@ -27,13 +27,16 @@
 ```
 
 **IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
+
 - Phase 2: /tasks command creates tasks.md
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
+
 ModestBench Framework: A TypeScript CLI tool that wraps tinybench to provide structured, consistent benchmark execution with hierarchical organization (files → suites → tasks), real-time progress tracking, historical result storage, and multiple output formats (human-readable, JSON, CSV).
 
 ## Technical Context
+
 **Language/Version**: TypeScript (Node.js 18+)
 **Primary Dependencies**: tinybench (benchmark engine), yargs (CLI), consola (logging/colors), ora or cli-progress (progress indicators)
 **Storage**: Local filesystem (JSON/CSV files for historical data)
@@ -45,7 +48,8 @@ ModestBench Framework: A TypeScript CLI tool that wraps tinybench to provide str
 **Scale/Scope**: Support large benchmark suites, indefinite historical data storage, extensible reporter system
 
 ## Constitution Check
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 **Phase 1 Re-evaluation:**
 **Code Quality Standards**: ✅ ESLint + typescript-eslint specified, Prettier for formatting, TypeScript strict mode
@@ -59,6 +63,7 @@ ModestBench Framework: A TypeScript CLI tool that wraps tinybench to provide str
 ## Project Structure
 
 ### Documentation (this feature)
+
 ```
 specs/[###-feature]/
 ├── plan.md              # This file (/plan command output)
@@ -70,6 +75,7 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
+
 ```
 src/
 ├── cli/              # CLI entry point and command handling
@@ -94,12 +100,14 @@ config/
 **Structure Decision**: Single TypeScript CLI package with modular architecture. Each major component (CLI, core engine, reporters, storage, progress tracking) is separated for testability and extensibility. Reporter system uses plugin pattern for easy addition of new output formats.
 
 ## Phase 0: Outline & Research
+
 1. **Extract unknowns from Technical Context** above:
    - For each NEEDS CLARIFICATION → research task
    - For each dependency → best practices task
    - For each integration → patterns task
 
 2. **Generate and dispatch research agents**:
+
    ```
    For each unknown in Technical Context:
      Task: "Research {unknown} for {feature context}"
@@ -115,7 +123,8 @@ config/
 **Output**: research.md with all NEEDS CLARIFICATION resolved
 
 ## Phase 1: Design & Contracts
-*Prerequisites: research.md complete*
+
+_Prerequisites: research.md complete_
 
 1. **Extract entities from feature spec** → `data-model.md`:
    - Entity name, fields, relationships
@@ -145,12 +154,14 @@ config/
    - Keep under 150 lines for token efficiency
    - Output to repository root
 
-**Output**: data-model.md, /contracts/*, failing tests, quickstart.md, agent-specific file
+**Output**: data-model.md, /contracts/\*, failing tests, quickstart.md, agent-specific file
 
 ## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do - DO NOT execute during /plan*
+
+_This section describes what the /tasks command will do - DO NOT execute during /plan_
 
 **Task Generation Strategy**:
+
 - Load `.specify/templates/tasks-template.md` as base
 - Extract from contracts/cli-commands.md → CLI command implementation tasks
 - Extract from contracts/core-api.md → API interface implementation tasks
@@ -158,9 +169,10 @@ config/
 - Extract from quickstart.md → example benchmark files and documentation
 
 **Specific Task Categories**:
+
 1. **Setup Tasks**: Project structure, TypeScript config, package.json, dependencies
 2. **Test Tasks**: Contract tests for CLI commands, API interfaces, file structure validation
-3. **Core Implementation**: 
+3. **Core Implementation**:
    - BenchmarkEngine, ConfigurationManager, FileLoader
    - ProgressManager, TimeEstimationEngine, ReporterRegistry
    - HumanReporter, JsonReporter, CsvReporter
@@ -169,6 +181,7 @@ config/
 6. **Documentation**: README, API docs, usage examples
 
 **TDD Ordering Strategy**:
+
 - Setup tasks first (T001-T003)
 - Contract tests before implementation (T004-T015 → T016-T030)
 - Core interfaces before implementations
@@ -177,6 +190,7 @@ config/
 - Documentation and examples last
 
 **Parallel Execution Markers [P]**:
+
 - Type definitions (different files)
 - Reporter implementations (independent)
 - Contract tests (separate test files)
@@ -185,6 +199,7 @@ config/
 **Estimated Output**: 35-40 numbered, ordered tasks following constitutional TDD requirements
 
 **Dependencies**:
+
 - TypeScript compilation gates before runtime tests
 - Core API implementations before CLI layer
 - File structure validation before benchmark loading
@@ -193,25 +208,28 @@ config/
 **IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
 
 ## Phase 3+: Future Implementation
-*These phases are beyond the scope of the /plan command*
+
+_These phases are beyond the scope of the /plan command_
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
 **Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking
-*Fill ONLY if Constitution Check has violations that must be justified*
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+_Fill ONLY if Constitution Check has violations that must be justified_
 
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |
 
 ## Progress Tracking
-*This checklist is updated during execution flow*
+
+_This checklist is updated during execution flow_
 
 **Phase Status**:
+
 - [x] Phase 0: Research complete (/plan command)
 - [x] Phase 1: Design complete (/plan command)
 - [x] Phase 2: Task planning complete (/plan command - describe approach only)
@@ -220,10 +238,12 @@ config/
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
+
 - [x] Initial Constitution Check: PASS
 - [x] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
 - [x] Complexity deviations documented (none required)
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+
+_Based on Constitution v2.1.1 - See `/memory/constitution.md`_

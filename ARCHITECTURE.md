@@ -398,7 +398,7 @@ private createExplorer() {
 - Validates file syntax (bracket matching) ⚠️
 - Validates structure (benchmark patterns) ⚠️
 
-**Opinion: ⚠️ PARTIAL REPLACEMENT CANDIDATE**
+#### Opinion: ⚠️ PARTIAL REPLACEMENT CANDIDATE
 
 **File Discovery**: ✅ **Keep as-is** - `glob` package is the standard
 
@@ -587,7 +587,7 @@ Supports:
 
 CSV fields (lines 397-430):
 
-```
+```csv
 runId, startTime, endTime, duration, files, suites, tasks,
 passed, failed, nodeVersion, platform, arch, gitCommit, gitBranch
 ```
@@ -626,7 +626,7 @@ private index: null | StorageIndex = null;
 **Command**: `modestbench validate [patterns..]`  
 **Location**: `src/cli/commands/validate.ts`
 
-**Opinion: 🤔 CONSIDER REMOVAL**
+#### Opinion: 🤔 CONSIDER REMOVAL
 
 **Current Features**:
 
@@ -652,7 +652,7 @@ private index: null | StorageIndex = null;
 **Command**: `modestbench init [type]`  
 **Location**: `src/cli/commands/init.ts`
 
-**Opinion: ⚠️ SIMPLIFY**
+#### Opinion: ⚠️ SIMPLIFY
 
 **Current Features**:
 
@@ -678,7 +678,7 @@ private index: null | StorageIndex = null;
 
 **Location**: `src/core/engine.ts` (lines 896-900)
 
-**Opinion: ⚠️ INCOMPLETE IMPLEMENTATION**
+#### Opinion: ⚠️ INCOMPLETE IMPLEMENTATION
 
 **Current Status**:
 
@@ -706,7 +706,7 @@ private async getGitInfo(): Promise<GitInfo | undefined> {
 **Command**: `modestbench history compare <run-id1> <run-id2>`  
 **Location**: `src/cli/commands/history.ts`
 
-**Opinion: 🤔 VERIFY IMPLEMENTATION**
+#### Opinion: 🤔 VERIFY IMPLEMENTATION
 
 **Status**: Command is registered but actual comparison logic implementation unclear.
 
@@ -1176,15 +1176,15 @@ Provides test helpers and fixtures
 
 ### Medium Priority
 
-5. **🤔 Remove syntax validation** - Redundant, error-prone
-6. **🤔 Consider removing standalone validate command** - Redundant with run validation
-7. **🤔 Simplify init command** - Remove unused template variations
+1. **🤔 Remove syntax validation** - Redundant, error-prone
+2. **🤔 Consider removing standalone validate command** - Redundant with run validation
+3. **🤔 Simplify init command** - Remove unused template variations
 
 ### Low Priority
 
-8. Document environment variables in README
-9. Add programmatic API examples
-10. Consider SQLite for history storage (performance + safety)
+1. Document environment variables in README
+2. Add programmatic API examples
+3. Consider SQLite for history storage (performance + safety)
 
 ---
 

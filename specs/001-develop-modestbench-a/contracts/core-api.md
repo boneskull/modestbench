@@ -10,22 +10,22 @@ interface BenchmarkEngine {
    * Execute a collection of benchmark files
    */
   execute(config: RunConfiguration): Promise<BenchmarkRun>;
-  
+
   /**
    * Validate benchmark files without execution
    */
   validate(files: string[]): Promise<ValidationResult>;
-  
+
   /**
    * Discover benchmark files based on patterns
    */
   discover(pattern: string, exclude?: string[]): Promise<string[]>;
-  
+
   /**
    * Register custom reporter
    */
   registerReporter(name: string, reporter: Reporter): void;
-  
+
   /**
    * Get available reporters
    */
@@ -41,17 +41,17 @@ interface ConfigurationManager {
    * Load configuration from file and CLI args
    */
   load(configPath?: string, cliArgs?: CliArgs): Promise<ModestBenchConfig>;
-  
+
   /**
    * Validate configuration object
    */
   validate(config: Partial<ModestBenchConfig>): ValidationResult;
-  
+
   /**
    * Merge configurations with precedence
    */
   merge(...configs: Partial<ModestBenchConfig>[]): ModestBenchConfig;
-  
+
   /**
    * Get default configuration
    */
@@ -69,17 +69,20 @@ interface BenchmarkFileLoader {
    * Load and parse a benchmark file
    */
   load(filePath: string): Promise<BenchmarkFile>;
-  
+
   /**
    * Load multiple files in parallel
    */
   loadAll(filePaths: string[]): Promise<BenchmarkFile[]>;
-  
+
   /**
    * Watch for file changes
    */
-  watch(pattern: string, callback: (changes: FileChange[]) => void): FileWatcher;
-  
+  watch(
+    pattern: string,
+    callback: (changes: FileChange[]) => void,
+  ): FileWatcher;
+
   /**
    * Validate file structure
    */
@@ -105,27 +108,27 @@ interface HistoryStorage {
    * Save benchmark run results
    */
   saveRun(run: BenchmarkRun): Promise<void>;
-  
+
   /**
    * Load specific run by ID
    */
   loadRun(id: string): Promise<BenchmarkRun | null>;
-  
+
   /**
    * Query runs with filters
    */
   queryRuns(query: HistoryQuery): Promise<BenchmarkRun[]>;
-  
+
   /**
    * Get run metadata index
    */
   getIndex(): Promise<HistoryIndex>;
-  
+
   /**
    * Clean up old runs based on retention policy
    */
   cleanup(policy: RetentionPolicy): Promise<CleanupResult>;
-  
+
   /**
    * Export historical data
    */
@@ -164,27 +167,27 @@ interface ProgressManager {
    * Initialize progress tracking for a run
    */
   initialize(run: BenchmarkRun): void;
-  
+
   /**
    * Update progress state
    */
   update(update: Partial<ProgressState>): void;
-  
+
   /**
    * Get current progress state
    */
   getState(): ProgressState;
-  
+
   /**
    * Calculate estimated completion time
    */
   estimateCompletion(): Date | null;
-  
+
   /**
    * Register progress listener
    */
   onProgress(callback: (state: ProgressState) => void): void;
-  
+
   /**
    * Clean up progress tracking resources
    */
@@ -200,22 +203,22 @@ interface TimeEstimationEngine {
    * Load historical timing data
    */
   loadEstimates(): Promise<void>;
-  
+
   /**
    * Update estimates based on completed benchmarks
    */
   updateEstimate(key: string, duration: number): void;
-  
+
   /**
    * Get estimated duration for benchmark
    */
   getEstimate(key: string): TimingEstimate | null;
-  
+
   /**
    * Calculate total estimated time for run
    */
   estimateTotal(files: BenchmarkFile[]): number;
-  
+
   /**
    * Persist estimates to cache
    */
@@ -233,17 +236,17 @@ interface ReporterRegistry {
    * Register a new reporter
    */
   register(name: string, reporter: Reporter): void;
-  
+
   /**
    * Get reporter by name
    */
   get(name: string): Reporter | null;
-  
+
   /**
    * Get all available reporters
    */
   getAll(): Record<string, Reporter>;
-  
+
   /**
    * Create reporter instances for a run
    */
@@ -259,7 +262,7 @@ interface HumanReporter extends Reporter {
    * Configure color output
    */
   setColorEnabled(enabled: boolean): void;
-  
+
   /**
    * Configure progress bar style
    */
@@ -271,7 +274,7 @@ interface JsonReporter extends Reporter {
    * Configure output formatting
    */
   setFormatting(pretty: boolean, indent?: number): void;
-  
+
   /**
    * Set output stream or file
    */
@@ -283,7 +286,7 @@ interface CsvReporter extends Reporter {
    * Configure CSV format options
    */
   setOptions(options: CsvOptions): void;
-  
+
   /**
    * Set output file path
    */
@@ -345,17 +348,17 @@ interface FileValidator {
    * Validate benchmark file structure
    */
   validateStructure(file: BenchmarkFile): ValidationResult;
-  
+
   /**
    * Validate benchmark function
    */
   validateFunction(fn: Function): ValidationResult;
-  
+
   /**
    * Validate configuration object
    */
   validateConfig(config: Partial<TinybenchConfig>): ValidationResult;
-  
+
   /**
    * Check for performance anti-patterns
    */
@@ -373,17 +376,17 @@ interface ErrorManager {
    * Handle execution error
    */
   handleError(error: Error, context: ErrorContext): ExecutionError;
-  
+
   /**
    * Register error handler
    */
   onError(handler: (error: ExecutionError) => void): void;
-  
+
   /**
    * Get error statistics
    */
   getStats(): ErrorStats;
-  
+
   /**
    * Clear error history
    */
@@ -414,12 +417,12 @@ interface ErrorStats {
 interface Plugin {
   name: string;
   version: string;
-  
+
   /**
    * Initialize plugin
    */
   initialize(engine: BenchmarkEngine): Promise<void>;
-  
+
   /**
    * Plugin lifecycle hooks
    */
@@ -427,9 +430,12 @@ interface Plugin {
     beforeRun?: (run: BenchmarkRun) => Promise<void>;
     afterRun?: (run: BenchmarkRun) => Promise<void>;
     beforeFile?: (file: BenchmarkFile) => Promise<void>;
-    afterFile?: (file: BenchmarkFile, results: BenchmarkResult[]) => Promise<void>;
+    afterFile?: (
+      file: BenchmarkFile,
+      results: BenchmarkResult[],
+    ) => Promise<void>;
   };
-  
+
   /**
    * Cleanup plugin resources
    */
@@ -441,17 +447,17 @@ interface PluginManager {
    * Load plugin from module
    */
   load(modulePath: string): Promise<Plugin>;
-  
+
   /**
    * Register plugin instance
    */
   register(plugin: Plugin): void;
-  
+
   /**
    * Get all loaded plugins
    */
   getPlugins(): Plugin[];
-  
+
   /**
    * Execute plugin hooks
    */
@@ -469,12 +475,12 @@ interface SystemInfo {
    * Collect current environment information
    */
   collect(): Promise<EnvironmentInfo>;
-  
+
   /**
    * Monitor system resources during execution
    */
   monitor(callback: (stats: ResourceStats) => void): ResourceMonitor;
-  
+
   /**
    * Get system capabilities
    */

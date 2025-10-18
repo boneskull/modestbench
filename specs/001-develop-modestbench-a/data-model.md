@@ -81,10 +81,10 @@ interface BenchmarkRun {
 
 enum RunStatus {
   PENDING = 'pending',
-  RUNNING = 'running', 
+  RUNNING = 'running',
   COMPLETED = 'completed',
   FAILED = 'failed',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 /**
@@ -92,7 +92,7 @@ enum RunStatus {
  */
 interface BenchmarkResult {
   readonly file: string;
-  readonly suite: string; 
+  readonly suite: string;
   readonly task: string;
   readonly duration: number; // Average duration in milliseconds
   readonly iterations: number; // Number of iterations run
@@ -151,7 +151,7 @@ enum ExecutionPhase {
   SETUP = 'setup',
   EXECUTION = 'execution',
   TEARDOWN = 'teardown',
-  REPORTING = 'reporting'
+  REPORTING = 'reporting',
 }
 ```
 
@@ -202,26 +202,26 @@ interface ModestBenchConfig {
   readonly time?: number; // milliseconds
   readonly warmup?: boolean;
   readonly concurrent?: boolean;
-  
+
   // File discovery
   readonly pattern?: string;
   readonly exclude?: string[];
   readonly include?: string[];
-  
+
   // Output and reporting
   readonly reporters?: ReporterType[];
   readonly outputDir?: string;
   readonly quiet?: boolean;
   readonly verbose?: boolean;
-  
+
   // Historical data
   readonly historyLimit?: number; // null = unlimited
   readonly historyDir?: string;
-  
+
   // Progress tracking
   readonly estimationWindow?: number; // samples for ETA
   readonly progressInterval?: number; // milliseconds between updates
-  
+
   // Performance
   readonly maxConcurrency?: number;
   readonly memoryLimit?: number; // bytes
@@ -267,17 +267,20 @@ interface EstimateCache {
 ## Entity Relationships
 
 ### Hierarchical Structure
+
 - `BenchmarkFile` (1) → `BenchmarkSuite` (many)
 - `BenchmarkSuite` (1) → `BenchmarkTask` (many)
 - `BenchmarkRun` (1) → `BenchmarkResult` (many)
 - `BenchmarkResult` (1) → `BenchmarkStats` (1)
 
 ### Cross-References
+
 - `BenchmarkResult.{file,suite,task}` → Identifies source hierarchy
 - `TimingEstimate.key` → Composite key for benchmark identification
 - `HistoryEntry.id` → References full `BenchmarkRun` data
 
 ### Temporal Relationships
+
 - `HistoryIndex` → Chronological list of `BenchmarkRun` instances
 - `EstimateCache` → Aggregated historical timing data
 - `ProgressState` → Real-time execution state
@@ -285,18 +288,21 @@ interface EstimateCache {
 ## Data Validation Rules
 
 ### File Structure Validation
+
 - File names must be unique within a run
 - Suite names must be unique within a file
 - Task names must be unique within a suite
 - Circular references in setup/teardown chains prohibited
 
 ### Configuration Validation
+
 - `iterations` must be positive integer
 - `time` must be positive number
 - `historyLimit` must be positive integer or null
 - `timeout` must be greater than expected benchmark duration
 
 ### Result Validation
+
 - `duration` must be non-negative
 - `iterations` must be positive
 - `hz` must be non-negative
@@ -305,6 +311,7 @@ interface EstimateCache {
 ## Storage Implementation Strategy
 
 ### File System Layout
+
 ```
 .modestbench/
 ├── history/
@@ -319,12 +326,14 @@ interface EstimateCache {
 ```
 
 ### Data Serialization
+
 - **JSON Format**: Human-readable, widely supported
 - **Compression**: Optional gzip for large historical datasets
 - **Streaming**: Support for processing large result sets
 - **Atomic Writes**: Ensure data integrity during writes
 
 ### Migration Strategy
+
 - **Version Field**: Track data format versions
 - **Backward Compatibility**: Read older formats
 - **Migration Scripts**: Automated upgrade of legacy data
@@ -333,16 +342,19 @@ interface EstimateCache {
 ## Memory Management
 
 ### Streaming Operations
+
 - Process benchmark files one at a time
 - Write results incrementally during execution
 - Limit in-memory result accumulation
 
 ### Cache Management
+
 - LRU eviction for timing estimates
 - Periodic cleanup of stale cache entries
 - Memory-mapped access for large history files
 
 ### Resource Cleanup
+
 - Automatic cleanup of progress tracking resources
 - Graceful shutdown procedures
 - Temporary file cleanup on errors

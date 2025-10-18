@@ -8,6 +8,7 @@
 ---
 
 ## ⚡ Quick Guidelines
+
 - ✅ Focus on WHAT users need and WHY
 - ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
 - 👥 Written for business stakeholders, not developers
@@ -17,6 +18,7 @@
 ## Clarifications
 
 ### Session 2025-10-06
+
 - Q: What machine-readable output formats should ModestBench support beyond human-readable tables and graphs? → A: Both JSON and CSV
 - Q: What should ModestBench use as the basis for progress time estimation calculations? → A: Both historical data and current patterns
 - Q: How long should ModestBench retain historical benchmark results? → A: Store indefinitely
@@ -26,9 +28,11 @@
 ## User Scenarios & Testing
 
 ### Primary User Story
+
 A developer wants to create, organize, and execute performance benchmarks for their JavaScript code. They need a structured way to organize benchmarks into files and suites, execute them with detailed progress feedback, and track performance trends over time to identify regressions and improvements.
 
 ### Acceptance Scenarios
+
 1. **Given** a developer has benchmark files organized in their project, **When** they run the CLI command, **Then** all benchmarks execute with real-time progress feedback showing estimated completion times
 2. **Given** a developer runs benchmarks multiple times, **When** they view historical results, **Then** they see performance trends in human-readable tables and graphs
 3. **Given** a developer needs custom benchmark configuration, **When** they provide CLI arguments or configuration file, **Then** the framework applies all specified settings including tinybench options
@@ -36,6 +40,7 @@ A developer wants to create, organize, and execute performance benchmarks for th
 5. **Given** a benchmark execution completes, **When** results are displayed, **Then** output is colorful and readable without emoji distractions
 
 ### Edge Cases
+
 - What happens when benchmark files contain syntax errors or invalid benchmark definitions?
 - How does the system handle benchmarks that hang or take unexpectedly long to complete?
 - What occurs when configuration file and CLI arguments conflict?
@@ -44,6 +49,7 @@ A developer wants to create, organize, and execute performance benchmarks for th
 ## Requirements
 
 ### Functional Requirements
+
 - **FR-001**: System MUST provide a CLI interface for executing performance benchmarks
 - **FR-002**: System MUST organize benchmarks hierarchically (files → suites → individual benchmarks)
 - **FR-003**: System MUST support all configuration options available in the underlying tinybench library
@@ -61,6 +67,7 @@ A developer wants to create, organize, and execute performance benchmarks for th
 - **FR-015**: Historical data MUST persist indefinitely unless manually cleared by the user
 
 ### Key Entities
+
 - **Benchmark File**: A file containing one or more benchmark suites and individual benchmarks, with standardized structure
 - **Benchmark Suite**: A logical grouping of related benchmarks within a file, allowing organized execution and reporting
 - **Benchmark Task**: An individual performance test that measures execution time of specific code
@@ -74,12 +81,14 @@ A developer wants to create, organize, and execute performance benchmarks for th
 ## Review & Acceptance Checklist
 
 ### Content Quality
+
 - [x] No implementation details (languages, frameworks, APIs)
 - [x] Focused on user value and business needs
 - [x] Written for non-technical stakeholders
 - [x] All mandatory sections completed
 
 ### Requirement Completeness
+
 - [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
