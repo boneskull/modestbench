@@ -38,6 +38,7 @@ import { handleValidateCommand as validateCommand } from './commands/validate.js
  * CLI context with initialized services
  */
 export interface CliContext {
+  readonly abortController: AbortController;
   readonly configManager: ConfigurationManager;
   readonly engine: BenchmarkEngine;
   readonly errorManager: ErrorManager;
@@ -80,8 +81,9 @@ export const ExitCodes = {
  * Initialize and run the CLI
  */
 export const cli = (argv?: string[]): void => {
-  setupSignalHandlers();
-  main(argv).catch((error) => {
+  const abortController = new AbortController();
+  setupSignalHandlers(abortController);
+  main(argv, abortController).catch((error) => {
     console.error('CLI error:', error);
     process.exit(ExitCodes.UNKNOWN_ERROR);
   });
@@ -90,7 +92,10 @@ export const cli = (argv?: string[]): void => {
 /**
  * Main CLI entry point
  */
-export const main = async (argv?: string[]): Promise<void> => {
+export const main = async (
+  argv?: string[],
+  abortController?: AbortController,
+): Promise<void> => {
   try {
     const args = argv || hideBin(process.argv);
 
@@ -227,7 +232,7 @@ export const main = async (argv?: string[]): Promise<void> => {
             ]);
         },
         async (argv) => {
-          const context = await createCliContext(argv);
+          const context = await createCliContext(argv, abortController!);
           const exitCode = await runCommand(context, {
             bail: argv.bail,
             config: argv.config,
@@ -331,7 +336,7 @@ export const main = async (argv?: string[]): Promise<void> => {
             ]);
         },
         async (argv) => {
-          const context = await createCliContext(argv);
+          const context = await createCliContext(argv, abortController!);
           const exitCode = await historyCommand(context, {
             args: argv.args,
             confirm: argv.confirm,
@@ -393,7 +398,7 @@ export const main = async (argv?: string[]): Promise<void> => {
             ]);
         },
         async (argv) => {
-          const context = await createCliContext(argv);
+          const context = await createCliContext(argv, abortController!);
           const exitCode = await initCommand(context, {
             configType: argv['config-type'],
             cwd: argv.cwd,
@@ -453,7 +458,7 @@ export const main = async (argv?: string[]): Promise<void> => {
             ]);
         },
         async (argv) => {
-          const context = await createCliContext(argv);
+          const context = await createCliContext(argv, abortController!);
           const exitCode = await validateCommand(context, {
             config: argv.config,
             cwd: argv.cwd,
@@ -499,6 +504,7 @@ export const main = async (argv?: string[]): Promise<void> => {
  */
 const createCliContext = async (
   options: GlobalOptions,
+  abortController: AbortController,
 ): Promise<CliContext> => {
   try {
     const engine = bootstrap();
@@ -528,6 +534,7 @@ const createCliContext = async (
     );
 
     return {
+      abortController,
       configManager: engine.configManager,
       engine,
       errorManager: engine.errorManager,
@@ -548,16 +555,34 @@ const createCliContext = async (
 /**
  * Handle process signals gracefully
  */
-const setupSignalHandlers = (): void => {
-  process.on('SIGINT', () => {
-    console.log('\nReceived SIGINT, shutting down gracefully...');
-    process.exit(ExitCodes.SUCCESS);
-  });
+const setupSignalHandlers = (abortController: AbortController): void => {
+  let abortRequested = false;
 
-  process.on('SIGTERM', () => {
-    console.log('\nReceived SIGTERM, shutting down gracefully...');
-    process.exit(ExitCodes.SUCCESS);
-  });
+  const handleSignal = (signal: string) => {
+    if (abortRequested) {
+      // Second signal, force exit
+      console.log(`\nReceived ${signal} again, forcing exit...`);
+      process.exit(
+        128 + (signal === 'SIGINT' ? 2 : signal === 'SIGQUIT' ? 3 : 15),
+      );
+    }
+
+    console.log(`\nReceived ${signal}, aborting benchmarks...`);
+    abortRequested = true;
+    abortController.abort();
+
+    // Give a short grace period for cleanup, then exit
+    setTimeout(() => {
+      console.log('\nBenchmark aborted.');
+      process.exit(
+        128 + (signal === 'SIGINT' ? 2 : signal === 'SIGQUIT' ? 3 : 15),
+      );
+    }, 100);
+  };
+
+  process.on('SIGINT', () => handleSignal('SIGINT'));
+  process.on('SIGQUIT', () => handleSignal('SIGQUIT'));
+  process.on('SIGTERM', () => handleSignal('SIGTERM'));
 
   process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);

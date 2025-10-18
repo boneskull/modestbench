@@ -67,7 +67,9 @@ interface BenchmarkSuite {
   benchmarks: Record<string, BenchmarkTask>;
   config?: Partial<ModestBenchConfig>;
   metadata?: Record<string, unknown>;
+  setup?: () => Promise<void> | void;
   tags?: string[];
+  teardown?: () => Promise<void> | void;
 }
 
 /**
@@ -141,6 +143,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
   async execute(
     config: RunConfiguration,
     reporters: Reporter[] = [],
+    signal?: AbortSignal,
   ): Promise<BenchmarkRun> {
     const startTime = new Date();
     let currentPhase: ExecutionPhase = 'discovery';
@@ -272,6 +275,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
             filePath,
             mergedConfig,
             reporters,
+            signal,
           );
           fileResults.push(fileResult);
 
@@ -508,6 +512,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
     filePath: string,
     config: ModestBenchConfig,
     reporters: Reporter[] = [],
+    signal?: AbortSignal,
   ): Promise<FileResult> {
     const startTime = new Date();
 
@@ -535,6 +540,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
             suiteData,
             config,
             reporters,
+            signal,
           );
           await this.callReporters(reporters, 'onSuiteEnd', suiteResult);
           suiteResults.push(suiteResult);
@@ -575,37 +581,69 @@ export class ModestBenchEngine implements BenchmarkEngine {
     suiteData: BenchmarkSuite,
     config: ModestBenchConfig,
     reporters: Reporter[] = [],
+    signal?: AbortSignal,
   ): Promise<SuiteResult> {
     const startTime = new Date();
 
     try {
       const taskResults: TaskResult[] = [];
 
-      // Process each benchmark in the suite
-      if (suiteData.benchmarks && typeof suiteData.benchmarks === 'object') {
-        for (const [taskName, taskData] of Object.entries(
-          suiteData.benchmarks,
-        )) {
-          await this.callReporters(reporters, 'onTaskStart', taskName);
+      // Run suite setup if provided
+      if (suiteData.setup && typeof suiteData.setup === 'function') {
+        try {
+          await suiteData.setup();
+        } catch (error) {
+          const setupError =
+            error instanceof Error
+              ? error
+              : new Error(`Setup failed: ${String(error)}`);
+          throw new Error(`Suite setup failed: ${setupError.message}`);
+        }
+      }
 
-          // Mark task as in-progress (shows as 0.5 progress for current task)
-          this.progressManager.update({
-            tasksCompleted: taskResults.length + 0.5,
-          });
+      try {
+        // Process each benchmark in the suite
+        if (suiteData.benchmarks && typeof suiteData.benchmarks === 'object') {
+          for (const [taskName, taskData] of Object.entries(
+            suiteData.benchmarks,
+          )) {
+            await this.callReporters(reporters, 'onTaskStart', taskName);
 
-          const taskResult = await this.executeBenchmarkTask(
-            taskName,
-            taskData,
-            config,
-            reporters,
-          );
-          await this.callReporters(reporters, 'onTaskResult', taskResult);
-          taskResults.push(taskResult);
+            // Mark task as in-progress (shows as 0.5 progress for current task)
+            this.progressManager.update({
+              tasksCompleted: taskResults.length + 0.5,
+            });
 
-          // Update task-level progress - task is now complete
-          this.progressManager.update({
-            tasksCompleted: taskResults.length,
-          });
+            const taskResult = await this.executeBenchmarkTask(
+              taskName,
+              taskData,
+              config,
+              reporters,
+              signal,
+            );
+            await this.callReporters(reporters, 'onTaskResult', taskResult);
+            taskResults.push(taskResult);
+
+            // Update task-level progress - task is now complete
+            this.progressManager.update({
+              tasksCompleted: taskResults.length,
+            });
+          }
+        }
+      } finally {
+        // Run suite teardown if provided (always runs, even if benchmarks fail)
+        if (suiteData.teardown && typeof suiteData.teardown === 'function') {
+          try {
+            await suiteData.teardown();
+          } catch (error) {
+            // Log teardown errors but don't fail the suite
+            const teardownError =
+              error instanceof Error ? error : new Error(String(error));
+            console.error(
+              `Warning: Suite teardown failed for "${suiteName}":`,
+              teardownError.message,
+            );
+          }
         }
       }
 
@@ -647,6 +685,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
     taskData: BenchmarkTask,
     config: ModestBenchConfig,
     _reporters: Reporter[] = [],
+    signal?: AbortSignal,
   ): Promise<TaskResult> {
     try {
       if (!taskData.fn || typeof taskData.fn !== 'function') {
@@ -665,8 +704,8 @@ export class ModestBenchEngine implements BenchmarkEngine {
         warmupTime: Math.min(config.warmup || 0, 500), // Cap warmup too
       });
 
-      // Add the task
-      bench.add(taskName, taskData.fn);
+      // Add the task with signal for task-level abort support
+      bench.add(taskName, taskData.fn, signal ? { signal } : undefined);
 
       // Set up periodic progress updates during execution
       const progressInterval = setInterval(() => {
@@ -686,7 +725,11 @@ export class ModestBenchEngine implements BenchmarkEngine {
         if (errorMessage.includes('Invalid array length')) {
           // Retry with minimal time (10ms) for extremely fast operations
           const minimalBench = new Bench({ time: 10, warmupTime: 0 });
-          minimalBench.add(taskName, taskData.fn);
+          minimalBench.add(
+            taskName,
+            taskData.fn,
+            signal ? { signal } : undefined,
+          );
           try {
             await minimalBench.run();
           } catch {
@@ -728,6 +771,28 @@ export class ModestBenchEngine implements BenchmarkEngine {
         throw new Error('No benchmark results returned');
       }
 
+      // Check if the task was aborted
+      if (results.aborted) {
+        // Task was aborted via signal - return minimal valid result with error
+        const taskResult: TaskResult = {
+          error: new Error('Benchmark aborted by user signal'),
+          iterations: results.latency?.samples?.length || 0,
+          marginOfError: 0,
+          max: 0,
+          mean: 0,
+          metadata: taskData.metadata ?? {},
+          min: 0,
+          name: taskName,
+          opsPerSecond: 0,
+          p95: 0,
+          p99: 0,
+          stdDev: 0,
+          ...(taskData.tags ? { tags: taskData.tags } : {}),
+          variance: 0,
+        };
+        return taskResult;
+      }
+
       // Check if tinybench detected an error during execution
       if (results.error) {
         const errorMessage =
@@ -739,7 +804,11 @@ export class ModestBenchEngine implements BenchmarkEngine {
         if (errorMessage.includes('Invalid array length')) {
           // Retry with minimal time for extremely fast operations
           const minimalBench = new Bench({ time: 10, warmupTime: 0 });
-          minimalBench.add(taskName, taskData.fn);
+          minimalBench.add(
+            taskName,
+            taskData.fn,
+            signal ? { signal } : undefined,
+          );
           await minimalBench.run();
           const minimalResults = minimalBench.results[0];
 

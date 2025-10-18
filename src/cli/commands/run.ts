@@ -111,9 +111,22 @@ export const handleRunCommand = async (
       files: discoveredFiles,
     };
 
-    const executionResult = await context.engine.execute(runConfig, reporters);
+    const executionResult = await context.engine.execute(
+      runConfig,
+      reporters,
+      context.abortController.signal,
+    );
 
     // Step 6: Results handling
+    // Check if aborted by signal
+    if (context.abortController.signal.aborted) {
+      if (!shouldBeQuiet) {
+        console.error('\n✋ Benchmark run aborted by user');
+      }
+      // Exit with SIGINT code (128 + 2 = 130)
+      process.exit(130);
+    }
+
     const exitCode = handleResults(executionResult, options, shouldBeQuiet);
 
     if (!shouldBeQuiet) {

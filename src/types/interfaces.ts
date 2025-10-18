@@ -32,6 +32,7 @@ export interface BenchmarkEngine {
   execute(
     config: RunConfiguration,
     reporters?: Reporter[],
+    signal?: AbortSignal,
   ): Promise<BenchmarkRun>;
 
   /**
