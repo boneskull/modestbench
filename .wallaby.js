@@ -19,7 +19,7 @@ export default {
     '!src/node_modules/modestbench/**',
     { instrument: false, pattern: 'test/**/*.test.ts.snapshot' },
   ],
-  filesWithNoCoverageCalculated: ['.tmp/**/*.test.ts', 'test/**/*.ts'],
+  filesWithNoCoverageCalculated: ['.tmp/**/*.test.ts'],
   preloadModules: ['tsx/esm'],
   runMode: 'onsave',
   tests: [
