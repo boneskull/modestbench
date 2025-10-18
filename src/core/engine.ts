@@ -708,6 +708,8 @@ export class ModestBenchEngine implements BenchmarkEngine {
       });
 
       // Add the task with signal for task-level abort support
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore - Pending https://github.com/tinylibs/tinybench/pull/364
       bench.add(taskName, taskData.fn, signal ? { signal } : undefined);
 
       // Set up periodic progress updates during execution
@@ -731,6 +733,8 @@ export class ModestBenchEngine implements BenchmarkEngine {
           minimalBench.add(
             taskName,
             taskData.fn,
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore - Pending https://github.com/tinylibs/tinybench/pull/364
             signal ? { signal } : undefined,
           );
           try {
@@ -810,6 +814,8 @@ export class ModestBenchEngine implements BenchmarkEngine {
           minimalBench.add(
             taskName,
             taskData.fn,
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore - Pending https://github.com/tinylibs/tinybench/pull/364
             signal ? { signal } : undefined,
           );
           await minimalBench.run();
