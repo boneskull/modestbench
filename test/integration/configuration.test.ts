@@ -191,7 +191,7 @@ export default {
         '--time',
         '100',
         '--output',
-        './cli-output',
+        join(tempDir, 'cli-output'),
       ]);
 
       // Should use CLI values over config file and succeed

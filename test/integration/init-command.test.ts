@@ -89,12 +89,17 @@ describe('modestbench init command - integration', () => {
 
       // Verify file content doesn't have escaped newlines
       const content = await readFile(configPath, 'utf8');
-      expect(content, 'not to contain', '\\n');
-      expect(content, 'to contain', '\n');
+      expect(content, 'not to contain', '\\n', 'and', 'to contain', '\n');
 
       // Verify it has proper YAML structure
-      expect(content, 'to contain', 'pattern:');
-      expect(content, 'to contain', 'reporters:');
+      expect(
+        content,
+        'to contain',
+        'pattern:',
+        'and',
+        'to contain',
+        'reporters:',
+      );
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
@@ -146,8 +151,14 @@ describe('modestbench init command - integration', () => {
 
       // Verify file uses ESM, not CommonJS
       const content = await readFile(configPath, 'utf8');
-      expect(content, 'to contain', 'export default');
-      expect(content, 'not to contain', 'module.exports');
+      expect(
+        content,
+        'to contain',
+        'export default',
+        'and',
+        'not to contain',
+        'module.exports',
+      );
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
@@ -184,9 +195,17 @@ describe('modestbench init command - integration', () => {
 
       // Verify file has TypeScript import and type annotation
       const content = await readFile(configPath, 'utf8');
-      expect(content, 'to contain', 'import type { ModestBenchConfig }');
-      expect(content, 'to contain', 'const config: ModestBenchConfig');
-      expect(content, 'to contain', 'export default config');
+      expect(
+        content,
+        'to contain',
+        'import type { ModestBenchConfig }',
+        'and',
+        'to contain',
+        'const config: ModestBenchConfig',
+        'and',
+        'to contain',
+        'export default config',
+      );
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
@@ -289,8 +308,14 @@ describe('modestbench init command - integration', () => {
         'utf8',
       );
 
-      expect(exampleContent, 'to contain', 'export default');
-      expect(exampleContent, 'to contain', 'benchmarks:');
+      expect(
+        exampleContent,
+        'to contain',
+        'export default',
+        'and',
+        'to contain',
+        'benchmarks:',
+      );
     });
   });
 
@@ -302,8 +327,14 @@ describe('modestbench init command - integration', () => {
       await access(gitignorePath);
 
       const content = await readFile(gitignorePath, 'utf8');
-      expect(content, 'to contain', 'benchmark-results/');
-      expect(content, 'to contain', 'node_modules/');
+      expect(
+        content,
+        'to contain',
+        'benchmark-results/',
+        'and',
+        'to contain',
+        'node_modules/',
+      );
     });
 
     it('should create README.md file', async () => {
@@ -313,8 +344,14 @@ describe('modestbench init command - integration', () => {
       await access(readmePath);
 
       const content = await readFile(readmePath, 'utf8');
-      expect(content, 'to contain', 'ModestBench');
-      expect(content, 'to contain', 'modestbench run');
+      expect(
+        content,
+        'to contain',
+        'ModestBench',
+        'and',
+        'to contain',
+        'modestbench run',
+      );
     });
   });
 
