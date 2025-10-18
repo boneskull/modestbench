@@ -8,6 +8,8 @@
 
 import type { Argv } from 'yargs';
 
+import { realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -569,6 +571,20 @@ const setupSignalHandlers = (): void => {
 };
 
 // Run CLI if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  cli();
+const scriptPath = fileURLToPath(import.meta.url);
+const argPath = process.argv[1];
+
+// Resolve both to real paths to handle symlinks (e.g. npm install ../package)
+try {
+  const scriptRealPath = realpathSync(scriptPath);
+  const argRealPath = argPath ? realpathSync(argPath) : '';
+
+  if (scriptRealPath === argRealPath) {
+    cli();
+  }
+} catch {
+  // If realpath fails (file doesn't exist), fall back to string comparison
+  if (import.meta.url === `file://${argPath}`) {
+    cli();
+  }
 }
