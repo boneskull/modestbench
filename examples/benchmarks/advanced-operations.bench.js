@@ -3,6 +3,11 @@ const stringState = {
   testString: '',
 };
 
+// Shared state for Array Algorithms suite
+const arrayState = {
+  testArray: [],
+};
+
 export default {
   config: {
     iterations: 1000,
@@ -14,17 +19,15 @@ export default {
       benchmarks: {
         'Array.findIndex()': {
           fn: () => {
-            const arr = Array.from({ length: 1000 }, (_, i) => i);
-            return arr.findIndex((x) => x === 500);
+            return arrayState.testArray.findIndex((x) => x === 500);
           },
         },
 
         'Linear Search': {
           fn: () => {
-            const arr = Array.from({ length: 1000 }, (_, i) => i);
             const target = 500;
-            for (let i = 0; i < arr.length; i++) {
-              if (arr[i] === target) {
+            for (let i = 0; i < arrayState.testArray.length; i++) {
+              if (arrayState.testArray[i] === target) {
                 return i;
               }
             }
@@ -35,6 +38,16 @@ export default {
 
       config: {
         iterations: 500, // Override for this suite
+      },
+
+      setup: () => {
+        // Suite-level setup: Create the array once
+        arrayState.testArray = Array.from({ length: 1000 }, (_, i) => i);
+      },
+
+      teardown: () => {
+        // Suite-level teardown: Clean up
+        arrayState.testArray = [];
       },
     },
 
@@ -58,7 +71,7 @@ export default {
 
       setup: () => {
         // Suite-level setup
-        stringState.testString = 'a'.repeat(10000);
+        stringState.testString = 'a'.repeat(100);
       },
 
       teardown: () => {
