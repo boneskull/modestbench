@@ -1,0 +1,19 @@
+name: Validate Commit Messages
+on: [pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    env:
+      FORCE_COLOR: '1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: ./.github/actions/prepare
+      - name: Run commitlint
+        uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6
+        env:
+          NODE_PATH: ${{ github.workspace }}/node_modules

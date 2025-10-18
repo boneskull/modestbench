@@ -1,0 +1,27 @@
+name: Publish
+description: Publish to npm
+
+inputs:
+  token:
+    description: 'npm token'
+    required: true
+
+runs:
+  steps:
+    # see https://github.com/google-github-actions/release-please-action#automating-publication-to-npm
+    # see https://docs.npmjs.com/generating-provenance-statements
+    - name: Checkout Repository
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - name: Setup Node.js
+      uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+      with:
+        node-version: 24.10.0
+        registry-url: https://registry.npmjs.org
+    - name: Install & Build
+      uses: bahmutov/npm-install@4488656f8e90d3c85e3a964db0018dd624f340e7 # v1.11.1
+    - name: Publish to npm
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.token }}
+      run: npm publish --provenance --access public --registry https://registry.npmjs.org
+      shell: bash
+  using: composite
