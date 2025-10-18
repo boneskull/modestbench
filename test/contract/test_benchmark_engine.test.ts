@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
 import type { BenchmarkEngine } from '../../src/types/interfaces.js';
@@ -15,50 +15,50 @@ describe('BenchmarkEngine interface contract', () => {
     it('should have execute method', () => {
       // This test will fail until implementation exists
       if (engine) {
-        assert.ok(typeof engine.execute === 'function');
+        expect(engine.execute, 'to be a function');
         // execute(config: RunConfiguration): Promise<BenchmarkRun>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have validate method', () => {
       // This test will fail until implementation exists
       if (engine) {
-        assert.ok(typeof engine.validate === 'function');
+        expect(engine.validate, 'to be a function');
         // validate(files: string[]): Promise<ValidationResult>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have discover method', () => {
       // This test will fail until implementation exists
       if (engine) {
-        assert.ok(typeof engine.discover === 'function');
+        expect(engine.discover, 'to be a function');
         // discover(pattern: string, exclude?: string[]): Promise<string[]>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have registerReporter method', () => {
       // This test will fail until implementation exists
       if (engine) {
-        assert.ok(typeof engine.registerReporter === 'function');
+        expect(engine.registerReporter, 'to be a function');
         // registerReporter(name: string, reporter: Reporter): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have getReporters method', () => {
       // This test will fail until implementation exists
       if (engine) {
-        assert.ok(typeof engine.getReporters === 'function');
+        expect(engine.getReporters, 'to be a function');
         // getReporters(): Record<string, Reporter>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -74,13 +74,13 @@ describe('BenchmarkEngine interface contract', () => {
 
         try {
           const result = await engine.execute(config);
-          assert.ok(result !== undefined);
+          expect(result, 'not to be undefined');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -93,20 +93,20 @@ describe('BenchmarkEngine interface contract', () => {
         };
 
         const promise = engine.execute(config);
-        assert.ok(promise instanceof Promise);
+        expect(promise, 'to be a', Promise);
 
         try {
           const result = await promise;
           // Result should have BenchmarkRun properties
-          assert.ok(typeof result === 'object');
-          assert.ok('id' in result);
-          assert.ok('timestamp' in result);
-          assert.ok('status' in result);
+          expect(result, 'to be an object');
+          expect('id' in result, 'to be truthy');
+          expect('timestamp' in result, 'to be truthy');
+          expect('status' in result, 'to be truthy');
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -116,31 +116,31 @@ describe('BenchmarkEngine interface contract', () => {
       if (engine) {
         try {
           const result = await engine.validate(['test.bench.js']);
-          assert.ok(result !== undefined);
+          expect(result, 'not to be undefined');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<ValidationResult>', async () => {
       if (engine) {
         const promise = engine.validate(['test.bench.js']);
-        assert.ok(promise instanceof Promise);
+        expect(promise, 'to be a', Promise);
 
         try {
           const result = await promise;
           // Result should have ValidationResult properties
-          assert.ok(typeof result === 'object');
-          assert.ok('valid' in result);
+          expect(result, 'to be an object');
+          expect('valid' in result, 'to be truthy');
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -150,13 +150,13 @@ describe('BenchmarkEngine interface contract', () => {
       if (engine) {
         try {
           const result = await engine.discover('**/*.bench.js');
-          assert.ok(Array.isArray(result));
+          expect(result, 'to be an array');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -166,33 +166,33 @@ describe('BenchmarkEngine interface contract', () => {
           const result = await engine.discover('**/*.bench.js', [
             'node_modules/**',
           ]);
-          assert.ok(Array.isArray(result));
+          expect(result, 'to be an array');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<string[]>', async () => {
       if (engine) {
         const promise = engine.discover('**/*.bench.js');
-        assert.ok(promise instanceof Promise);
+        expect(promise, 'to be a', Promise);
 
         try {
           const result = await promise;
-          assert.ok(Array.isArray(result));
+          expect(result, 'to be an array');
           // Should be array of file paths
           result.forEach((path) => {
-            assert.ok(typeof path === 'string');
+            expect(typeof path === 'string', 'to be truthy');
           });
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -201,33 +201,39 @@ describe('BenchmarkEngine interface contract', () => {
     it('should register reporters with name and instance', () => {
       if (engine) {
         const mockReporter = {
-          name: 'test',
           onEnd: () => {},
-          onResult: () => {},
+          onError: () => {},
+          onFileEnd: () => {},
+          onFileStart: () => {},
+          onProgress: () => {},
           onStart: () => {},
+          onSuiteEnd: () => {},
+          onSuiteStart: () => {},
+          onTaskResult: () => {},
+          onTaskStart: () => {},
         };
 
         try {
           engine.registerReporter('test', mockReporter);
           const reporters = engine.getReporters();
-          assert.ok('test' in reporters);
-          assert.strictEqual(reporters.test, mockReporter);
+          expect('test' in reporters, 'to be truthy');
+          expect(reporters.test, 'to equal', mockReporter);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return reporters record', () => {
       if (engine) {
         const reporters = engine.getReporters();
-        assert.ok(typeof reporters === 'object');
-        assert.ok(reporters !== null);
+        expect(typeof reporters === 'object', 'to be truthy');
+        expect(reporters !== null, 'to be truthy');
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -236,13 +242,14 @@ describe('BenchmarkEngine interface contract', () => {
     it('should handle invalid configurations gracefully', async () => {
       if (engine) {
         try {
-          await engine.execute(null);
-          assert.fail('Should throw for invalid config');
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          await engine.execute({} as any);
+          expect.fail('Should throw for invalid config');
         } catch (error) {
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -252,10 +259,10 @@ describe('BenchmarkEngine interface contract', () => {
           await engine.validate(['nonexistent.bench.js']);
           // Should either succeed with validation errors or throw
         } catch (error) {
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });

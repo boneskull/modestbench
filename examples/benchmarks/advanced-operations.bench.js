@@ -1,3 +1,8 @@
+// Shared state for String Operations suite
+const stringState = {
+  testString: '',
+};
+
 export default {
   config: {
     iterations: 1000,
@@ -36,31 +41,28 @@ export default {
     'String Operations': {
       benchmarks: {
         'RegExp.test()': {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          fn: () => /a/.test(global.testString),
+          fn: () => /a/.test(stringState.testString),
           tags: ['string', 'regex'],
         },
 
         'String.includes()': {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-          fn: () => global.testString.includes('a'),
+          fn: () => stringState.testString.includes('a'),
           tags: ['string', 'search'],
         },
 
         'String.indexOf()': {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-          fn: () => global.testString.indexOf('a'),
+          fn: () => stringState.testString.indexOf('a'),
           tags: ['string', 'search'],
         },
       },
 
       setup: () => {
         // Suite-level setup
-        global.testString = 'a'.repeat(10000);
+        stringState.testString = 'a'.repeat(10000);
       },
 
       teardown: () => {
-        delete global.testString;
+        stringState.testString = '';
       },
     },
   },

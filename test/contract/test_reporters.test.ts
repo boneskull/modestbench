@@ -1,7 +1,11 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
-import type { Reporter } from '../../src/types/interfaces.js';
+import type {
+  CsvReporter,
+  Reporter,
+  ReporterRegistry,
+} from '../../src/types/interfaces.js';
 
 /**
  * Contract tests for Reporter interfaces Reference: contracts/core-api.md lines
@@ -10,8 +14,10 @@ import type { Reporter } from '../../src/types/interfaces.js';
 
 interface ReportersTestContext {
   base?: Reporter;
+  csv?: CsvReporter;
   human?: Reporter;
   json?: Reporter;
+  registry?: ReporterRegistry;
 }
 
 describe('Reporter interfaces contract', () => {
@@ -20,91 +26,91 @@ describe('Reporter interfaces contract', () => {
   describe('base Reporter interface', () => {
     it('should have onStart method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onStart === 'function');
+        expect(reporters.base.onStart, 'to be a function');
         // onStart(run: BenchmarkRun): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onFileStart method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onFileStart === 'function');
+        expect(reporters.base.onFileStart, 'to be a function');
         // onFileStart(file: BenchmarkFile): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onSuiteStart method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onSuiteStart === 'function');
+        expect(reporters.base.onSuiteStart, 'to be a function');
         // onSuiteStart(suite: BenchmarkSuite): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onTaskStart method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onTaskStart === 'function');
+        expect(reporters.base.onTaskStart, 'to be a function');
         // onTaskStart(task: BenchmarkTask): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onTaskResult method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onTaskResult === 'function');
+        expect(reporters.base.onTaskResult, 'to be a function');
         // onTaskResult(result: BenchmarkResult): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onSuiteEnd method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onSuiteEnd === 'function');
+        expect(reporters.base.onSuiteEnd, 'to be a function');
         // onSuiteEnd(suite: BenchmarkSuite): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onFileEnd method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onFileEnd === 'function');
+        expect(reporters.base.onFileEnd, 'to be a function');
         // onFileEnd(file: BenchmarkFile): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onEnd method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onEnd === 'function');
+        expect(reporters.base.onEnd, 'to be a function');
         // onEnd(run: BenchmarkRun): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onProgress method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onProgress === 'function');
+        expect(reporters.base.onProgress, 'to be a function');
         // onProgress(state: ProgressState): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onError method', () => {
       if (reporters?.base) {
-        assert.ok(typeof reporters.base.onError === 'function');
+        expect(reporters.base.onError, 'to be a function');
         // onError(error: Error, context?: string): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -113,11 +119,11 @@ describe('Reporter interfaces contract', () => {
     it('should extend base Reporter interface', () => {
       if (reporters?.human) {
         // Should have all base reporter methods
-        assert.ok(typeof reporters.human.onStart === 'function');
-        assert.ok(typeof reporters.human.onEnd === 'function');
-        assert.ok(typeof reporters.human.onProgress === 'function');
+        expect(reporters.human.onStart, 'to be a function');
+        expect(reporters.human.onEnd, 'to be a function');
+        expect(reporters.human.onProgress, 'to be a function');
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -125,20 +131,44 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.human) {
         try {
           const mockRun = {
+            config: {} as any,
+            duration: 1000,
+            endTime: new Date(),
+            environment: {
+              arch: process.arch,
+              availableMemory: 1000000,
+              cpu: { cores: 4, model: 'test', speed: 2000 },
+              env: {},
+              hostname: 'test',
+              memory: { free: 1000, total: 2000, used: 1000 },
+              nodeVersion: process.version,
+              platform: process.platform,
+            },
+            files: [],
             id: 'test-run-123',
-            status: 'running',
-            timestamp: new Date(),
+            startTime: new Date(),
+            summary: {
+              failedTasks: 0,
+              fastest: null,
+              overallMean: 0,
+              passedTasks: 0,
+              slowest: null,
+              totalFiles: 0,
+              totalOperations: 0,
+              totalSuites: 0,
+              totalTasks: 0,
+            },
           };
 
           // Should format output for human consumption
           reporters.human.onStart(mockRun);
-          assert.ok(true, 'Should handle human-readable formatting');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -146,23 +176,28 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.human) {
         try {
           const mockResult = {
-            duration: 1.5,
-            file: 'test.bench.js',
-            hz: 1000000,
-            stats: {},
-            suite: 'Performance Tests',
-            task: 'array iteration',
+            iterations: 1000,
+            marginOfError: 1.5,
+            max: 2000,
+            mean: 1000,
+            min: 500,
+            name: 'array iteration',
+            opsPerSecond: 1000000,
+            p95: 1800,
+            p99: 1950,
+            stdDev: 200,
+            variance: 40000,
           };
 
           // Should include ANSI color codes or formatted output
           reporters.human.onTaskResult(mockResult);
-          assert.ok(true, 'Should handle colored output');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -171,20 +206,25 @@ describe('Reporter interfaces contract', () => {
         try {
           const mockProgress = {
             currentFile: 'test.bench.js',
+            elapsed: 5000,
             filesCompleted: 2,
             percentage: 40,
+            suitesCompleted: 3,
+            tasksCompleted: 10,
             totalFiles: 5,
+            totalSuites: 8,
+            totalTasks: 25,
           };
 
           // Should render progress bar
           reporters.human.onProgress(mockProgress);
-          assert.ok(true, 'Should handle progress bar rendering');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -193,10 +233,10 @@ describe('Reporter interfaces contract', () => {
     it('should extend base Reporter interface', () => {
       if (reporters?.json) {
         // Should have all base reporter methods
-        assert.ok(typeof reporters.json.onStart === 'function');
-        assert.ok(typeof reporters.json.onEnd === 'function');
+        expect(reporters.json.onStart, 'to be a function');
+        expect(reporters.json.onEnd, 'to be a function');
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -205,18 +245,22 @@ describe('Reporter interfaces contract', () => {
         try {
           // Should output JSON
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-          const output = reporters.json.getOutput();
+          const output = (reporters.json as any).getOutput?.();
           if (output) {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             JSON.parse(output); // Should not throw
           }
-          assert.ok(true, 'Should produce valid JSON');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase - either no getOutput method or invalid JSON
-          assert.ok(error instanceof Error || error instanceof SyntaxError);
+
+          expect(
+            error instanceof Error || error instanceof SyntaxError,
+            'to be truthy',
+          );
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -225,10 +269,12 @@ describe('Reporter interfaces contract', () => {
     it('should extend base Reporter interface', () => {
       if (reporters?.csv) {
         // Should have all base reporter methods
-        assert.ok(typeof reporters.csv.onStart === 'function');
-        assert.ok(typeof reporters.csv.onTaskResult === 'function');
+
+        expect(reporters.csv.onStart, 'to be a function');
+
+        expect(reporters.csv.onTaskResult, 'to be a function');
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -236,30 +282,35 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.csv) {
         try {
           const mockResult = {
-            duration: 1.5,
-            file: 'test.bench.js',
-            hz: 1000000,
-            suite: 'Performance Tests',
-            task: 'array iteration',
+            iterations: 1000,
+            marginOfError: 1.5,
+            max: 2000,
+            mean: 1000,
+            min: 500,
+            name: 'array iteration',
+            opsPerSecond: 1000000,
+            p95: 1800,
+            p99: 1950,
+            stdDev: 200,
+            variance: 40000,
           };
 
           // Should output CSV
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           reporters.csv.onTaskResult(mockResult);
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-          const output = reporters.csv.getOutput();
+          const output = (reporters.csv as any).getOutput?.();
           if (output) {
             // Should contain commas and proper CSV structure
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-            assert.ok(output.includes(','));
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call
+            expect(output.includes(','), 'to be truthy');
           }
-          assert.ok(true, 'Should produce valid CSV');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -267,26 +318,27 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.csv) {
         try {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-          const output = reporters.csv.getOutput();
+          const output = (reporters.csv as any).getOutput?.();
           if (output) {
             // Should start with headers
             // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             const lines = output.split('\n');
+
             const headers = lines[0];
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-            assert.ok(headers.includes('file'));
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-            assert.ok(headers.includes('suite'));
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-            assert.ok(headers.includes('task'));
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            expect(headers.includes('file'), 'to be truthy');
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            expect(headers.includes('suite'), 'to be truthy');
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument
+            expect(headers.includes('task'), 'to be truthy');
           }
-          assert.ok(true, 'Should include CSV headers');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -295,14 +347,16 @@ describe('Reporter interfaces contract', () => {
         try {
           // Should accept delimiter options
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-          const _customCsv = new reporters.csv.constructor({ delimiter: ';' });
-          assert.ok(true, 'Should support configurable delimiters');
+          const _customCsv = new (reporters.csv as any).constructor({
+            delimiter: ';',
+          });
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -310,28 +364,28 @@ describe('Reporter interfaces contract', () => {
   describe('ReporterRegistry interface', () => {
     it('should have register method', () => {
       if (reporters?.registry) {
-        assert.ok(typeof reporters.registry.register === 'function');
+        expect(reporters.registry.register, 'to be a function');
         // register(name: string, reporter: Reporter): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have get method', () => {
       if (reporters?.registry) {
-        assert.ok(typeof reporters.registry.get === 'function');
+        expect(reporters.registry.get, 'to be a function');
         // get(name: string): Reporter | undefined
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have getAll method', () => {
       if (reporters?.registry) {
-        assert.ok(typeof reporters.registry.getAll === 'function');
+        expect(reporters.registry.getAll, 'to be a function');
         // getAll(): Record<string, Reporter>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -340,20 +394,27 @@ describe('Reporter interfaces contract', () => {
         try {
           const mockReporter = {
             onEnd: () => {},
+            onError: () => {},
+            onFileEnd: () => {},
+            onFileStart: () => {},
+            onProgress: () => {},
             onStart: () => {},
+            onSuiteEnd: () => {},
+            onSuiteStart: () => {},
+            onTaskResult: () => {},
+            onTaskStart: () => {},
           };
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           reporters.registry.register('test', mockReporter);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           const retrieved = reporters.registry.get('test');
-          assert.strictEqual(retrieved, mockReporter);
+
+          expect(retrieved, 'to equal', mockReporter);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -401,7 +462,7 @@ describe('Reporter interfaces contract', () => {
           mockReporter.onEnd(mockRun);
 
           // Verify correct order
-          assert.deepStrictEqual(callOrder, [
+          expect(callOrder, 'to equal', [
             'start',
             'fileStart',
             'suiteStart',
@@ -413,10 +474,10 @@ describe('Reporter interfaces contract', () => {
           ]);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -439,13 +500,13 @@ describe('Reporter interfaces contract', () => {
             errorReporter.onError(error);
           }
 
-          assert.ok(true, 'Should handle reporter errors');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });

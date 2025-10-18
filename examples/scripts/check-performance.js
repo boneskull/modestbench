@@ -5,13 +5,14 @@ import { readFileSync } from 'fs';
 
 // Run benchmarks and get JSON output
 execSync('modestbench run --reporters json --output ./tmp');
-const results = JSON.parse(readFileSync('./tmp/results.json'));
+const results = JSON.parse(readFileSync('./tmp/results.json', 'utf8'));
 
 // Compare with baseline
-const baseline = JSON.parse(readFileSync('./baseline-results.json'));
+const baseline = JSON.parse(readFileSync('./baseline-results.json', 'utf8'));
 
 for (const result of results.results) {
   const baselineResult = baseline.results.find(
+    /** @param {any} r */
     (r) =>
       r.file === result.file &&
       r.suite === result.suite &&

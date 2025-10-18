@@ -1,14 +1,14 @@
-pattern: "test/**/*.bench.ts"
+pattern: 'test/**/*.bench.ts'
 exclude:
-  - "node_modules/**"
-  - "dist/**"
+  - 'node_modules/**'
+  - 'dist/**'
 reporters:
   - human
   - json
 iterations: 500
 time: 2000
 warmup: 100
-outputDir: "./test-output"
+outputDir: './test-output'
 quiet: false
 verbose: true
 bail: false
@@ -24,5 +24,3 @@ thresholds:
 reporterConfig:
   human:
     showProgress: true
-
-

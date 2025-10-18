@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
 import type { HistoryStorage } from '../../src/types/interfaces.js';
@@ -14,55 +14,55 @@ describe('HistoryStorage interface contract', () => {
   describe('interface methods', () => {
     it('should have saveRun method', () => {
       if (historyStorage) {
-        assert.ok(typeof historyStorage.saveRun === 'function');
+        expect(historyStorage.saveRun, 'to be a function');
         // saveRun(run: BenchmarkRun): Promise<void>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have loadRun method', () => {
       if (historyStorage) {
-        assert.ok(typeof historyStorage.loadRun === 'function');
+        expect(historyStorage.loadRun, 'to be a function');
         // loadRun(id: string): Promise<BenchmarkRun | null>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have queryRuns method', () => {
       if (historyStorage) {
-        assert.ok(typeof historyStorage.queryRuns === 'function');
+        expect(historyStorage.queryRuns, 'to be a function');
         // queryRuns(query: HistoryQuery): Promise<BenchmarkRun[]>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have getIndex method', () => {
       if (historyStorage) {
-        assert.ok(typeof historyStorage.getIndex === 'function');
+        expect(historyStorage.getIndex, 'to be a function');
         // getIndex(): Promise<HistoryIndex>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have cleanup method', () => {
       if (historyStorage) {
-        assert.ok(typeof historyStorage.cleanup === 'function');
+        expect(historyStorage.cleanup, 'to be a function');
         // cleanup(policy: RetentionPolicy): Promise<CleanupResult>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have export method', () => {
       if (historyStorage) {
-        assert.ok(typeof historyStorage.export === 'function');
+        expect(historyStorage.export, 'to be a function');
         // export(format: 'json' | 'csv', query?: HistoryQuery): Promise<string>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -71,53 +71,90 @@ describe('HistoryStorage interface contract', () => {
     it('should accept BenchmarkRun parameter', async () => {
       if (historyStorage) {
         const mockRun = {
-          configuration: {
-            config: {},
-            files: ['test.bench.js'],
-            reporters: ['human'],
-          },
+          config: {} as any,
           duration: 1000,
+          endTime: new Date(),
           environment: {
-            node: process.version,
+            arch: process.arch,
+            availableMemory: 1000000,
+            cpu: { cores: 4, model: 'test', speed: 2000 },
+            env: {},
+            hostname: 'test',
+            memory: { free: 1000, total: 2000, used: 1000 },
+            nodeVersion: process.version,
             platform: process.platform,
           },
+          files: [],
           id: 'test-run-123',
-          results: [],
-          status: 'completed',
-          timestamp: new Date(),
+          startTime: new Date(),
+          summary: {
+            failedTasks: 0,
+            fastest: null,
+            overallMean: 0,
+            passedTasks: 0,
+            slowest: null,
+            totalFiles: 0,
+            totalOperations: 0,
+            totalSuites: 0,
+            totalTasks: 0,
+          },
         };
 
         try {
           await historyStorage.saveRun(mockRun);
-          assert.ok(true, 'saveRun should accept BenchmarkRun');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<void>', async () => {
       if (historyStorage) {
         const mockRun = {
+          config: {} as any,
+          duration: 1000,
+          endTime: new Date(),
+          environment: {
+            arch: process.arch,
+            availableMemory: 1000000,
+            cpu: { cores: 4, model: 'test', speed: 2000 },
+            env: {},
+            hostname: 'test',
+            memory: { free: 1000, total: 2000, used: 1000 },
+            nodeVersion: process.version,
+            platform: process.platform,
+          },
+          files: [],
           id: 'test-run-123',
-          status: 'completed',
-          timestamp: new Date(),
+          startTime: new Date(),
+          summary: {
+            failedTasks: 0,
+            fastest: null,
+            overallMean: 0,
+            passedTasks: 0,
+            slowest: null,
+            totalFiles: 0,
+            totalOperations: 0,
+            totalSuites: 0,
+            totalTasks: 0,
+          },
         };
 
         const promise = historyStorage.saveRun(mockRun);
-        assert.ok(promise instanceof Promise);
+        expect(promise instanceof Promise, 'to be truthy');
 
         try {
           const result = await promise;
-          assert.strictEqual(result, undefined);
+          expect(result, 'to be undefined');
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -128,31 +165,32 @@ describe('HistoryStorage interface contract', () => {
         try {
           const result = await historyStorage.loadRun('test-run-123');
           // Should return BenchmarkRun or null
-          assert.ok(result === null || typeof result === 'object');
+          expect(result === null || typeof result === 'object', 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<BenchmarkRun | null>', async () => {
       if (historyStorage) {
         const promise = historyStorage.loadRun('test-run-123');
-        assert.ok(promise instanceof Promise);
+        expect(promise instanceof Promise, 'to be truthy');
 
         try {
           const result = await promise;
-          assert.ok(
+          expect(
             result === null || (typeof result === 'object' && 'id' in result),
+            'to be truthy',
           );
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -168,13 +206,13 @@ describe('HistoryStorage interface contract', () => {
 
         try {
           const results = await historyStorage.queryRuns(query);
-          assert.ok(Array.isArray(results));
+          expect(results, 'to be an array');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -189,10 +227,10 @@ describe('HistoryStorage interface contract', () => {
           await historyStorage.queryRuns(query);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -206,10 +244,10 @@ describe('HistoryStorage interface contract', () => {
           await historyStorage.queryRuns(query);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -223,10 +261,10 @@ describe('HistoryStorage interface contract', () => {
           await historyStorage.queryRuns(query);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -238,34 +276,34 @@ describe('HistoryStorage interface contract', () => {
 
         try {
           const results = await historyStorage.queryRuns(query);
-          assert.ok(Array.isArray(results));
+          expect(results, 'to be an array');
           // Should respect limit when results exist
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<BenchmarkRun[]>', async () => {
       if (historyStorage) {
         const promise = historyStorage.queryRuns({});
-        assert.ok(promise instanceof Promise);
+        expect(promise instanceof Promise, 'to be truthy');
 
         try {
           const results = await promise;
-          assert.ok(Array.isArray(results));
+          expect(results, 'to be an array');
           results.forEach((run) => {
-            assert.ok(typeof run === 'object');
-            assert.ok('id' in run);
+            expect(typeof run === 'object', 'to be truthy');
+            expect('id' in run, 'to be truthy');
           });
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -281,36 +319,37 @@ describe('HistoryStorage interface contract', () => {
 
         try {
           const result = await historyStorage.cleanup(policy);
-          assert.ok(typeof result === 'object');
-          assert.ok('removedRuns' in result);
+          expect(result, 'to be an object');
+          expect('removedRuns' in result, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<CleanupResult>', async () => {
       if (historyStorage) {
         const promise = historyStorage.cleanup({});
-        assert.ok(promise instanceof Promise);
+        expect(promise instanceof Promise, 'to be truthy');
 
         try {
           const result = await promise;
-          assert.ok(typeof result === 'object');
-          assert.ok('removedRuns' in result);
-          assert.ok('freedSpace' in result);
-          assert.ok('errors' in result);
-          assert.ok(typeof result.removedRuns === 'number');
-          assert.ok(typeof result.freedSpace === 'number');
-          assert.ok(Array.isArray(result.errors));
+          expect(result, 'to be an object');
+          expect('removedRuns' in result, 'to be truthy');
+          expect('freedBytes' in result, 'to be truthy');
+          expect('removedFiles' in result, 'to be truthy');
+
+          expect(result.removedRuns, 'to be a number');
+          expect(result.freedBytes, 'to be a number');
+          expect(result.removedFiles, 'to be an array');
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -320,15 +359,15 @@ describe('HistoryStorage interface contract', () => {
       if (historyStorage) {
         try {
           const result = await historyStorage.export('json');
-          assert.ok(typeof result === 'string');
+          expect(result, 'to be a string');
           // Should be valid JSON
           JSON.parse(result);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -336,15 +375,15 @@ describe('HistoryStorage interface contract', () => {
       if (historyStorage) {
         try {
           const result = await historyStorage.export('csv');
-          assert.ok(typeof result === 'string');
+          expect(result, 'to be a string');
           // Should contain CSV headers
-          assert.ok(result.includes(',') || result.length === 0);
+          expect(result.includes(',') || result.length === 0, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -359,26 +398,26 @@ describe('HistoryStorage interface contract', () => {
           await historyStorage.export('json', query);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<string>', async () => {
       if (historyStorage) {
         const promise = historyStorage.export('json');
-        assert.ok(promise instanceof Promise);
+        expect(promise instanceof Promise, 'to be truthy');
 
         try {
           const result = await promise;
-          assert.ok(typeof result === 'string');
+          expect(result, 'to be a string');
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -388,13 +427,13 @@ describe('HistoryStorage interface contract', () => {
       if (historyStorage) {
         try {
           const result = await historyStorage.loadRun('invalid-id');
-          assert.strictEqual(result, null);
+          expect(result, 'to be null');
         } catch (error) {
           // Should either return null or throw descriptive error
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -403,12 +442,12 @@ describe('HistoryStorage interface contract', () => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           await historyStorage.saveRun(null as any);
-          assert.fail('Should throw for invalid run');
+          expect.fail('Should throw for invalid run');
         } catch (error) {
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });

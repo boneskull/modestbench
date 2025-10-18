@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -25,77 +25,85 @@ describe('modestbench run command', () => {
   describe('CLI contract', () => {
     it('should accept pattern argument', async () => {
       const result = await runCommand(['run', '*.bench.js', '--help'], tempDir);
-      assert.ok(result.stdout.includes('pattern'));
+      expect(result.stdout.includes('pattern'), 'to be truthy');
     });
 
     it('should support --config/-c option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--config') || result.stdout.includes('-c'),
+        'to be truthy',
       );
     });
 
     it('should support --reporters/-r option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--reporters') || result.stdout.includes('-r'),
+        'to be truthy',
       );
     });
 
     it('should support --output/-o option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--output') || result.stdout.includes('-o'),
+        'to be truthy',
       );
     });
 
     it('should support --iterations/-i option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--iterations') || result.stdout.includes('-i'),
+        'to be truthy',
       );
     });
 
     it('should support --time/-t option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--time') || result.stdout.includes('-t'),
+        'to be truthy',
       );
     });
 
     it('should support --warmup/-w option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--warmup') || result.stdout.includes('-w'),
+        'to be truthy',
       );
     });
 
     it('should support --bail option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(result.stdout.includes('--bail'));
+      expect(result.stdout.includes('--bail'), 'to be truthy');
     });
 
     it('should support --exclude option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(result.stdout.includes('--exclude'));
+      expect(result.stdout.includes('--exclude'), 'to be truthy');
     });
 
     it('should support --timeout option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(result.stdout.includes('--timeout'));
+      expect(result.stdout.includes('--timeout'), 'to be truthy');
     });
 
     it('should support --quiet/-q option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--quiet') || result.stdout.includes('-q'),
+        'to be truthy',
       );
     });
 
     it('should support --verbose/-v option', async () => {
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--verbose') || result.stdout.includes('-v'),
+        'to be truthy',
       );
     });
   });
@@ -120,17 +128,23 @@ describe('modestbench run command', () => {
       );
 
       const result = await runCommand(['run', benchFile], tempDir);
-      assert.strictEqual(result.exitCode, 0);
+      expect(result.exitCode, 'to equal', 0);
     });
 
     it('should exit with code 2 for configuration errors', async () => {
-      const result = await runCommand(['run', '--config', 'nonexistent.json'], tempDir);
-      assert.strictEqual(result.exitCode, 2);
+      const result = await runCommand(
+        ['run', '--config', 'nonexistent.json'],
+        tempDir,
+      );
+      expect(result.exitCode, 'to equal', 2);
     });
 
     it('should exit with code 3 for file discovery errors', async () => {
-      const result = await runCommand(['run', '/nonexistent/path/*.bench.js'], tempDir);
-      assert.strictEqual(result.exitCode, 3);
+      const result = await runCommand(
+        ['run', '/nonexistent/path/*.bench.js'],
+        tempDir,
+      );
+      expect(result.exitCode, 'to equal', 3);
     });
   });
 
@@ -142,17 +156,23 @@ describe('modestbench run command', () => {
         'human',
         '--help',
       ]);
-      assert.strictEqual(result.exitCode, 0);
+      expect(result.exitCode, 'to equal', 0);
     });
 
     it('should support json reporter', async () => {
-      const result = await runCommand(['run', '--reporters', 'json', '--help'], tempDir);
-      assert.strictEqual(result.exitCode, 0);
+      const result = await runCommand(
+        ['run', '--reporters', 'json', '--help'],
+        tempDir,
+      );
+      expect(result.exitCode, 'to equal', 0);
     });
 
     it('should support csv reporter', async () => {
-      const result = await runCommand(['run', '--reporters', 'csv', '--help'], tempDir);
-      assert.strictEqual(result.exitCode, 0);
+      const result = await runCommand(
+        ['run', '--reporters', 'csv', '--help'],
+        tempDir,
+      );
+      expect(result.exitCode, 'to equal', 0);
     });
 
     it('should support multiple reporters', async () => {
@@ -162,7 +182,7 @@ describe('modestbench run command', () => {
         'human,json,csv',
         '--help',
       ]);
-      assert.strictEqual(result.exitCode, 0);
+      expect(result.exitCode, 'to equal', 0);
     });
   });
 
@@ -170,11 +190,11 @@ describe('modestbench run command', () => {
     it('should use default pattern **/*.bench.{js,ts}', async () => {
       // This test will fail until implementation exists
       const result = await runCommand(['run', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('**/*.bench.{js,ts}') ||
           result.stderr.includes('not found'),
+        'to be truthy',
       );
     });
   });
-
 });

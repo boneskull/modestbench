@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
 import type { ProgressManager } from '../../src/types/interfaces.js';
@@ -14,55 +14,55 @@ describe('ProgressManager interface contract', () => {
   describe('interface methods', () => {
     it('should have initialize method', () => {
       if (progressManager) {
-        assert.ok(typeof progressManager.initialize === 'function');
+        expect(progressManager.initialize, 'to be a function');
         // initialize(run: BenchmarkRun): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have update method', () => {
       if (progressManager) {
-        assert.ok(typeof progressManager.update === 'function');
+        expect(progressManager.update, 'to be a function');
         // update(update: Partial<ProgressState>): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have getState method', () => {
       if (progressManager) {
-        assert.ok(typeof progressManager.getState === 'function');
+        expect(progressManager.getState, 'to be a function');
         // getState(): ProgressState
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have estimateCompletion method', () => {
       if (progressManager) {
-        assert.ok(typeof progressManager.estimateCompletion === 'function');
+        expect(progressManager.estimateCompletion, 'to be a function');
         // estimateCompletion(): Date | null
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have onProgress method', () => {
       if (progressManager) {
-        assert.ok(typeof progressManager.onProgress === 'function');
+        expect(progressManager.onProgress, 'to be a function');
         // onProgress(callback: (state: ProgressState) => void): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have cleanup method', () => {
       if (progressManager) {
-        assert.ok(typeof progressManager.cleanup === 'function');
+        expect(progressManager.cleanup, 'to be a function');
         // cleanup(): void
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -71,47 +71,88 @@ describe('ProgressManager interface contract', () => {
     it('should accept BenchmarkRun parameter', () => {
       if (progressManager) {
         const mockRun = {
-          configuration: {
-            config: {},
-            files: ['test.bench.js'],
-            reporters: ['human'],
-          },
+          config: {} as any,
           duration: 0,
-          environment: {},
+          endTime: new Date(),
+          environment: {
+            arch: process.arch,
+            availableMemory: 1000000,
+            cpu: { cores: 4, model: 'test', speed: 2000 },
+            env: {},
+            hostname: 'test',
+            memory: { free: 1000, total: 2000, used: 1000 },
+            nodeVersion: process.version,
+            platform: process.platform,
+          },
+          files: [],
           id: 'test-run-123',
-          results: [],
-          status: 'pending',
-          timestamp: new Date(),
+          startTime: new Date(),
+          summary: {
+            failedTasks: 0,
+            fastest: null,
+            overallMean: 0,
+            passedTasks: 0,
+            slowest: null,
+            totalFiles: 0,
+            totalOperations: 0,
+            totalSuites: 0,
+            totalTasks: 0,
+          },
         };
 
         try {
           progressManager.initialize(mockRun);
-          assert.ok(true, 'initialize should accept BenchmarkRun');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return void', () => {
       if (progressManager) {
         const mockRun = {
+          config: {} as any,
+          duration: 0,
+          endTime: new Date(),
+          environment: {
+            arch: process.arch,
+            availableMemory: 1000000,
+            cpu: { cores: 4, model: 'test', speed: 2000 },
+            env: {},
+            hostname: 'test',
+            memory: { free: 1000, total: 2000, used: 1000 },
+            nodeVersion: process.version,
+            platform: process.platform,
+          },
+          files: [],
           id: 'test-run-123',
-          status: 'pending',
+          startTime: new Date(),
+          summary: {
+            failedTasks: 0,
+            fastest: null,
+            overallMean: 0,
+            passedTasks: 0,
+            slowest: null,
+            totalFiles: 0,
+            totalOperations: 0,
+            totalSuites: 0,
+            totalTasks: 0,
+          },
         };
 
         try {
           const result = progressManager.initialize(mockRun);
-          assert.strictEqual(result, undefined);
+          expect(result, 'to be undefined');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -129,13 +170,13 @@ describe('ProgressManager interface contract', () => {
 
         try {
           progressManager.update(update);
-          assert.ok(true, 'update should accept Partial<ProgressState>');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -143,13 +184,13 @@ describe('ProgressManager interface contract', () => {
       if (progressManager) {
         try {
           progressManager.update({});
-          assert.ok(true, 'update should handle empty updates');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -157,13 +198,13 @@ describe('ProgressManager interface contract', () => {
       if (progressManager) {
         try {
           const result = progressManager.update({});
-          assert.strictEqual(result, undefined);
+          expect(result, 'to be undefined');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -173,20 +214,20 @@ describe('ProgressManager interface contract', () => {
       if (progressManager) {
         try {
           const state = progressManager.getState();
-          assert.ok(typeof state === 'object');
-          assert.ok(state !== null);
+          expect(typeof state === 'object', 'to be truthy');
+          expect(state !== null, 'to be truthy');
 
           // Should have ProgressState properties
-          assert.ok('totalFiles' in state);
-          assert.ok('filesCompleted' in state);
-          assert.ok(typeof state.totalFiles === 'number');
-          assert.ok(typeof state.filesCompleted === 'number');
+          expect('totalFiles' in state, 'to be truthy');
+          expect('filesCompleted' in state, 'to be truthy');
+          expect(state.totalFiles, 'to be a number');
+          expect(state.filesCompleted, 'to be a number');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -197,13 +238,13 @@ describe('ProgressManager interface contract', () => {
           const state2 = progressManager.getState();
 
           // Should return consistent state within same call context
-          assert.deepStrictEqual(state1, state2);
+          expect(state1, 'to equal', state2);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -213,13 +254,13 @@ describe('ProgressManager interface contract', () => {
       if (progressManager) {
         try {
           const estimate = progressManager.estimateCompletion();
-          assert.ok(estimate === null || estimate instanceof Date);
+          expect(estimate === null || estimate instanceof Date, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -228,13 +269,13 @@ describe('ProgressManager interface contract', () => {
         try {
           // Before any progress updates, should return null
           const estimate = progressManager.estimateCompletion();
-          assert.ok(estimate === null || estimate instanceof Date);
+          expect(estimate === null || estimate instanceof Date, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -243,16 +284,16 @@ describe('ProgressManager interface contract', () => {
         try {
           const estimate = progressManager.estimateCompletion();
           if (estimate !== null) {
-            assert.ok(estimate instanceof Date);
+            expect(estimate instanceof Date, 'to be truthy');
             // Should be in the future (or very close to now)
-            assert.ok(estimate.getTime() >= Date.now() - 1000);
+            expect(estimate.getTime() >= Date.now() - 1000, 'to be truthy');
           }
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -266,13 +307,13 @@ describe('ProgressManager interface contract', () => {
 
         try {
           progressManager.onProgress(callback);
-          assert.ok(true, 'onProgress should accept callback function');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -282,13 +323,13 @@ describe('ProgressManager interface contract', () => {
 
         try {
           const result = progressManager.onProgress(callback);
-          assert.strictEqual(result, undefined);
+          expect(result, 'to be undefined');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -308,15 +349,15 @@ describe('ProgressManager interface contract', () => {
 
           // Callback should be called with state
           if (callbackCalled) {
-            assert.ok(typeof receivedState === 'object');
-            assert.ok('filesCompleted' in receivedState);
+            expect(typeof receivedState === 'object', 'to be truthy');
+            expect('filesCompleted' in receivedState, 'to be truthy');
           }
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -326,13 +367,13 @@ describe('ProgressManager interface contract', () => {
       if (progressManager) {
         try {
           const result = progressManager.cleanup();
-          assert.strictEqual(result, undefined);
+          expect(result, 'to be undefined');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -341,13 +382,13 @@ describe('ProgressManager interface contract', () => {
         try {
           progressManager.cleanup();
           // After cleanup, getState might throw or return empty state
-          assert.ok(true, 'cleanup should complete without error');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -363,15 +404,17 @@ describe('ProgressManager interface contract', () => {
           });
 
           const state = progressManager.getState();
-          assert.strictEqual(state.currentFile, 'test1.bench.js');
-          assert.strictEqual(state.totalFiles, 3);
-          assert.strictEqual(state.filesCompleted, 0);
+          expect(state, 'to satisfy', {
+            currentFile: 'test1.bench.js',
+            filesCompleted: 0,
+            totalFiles: 3,
+          });
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -385,15 +428,17 @@ describe('ProgressManager interface contract', () => {
           });
 
           const state = progressManager.getState();
-          assert.strictEqual(state.currentSuite, 'Performance Tests');
-          assert.strictEqual(state.totalSuites, 5);
-          assert.strictEqual(state.suitesCompleted, 2);
+          expect(state, 'to satisfy', {
+            currentSuite: 'Performance Tests',
+            suitesCompleted: 2,
+            totalSuites: 5,
+          });
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -407,15 +452,17 @@ describe('ProgressManager interface contract', () => {
           });
 
           const state = progressManager.getState();
-          assert.strictEqual(state.currentTask, 'array iteration');
-          assert.strictEqual(state.totalTasks, 10);
-          assert.strictEqual(state.tasksCompleted, 7);
+          expect(state, 'to satisfy', {
+            currentTask: 'array iteration',
+            tasksCompleted: 7,
+            totalTasks: 10,
+          });
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -431,12 +478,12 @@ describe('ProgressManager interface contract', () => {
           } as any);
 
           // Should either accept and normalize or throw descriptive error
-          assert.ok(true, 'Should handle invalid updates');
+          expect(true, 'to be truthy');
         } catch (error) {
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -445,13 +492,13 @@ describe('ProgressManager interface contract', () => {
         try {
           progressManager.cleanup();
           progressManager.cleanup();
-          assert.ok(true, 'Should handle multiple cleanup calls');
+          expect(true, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });

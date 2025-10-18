@@ -9,7 +9,7 @@
  * - All config formats (JSON, YAML, JS, TS) work
  */
 
-import { strict as assert } from 'node:assert';
+import { expect, expectAsync } from 'bupkis';
 import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -36,7 +36,7 @@ describe('modestbench init command - integration', () => {
         tempDir,
       );
 
-      assert.strictEqual(result.exitCode, 0, `Init failed: ${result.stderr}`);
+      expect(result.exitCode, 'to equal', 0);
 
       // Verify file exists
       const configPath = join(tempDir, 'modestbench.config.json');
@@ -47,12 +47,12 @@ describe('modestbench init command - integration', () => {
       const config = JSON.parse(content);
 
       // Verify basic structure
-      assert.ok(config.pattern, 'Config should have pattern');
-      assert.ok(config.reporters, 'Config should have reporters');
-      assert.ok(
-        typeof config.iterations === 'number',
-        'Iterations should be a number',
-      );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      expect(config, 'to satisfy', {
+        iterations: expect.it('to be a number'),
+        pattern: expect.it('to be truthy'),
+        reporters: expect.it('to be truthy'),
+      });
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
@@ -66,9 +66,11 @@ describe('modestbench init command - integration', () => {
       const config = await manager.load(configPath);
 
       // Verify cosmiconfig successfully loaded and validated the config
-      assert.ok(config.pattern);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(typeof config.iterations === 'number');
+      expect(config, 'to satisfy', {
+        iterations: expect.it('to be a number'),
+        pattern: expect.it('to be truthy'),
+        reporters: expect.it('to be an array'),
+      });
     });
   });
 
@@ -79,7 +81,7 @@ describe('modestbench init command - integration', () => {
         tempDir,
       );
 
-      assert.strictEqual(result.exitCode, 0, `Init failed: ${result.stderr}`);
+      expect(result.exitCode, 'to equal', 0);
 
       // Verify file exists
       const configPath = join(tempDir, 'modestbench.config.yaml');
@@ -87,18 +89,12 @@ describe('modestbench init command - integration', () => {
 
       // Verify file content doesn't have escaped newlines
       const content = await readFile(configPath, 'utf8');
-      assert.ok(
-        !content.includes('\\n'),
-        'YAML should not contain escaped newlines',
-      );
-      assert.ok(content.includes('\n'), 'YAML should contain actual newlines');
+      expect(content, 'not to contain', '\\n');
+      expect(content, 'to contain', '\n');
 
       // Verify it has proper YAML structure
-      assert.ok(content.includes('pattern:'), 'YAML should have pattern field');
-      assert.ok(
-        content.includes('reporters:'),
-        'YAML should have reporters field',
-      );
+      expect(content, 'to contain', 'pattern:');
+      expect(content, 'to contain', 'reporters:');
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
@@ -112,9 +108,11 @@ describe('modestbench init command - integration', () => {
       const config = await manager.load(configPath);
 
       // Verify cosmiconfig successfully loaded and validated the config
-      assert.ok(config.pattern);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(typeof config.iterations === 'number');
+      expect(config, 'to satisfy', {
+        iterations: expect.it('to be a number'),
+        pattern: expect.it('to be truthy'),
+        reporters: expect.it('to be an array'),
+      });
     });
 
     it('should generate YAML with proper array formatting', async () => {
@@ -129,10 +127,7 @@ describe('modestbench init command - integration', () => {
       );
 
       // YAML arrays should use dash syntax
-      assert.ok(
-        content.includes('  - '),
-        'YAML should have array items with dashes',
-      );
+      expect(content, 'to contain', '  - ');
     });
   });
 
@@ -143,7 +138,7 @@ describe('modestbench init command - integration', () => {
         tempDir,
       );
 
-      assert.strictEqual(result.exitCode, 0, `Init failed: ${result.stderr}`);
+      expect(result.exitCode, 'to equal', 0);
 
       // Verify file exists
       const configPath = join(tempDir, 'modestbench.config.js');
@@ -151,14 +146,8 @@ describe('modestbench init command - integration', () => {
 
       // Verify file uses ESM, not CommonJS
       const content = await readFile(configPath, 'utf8');
-      assert.ok(
-        content.includes('export default'),
-        'JS config should use ESM export default',
-      );
-      assert.ok(
-        !content.includes('module.exports'),
-        'JS config should not use CommonJS',
-      );
+      expect(content, 'to contain', 'export default');
+      expect(content, 'not to contain', 'module.exports');
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
@@ -172,9 +161,11 @@ describe('modestbench init command - integration', () => {
       const config = await manager.load(configPath);
 
       // Verify cosmiconfig successfully loaded and validated the config
-      assert.ok(config.pattern);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(typeof config.iterations === 'number');
+      expect(config, 'to satisfy', {
+        iterations: expect.it('to be a number'),
+        pattern: expect.it('to be truthy'),
+        reporters: expect.it('to be an array'),
+      });
     });
   });
 
@@ -185,7 +176,7 @@ describe('modestbench init command - integration', () => {
         tempDir,
       );
 
-      assert.strictEqual(result.exitCode, 0, `Init failed: ${result.stderr}`);
+      expect(result.exitCode, 'to equal', 0);
 
       // Verify file exists
       const configPath = join(tempDir, 'modestbench.config.ts');
@@ -193,18 +184,9 @@ describe('modestbench init command - integration', () => {
 
       // Verify file has TypeScript import and type annotation
       const content = await readFile(configPath, 'utf8');
-      assert.ok(
-        content.includes('import type { ModestBenchConfig }'),
-        'TS config should have type import',
-      );
-      assert.ok(
-        content.includes('const config: ModestBenchConfig'),
-        'TS config should have type annotation',
-      );
-      assert.ok(
-        content.includes('export default config'),
-        'TS config should export config',
-      );
+      expect(content, 'to contain', 'import type { ModestBenchConfig }');
+      expect(content, 'to contain', 'const config: ModestBenchConfig');
+      expect(content, 'to contain', 'export default config');
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
@@ -218,9 +200,11 @@ describe('modestbench init command - integration', () => {
       const config = await manager.load(configPath);
 
       // Verify cosmiconfig successfully loaded and validated the config
-      assert.ok(config.pattern);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(typeof config.iterations === 'number');
+      expect(config, 'to satisfy', {
+        iterations: expect.it('to be a number'),
+        pattern: expect.it('to be truthy'),
+        reporters: expect.it('to be an array'),
+      });
     });
   });
 
@@ -234,9 +218,11 @@ describe('modestbench init command - integration', () => {
       );
 
       // Basic project should have minimal iterations
-      assert.strictEqual(config.iterations, 100);
-      assert.strictEqual(config.reporters.length, 1);
-      assert.ok(config.reporters.includes('human'));
+      expect(config, 'to satisfy', {
+        iterations: 100,
+        reporters: expect.it('to have length', 1),
+      });
+      expect(config.reporters, 'to contain', 'human');
     });
 
     it('should generate advanced project with full config', async () => {
@@ -248,10 +234,12 @@ describe('modestbench init command - integration', () => {
       );
 
       // Advanced project should have more iterations and multiple reporters
-      assert.strictEqual(config.iterations, 1000);
-      assert.ok(config.reporters.length >= 2);
-      assert.ok(config.outputDir);
-      assert.ok(typeof config.warmup === 'number');
+      expect(config, 'to satisfy', {
+        iterations: 1000,
+        outputDir: expect.it('to be truthy'),
+        warmup: expect.it('to be a number'),
+      });
+      expect(config.reporters.length, 'to be greater than or equal to', 2);
     });
 
     it('should generate library project optimized for testing', async () => {
@@ -263,9 +251,9 @@ describe('modestbench init command - integration', () => {
       );
 
       // Library project should have high iterations and all reporters
-      assert.strictEqual(config.iterations, 5000);
-      assert.ok(config.reporters.length >= 3);
-      assert.ok(config.reporters.includes('csv'));
+      expect(config.iterations, 'to equal', 5000);
+      expect(config.reporters.length, 'to be greater than or equal to', 3);
+      expect(config.reporters, 'to contain', 'csv');
     });
   });
 
@@ -287,9 +275,9 @@ describe('modestbench init command - integration', () => {
       await access(benchmarksDir); // Directory exists
 
       // Example files should not exist
-      await assert.rejects(
-        async () => await access(join(benchmarksDir, 'example.bench.js')),
-        'Example file should not exist',
+      await expectAsync(
+        access(join(benchmarksDir, 'example.bench.js')),
+        'to reject',
       );
     });
 
@@ -301,14 +289,8 @@ describe('modestbench init command - integration', () => {
         'utf8',
       );
 
-      assert.ok(
-        exampleContent.includes('export default'),
-        'Benchmark should use ESM',
-      );
-      assert.ok(
-        exampleContent.includes('benchmarks:'),
-        'Benchmark should have benchmarks object',
-      );
+      expect(exampleContent, 'to contain', 'export default');
+      expect(exampleContent, 'to contain', 'benchmarks:');
     });
   });
 
@@ -320,14 +302,8 @@ describe('modestbench init command - integration', () => {
       await access(gitignorePath);
 
       const content = await readFile(gitignorePath, 'utf8');
-      assert.ok(
-        content.includes('benchmark-results/'),
-        'Should ignore results directory',
-      );
-      assert.ok(
-        content.includes('node_modules/'),
-        'Should ignore node_modules',
-      );
+      expect(content, 'to contain', 'benchmark-results/');
+      expect(content, 'to contain', 'node_modules/');
     });
 
     it('should create README.md file', async () => {
@@ -337,14 +313,8 @@ describe('modestbench init command - integration', () => {
       await access(readmePath);
 
       const content = await readFile(readmePath, 'utf8');
-      assert.ok(
-        content.includes('ModestBench'),
-        'README should mention ModestBench',
-      );
-      assert.ok(
-        content.includes('modestbench run'),
-        'README should have usage examples',
-      );
+      expect(content, 'to contain', 'ModestBench');
+      expect(content, 'to contain', 'modestbench run');
     });
   });
 
@@ -352,29 +322,25 @@ describe('modestbench init command - integration', () => {
     it('should fail when reinitializing without --force', async () => {
       // First init
       const result1 = await runCommand(['init', '--no-examples'], tempDir);
-      assert.strictEqual(result1.exitCode, 0);
+      expect(result1.exitCode, 'to equal', 0);
 
       // Second init without force
       const result2 = await runCommand(['init', '--no-examples'], tempDir);
-      assert.strictEqual(result2.exitCode, 1);
-      assert.ok(
-        result2.stderr.includes('already exist') ||
-          result2.stdout.includes('already exist'),
-        'Should indicate files already exist',
-      );
+      expect(result2.exitCode, 'to equal', 1);
+      expect(result2.stderr + result2.stdout, 'to match', /already exist/);
     });
 
     it('should succeed when reinitializing with --force', async () => {
       // First init
       const result1 = await runCommand(['init', '--no-examples'], tempDir);
-      assert.strictEqual(result1.exitCode, 0);
+      expect(result1.exitCode, 'to equal', 0);
 
       // Second init with force
       const result2 = await runCommand(
         ['init', '--force', '--no-examples'],
         tempDir,
       );
-      assert.strictEqual(result2.exitCode, 0);
+      expect(result2.exitCode, 'to equal', 0);
     });
   });
 

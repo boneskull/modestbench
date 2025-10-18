@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
 import type { ConfigurationManager } from '../../src/types/interfaces.js';
@@ -14,37 +14,37 @@ describe('ConfigurationManager interface contract', () => {
   describe('interface methods', () => {
     it('should have load method', () => {
       if (configManager) {
-        assert.ok(typeof configManager.load === 'function');
+        expect(configManager.load, 'to be a function');
         // load(configPath?: string, cliArgs?: CliArgs): Promise<ModestBenchConfig>
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have validate method', () => {
       if (configManager) {
-        assert.ok(typeof configManager.validate === 'function');
+        expect(configManager.validate, 'to be a function');
         // validate(config: Partial<ModestBenchConfig>): ValidationResult
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have merge method', () => {
       if (configManager) {
-        assert.ok(typeof configManager.merge === 'function');
+        expect(configManager.merge, 'to be a function');
         // merge(...configs: Partial<ModestBenchConfig>[]): ModestBenchConfig
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should have getDefaults method', () => {
       if (configManager) {
-        assert.ok(typeof configManager.getDefaults === 'function');
+        expect(configManager.getDefaults, 'to be a function');
         // getDefaults(): ModestBenchConfig
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -54,14 +54,14 @@ describe('ConfigurationManager interface contract', () => {
       if (configManager) {
         try {
           const config = await configManager.load();
-          assert.ok(typeof config === 'object');
-          assert.ok(config !== null);
+          expect(config, 'to be an object');
+          expect(config, 'not to be null');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -69,50 +69,53 @@ describe('ConfigurationManager interface contract', () => {
       if (configManager) {
         try {
           const config = await configManager.load('modestbench.config.json');
-          assert.ok(typeof config === 'object');
+          expect(config, 'to be an object');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should load configuration with CLI args', async () => {
       if (configManager) {
         const cliArgs = {
-          output: 'results/',
+          outputDir: 'results/',
           reporters: ['json'],
         };
 
         try {
           const config = await configManager.load(undefined, cliArgs);
-          assert.ok(typeof config === 'object');
+          expect(config, 'to be an object');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should return Promise<ModestBenchConfig>', async () => {
       if (configManager) {
         const promise = configManager.load();
-        assert.ok(promise instanceof Promise);
+        expect(promise instanceof Promise, 'to be truthy');
 
         try {
           const config = await promise;
           // Should have ModestBenchConfig properties
-          assert.ok(typeof config === 'object');
-          assert.ok('reporters' in config || 'tinybench' in config);
+          expect(config, 'to be an object');
+          expect(
+            'reporters' in config || 'tinybench' in config,
+            'to be truthy',
+          );
         } catch {
           // Expected during contract testing
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -121,20 +124,20 @@ describe('ConfigurationManager interface contract', () => {
     it('should validate partial configuration', () => {
       if (configManager) {
         const partialConfig = {
-          output: './results',
+          outputDir: './results',
           reporters: ['human', 'json'],
         };
 
         try {
           const result = configManager.validate(partialConfig);
-          assert.ok(typeof result === 'object');
-          assert.ok('valid' in result);
+          expect(result, 'to be an object');
+          expect('valid' in result, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -142,15 +145,15 @@ describe('ConfigurationManager interface contract', () => {
       if (configManager) {
         try {
           const result = configManager.validate({});
-          assert.ok(typeof result === 'object');
-          assert.ok('valid' in result);
-          assert.ok(typeof result.valid === 'boolean');
+          expect(result, 'to be an object');
+          expect('valid' in result, 'to be truthy');
+          expect(result.valid, 'to be a boolean');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -159,21 +162,21 @@ describe('ConfigurationManager interface contract', () => {
     it('should merge multiple partial configurations', () => {
       if (configManager) {
         const config1 = { reporters: ['human'] };
-        const config2 = { output: './results' };
+        const config2 = { outputDir: './results' };
         const config3 = { bail: true };
 
         try {
           const merged = configManager.merge(config1, config2, config3);
-          assert.ok(typeof merged === 'object');
-          assert.ok('reporters' in merged);
-          assert.ok('output' in merged);
-          assert.ok('bail' in merged);
+          expect(typeof merged === 'object', 'to be truthy');
+          expect('reporters' in merged, 'to be truthy');
+          expect('outputDir' in merged, 'to be truthy');
+          expect('bail' in merged, 'to be truthy');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -185,13 +188,13 @@ describe('ConfigurationManager interface contract', () => {
         try {
           const merged = configManager.merge(config1, config2);
           // Later configs should override earlier ones
-          assert.ok(Array.isArray(merged.reporters));
+          expect(merged.reporters, 'to be an array');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -199,14 +202,14 @@ describe('ConfigurationManager interface contract', () => {
       if (configManager) {
         try {
           const merged = configManager.merge({});
-          assert.ok(typeof merged === 'object');
+          expect(typeof merged === 'object', 'to be truthy');
           // Should have all required properties filled in
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -216,18 +219,18 @@ describe('ConfigurationManager interface contract', () => {
       if (configManager) {
         try {
           const defaults = configManager.getDefaults();
-          assert.ok(typeof defaults === 'object');
-          assert.ok(defaults !== null);
+          expect(typeof defaults === 'object', 'to be truthy');
+          expect(defaults, 'not to be null');
 
           // Should have expected default properties
-          assert.ok('reporters' in defaults);
-          assert.ok(Array.isArray(defaults.reporters));
+          expect('reporters' in defaults, 'to be truthy');
+          expect(defaults.reporters, 'to be an array');
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -238,13 +241,13 @@ describe('ConfigurationManager interface contract', () => {
           const defaults2 = configManager.getDefaults();
 
           // Should return equivalent objects
-          assert.deepStrictEqual(defaults1, defaults2);
+          expect(defaults1, 'to equal', defaults2);
         } catch (error) {
           // Expected during contract testing phase
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -256,10 +259,10 @@ describe('ConfigurationManager interface contract', () => {
           await configManager.load('modestbench.config.json');
         } catch (error) {
           // Expected during contract testing - file doesn't exist
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -269,10 +272,10 @@ describe('ConfigurationManager interface contract', () => {
           await configManager.load('modestbench.config.yaml');
         } catch (error) {
           // Expected during contract testing - file doesn't exist
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -282,10 +285,10 @@ describe('ConfigurationManager interface contract', () => {
           await configManager.load('modestbench.config.js');
         } catch (error) {
           // Expected during contract testing - file doesn't exist
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
@@ -295,10 +298,10 @@ describe('ConfigurationManager interface contract', () => {
           await configManager.load('modestbench.config.ts');
         } catch (error) {
           // Expected during contract testing - file doesn't exist
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });
@@ -310,30 +313,30 @@ describe('ConfigurationManager interface contract', () => {
           await configManager.load('nonexistent.config.json');
           // Should either return defaults or throw descriptive error
         } catch (error) {
-          assert.ok(error instanceof Error);
-          assert.ok(error.message.length > 0);
+          expect(error, 'to be an', Error);
+          expect((error as Error).message.length > 0, 'to be truthy');
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
 
     it('should handle invalid configuration data', () => {
       if (configManager) {
         const invalidConfig = {
-          invalid: true,
-          output: 123,
+          outputDir: 123,
           reporters: 'not-an-array',
-        };
+        } as any;
 
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           const result = configManager.validate(invalidConfig);
-          assert.ok(!result.valid || result.errors?.length > 0);
+          expect(!result.valid || result.errors?.length > 0, 'to be truthy');
         } catch (error) {
-          assert.ok(error instanceof Error);
+          expect(error, 'to be an', Error);
         }
       } else {
-        assert.ok(true, 'Implementation not yet available');
+        expect(true, 'to be truthy');
       }
     });
   });

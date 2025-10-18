@@ -1,5 +1,25 @@
 // Performance optimization examples
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
+
+// Shared state for Iteration Examples suite
+const iterationState = {
+  largeComputation: /** @type {() => number} */ (() => 0),
+  smallArray: /** @type {number[]} */ ([]),
+};
+
+// Shared state for Optimization Examples suite
+const optimizationState = {
+  dataset: /** @type {{ id: number; name: string; value: number }[]} */ ([]),
+  processData: /** @type {(
+  data: { id: number; name: string; value: number }[],
+) => string[]} */ (() => []),
+};
+
+// Shared state for Sorting Algorithms suite
+const sortingState = {
+  bubbleSort: /** @type {(arr: number[]) => number[]} */ (() => []),
+  quickSort: /** @type {(arr: number[]) => number[]} */ (() => []),
+  unsortedData: /** @type {number[]} */ ([]),
+};
 
 export default {
   suites: {
@@ -8,21 +28,21 @@ export default {
         // Fast operations need more iterations
         'Array Access': {
           config: { iterations: 10000 },
-          fn: () => global.smallArray[50],
+          fn: () => iterationState.smallArray[50],
           tags: ['fast', 'array'],
         },
 
         // Slow operations need fewer iterations
         'Heavy Computation': {
           config: { iterations: 10 },
-          fn: () => global.largeComputation(),
+          fn: () => iterationState.largeComputation(),
           tags: ['slow', 'computation'],
         },
       },
 
       setup: () => {
-        global.smallArray = Array.from({ length: 100 }, (_, i) => i);
-        global.largeComputation = () => {
+        iterationState.smallArray = Array.from({ length: 100 }, (_, i) => i);
+        iterationState.largeComputation = () => {
           let result = 0;
           for (let i = 0; i < 100000; i++) {
             result += Math.sqrt(i);
@@ -32,8 +52,8 @@ export default {
       },
 
       teardown: () => {
-        delete global.smallArray;
-        delete global.largeComputation;
+        iterationState.smallArray = [];
+        iterationState.largeComputation = () => 0;
       },
     },
 
@@ -41,7 +61,7 @@ export default {
       benchmarks: {
         // ✅ Good: setup excluded from measurement
         'Fast Benchmark': {
-          fn: () => global.processData(global.dataset),
+          fn: () => optimizationState.processData(optimizationState.dataset),
           tags: ['optimized', 'fast'],
         },
 
@@ -62,13 +82,13 @@ export default {
 
       setup: () => {
         // Generate large dataset once for all benchmarks
-        global.dataset = Array.from({ length: 10000 }, (_, i) => ({
+        optimizationState.dataset = Array.from({ length: 10000 }, (_, i) => ({
           id: i,
           name: `item-${i}`,
           value: Math.random(),
         }));
 
-        global.processData = (data) => {
+        optimizationState.processData = (data) => {
           return data
             .filter((item) => item.value > 0.5)
             .map((item) => item.name)
@@ -77,8 +97,8 @@ export default {
       },
 
       teardown: () => {
-        delete global.dataset;
-        delete global.processData;
+        optimizationState.dataset = [];
+        optimizationState.processData = () => [];
         // Optional garbage collection
         if (global.gc) {
           global.gc();
@@ -89,47 +109,50 @@ export default {
     'Sorting Algorithms': {
       benchmarks: {
         'Bubble Sort': {
-          fn: () => global.bubbleSort([...global.unsortedData]),
+          fn: () => sortingState.bubbleSort([...sortingState.unsortedData]),
           tags: ['sorting', 'algorithm', 'slow'],
         },
 
         'Native Sort': {
-          fn: () => [...global.unsortedData].sort((a, b) => a - b),
+          fn: () => [...sortingState.unsortedData].sort((a, b) => a - b),
           tags: ['sorting', 'native', 'fast'],
         },
 
         'Quick Sort': {
-          fn: () => global.quickSort([...global.unsortedData]),
+          fn: () => sortingState.quickSort([...sortingState.unsortedData]),
           tags: ['sorting', 'algorithm', 'fast'],
         },
       },
 
       setup: () => {
-        global.unsortedData = Array.from({ length: 1000 }, () =>
+        sortingState.unsortedData = Array.from({ length: 1000 }, () =>
           Math.floor(Math.random() * 1000),
         );
 
-        global.quickSort = (arr) => {
+        sortingState.quickSort = (arr) => {
           if (arr.length <= 1) {
             return arr;
           }
-          const pivot = arr[Math.floor(arr.length / 2)];
+          const pivotIndex = Math.floor(arr.length / 2);
+          const pivot = /** @type {number} */ (arr[pivotIndex]);
           const left = arr.filter((x) => x < pivot);
           const middle = arr.filter((x) => x === pivot);
           const right = arr.filter((x) => x > pivot);
           return [
-            ...global.quickSort(left),
+            ...sortingState.quickSort(left),
             ...middle,
-            ...global.quickSort(right),
+            ...sortingState.quickSort(right),
           ];
         };
 
-        global.bubbleSort = (arr) => {
+        sortingState.bubbleSort = (arr) => {
           const result = [...arr];
           for (let i = 0; i < result.length; i++) {
             for (let j = 0; j < result.length - i - 1; j++) {
-              if (result[j] > result[j + 1]) {
-                [result[j], result[j + 1]] = [result[j + 1], result[j]];
+              const current = /** @type {number} */ (result[j]);
+              const next = /** @type {number} */ (result[j + 1]);
+              if (current > next) {
+                [result[j], result[j + 1]] = [next, current];
               }
             }
           }
@@ -138,9 +161,9 @@ export default {
       },
 
       teardown: () => {
-        delete global.unsortedData;
-        delete global.quickSort;
-        delete global.bubbleSort;
+        sortingState.unsortedData = [];
+        sortingState.quickSort = () => [];
+        sortingState.bubbleSort = () => [];
       },
     },
   },

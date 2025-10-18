@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -50,23 +50,13 @@ describe('Multiple reporter output formats', () => {
 
       if (result.exitCode === 0) {
         // Should contain human-readable elements
-        assert.ok(
-          result.stdout.includes('ops/sec') ||
-            result.stdout.includes('fastest') ||
-            result.stdout.includes('Human Output Test'),
-        );
+        expect(result.stdout, 'to match', /ops\/sec|fastest|Human Output Test/);
 
         // Should contain table-like formatting (from quickstart example)
-        assert.ok(
-          result.stdout.includes('│') ||
-            result.stdout.includes('┌') ||
-            result.stdout.includes('└') ||
-            result.stdout.includes('|') ||
-            result.stdout.includes('-'),
-        );
+        expect(result.stdout, 'to match', /│|┌|└|\||-/);
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -98,14 +88,10 @@ describe('Multiple reporter output formats', () => {
 
       if (result.exitCode === 0) {
         // Should show progress indicators
-        assert.ok(
-          result.stdout.includes('%') ||
-            result.stdout.includes('█') ||
-            result.stdout.includes('progress'),
-        );
+        expect(result.stdout, 'to match', /%|█|progress/);
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -138,15 +124,10 @@ describe('Multiple reporter output formats', () => {
 
       if (result.exitCode === 0) {
         // Should show statistical information
-        assert.ok(
-          result.stdout.includes('±') ||
-            result.stdout.includes('mean') ||
-            result.stdout.includes('stddev') ||
-            result.stdout.includes('%'),
-        );
+        expect(result.stdout, 'to match', /±|mean|stddev|%/);
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
   });
@@ -186,21 +167,26 @@ describe('Multiple reporter output formats', () => {
           const data = JSON.parse(jsonContent);
 
           // Should have expected JSON structure from quickstart
-          assert.ok(data.run !== undefined);
-          assert.ok(data.run.id !== undefined);
-          assert.ok(data.run.timestamp !== undefined);
-          assert.ok(Array.isArray(data.results));
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          expect(data, 'to satisfy', {
+            results: expect.it('to be an array'),
+            run: {
+              id: expect.it('to be truthy'),
+              timestamp: expect.it('to be truthy'),
+            },
+          });
         } catch (_error) {
           // File might not exist or be invalid JSON
           if (result.stdout) {
             // Try parsing stdout as JSON
             const data = JSON.parse(result.stdout);
-            assert.ok(data !== null);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            expect(data, 'to be truthy');
           }
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -236,26 +222,29 @@ describe('Multiple reporter output formats', () => {
           const data = JSON.parse(result.stdout);
 
           // Should include comprehensive metadata
-          assert.ok(data.run);
-          assert.ok(data.results);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          expect(data, 'to have key', 'run');
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          expect(data, 'to have key', 'results');
 
           if (data.results.length > 0) {
             const firstResult = data.results[0];
-            assert.ok(firstResult.file !== undefined);
-            assert.ok(firstResult.suite !== undefined);
-            assert.ok(firstResult.task !== undefined);
-            assert.ok(firstResult.hz !== undefined);
-            assert.ok(firstResult.stats !== undefined);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            expect(firstResult, 'to satisfy', {
+              file: expect.it('to be truthy'),
+              hz: expect.it('to be truthy'),
+              stats: expect.it('to be truthy'),
+              suite: expect.it('to be truthy'),
+              task: expect.it('to be truthy'),
+            });
           }
         } catch {
           // JSON parsing failed - might be streaming or incomplete
-          assert.ok(
-            result.stdout.includes('json') || result.stdout.includes('{'),
-          );
+          expect(result.stdout, 'to match', /json|\{/);
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
   });
@@ -296,30 +285,29 @@ describe('Multiple reporter output formats', () => {
           const lines = csvContent.trim().split('\n');
 
           // Should have header row
-          assert.ok(lines.length >= 1);
+          expect(lines.length, 'to be greater than or equal to', 1);
           const headers = lines[0]?.split(',') || [];
-          assert.ok(
+          expect(
             headers.includes('file') ||
               headers.includes('suite') ||
               headers.includes('task'),
+            'to be truthy',
           );
 
           // Should have data rows
           if (lines.length > 1 && lines[1]) {
-            assert.ok(lines[1].includes('csv task'));
+            expect(lines[1], 'to contain', 'csv task');
           }
         } catch (_error) {
           // File might not exist, check stdout
           if (result.stdout) {
-            assert.ok(result.stdout.includes(','));
-            assert.ok(
-              result.stdout.includes('file') || result.stdout.includes('suite'),
-            );
+            expect(result.stdout, 'to contain', ',');
+            expect(result.stdout, 'to match', /file|suite/);
           }
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -351,15 +339,15 @@ describe('Multiple reporter output formats', () => {
           const headers = lines[0].toLowerCase();
 
           // Should include essential columns from quickstart example
-          assert.ok(headers.includes('file'));
-          assert.ok(headers.includes('suite'));
-          assert.ok(headers.includes('task'));
-          assert.ok(headers.includes('hz') || headers.includes('ops'));
-          assert.ok(headers.includes('duration') || headers.includes('time'));
+          expect(headers, 'to contain', 'file');
+          expect(headers, 'to contain', 'suite');
+          expect(headers, 'to contain', 'task');
+          expect(headers, 'to match', /hz|ops/);
+          expect(headers, 'to match', /duration|time/);
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -391,13 +379,10 @@ describe('Multiple reporter output formats', () => {
 
       if (result.exitCode === 0 && result.stdout) {
         // Should use semicolon delimiter
-        assert.ok(result.stdout.includes(';'));
+        expect(result.stdout, 'to contain', ';');
       } else {
         // Implementation doesn't exist yet
-        assert.ok(
-          result.stderr.includes('not found') ||
-            result.stderr.includes('Unknown argument'),
-        );
+        expect(result.stderr, 'to match', /not found|Unknown argument/);
       }
     });
   });
@@ -431,10 +416,7 @@ describe('Multiple reporter output formats', () => {
 
       if (result.exitCode === 0) {
         // Should have human output in stdout
-        assert.ok(
-          result.stdout.includes('Multi Reporter Test') ||
-            result.stdout.includes('ops'),
-        );
+        expect(result.stdout, 'to match', /Multi Reporter Test|ops/);
 
         // Should create json and csv files
         try {
@@ -444,16 +426,17 @@ describe('Multiple reporter output formats', () => {
           await readFile(jsonFile, 'utf-8');
           await readFile(csvFile, 'utf-8');
 
-          assert.ok(true, 'Multiple output files created');
+          expect(true, 'to be truthy'); // Multiple output files created
         } catch {
           // Files might not exist if implementation not ready
-          assert.ok(
+          expect(
             result.stdout.length > 0 || result.stderr.includes('not found'),
+            'to be truthy',
           );
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -488,7 +471,10 @@ describe('Multiple reporter output formats', () => {
       ]);
 
       // Should handle reporter-specific options
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -524,16 +510,17 @@ describe('Multiple reporter output formats', () => {
         // Should create nested directories
         try {
           await readFile(join(outputDir, 'results.json'), 'utf-8');
-          assert.ok(true, 'Created nested output directory');
+          expect(true, 'to be truthy'); // Created nested output directory
         } catch {
           // Directory creation might not be implemented
-          assert.ok(
+          expect(
             result.stderr.includes('not found') || result.stdout.length > 0,
+            'to be truthy',
           );
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -569,7 +556,10 @@ describe('Multiple reporter output formats', () => {
       ]);
 
       // Should handle existing files (overwrite or append)
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should support custom output filenames', async () => {
@@ -599,7 +589,10 @@ describe('Multiple reporter output formats', () => {
       ]);
 
       // Should use custom filename
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -632,7 +625,7 @@ describe('Multiple reporter output formats', () => {
       ]);
 
       // Should not crash, should report error appropriately
-      assert.ok(result.exitCode >= 0);
+      expect(result.exitCode, 'to be greater than or equal to', 0);
     });
 
     it('should continue with other reporters if one fails', async () => {
@@ -660,7 +653,10 @@ describe('Multiple reporter output formats', () => {
       ]);
 
       // Should continue with valid reporters
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 });

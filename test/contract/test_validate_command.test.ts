@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -29,7 +29,10 @@ describe('modestbench validate command', () => {
       await writeFile(invalidFile, 'invalid javascript syntax {');
 
       const result = await runCommand(['validate', invalidFile], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
 
     it('should validate file structure', async () => {
@@ -41,7 +44,10 @@ describe('modestbench validate command', () => {
       );
 
       const result = await runCommand(['validate', wrongStructure], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
 
     it('should validate configuration files', async () => {
@@ -49,8 +55,14 @@ describe('modestbench validate command', () => {
       const invalidConfig = join(tempDir, 'modestbench.config.json');
       await writeFile(invalidConfig, '{ invalid json');
 
-      const result = await runCommand(['validate', '--config', invalidConfig], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      const result = await runCommand(
+        ['validate', '--config', invalidConfig],
+        tempDir,
+      );
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
 
     it('should validate dependencies', async () => {
@@ -68,7 +80,10 @@ describe('modestbench validate command', () => {
       );
 
       const result = await runCommand(['validate', depFile], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
   });
 
@@ -88,42 +103,54 @@ describe('modestbench validate command', () => {
       );
 
       const result = await runCommand(['validate', benchFile], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
 
     it('should validate all benchmark files when no files specified', async () => {
       const result = await runCommand(['validate'], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
 
     it('should validate using glob patterns', async () => {
       const result = await runCommand(['validate', '**/*.bench.js'], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
   });
 
   describe('CLI options', () => {
     it('should support --config option for config file validation', async () => {
       const result = await runCommand(['validate', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--config') ||
           result.stderr.includes('not found'),
+        'to be truthy',
       );
     });
 
     it('should support --quiet option for minimal output', async () => {
       const result = await runCommand(['validate', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--quiet') ||
           result.stderr.includes('not found'),
+        'to be truthy',
       );
     });
 
     it('should support --verbose option for detailed output', async () => {
       const result = await runCommand(['validate', '--help'], tempDir);
-      assert.ok(
+      expect(
         result.stdout.includes('--verbose') ||
           result.stderr.includes('not found'),
+        'to be truthy',
       );
     });
   });
@@ -144,7 +171,10 @@ describe('modestbench validate command', () => {
       );
 
       const result = await runCommand(['validate', validFile], tempDir);
-      assert.ok(result.exitCode === 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should exit with code 1 for validation failures', async () => {
@@ -152,7 +182,10 @@ describe('modestbench validate command', () => {
       await writeFile(invalidFile, 'invalid content');
 
       const result = await runCommand(['validate', invalidFile], tempDir);
-      assert.ok(result.exitCode === 1 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 1 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should exit with code 2 for configuration errors', async () => {
@@ -161,7 +194,10 @@ describe('modestbench validate command', () => {
         '--config',
         'nonexistent.json',
       ]);
-      assert.ok(result.exitCode === 2 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 2 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should exit with code 3 for file discovery errors', async () => {
@@ -169,7 +205,10 @@ describe('modestbench validate command', () => {
         'validate',
         '/nonexistent/path/*.bench.js',
       ]);
-      assert.ok(result.exitCode === 3 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 3 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -196,20 +235,28 @@ describe('modestbench validate command', () => {
       );
 
       const result = await runCommand(['validate', antiPatternFile], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
   });
 
   describe('output format', () => {
     it('should provide detailed error messages', async () => {
       const result = await runCommand(['validate', '--help'], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
 
     it('should show validation summary', async () => {
       const result = await runCommand(['validate', '--help'], tempDir);
-      assert.ok(result.stderr.includes('not found') || result.exitCode >= 0);
+      expect(
+        result.stderr.includes('not found') || result.exitCode >= 0,
+        'to be truthy',
+      );
     });
   });
-
 });

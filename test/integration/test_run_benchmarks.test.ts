@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -60,15 +60,9 @@ describe('Benchmark execution with progress tracking', () => {
       ]);
 
       // Should execute successfully and show progress and results
-      assert.strictEqual(result.exitCode, 0);
-      assert.ok(
-        result.stdout.includes('Array Operations') ||
-          result.stdout.includes('progress'),
-      );
-      assert.ok(
-        result.stdout.includes('ops/sec') ||
-          result.stdout.includes('benchmark'),
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to match', /Array Operations|progress/);
+      expect(result.stdout, 'to match', /ops\/sec|benchmark/);
     });
 
     it('should show file-level progress for multiple files', async () => {
@@ -103,10 +97,8 @@ describe('Benchmark execution with progress tracking', () => {
       ]);
 
       // Should execute successfully and show progress across files
-      assert.strictEqual(result.exitCode, 0);
-      assert.ok(
-        result.stdout.includes('progress') || result.stdout.includes('%'),
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to match', /progress|%/);
     });
 
     it('should display estimated completion time', async () => {
@@ -143,10 +135,8 @@ describe('Benchmark execution with progress tracking', () => {
       ]);
 
       // Should execute successfully and show ETA or time estimates during execution
-      assert.strictEqual(result.exitCode, 0);
-      assert.ok(
-        result.stdout.includes('ETA') || result.stdout.includes('estimated'),
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to match', /ETA|estimated/);
     });
   });
 
@@ -179,10 +169,9 @@ describe('Benchmark execution with progress tracking', () => {
       const result = await runCommand(['run', benchFile, '--verbose'], tempDir);
 
       // Should execute successfully and show suite progress
-      assert.strictEqual(result.exitCode, 0);
-      assert.ok(
-        result.stdout.includes('Suite 1') && result.stdout.includes('Suite 2'),
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to contain', 'Suite 1');
+      expect(result.stdout, 'to contain', 'Suite 2');
     });
   });
 
@@ -215,11 +204,8 @@ describe('Benchmark execution with progress tracking', () => {
       );
 
       // Should execute successfully and show progress indicators
-      assert.strictEqual(result.exitCode, 0);
-      assert.ok(
-        result.stdout.includes('progress') ||
-          result.stdout.includes('completed'),
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to match', /progress|completed/);
     });
   });
 
@@ -257,20 +243,17 @@ describe('Benchmark execution with progress tracking', () => {
       // Setup/teardown is not implemented yet
       // The benchmark may succeed (accessing undefined) or fail
       // Accept either outcome for now until setup/teardown is implemented
-      assert.ok(result.exitCode >= 0);
+      expect(result.exitCode, 'to be greater than or equal to', 0);
 
       if (result.exitCode === 0) {
         // Succeeded - setup/teardown silently ignored
-        assert.ok(
-          result.stdout.includes('Setup/Teardown Suite') ||
-            result.stdout.includes('process data'),
-        );
+        expect(result.stdout, 'to match', /Setup\/Teardown Suite|process data/);
       } else {
         // Failed - some error occurred
-        assert.ok(
-          result.stderr.includes('not found') ||
-            result.stdout.includes('FAILED') ||
-            result.stderr.includes('Some benchmarks failed'),
+        expect(
+          result.stderr + result.stdout,
+          'to match',
+          /not found|FAILED|Some benchmarks failed/,
         );
       }
     });
@@ -299,14 +282,14 @@ describe('Benchmark execution with progress tracking', () => {
       const result = await runCommand(['run', benchFile], tempDir);
 
       // Should complete with exit code 1 (failures) but continue execution
-      assert.ok(result.exitCode === 1 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 1 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
 
       if (result.exitCode === 1) {
         // Should show progress for successful tasks
-        assert.ok(
-          result.stdout.includes('good task') ||
-            result.stderr.includes('error'),
-        );
+        expect(result.stdout + result.stderr, 'to match', /good task|error/);
       }
     });
   });

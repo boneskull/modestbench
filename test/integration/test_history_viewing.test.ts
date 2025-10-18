@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -50,12 +50,10 @@ describe('Historical results viewing and trends', () => {
 
       if (result.exitCode === 0) {
         // Should show list of runs
-        assert.ok(
-          result.stdout.includes('run') || result.stdout.includes('Test Suite'),
-        );
+        expect(result.stdout, 'to match', /run|Test Suite/);
       } else {
         // Implementation doesn't exist yet
-        assert.ok(result.stderr.includes('not found'));
+        expect(result.stderr, 'to contain', 'not found');
       }
     });
 
@@ -68,7 +66,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should filter results by pattern
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should support date filtering', async () => {
@@ -80,7 +81,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should filter by date
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should support limiting results', async () => {
@@ -90,7 +94,10 @@ describe('Historical results viewing and trends', () => {
       );
 
       // Should limit number of results
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should support tag filtering', async () => {
@@ -102,7 +109,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should filter by tags
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -146,18 +156,19 @@ describe('Historical results viewing and trends', () => {
               ['history', 'show', String(runId)],
               tempDir,
             );
-            assert.ok(
-              showResult.stdout.includes('Detailed Suite') ||
-                showResult.stderr.includes('not found'),
+            expect(
+              showResult.stdout + showResult.stderr,
+              'to match',
+              /Detailed Suite|not found/,
             );
           }
         } catch {
           // JSON parsing failed - implementation not ready
-          assert.ok(true, 'Implementation not yet available');
+          expect(true, 'to be truthy'); // to be truthy // Implementation not yet available
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(listResult.stderr.includes('not found'));
+        expect(listResult.stderr, 'to contain', 'not found');
       }
     });
 
@@ -168,7 +179,10 @@ describe('Historical results viewing and trends', () => {
       );
 
       // Should return appropriate error code
-      assert.ok(result.exitCode === 1 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 1 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -217,18 +231,19 @@ describe('Historical results viewing and trends', () => {
               String(runs[0].id),
               String(runs[1].id),
             ]);
-            assert.ok(
-              compareResult.stdout.includes('comparison') ||
-                compareResult.stderr.includes('not found'),
+            expect(
+              compareResult.stdout + compareResult.stderr,
+              'to match',
+              /comparison|not found/,
             );
           }
         } catch {
           // JSON parsing failed - implementation not ready
-          assert.ok(true, 'Implementation not yet available');
+          expect(true, 'to be truthy'); // to be truthy // Implementation not yet available
         }
       } else {
         // Implementation doesn't exist yet
-        assert.ok(listResult.stderr.includes('not found'));
+        expect(listResult.stderr, 'to contain', 'not found');
       }
     });
 
@@ -239,7 +254,10 @@ describe('Historical results viewing and trends', () => {
       );
 
       // Should show differences between runs
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -248,17 +266,11 @@ describe('Historical results viewing and trends', () => {
       const result = await runCommand(['history', 'trends'], tempDir);
 
       // CLI should work and show trend analysis
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.toLowerCase().includes('trend') ||
-          result.stdout.toLowerCase().includes('performance') ||
-          result.stdout.includes('No historical data') ||
-          result.stdout.includes('not yet implemented'),
-        'Should show trend analysis, no data message, or not implemented message',
+      expect(result.exitCode, 'to equal', 0);
+      expect(
+        result.stdout.toLowerCase(),
+        'to match',
+        /trend|performance|no historical data|not yet implemented/,
       );
     });
 
@@ -270,7 +282,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should filter trends by pattern
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should show regression detection', async () => {
@@ -282,7 +297,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should detect performance regressions
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -297,18 +315,11 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // CLI should work and clean old data or show no data message
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.toLowerCase().includes('cleaned') ||
-          result.stdout.toLowerCase().includes('removed') ||
-          result.stdout.includes('No historical data') ||
-          result.stdout.includes('0 entries') ||
-          result.stdout.includes('0 runs'),
-        'Should show clean operation result',
+      expect(result.exitCode, 'to equal', 0);
+      expect(
+        result.stdout.toLowerCase(),
+        'to match',
+        /cleaned|removed|No historical data|0 entries|0 runs/,
       );
     });
 
@@ -321,7 +332,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should clean based on size
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should clean by count limit', async () => {
@@ -331,7 +345,10 @@ describe('Historical results viewing and trends', () => {
       );
 
       // Should clean based on run count
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -343,18 +360,14 @@ describe('Historical results viewing and trends', () => {
       );
 
       // CLI should work and output human format (table) or no data message
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
+      expect(result.exitCode, 'to equal', 0);
+      expect(
         result.stdout.includes('│') ||
           result.stdout.includes('|') ||
           result.stdout.includes('No historical data') ||
           result.stdout.includes('No matching') ||
-          result.stdout.length === 0, // Empty output acceptable
-        'Should show human format or no data message',
+          result.stdout.length === 0,
+        'to be truthy',
       );
     });
 
@@ -365,22 +378,18 @@ describe('Historical results viewing and trends', () => {
       );
 
       // CLI should work and output JSON format or empty result
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
+      expect(result.exitCode, 'to equal', 0);
       if (result.stdout.trim()) {
         try {
           // Should be valid JSON
           JSON.parse(result.stdout);
-          assert.ok(true, 'Valid JSON output');
+          expect(true, 'to be truthy'); // Valid JSON output
         } catch {
-          assert.fail('Invalid JSON output');
+          expect(false, 'to be truthy'); // Invalid JSON output
         }
       } else {
         // Empty result is acceptable (no data)
-        assert.ok(true, 'No data to display');
+        expect(true, 'to be truthy'); // No data to display
       }
     });
 
@@ -391,17 +400,13 @@ describe('Historical results viewing and trends', () => {
       );
 
       // CLI should work and output CSV format or empty result
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
+      expect(result.exitCode, 'to equal', 0);
       // Should output CSV format (with commas) or be empty if no data
-      assert.ok(
+      expect(
         result.stdout.includes(',') ||
           result.stdout.length === 0 ||
           result.stdout.includes('No historical'),
-        'Should show CSV format or no data message',
+        'to be truthy',
       );
     });
   });
@@ -431,17 +436,11 @@ describe('Historical results viewing and trends', () => {
       const historyResult = await runCommand(['history', 'list'], tempDir);
 
       // CLI should work even if no historical data exists
-      assert.strictEqual(
-        historyResult.exitCode,
-        0,
-        `Command failed: ${historyResult.stderr}`,
-      );
-      assert.ok(
-        historyResult.stdout.includes('Persistent Suite') ||
-          historyResult.stdout.includes('run') ||
-          historyResult.stdout.includes('No historical data') ||
-          historyResult.stdout.includes('No matching'),
-        'Should show history data or no data message',
+      expect(historyResult.exitCode, 'to equal', 0);
+      expect(
+        historyResult.stdout,
+        'to match',
+        /Persistent Suite|run|No historical data|No matching/,
       );
     });
 
@@ -455,11 +454,11 @@ describe('Historical results viewing and trends', () => {
       const result = await runCommand(['history', 'list'], tempDir);
 
       // Should handle corruption gracefully with error exit code or clean recovery
-      assert.ok(
+      expect(
         result.exitCode === 3 ||
           result.stderr.includes('corruption') ||
-          result.exitCode === 0, // Might gracefully handle and reset corrupted data
-        'Should handle corrupted data gracefully',
+          result.exitCode === 0,
+        'to be truthy',
       );
     });
   });
@@ -473,7 +472,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should show performance improvements
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should detect performance regressions', async () => {
@@ -484,7 +486,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should show performance regressions
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should show statistical significance', async () => {
@@ -496,7 +501,10 @@ describe('Historical results viewing and trends', () => {
       ]);
 
       // Should include statistical confidence levels
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 });

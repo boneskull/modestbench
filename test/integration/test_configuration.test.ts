@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { expect } from 'bupkis';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -67,15 +67,8 @@ describe('Configuration file and CLI argument merging', () => {
       ]);
 
       // CLI should work correctly and use config file settings
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.includes('Config Test') || result.stdout.includes('json'),
-        'Should show config test results',
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to match', /Config Test|json/);
     });
 
     it('should load YAML configuration files', async () => {
@@ -100,7 +93,7 @@ warmup: 0
       ]);
 
       // Should handle YAML config successfully
-      assert.ok(result.exitCode >= 0, `Command failed: ${result.stderr}`);
+      expect(result.exitCode, 'to be greater than or equal to', 0);
     });
 
     it('should load JavaScript configuration files', async () => {
@@ -125,7 +118,7 @@ module.exports = {
       ]);
 
       // Should handle JS config
-      assert.ok(result.exitCode >= 0, `Command failed: ${result.stderr}`);
+      expect(result.exitCode, 'to be greater than or equal to', 0);
     });
 
     it('should load TypeScript configuration files', async () => {
@@ -150,7 +143,7 @@ export default {
       ]);
 
       // Should handle TS config
-      assert.ok(result.exitCode >= 0, `Command failed: ${result.stderr}`);
+      expect(result.exitCode, 'to be greater than or equal to', 0);
     });
   });
 
@@ -202,15 +195,8 @@ export default {
       ]);
 
       // Should use CLI values over config file and succeed
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.includes('Precedence Test'),
-        'Should show benchmark results',
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to contain', 'Precedence Test');
     });
 
     it('should use config file defaults when CLI args not provided', async () => {
@@ -252,15 +238,8 @@ export default {
       ]);
 
       // Should use config file defaults and succeed
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.includes('Defaults Test'),
-        'Should show benchmark results',
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to contain', 'Defaults Test');
     });
   });
 
@@ -322,15 +301,8 @@ export default {
       ]);
 
       // Should merge configurations and succeed
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.includes('Merge Test'),
-        'Should show benchmark results',
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to contain', 'Merge Test');
     });
   });
 
@@ -345,7 +317,10 @@ export default {
       );
 
       // Should report configuration error
-      assert.ok(result.exitCode === 2 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 2 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should validate configuration values', async () => {
@@ -366,7 +341,10 @@ export default {
       );
 
       // Should report validation errors
-      assert.ok(result.exitCode === 2 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 2 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
 
     it('should handle missing configuration files gracefully', async () => {
@@ -377,7 +355,10 @@ export default {
       ]);
 
       // Should report missing config file
-      assert.ok(result.exitCode === 2 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode === 2 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -411,7 +392,10 @@ module.exports = {
       ]);
 
       // Should use environment-specific config
-      assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
+      expect(
+        result.exitCode >= 0 || result.stderr.includes('not found'),
+        'to be truthy',
+      );
     });
   });
 
@@ -458,12 +442,12 @@ module.exports = {
 
       if (result.exitCode === 0) {
         // Should merge inline config with global
-        assert.ok(result.stdout.includes('Inline Config Test'));
+        expect(result.stdout, 'to contain', 'Inline Config Test');
       } else {
         // This feature may not be implemented yet, expect reasonable error
-        assert.ok(
+        expect(
           result.stderr.includes('not found') || result.exitCode !== 0,
-          'Should handle inline config gracefully',
+          'to be truthy',
         );
       }
     });
@@ -509,15 +493,13 @@ module.exports = {
 
       if (result.exitCode === 0) {
         // Should use suite-specific configuration
-        assert.ok(
-          result.stdout.includes('Fast Suite') &&
-            result.stdout.includes('Slow Suite'),
-        );
+        expect(result.stdout, 'to contain', 'Fast Suite');
+        expect(result.stdout, 'to contain', 'Slow Suite');
       } else {
         // This feature may not be implemented yet, expect reasonable error
-        assert.ok(
+        expect(
           result.stderr.includes('not found') || result.exitCode !== 0,
-          'Should handle suite-level config gracefully',
+          'to be truthy',
         );
       }
     });
@@ -561,15 +543,8 @@ module.exports = {
       );
 
       // Should auto-discover config file and succeed
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.includes('Auto Discover Test'),
-        'Should show benchmark results',
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to contain', 'Auto Discover Test');
     });
 
     it('should search parent directories for configuration', async () => {
@@ -613,15 +588,8 @@ module.exports = {
       );
 
       // Should find parent config and succeed
-      assert.strictEqual(
-        result.exitCode,
-        0,
-        `Command failed: ${result.stderr}`,
-      );
-      assert.ok(
-        result.stdout.includes('Nested Test'),
-        'Should show benchmark results',
-      );
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to contain', 'Nested Test');
     });
   });
 });

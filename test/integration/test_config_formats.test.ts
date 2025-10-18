@@ -2,7 +2,7 @@
  * Tests for loading configuration in different formats (JSON, YAML, JS, TS)
  */
 
-import assert from 'node:assert';
+import { expect, expectAsync } from 'bupkis';
 import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -21,15 +21,24 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts');
-      assert.strictEqual(config.iterations, 500);
-      assert.strictEqual(config.time, 2000);
-      assert.strictEqual(config.warmup, 100);
-      assert.strictEqual(config.verbose, true);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(config.reporters.includes('human'));
-      assert.ok(config.reporters.includes('json'));
-      assert.ok(config.tags.includes('json'));
+      expect(config, 'to satisfy', {
+        iterations: 500,
+        pattern: 'test/**/*.bench.ts',
+        time: 2000,
+        verbose: true,
+        warmup: 100,
+      });
+      expect(
+        config.reporters,
+        'to be an array',
+        'and',
+        'to contain',
+        'human',
+        'and',
+        'to contain',
+        'json',
+      );
+      expect(config.tags, 'to contain', 'json');
     });
 
     it('should merge JSON config with CLI args', async () => {
@@ -41,10 +50,12 @@ describe('Configuration format loading', () => {
         quiet: true, // Override JSON value of false
       });
 
-      assert.strictEqual(config.iterations, 1000); // CLI override
-      assert.strictEqual(config.quiet, true); // CLI override
-      assert.strictEqual(config.time, 2000); // From JSON
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts'); // From JSON
+      expect(config, 'to satisfy', {
+        iterations: 1000, // CLI override
+        pattern: 'test/**/*.bench.ts', // From JSON
+        quiet: true, // CLI override
+        time: 2000, // From JSON
+      });
     });
 
     it('should handle nested objects in JSON', async () => {
@@ -53,15 +64,18 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.ok(config.metadata);
-      assert.strictEqual(config.metadata.format, 'json');
-      assert.strictEqual(config.metadata.testFile, true);
-
-      assert.ok(config.thresholds);
-      assert.strictEqual(config.thresholds.maxMean, 1000);
-
-      assert.ok(config.reporterConfig);
-      assert.ok(config.reporterConfig.human);
+      expect(config, 'to satisfy', {
+        metadata: {
+          format: 'json',
+          testFile: true,
+        },
+        reporterConfig: {
+          human: expect.it('to be truthy'),
+        },
+        thresholds: {
+          maxMean: 1000,
+        },
+      });
     });
   });
 
@@ -72,15 +86,24 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts');
-      assert.strictEqual(config.iterations, 500);
-      assert.strictEqual(config.time, 2000);
-      assert.strictEqual(config.warmup, 100);
-      assert.strictEqual(config.verbose, true);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(config.reporters.includes('human'));
-      assert.ok(config.reporters.includes('json'));
-      assert.ok(config.tags.includes('yaml'));
+      expect(config, 'to satisfy', {
+        iterations: 500,
+        pattern: 'test/**/*.bench.ts',
+        time: 2000,
+        verbose: true,
+        warmup: 100,
+      });
+      expect(
+        config.reporters,
+        'to be an array',
+        'and',
+        'to contain',
+        'human',
+        'and',
+        'to contain',
+        'json',
+      );
+      expect(config.tags, 'to contain', 'yaml');
     });
 
     it('should merge YAML config with CLI args', async () => {
@@ -92,10 +115,12 @@ describe('Configuration format loading', () => {
         quiet: true, // Override YAML value of false
       });
 
-      assert.strictEqual(config.iterations, 1000); // CLI override
-      assert.strictEqual(config.quiet, true); // CLI override
-      assert.strictEqual(config.time, 2000); // From YAML
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts'); // From YAML
+      expect(config, 'to satisfy', {
+        iterations: 1000, // CLI override
+        pattern: 'test/**/*.bench.ts', // From YAML
+        quiet: true, // CLI override
+        time: 2000, // From YAML
+      });
     });
   });
 
@@ -106,15 +131,24 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts');
-      assert.strictEqual(config.iterations, 500);
-      assert.strictEqual(config.time, 2000);
-      assert.strictEqual(config.warmup, 100);
-      assert.strictEqual(config.verbose, true);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(config.reporters.includes('human'));
-      assert.ok(config.reporters.includes('json'));
-      assert.ok(config.tags.includes('javascript'));
+      expect(config, 'to satisfy', {
+        iterations: 500,
+        pattern: 'test/**/*.bench.ts',
+        time: 2000,
+        verbose: true,
+        warmup: 100,
+      });
+      expect(
+        config.reporters,
+        'to be an array',
+        'and',
+        'to contain',
+        'human',
+        'and',
+        'to contain',
+        'json',
+      );
+      expect(config.tags, 'to contain', 'javascript');
     });
 
     it('should merge JS config with CLI args', async () => {
@@ -126,10 +160,12 @@ describe('Configuration format loading', () => {
         iterations: 1000, // Override JS value of 500
       });
 
-      assert.strictEqual(config.iterations, 1000); // CLI override
-      assert.strictEqual(config.bail, true); // CLI override
-      assert.strictEqual(config.time, 2000); // From JS
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts'); // From JS
+      expect(config, 'to satisfy', {
+        bail: true, // CLI override
+        iterations: 1000, // CLI override
+        pattern: 'test/**/*.bench.ts', // From JS
+        time: 2000, // From JS
+      });
     });
   });
 
@@ -140,15 +176,24 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts');
-      assert.strictEqual(config.iterations, 500);
-      assert.strictEqual(config.time, 2000);
-      assert.strictEqual(config.warmup, 100);
-      assert.strictEqual(config.verbose, true);
-      assert.ok(Array.isArray(config.reporters));
-      assert.ok(config.reporters.includes('human'));
-      assert.ok(config.reporters.includes('json'));
-      assert.ok(config.tags.includes('typescript'));
+      expect(config, 'to satisfy', {
+        iterations: 500,
+        pattern: 'test/**/*.bench.ts',
+        time: 2000,
+        verbose: true,
+        warmup: 100,
+      });
+      expect(
+        config.reporters,
+        'to be an array',
+        'and',
+        'to contain',
+        'human',
+        'and',
+        'to contain',
+        'json',
+      );
+      expect(config.tags, 'to contain', 'typescript');
     });
 
     it('should merge TS config with CLI args', async () => {
@@ -160,10 +205,12 @@ describe('Configuration format loading', () => {
         timeout: 120000, // Override TS value of 60000
       });
 
-      assert.strictEqual(config.iterations, 1000); // CLI override
-      assert.strictEqual(config.timeout, 120000); // CLI override
-      assert.strictEqual(config.time, 2000); // From TS
-      assert.strictEqual(config.pattern, 'test/**/*.bench.ts'); // From TS
+      expect(config, 'to satisfy', {
+        iterations: 1000, // CLI override
+        pattern: 'test/**/*.bench.ts', // From TS
+        time: 2000, // From TS
+        timeout: 120000, // CLI override
+      });
     });
 
     it('should support TypeScript type definitions', async () => {
@@ -173,15 +220,18 @@ describe('Configuration format loading', () => {
       const config = await manager.load(configPath);
 
       // Verify that the config has the expected structure
-      assert.ok(typeof config === 'object');
-      assert.ok('pattern' in config);
-      assert.ok('iterations' in config);
-      assert.ok('reporters' in config);
+      expect(config, 'to be an object');
+      expect(config, 'to have key', 'pattern');
+      expect(config, 'to have key', 'iterations');
+      expect(config, 'to have key', 'reporters');
 
       // Verify metadata from TS config
-      assert.ok(config.metadata);
-      assert.strictEqual(config.metadata.format, 'typescript');
-      assert.strictEqual(config.metadata.testFile, true);
+      expect(config, 'to satisfy', {
+        metadata: {
+          format: 'typescript',
+          testFile: true,
+        },
+      });
     });
   });
 
@@ -194,14 +244,11 @@ describe('Configuration format loading', () => {
         iterations: 2000, // CLI
       });
 
-      // CLI value wins
-      assert.strictEqual(config.iterations, 2000);
-
-      // File value used (not in CLI)
-      assert.strictEqual(config.time, 2000);
-
-      // Default value used (not in CLI or file)
-      assert.strictEqual(config.bail, false);
+      expect(config, 'to satisfy', {
+        bail: false, // Default value used (not in CLI or file)
+        iterations: 2000, // CLI value wins
+        time: 2000, // File value used (not in CLI)
+      });
     });
   });
 
@@ -212,12 +259,15 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.ok(config.metadata);
-      assert.strictEqual(config.metadata.format, 'yaml');
-      assert.strictEqual(config.metadata.testFile, true);
-
-      assert.ok(config.thresholds);
-      assert.strictEqual(config.thresholds.maxMean, 1000);
+      expect(config, 'to satisfy', {
+        metadata: {
+          format: 'yaml',
+          testFile: true,
+        },
+        thresholds: {
+          maxMean: 1000,
+        },
+      });
     });
 
     it('should handle nested objects in JS', async () => {
@@ -226,12 +276,15 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.ok(config.metadata);
-      assert.strictEqual(config.metadata.format, 'javascript');
-      assert.strictEqual(config.metadata.testFile, true);
-
-      assert.ok(config.reporterConfig);
-      assert.ok(config.reporterConfig.human);
+      expect(config, 'to satisfy', {
+        metadata: {
+          format: 'javascript',
+          testFile: true,
+        },
+        reporterConfig: {
+          human: expect.it('to be truthy'),
+        },
+      });
     });
 
     it('should handle nested objects in TS', async () => {
@@ -240,12 +293,15 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath);
 
-      assert.ok(config.metadata);
-      assert.strictEqual(config.metadata.format, 'typescript');
-      assert.strictEqual(config.metadata.testFile, true);
-
-      assert.ok(config.thresholds);
-      assert.strictEqual(config.thresholds.maxMean, 1000);
+      expect(config, 'to satisfy', {
+        metadata: {
+          format: 'typescript',
+          testFile: true,
+        },
+        thresholds: {
+          maxMean: 1000,
+        },
+      });
     });
   });
 
@@ -254,8 +310,9 @@ describe('Configuration format loading', () => {
       const manager = new ModestBenchConfigurationManager();
       const configPath = join(fixturesDir, 'non-existent.yaml');
 
-      await assert.rejects(
-        async () => await manager.load(configPath),
+      await expectAsync(
+        manager.load(configPath),
+        'to reject with error satisfying',
         /Failed to load configuration/,
       );
     });
@@ -266,14 +323,14 @@ describe('Configuration format loading', () => {
 
       // Valid config should load
       const config = await manager.load(configPath);
-      assert.ok(config);
+      expect(config, 'to be truthy');
 
       // Invalid CLI override should fail validation
-      await assert.rejects(
-        async () =>
-          await manager.load(configPath, {
-            iterations: -1, // Invalid: must be positive
-          }),
+      await expectAsync(
+        manager.load(configPath, {
+          iterations: -1, // Invalid: must be positive
+        }),
+        'to reject with error satisfying',
         /Configuration validation failed/,
       );
     });
