@@ -6,8 +6,7 @@
  * tools.
  */
 
-import { writeFileSync } from 'node:fs';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import type {
@@ -68,6 +67,8 @@ export class CsvReporter extends BaseReporter {
 
   private readonly outputPath?: string | undefined;
 
+  private readonly quiet: boolean;
+
   private readonly quote: string;
 
   private rows: CsvRow[] = [];
@@ -78,6 +79,7 @@ export class CsvReporter extends BaseReporter {
       includeHeaders?: boolean;
       includeMetadata?: boolean;
       outputPath?: string;
+      quiet?: boolean;
       quote?: string;
     } = {},
   ) {
@@ -88,6 +90,7 @@ export class CsvReporter extends BaseReporter {
     this.includeMetadata = options.includeMetadata ?? true;
     this.delimiter = options.delimiter ?? ',';
     this.quote = options.quote ?? '"';
+    this.quiet = options.quiet ?? false;
   }
 
   /**
@@ -357,6 +360,10 @@ export class CsvReporter extends BaseReporter {
    * Write CSV content to stdout
    */
   private writeToStdout(csvContent: string): void {
+    if (this.quiet) {
+      return;
+    }
+
     console.log(csvContent);
   }
 }

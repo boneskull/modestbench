@@ -53,6 +53,8 @@ export class JsonReporter extends BaseReporter {
 
   private readonly prettyPrint: boolean;
 
+  private readonly quiet: boolean;
+
   private statistics: {
     fastestTask?: TaskResult;
     slowestTask?: TaskResult;
@@ -71,6 +73,7 @@ export class JsonReporter extends BaseReporter {
       includeStatistics?: boolean;
       outputPath?: string;
       prettyPrint?: boolean;
+      quiet?: boolean;
     } = {},
   ) {
     super('json', options);
@@ -79,6 +82,7 @@ export class JsonReporter extends BaseReporter {
     this.prettyPrint = options.prettyPrint ?? true;
     this.includeStatistics = options.includeStatistics ?? true;
     this.includeMetadata = options.includeMetadata ?? true;
+    this.quiet = options.quiet ?? false;
   }
 
   /**
@@ -286,6 +290,10 @@ export class JsonReporter extends BaseReporter {
    * Write JSON output to stdout
    */
   private writeToStdout(output: JsonOutput): void {
+    if (this.quiet) {
+      return;
+    }
+
     const jsonString = this.prettyPrint
       ? JSON.stringify(output, null, 2)
       : JSON.stringify(output);

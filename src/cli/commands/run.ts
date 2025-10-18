@@ -276,18 +276,21 @@ const setupReporters = async (
         reporter = new HumanReporter({
           color: true,
           progress: true,
+          quiet: shouldBeQuiet,
           verbose: false,
         });
       } else if (reporterName === 'json') {
         reporter = new JsonReporter({
           ...(outputDir ? { outputPath: `${outputDir}/results.json` } : {}),
           prettyPrint: true,
+          quiet: shouldBeQuiet,
         });
       } else if (reporterName === 'csv') {
         reporter = new CsvReporter({
           includeHeaders: true,
           includeMetadata: true,
           ...(outputDir ? { outputPath: `${outputDir}/results.csv` } : {}),
+          quiet: shouldBeQuiet,
         });
       } else {
         // Fall back to registry for custom reporters

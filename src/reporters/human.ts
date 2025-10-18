@@ -48,6 +48,8 @@ export class HumanReporter extends BaseReporter {
 
   private progressTimer?: NodeJS.Timeout | null | undefined;
 
+  private readonly quiet: boolean;
+
   private readonly showProgress: boolean;
 
   private spinnerIndex = 0;
@@ -62,6 +64,7 @@ export class HumanReporter extends BaseReporter {
     options: {
       color?: boolean;
       progress?: boolean;
+      quiet?: boolean;
       verbose?: boolean;
     } = {},
   ) {
@@ -76,9 +79,14 @@ export class HumanReporter extends BaseReporter {
 
     this.showProgress = options.progress ?? true;
     this.verbose = options.verbose ?? false;
+    this.quiet = options.quiet ?? false;
   }
 
   onEnd(run: BenchmarkRun): void {
+    if (this.quiet) {
+      return;
+    }
+
     this.clearProgress();
 
     const duration = Date.now() - this.startTime;
@@ -126,6 +134,10 @@ export class HumanReporter extends BaseReporter {
   }
 
   onError(error: Error): void {
+    if (this.quiet) {
+      return;
+    }
+
     this.clearProgress();
     console.error(this.colorize('red', '❌ Error:'), error.message);
 
@@ -135,6 +147,10 @@ export class HumanReporter extends BaseReporter {
   }
 
   onFileEnd(result: FileResult): void {
+    if (this.quiet) {
+      return;
+    }
+
     const totalTasks = result.suites.reduce(
       (sum, suite) => sum + suite.tasks.length,
       0,
@@ -162,13 +178,17 @@ export class HumanReporter extends BaseReporter {
   }
 
   onFileStart(file: string): void {
+    if (this.quiet) {
+      return;
+    }
+
     this.clearProgress();
     const displayPath = this.formatPath(file);
     console.log(this.colorize('bold', `▶ ${displayPath}`));
   }
 
   onProgress(state: ProgressState): void {
-    if (!this.showProgress) {
+    if (this.quiet || !this.showProgress) {
       return;
     }
 
@@ -202,6 +222,10 @@ export class HumanReporter extends BaseReporter {
   }
 
   onStart(run: BenchmarkRun): void {
+    if (this.quiet) {
+      return;
+    }
+
     this.startTime = Date.now();
     this.clearLine();
 
@@ -248,6 +272,10 @@ export class HumanReporter extends BaseReporter {
   }
 
   onSuiteEnd(result: SuiteResult): void {
+    if (this.quiet) {
+      return;
+    }
+
     const passed = result.tasks.filter((t) => !t.error).length;
     const failed = result.tasks.filter((t) => t.error).length;
 
@@ -262,6 +290,10 @@ export class HumanReporter extends BaseReporter {
   }
 
   onSuiteStart(suite: string): void {
+    if (this.quiet) {
+      return;
+    }
+
     this.clearLine();
     console.log();
     console.log(
@@ -270,6 +302,10 @@ export class HumanReporter extends BaseReporter {
   }
 
   onTaskResult(result: TaskResult): void {
+    if (this.quiet) {
+      return;
+    }
+
     this.clearProgress();
 
     const status = result.error
@@ -302,6 +338,10 @@ export class HumanReporter extends BaseReporter {
   }
 
   onTaskStart(task: string): void {
+    if (this.quiet) {
+      return;
+    }
+
     if (this.showProgress) {
       this.startProgress(`Running ${task}...`);
     } else if (this.verbose) {
