@@ -110,10 +110,26 @@ export class BenchmarkFileLoader implements FileLoader {
       const stats = await stat(filePath);
 
       // Load the module using dynamic import
-      const module = (await import(filePath)) as {
-        [key: string]: unknown;
-        default?: unknown;
-      };
+      // For TypeScript files, use tsx to transpile on-the-fly without type-checking
+      const ext = extname(filePath);
+      let module: { [key: string]: unknown; default?: unknown };
+
+      if (ext === '.ts') {
+        // Dynamically import tsx for TypeScript files
+        // Note: tsx is loaded dynamically to avoid module resolution issues during CJS build
+        const { tsImport } = await import('tsx/esm/api');
+        module = (await tsImport(filePath, import.meta.url)) as {
+          [key: string]: unknown;
+          default?: unknown;
+        };
+      } else {
+        // Use native dynamic import for JavaScript files
+        module = (await import(filePath)) as {
+          [key: string]: unknown;
+          default?: unknown;
+        };
+      }
+
       const exports = module.default || module;
 
       // Analyze exports for metadata

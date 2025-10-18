@@ -73,6 +73,7 @@
     "cosmiconfig": "^9.0.0",
     "glob": "^11.0.3",
     "tinybench": "^2.6.0",
+    "tsx": "4.20.6",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -100,7 +101,6 @@
     "prettier-plugin-pkg": "0.21.2",
     "prettier-plugin-sort-json": "4.1.1",
     "tinybench": "5.0.1",
-    "tsx": "4.20.6",
     "typescript": "5.9.3",
     "typescript-eslint": "8.46.0",
     "zshy": "^0.4.3"
