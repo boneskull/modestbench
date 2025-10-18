@@ -145,3 +145,5 @@ vite.config.ts.timestamp-*
 .claude-skills
 .modestbench
 
+worktrees/*
+!worktrees/README.md
