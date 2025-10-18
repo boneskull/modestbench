@@ -35,7 +35,7 @@ import type { BenchmarkFile } from './loader.js';
  * File loader interface for benchmark discovery and loading
  */
 export interface FileLoader {
-  discover(pattern: string, exclude?: string[]): Promise<string[]>;
+  discover(pattern: string | string[], exclude?: string[]): Promise<string[]>;
   load(filePath: string): Promise<BenchmarkFile>;
   validate(filePath: string): Promise<ValidationResult>;
 }

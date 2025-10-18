@@ -66,18 +66,32 @@ export class BenchmarkFileLoader implements FileLoader {
   ]);
 
   /**
-   * Discover benchmark files using glob patterns
+   * Discover benchmark files using glob patterns or explicit file paths
    */
-  async discover(pattern: string, exclude: string[] = []): Promise<string[]> {
+  async discover(
+    pattern: string | string[],
+    exclude: string[] = [],
+  ): Promise<string[]> {
     try {
-      const files = await glob(pattern, {
-        absolute: true,
-        ignore: exclude,
-        nodir: true,
-      });
+      const patterns = Array.isArray(pattern) ? pattern : [pattern];
+      const allFiles = new Set<string>();
+
+      // Process each pattern
+      for (const p of patterns) {
+        const files = await glob(p, {
+          absolute: true,
+          ignore: exclude,
+          nodir: true,
+        });
+
+        // Add discovered files to the set (automatic deduplication)
+        for (const file of files) {
+          allFiles.add(file);
+        }
+      }
 
       // Filter to supported file extensions
-      const supportedFiles = files.filter((file: string) => {
+      const supportedFiles = Array.from(allFiles).filter((file: string) => {
         const ext = extname(file);
         return this.supportedExtensions.has(ext);
       });
