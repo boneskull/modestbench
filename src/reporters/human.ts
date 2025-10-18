@@ -5,6 +5,8 @@
  * real-time progress, results, and formatted statistics.
  */
 
+import path from 'node:path';
+
 import type {
   BenchmarkRun,
   FileResult,
@@ -21,6 +23,7 @@ import { BaseReporter } from './registry.js';
 const colors = {
   blue: '\x1b[34m',
   bold: '\x1b[1m',
+  brightBlue: '\x1b[94m',
   cyan: '\x1b[36m',
   dim: '\x1b[2m',
   gray: '\x1b[90m',
@@ -106,10 +109,10 @@ export class HumanReporter extends BaseReporter {
       );
     }
 
-    console.log(`${this.colorize('blue', '📁 Files:')} ${totalFiles}`);
-    console.log(`${this.colorize('blue', '📊 Suites:')} ${totalSuites}`);
+    console.log(`${this.colorize('brightBlue', '📁 Files:')} ${totalFiles}`);
+    console.log(`${this.colorize('brightBlue', '📊 Suites:')} ${totalSuites}`);
     console.log(
-      `${this.colorize('blue', '⏱️  Duration:')} ${this.formatDuration(duration * 1000000)}`,
+      `${this.colorize('brightBlue', '⏱️ Duration:')} ${this.formatDuration(duration * 1000000)}`,
     );
     console.log();
 
@@ -160,7 +163,8 @@ export class HumanReporter extends BaseReporter {
 
   onFileStart(file: string): void {
     this.clearProgress();
-    console.log(this.colorize('bold', `📁 ${file}`));
+    const displayPath = this.formatPath(file);
+    console.log(this.colorize('bold', `▶ ${displayPath}`));
   }
 
   onProgress(state: ProgressState): void {
@@ -353,6 +357,21 @@ export class HumanReporter extends BaseReporter {
     }
 
     return `${size.toFixed(1)} ${units[unitIndex]}`;
+  }
+
+  /**
+   * Format file path - show relative path if within CWD, otherwise absolute
+   */
+  private formatPath(filePath: string): string {
+    const cwd = process.cwd();
+    const absolutePath = path.resolve(filePath);
+
+    // Check if the file is within the current working directory
+    if (absolutePath.startsWith(cwd + path.sep) || absolutePath === cwd) {
+      return path.relative(cwd, absolutePath);
+    }
+
+    return absolutePath;
   }
 
   /**
