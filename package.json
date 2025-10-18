@@ -5,7 +5,7 @@
   "description": "A framework which wraps around tinybench to provide structure, consistency and convenience to developers creating and maintaining benchmarks",
   "repository": {
     "type": "git",
-    "url": "https://github.com/boneskull/modestbench.git"
+    "url": "git+https://github.com/boneskull/modestbench.git"
   },
   "homepage": "https://github.com/boneskull/modestbench#readme",
   "bugs": {
@@ -32,13 +32,13 @@
       "types": "./dist/cli/index.d.cts",
       "import": "./dist/cli/index.js",
       "require": "./dist/cli/index.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "CHANGELOG.md",
     "dist",
-    "README.md",
-    "LICENSE"
+    "src"
   ],
   "keywords": [
     "benchmark",
@@ -162,7 +162,8 @@
   "zshy": {
     "exports": {
       ".": "./src/index.ts",
-      "./cli": "./src/cli/index.ts"
+      "./cli": "./src/cli/index.ts",
+      "./package.json": "./package.json"
     }
   }
 }
