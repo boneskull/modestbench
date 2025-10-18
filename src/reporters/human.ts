@@ -1,8 +1,8 @@
 /**
  * ModestBench Human-Readable Console Reporter
  *
- * Provides colorized, progressive output for terminal environments.
- * Displays real-time progress, results, and formatted statistics.
+ * Provides colorized, progressive output for terminal environments. Displays
+ * real-time progress, results, and formatted statistics.
  */
 
 import type {
@@ -60,7 +60,7 @@ export class HumanReporter extends BaseReporter {
       color?: boolean;
       progress?: boolean;
       verbose?: boolean;
-    } = {}
+    } = {},
   ) {
     super('human', options);
 
@@ -83,14 +83,12 @@ export class HumanReporter extends BaseReporter {
 
     // Calculate totals across all files
     let totalSuites = 0;
-    let totalTasks = 0;
     let totalPassed = 0;
     let totalFailed = 0;
 
     for (const file of run.files) {
       totalSuites += file.suites.length;
       for (const suite of file.suites) {
-        totalTasks += suite.tasks.length;
         totalPassed += suite.tasks.filter((t: TaskResult) => !t.error).length;
         totalFailed += suite.tasks.filter((t: TaskResult) => t.error).length;
       }
@@ -104,14 +102,14 @@ export class HumanReporter extends BaseReporter {
       console.log(`${this.colorize('green', '✓ Passed:')} ${totalPassed}`);
     } else {
       console.log(
-        `${this.colorize('green', '✓ All tests passed:')} ${totalPassed}`
+        `${this.colorize('green', '✓ All tests passed:')} ${totalPassed}`,
       );
     }
 
     console.log(`${this.colorize('blue', '📁 Files:')} ${totalFiles}`);
     console.log(`${this.colorize('blue', '📊 Suites:')} ${totalSuites}`);
     console.log(
-      `${this.colorize('blue', '⏱️  Duration:')} ${this.formatDuration(duration * 1000000)}`
+      `${this.colorize('blue', '⏱️  Duration:')} ${this.formatDuration(duration * 1000000)}`,
     );
     console.log();
 
@@ -119,7 +117,7 @@ export class HumanReporter extends BaseReporter {
       console.log(this.colorize('red', '❌ Some benchmarks failed'));
     } else {
       console.log(
-        this.colorize('green', '🎉 All benchmarks completed successfully!')
+        this.colorize('green', '🎉 All benchmarks completed successfully!'),
       );
     }
   }
@@ -136,21 +134,24 @@ export class HumanReporter extends BaseReporter {
   onFileEnd(result: FileResult): void {
     const totalTasks = result.suites.reduce(
       (sum, suite) => sum + suite.tasks.length,
-      0
+      0,
     );
     const totalPassed = result.suites.reduce(
-      (sum, suite) => sum + suite.tasks.filter(t => !t.error).length,
-      0
+      (sum, suite) => sum + suite.tasks.filter((t) => !t.error).length,
+      0,
     );
     const totalFailed = totalTasks - totalPassed;
 
     if (totalFailed > 0) {
       console.log(
-        this.colorize('red', `  ✗ ${totalFailed} failed, ${totalPassed} passed`)
+        this.colorize(
+          'red',
+          `  ✗ ${totalFailed} failed, ${totalPassed} passed`,
+        ),
       );
     } else {
       console.log(
-        this.colorize('green', `  ✓ All ${totalPassed} tasks passed`)
+        this.colorize('green', `  ✓ All ${totalPassed} tasks passed`),
       );
     }
 
@@ -163,7 +164,9 @@ export class HumanReporter extends BaseReporter {
   }
 
   onProgress(state: ProgressState): void {
-    if (!this.showProgress) {return;}
+    if (!this.showProgress) {
+      return;
+    }
 
     const { elapsed, percentage, tasksCompleted, totalTasks } = state;
     const progressMessage = `${tasksCompleted}/${totalTasks} tasks (${percentage}%) | Elapsed: ${Math.round(elapsed / 1000)}s`;
@@ -204,16 +207,16 @@ export class HumanReporter extends BaseReporter {
     if (run.environment) {
       console.log(this.colorize('dim', 'Environment:'));
       console.log(
-        `  Node.js: ${this.colorize('cyan', run.environment.nodeVersion)}`
+        `  Node.js: ${this.colorize('cyan', run.environment.nodeVersion)}`,
       );
       console.log(
-        `  Platform: ${this.colorize('cyan', `${run.environment.platform} ${run.environment.arch}`)}`
+        `  Platform: ${this.colorize('cyan', `${run.environment.platform} ${run.environment.arch}`)}`,
       );
       console.log(
-        `  CPU: ${this.colorize('cyan', run.environment.cpu.model)} (${run.environment.cpu.cores} cores)`
+        `  CPU: ${this.colorize('cyan', run.environment.cpu.model)} (${run.environment.cpu.cores} cores)`,
       );
       console.log(
-        `  Memory: ${this.colorize('cyan', this.formatBytes(run.environment.memory.total))}`
+        `  Memory: ${this.colorize('cyan', this.formatBytes(run.environment.memory.total))}`,
       );
       console.log();
     }
@@ -235,18 +238,18 @@ export class HumanReporter extends BaseReporter {
     }
 
     console.log(
-      this.colorize('dim', `Found ${run.summary.totalFiles} benchmark file(s)`)
+      this.colorize('dim', `Found ${run.summary.totalFiles} benchmark file(s)`),
     );
     console.log();
   }
 
   onSuiteEnd(result: SuiteResult): void {
-    const passed = result.tasks.filter(t => !t.error).length;
-    const failed = result.tasks.filter(t => t.error).length;
+    const passed = result.tasks.filter((t) => !t.error).length;
+    const failed = result.tasks.filter((t) => t.error).length;
 
     if (failed > 0) {
       console.log(
-        `  ${this.colorize('red', `✗ ${failed} failed`)}, ${this.colorize('green', `${passed} passed`)}`
+        `  ${this.colorize('red', `✗ ${failed} failed`)}, ${this.colorize('green', `${passed} passed`)}`,
       );
     } else {
       console.log(`  ${this.colorize('green', `✓ ${passed} passed`)}`);
@@ -258,7 +261,7 @@ export class HumanReporter extends BaseReporter {
     this.clearLine();
     console.log();
     console.log(
-      `  ${this.colorize('blue', '▶')} ${this.colorize('bold', suite)}`
+      `  ${this.colorize('blue', '▶')} ${this.colorize('bold', suite)}`,
     );
   }
 
@@ -271,7 +274,7 @@ export class HumanReporter extends BaseReporter {
 
     if (result.error) {
       console.log(
-        `    ${status} ${result.name} ${this.colorize('red', 'FAILED')}`
+        `    ${status} ${result.name} ${this.colorize('red', 'FAILED')}`,
       );
       if (this.verbose) {
         console.log(`      ${this.colorize('red', result.error.message)}`);
@@ -283,12 +286,12 @@ export class HumanReporter extends BaseReporter {
 
       console.log(`    ${status} ${result.name}`);
       console.log(
-        `      ${this.colorize('cyan', duration)} ${this.colorize('dim', '±')}${this.colorize('yellow', rme)} ${this.colorize('gray', '(')}${this.colorize('green', opsPerSec)}${this.colorize('gray', ')')}`
+        `      ${this.colorize('cyan', duration)} ${this.colorize('dim', '±')}${this.colorize('yellow', rme)} ${this.colorize('gray', '(')}${this.colorize('green', opsPerSec)}${this.colorize('gray', ')')}`,
       );
 
       if (this.verbose && result.iterations > 0) {
         console.log(
-          `      ${this.colorize('dim', `${result.iterations} iterations`)}`
+          `      ${this.colorize('dim', `${result.iterations} iterations`)}`,
         );
       }
     }
@@ -308,7 +311,7 @@ export class HumanReporter extends BaseReporter {
   private clearLine(): void {
     if (process.stdout.isTTY && this.lastProgressLine) {
       process.stdout.write(
-        '\r' + ' '.repeat(this.lastProgressLine.length) + '\r'
+        '\r' + ' '.repeat(this.lastProgressLine.length) + '\r',
       );
       this.lastProgressLine = '';
     }
@@ -412,7 +415,7 @@ export class HumanReporter extends BaseReporter {
     // Clear the previous line
     if (this.lastProgressLine) {
       process.stdout.write(
-        '\r' + ' '.repeat(this.lastProgressLine.length) + '\r'
+        '\r' + ' '.repeat(this.lastProgressLine.length) + '\r',
       );
     }
 

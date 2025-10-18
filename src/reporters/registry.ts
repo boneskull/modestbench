@@ -1,8 +1,8 @@
 /**
  * ModestBench Reporter Registry
  *
- * Plugin-based system for managing benchmark output formatters.
- * Supports registration, retrieval, and lifecycle management of reporters.
+ * Plugin-based system for managing benchmark output formatters. Supports
+ * registration, retrieval, and lifecycle management of reporters.
  */
 
 import type { ReporterRegistry } from '../core/engine.js';
@@ -137,7 +137,7 @@ export abstract class BaseReporter implements Reporter {
       return await operation();
     } catch (error) {
       await this.onError(
-        error instanceof Error ? error : new Error(String(error))
+        error instanceof Error ? error : new Error(String(error)),
       );
       return null;
     }
@@ -226,19 +226,25 @@ export class CompositeReporter extends BaseReporter {
    */
   private async broadcastAsync(
     method: keyof Reporter,
+
     ...args: any[]
   ): Promise<void> {
-    const promises = this.reporters.map(async reporter => {
+    const promises = this.reporters.map(async (reporter) => {
       try {
-        const result = (reporter[method] as any)(...args);
-        if (result && typeof result.then === 'function') {
-          await result;
+        const reporterMethod = reporter[method];
+        if (typeof reporterMethod === 'function') {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+          const result = (reporterMethod as any)(...args);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          if (result && typeof result.then === 'function') {
+            await result;
+          }
         }
       } catch (error) {
         // Handle reporter-specific errors without affecting others
         console.error(
           `Reporter error in ${reporter.constructor.name}.${method}:`,
-          error
+          error,
         );
       }
     });
@@ -296,7 +302,7 @@ export class ModestBenchReporterRegistry implements ReporterRegistry {
 
     if (missing.length > 0) {
       throw new Error(
-        `Unknown reporters: ${missing.join(', ')}. Available: ${Array.from(this.reporters.keys()).join(', ')}`
+        `Unknown reporters: ${missing.join(', ')}. Available: ${Array.from(this.reporters.keys()).join(', ')}`,
       );
     }
 

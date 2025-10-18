@@ -1,13 +1,15 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
+import type { HistoryStorage } from '../../src/types/interfaces.js';
+
 /**
- * Contract tests for HistoryStorage interface
- * Reference: contracts/core-api.md lines 47-73
+ * Contract tests for HistoryStorage interface Reference: contracts/core-api.md
+ * lines 47-73
  */
 
 describe('HistoryStorage interface contract', () => {
-  let historyStorage: any; // Will be undefined until implementation exists
+  let historyStorage: HistoryStorage | undefined; // Will be undefined until implementation exists
 
   describe('interface methods', () => {
     it('should have saveRun method', () => {
@@ -144,7 +146,7 @@ describe('HistoryStorage interface contract', () => {
         try {
           const result = await promise;
           assert.ok(
-            result === null || (typeof result === 'object' && 'id' in result)
+            result === null || (typeof result === 'object' && 'id' in result),
           );
         } catch {
           // Expected during contract testing
@@ -255,7 +257,7 @@ describe('HistoryStorage interface contract', () => {
         try {
           const results = await promise;
           assert.ok(Array.isArray(results));
-          results.forEach(run => {
+          results.forEach((run) => {
             assert.ok(typeof run === 'object');
             assert.ok('id' in run);
           });
@@ -399,6 +401,7 @@ describe('HistoryStorage interface contract', () => {
     it('should handle storage errors gracefully', async () => {
       if (historyStorage) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           await historyStorage.saveRun(null as any);
           assert.fail('Should throw for invalid run');
         } catch (error) {

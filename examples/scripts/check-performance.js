@@ -1,4 +1,5 @@
 // scripts/check-performance.js
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 
@@ -11,10 +12,10 @@ const baseline = JSON.parse(readFileSync('./baseline-results.json'));
 
 for (const result of results.results) {
   const baselineResult = baseline.results.find(
-    r =>
+    (r) =>
       r.file === result.file &&
       r.suite === result.suite &&
-      r.task === result.task
+      r.task === result.task,
   );
 
   if (baselineResult) {
@@ -22,7 +23,7 @@ for (const result of results.results) {
     if (regression > 0.1) {
       // 10% regression threshold
       console.error(
-        `Performance regression detected in ${result.task}: ${(regression * 100).toFixed(1)}%`
+        `Performance regression detected in ${result.task}: ${(regression * 100).toFixed(1)}%`,
       );
       process.exit(1);
     }

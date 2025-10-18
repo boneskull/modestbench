@@ -10,7 +10,7 @@ export default {
         'Array.findIndex()': {
           fn: () => {
             const arr = Array.from({ length: 1000 }, (_, i) => i);
-            return arr.findIndex(x => x === 500);
+            return arr.findIndex((x) => x === 500);
           },
         },
 
@@ -19,7 +19,9 @@ export default {
             const arr = Array.from({ length: 1000 }, (_, i) => i);
             const target = 500;
             for (let i = 0; i < arr.length; i++) {
-              if (arr[i] === target) {return i;}
+              if (arr[i] === target) {
+                return i;
+              }
             }
             return -1;
           },
@@ -34,16 +36,19 @@ export default {
     'String Operations': {
       benchmarks: {
         'RegExp.test()': {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           fn: () => /a/.test(global.testString),
           tags: ['string', 'regex'],
         },
 
         'String.includes()': {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           fn: () => global.testString.includes('a'),
           tags: ['string', 'search'],
         },
 
         'String.indexOf()': {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           fn: () => global.testString.indexOf('a'),
           tags: ['string', 'search'],
         },

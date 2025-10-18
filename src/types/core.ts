@@ -1,8 +1,9 @@
 /**
  * ModestBench Core Types
  *
- * Defines the fundamental data structures used throughout the ModestBench system.
- * These types represent benchmark results, metadata, configuration, and system state.
+ * Defines the fundamental data structures used throughout the ModestBench
+ * system. These types represent benchmark results, metadata, configuration, and
+ * system state.
  */
 
 /**
@@ -161,7 +162,7 @@ export type ExecutionPhase =
  */
 export interface FileResult {
   /** File-level configuration that was applied */
-  readonly config?: Partial<ModestBenchConfig>;
+  readonly config?: Partial<ModestBenchConfig> | undefined;
   /** Total execution time for the file in milliseconds */
   readonly duration: number;
   /** Timestamp when file execution completed */

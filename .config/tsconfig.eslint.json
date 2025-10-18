@@ -5,11 +5,16 @@
     "noEmit": true
   },
   "extends": "../tsconfig.json",
+  "files": [
+    "../test/fixtures/config/test-config.js",
+    "../examples/modestbench.config.js"
+  ],
   "include": [
     "../src/**/*.ts",
     "../test/**/*.ts",
     "../examples/**/*.ts",
     "../examples/**/*.js",
-    "../*.js"
+    "../*.js",
+    "../.*.js"
   ]
 }

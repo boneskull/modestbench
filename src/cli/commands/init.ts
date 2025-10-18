@@ -7,21 +7,20 @@
 
 import { access, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { type Argv } from 'yargs';
 
 import type { CliContext } from '../index.js';
 
 /**
- * Init command arguments interface
+ * Init command options interface
  */
-interface InitArguments {
+export interface InitOptions {
   configType: 'js' | 'json' | 'ts' | 'yaml';
   cwd: string;
   examples: boolean;
-  force?: boolean;
-  quiet?: boolean;
+  force?: boolean | undefined;
+  quiet?: boolean | undefined;
   type: 'advanced' | 'basic' | 'library';
-  verbose?: boolean;
+  verbose?: boolean | undefined;
 }
 
 /**
@@ -229,127 +228,92 @@ export default {
   },
 } as const;
 
-export const initCommand = {
-  builder: (yargs: Argv) => {
-    return yargs
-      .positional('type', {
-        choices: ['basic', 'advanced', 'library'],
-        default: 'basic',
-        describe: 'Type of project to initialize',
-        type: 'string',
-      })
-      .option('examples', {
-        default: true,
-        description: 'Include example benchmark files',
-        type: 'boolean',
-      })
-      .option('config-type', {
-        choices: ['json', 'yaml', 'js', 'ts'],
-        default: 'json',
-        description: 'Configuration file format',
-        type: 'string',
-      })
-      .option('force', {
-        default: false,
-        description: 'Overwrite existing files',
-        type: 'boolean',
-      })
-      .example([
-        ['$0 init', 'Initialize a basic project'],
-        [
-          '$0 init advanced --config ts',
-          'Initialize advanced project with TypeScript config',
-        ],
-        [
-          '$0 init library --no-examples',
-          'Initialize library project without examples',
-        ],
-      ]);
-  },
+/**
+ * Handle init command
+ */
+export const handleInitCommand = async (
+  context: CliContext,
+  options: InitOptions,
+): Promise<number> => {
+  try {
+    const template = PROJECT_TEMPLATES[options.type];
 
-  handler: async (
-    context: CliContext,
-    argv: InitArguments,
-  ): Promise<number> => {
-    try {
-      const template = PROJECT_TEMPLATES[argv.type];
+    if (!options.quiet) {
+      console.log(`Initializing ${template.name}...`);
+      console.log(template.description);
+      console.log();
+    }
 
-      if (!argv.quiet) {
-        console.log(`Initializing ${template.name}...`);
-        console.log(template.description);
-        console.log();
+    // Check if project already exists
+    if (!options.force) {
+      const hasConflicts = await checkForConflicts(options);
+      if (hasConflicts) {
+        console.error('Project files already exist. Use --force to overwrite.');
+        return 1; // Already initialized
       }
+    }
 
-      // Check if project already exists
-      if (!argv.force) {
-        const hasConflicts = await checkForConflicts(argv);
-        if (hasConflicts) {
-          console.error(
-            'Project files already exist. Use --force to overwrite.',
-          );
-          return 1; // Already initialized
-        }
-      }
+    // Create directory structure
+    await createDirectories(template.directories, options);
 
-      // Create directory structure
-      await createDirectories(template.directories, argv);
+    // Create configuration file
+    await createConfigFile(template.configOptions, options);
 
-      // Create configuration file
-      await createConfigFile(template.configOptions, argv);
+    // Create example benchmarks if requested
+    if (options.examples) {
+      await createExampleBenchmarks(options);
+    }
 
-      // Create example benchmarks if requested
-      if (argv.examples) {
-        await createExampleBenchmarks(argv);
-      }
+    // Create additional files
+    await createAdditionalFiles(options);
 
-      // Create additional files
-      await createAdditionalFiles(argv);
-
-      if (!argv.quiet) {
-        console.log('✅ Project initialized successfully!');
-        console.log();
-        console.log('Next steps:');
-        if (argv.examples) {
-          console.log('  1. Run example benchmarks: modestbench run');
-        } else {
-          console.log(
-            '  1. Create your first benchmark file in the benchmarks/ directory',
-          );
-        }
-        console.log('  2. Customize configuration in your config file');
-        console.log('  3. Add your own benchmark suites');
-        console.log();
+    if (!options.quiet) {
+      console.log('✅ Project initialized successfully!');
+      console.log();
+      console.log('Next steps:');
+      if (options.examples) {
+        console.log('  1. Run example benchmarks: modestbench run');
+      } else {
         console.log(
-          'Documentation: https://github.com/your-org/modestbench#readme',
+          '  1. Create your first benchmark file in the benchmarks/ directory',
         );
       }
-
-      return 0;
-    } catch (error) {
-      console.error(
-        'Init command failed:',
-        error instanceof Error ? error.message : String(error),
+      console.log('  2. Customize configuration in your config file');
+      console.log('  3. Add your own benchmark suites');
+      console.log();
+      console.log(
+        'Documentation: https://github.com/your-org/modestbench#readme',
       );
-
-      if (argv.verbose && error instanceof Error && error.stack) {
-        console.error('Stack trace:');
-        console.error(error.stack);
-      }
-
-      return 5; // Runtime error
     }
-  },
+
+    return 0;
+  } catch (error) {
+    console.error(
+      'Init command failed:',
+      error instanceof Error ? error.message : String(error),
+    );
+
+    if (options.verbose && error instanceof Error && error.stack) {
+      console.error('Stack trace:');
+      console.error(error.stack);
+    }
+
+    return 5; // Runtime error
+  }
 };
 
 /**
  * Check for existing files that would conflict
  */
-const checkForConflicts = async (argv: InitArguments): Promise<boolean> => {
-  const filesToCheck = ['modestbench.config.' + argv.configType, 'benchmarks'];
+const checkForConflicts = async (options: InitOptions): Promise<boolean> => {
+  const filesToCheck = [
+    'modestbench.config.' + options.configType,
+    'benchmarks',
+  ];
 
   for (const file of filesToCheck) {
     try {
-      await access(resolve(argv.cwd, file));
+      await access(resolve(options.cwd, file));
       return true; // File exists, conflict detected
     } catch {
       // File doesn't exist, no conflict
@@ -362,8 +326,8 @@ const checkForConflicts = async (argv: InitArguments): Promise<boolean> => {
 /**
  * Create additional project files
  */
-const createAdditionalFiles = async (argv: InitArguments): Promise<void> => {
-  if (!argv.quiet) {
+const createAdditionalFiles = async (options: InitOptions): Promise<void> => {
+  if (!options.quiet) {
     console.log('Creating additional files...');
   }
 
@@ -391,9 +355,9 @@ Thumbs.db
 `;
 
   try {
-    const gitignorePath = resolve(argv.cwd, '.gitignore');
+    const gitignorePath = resolve(options.cwd, '.gitignore');
     await writeFile(gitignorePath, gitignoreContent, 'utf8');
-    if (argv.verbose) {
+    if (options.verbose) {
       console.log('  ✓ .gitignore');
     }
   } catch {
@@ -433,9 +397,9 @@ Create new benchmark files in the \`benchmarks/\` directory. See the examples fo
 `;
 
   try {
-    const readmePath = resolve(argv.cwd, 'README.md');
+    const readmePath = resolve(options.cwd, 'README.md');
     await writeFile(readmePath, readmeContent, 'utf8');
-    if (argv.verbose) {
+    if (options.verbose) {
       console.log('  ✓ README.md');
     }
   } catch {
@@ -449,20 +413,20 @@ Create new benchmark files in the \`benchmarks/\` directory. See the examples fo
  */
 const createConfigFile = async (
   configOptions: any,
-  argv: InitArguments,
+  options: InitOptions,
 ): Promise<void> => {
-  const filename = `modestbench.config.${argv.configType}`;
-  const filePath = resolve(argv.cwd, filename);
+  const filename = `modestbench.config.${options.configType}`;
+  const filePath = resolve(options.cwd, filename);
 
-  if (!argv.quiet) {
+  if (!options.quiet) {
     console.log(`Creating configuration file: ${filename}`);
   }
 
   let content: string;
 
-  switch (argv.configType) {
+  switch (options.configType) {
     case 'js':
-      content = `module.exports = ${JSON.stringify(configOptions, null, 2)};\\n`;
+      content = `export default ${JSON.stringify(configOptions, null, 2)};\n`;
       break;
 
     case 'json':
@@ -484,12 +448,12 @@ export default config;
       break;
 
     default:
-      throw new Error(`Unsupported config format: ${argv.configType}`);
+      throw new Error(`Unsupported config format: ${options.configType}`);
   }
 
   try {
     await writeFile(filePath, content, 'utf8');
-    if (argv.verbose) {
+    if (options.verbose) {
       console.log(`  ✓ ${filename}`);
     }
   } catch (error) {
@@ -504,17 +468,17 @@ export default config;
  */
 const createDirectories = async (
   directories: readonly string[],
-  argv: InitArguments,
+  options: InitOptions,
 ): Promise<void> => {
-  if (!argv.quiet) {
+  if (!options.quiet) {
     console.log('Creating directories...');
   }
 
   for (const dir of directories) {
-    const dirPath = resolve(argv.cwd, dir);
+    const dirPath = resolve(options.cwd, dir);
     try {
       await mkdir(dirPath, { recursive: true });
-      if (argv.verbose) {
+      if (options.verbose) {
         console.log(`  ✓ ${dir}/`);
       }
     } catch (error) {
@@ -528,19 +492,19 @@ const createDirectories = async (
 /**
  * Create example benchmark files
  */
-const createExampleBenchmarks = async (argv: InitArguments): Promise<void> => {
-  if (!argv.quiet) {
+const createExampleBenchmarks = async (options: InitOptions): Promise<void> => {
+  if (!options.quiet) {
     console.log('Creating example benchmarks...');
   }
 
-  const benchmarksDir = resolve(argv.cwd, 'benchmarks');
+  const benchmarksDir = resolve(options.cwd, 'benchmarks');
 
   for (const [name, example] of Object.entries(EXAMPLE_BENCHMARKS)) {
     const filePath = join(benchmarksDir, example.filename);
 
     try {
       await writeFile(filePath, example.content, 'utf8');
-      if (argv.verbose) {
+      if (options.verbose) {
         console.log(`  ✓ ${example.filename}`);
       }
     } catch (error) {
@@ -558,17 +522,17 @@ const generateSimpleYaml = (obj: any, indent = 0): string => {
   const spaces = ' '.repeat(indent);
   let yaml = '';
 
-  for (const [key, value] of Object.entries(obj)) {
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      yaml += `${spaces}${key}:\\n${generateSimpleYaml(value, indent + 2)}`;
+      yaml += `${spaces}${key}:\n${generateSimpleYaml(value, indent + 2)}`;
     } else if (Array.isArray(value)) {
-      yaml += `${spaces}${key}:\\n`;
+      yaml += `${spaces}${key}:\n`;
       for (const item of value) {
-        yaml += `${spaces}  - ${item}\\n`;
+        yaml += `${spaces}  - ${item}\n`;
       }
     } else {
       const formattedValue = typeof value === 'string' ? `"${value}"` : value;
-      yaml += `${spaces}${key}: ${formattedValue}\\n`;
+      yaml += `${spaces}${key}: ${formattedValue}\n`;
     }
   }
 

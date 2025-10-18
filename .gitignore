@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 .tmp/
 .claude-skills
 .modestbench
+benchmark-results/
+cli-output/
+

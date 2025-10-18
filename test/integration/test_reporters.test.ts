@@ -32,8 +32,8 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Human Output Test': {
               benchmarks: {
-                'fast operation': { fn: () => 1 + 1 },
-                'slow operation': { fn: () => Array(1000).fill(0).reduce((a, b) => a + b, 0) }
+                'fast operation': { fn: () => 1 },
+                'slow operation': { fn: () => 2 }
               }
             }
           }
@@ -79,9 +79,9 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Progress Test': {
               benchmarks: {
-                'task 1': { fn: () => Math.random() },
-                'task 2': { fn: () => Math.random() },
-                'task 3': { fn: () => Math.random() }
+                'task 1': { fn: () => 1 },
+                'task 2': { fn: () => 2 },
+                'task 3': { fn: () => 3 }
               }
             }
           }
@@ -118,7 +118,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Statistics Test': {
               benchmarks: {
-                'stat task': { fn: () => 42 }
+                'stat task': { fn: () => 1 }
               }
             }
           }
@@ -133,7 +133,7 @@ describe('Multiple reporter output formats', () => {
         'human',
         '--verbose',
         '--iterations',
-        '10',
+        '1',
       ]);
 
       if (result.exitCode === 0) {
@@ -161,7 +161,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'JSON Test': {
               benchmarks: {
-                'json task': { fn: () => ({ test: true }) }
+                'json task': { fn: () => 1 }
               }
             }
           }
@@ -190,7 +190,7 @@ describe('Multiple reporter output formats', () => {
           assert.ok(data.run.id !== undefined);
           assert.ok(data.run.timestamp !== undefined);
           assert.ok(Array.isArray(data.results));
-        } catch (error) {
+        } catch (_error) {
           // File might not exist or be invalid JSON
           if (result.stdout) {
             // Try parsing stdout as JSON
@@ -214,7 +214,7 @@ describe('Multiple reporter output formats', () => {
             'Metadata Suite': {
               benchmarks: {
                 'metadata task': {
-                  fn: () => 123,
+                  fn: () => 1,
                   tags: ['performance', 'unit']
                 }
               }
@@ -270,8 +270,8 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'CSV Test': {
               benchmarks: {
-                'csv task 1': { fn: () => Array(10).fill(1) },
-                'csv task 2': { fn: () => Array(20).fill(2) }
+                'csv task 1': { fn: () => 1 },
+                'csv task 2': { fn: () => 2 }
               }
             }
           }
@@ -308,7 +308,7 @@ describe('Multiple reporter output formats', () => {
           if (lines.length > 1 && lines[1]) {
             assert.ok(lines[1].includes('csv task'));
           }
-        } catch (error) {
+        } catch (_error) {
           // File might not exist, check stdout
           if (result.stdout) {
             assert.ok(result.stdout.includes(','));
@@ -332,7 +332,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'CSV Columns Test': {
               benchmarks: {
-                'column task': { fn: () => 'test' }
+                'column task': { fn: () => 1 }
               }
             }
           }
@@ -340,7 +340,10 @@ describe('Multiple reporter output formats', () => {
       `,
       );
 
-      const result = await runCommand(['run', benchFile, '--reporters', 'csv'], tempDir);
+      const result = await runCommand(
+        ['run', benchFile, '--reporters', 'csv'],
+        tempDir,
+      );
 
       if (result.exitCode === 0 && result.stdout) {
         const lines = result.stdout.trim().split('\n');
@@ -369,7 +372,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Delimiter Test': {
               benchmarks: {
-                'delimiter task': { fn: () => 'delimiter' }
+                'delimiter task': { fn: () => 1 }
               }
             }
           }
@@ -409,7 +412,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Multi Reporter Test': {
               benchmarks: {
-                'multi task': { fn: () => 'multiple' }
+                'multi task': { fn: () => 1 }
               }
             }
           }
@@ -463,7 +466,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Reporter Config Test': {
               benchmarks: {
-                'config task': { fn: () => 'config' }
+                'config task': { fn: () => 1 }
               }
             }
           }
@@ -499,7 +502,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Output Dir Test': {
               benchmarks: {
-                'dir task': { fn: () => 'output' }
+                'dir task': { fn: () => 1 }
               }
             }
           }
@@ -543,7 +546,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Conflict Test': {
               benchmarks: {
-                'conflict task': { fn: () => 'conflict' }
+                'conflict task': { fn: () => 1 }
               }
             }
           }
@@ -578,7 +581,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Custom Name Test': {
               benchmarks: {
-                'name task': { fn: () => 'custom' }
+                'name task': { fn: () => 1 }
               }
             }
           }
@@ -610,7 +613,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Reporter Error Test': {
               benchmarks: {
-                'error task': { fn: () => 'error' }
+                'error task': { fn: () => 1 }
               }
             }
           }
@@ -641,7 +644,7 @@ describe('Multiple reporter output formats', () => {
           suites: {
             'Partial Failure Test': {
               benchmarks: {
-                'partial task': { fn: () => 'partial' }
+                'partial task': { fn: () => 1 }
               }
             }
           }
@@ -660,5 +663,4 @@ describe('Multiple reporter output formats', () => {
       assert.ok(result.exitCode >= 0 || result.stderr.includes('not found'));
     });
   });
-
 });

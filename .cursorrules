@@ -1,0 +1,81 @@
+# ModestBench Development Workflows
+
+This project uses a structured workflow system for feature development, managed through the `.specify/` infrastructure.
+
+## Workflow System Overview
+
+The project follows a phased approach to feature development:
+
+1. **Specify** - Create feature specifications from natural language descriptions
+2. **Clarify** - Resolve ambiguities through targeted questions (max 5)
+3. **Plan** - Generate implementation plans and design artifacts
+4. **Tasks** - Break down plans into actionable, dependency-ordered tasks
+5. **Implement** - Execute tasks following TDD principles
+6. **Analyze** - Validate consistency across all artifacts
+
+## Infrastructure
+
+- **Scripts**: `.specify/scripts/bash/` - Shell scripts for setup and validation
+- **Templates**: `.specify/templates/` - Markdown templates for artifacts
+- **Constitution**: `.specify/memory/constitution.md` - Project principles (non-negotiable)
+- **Specs Directory**: `specs/NNN-feature-name/` - Feature-specific artifacts
+
+## Available Workflow Prompts
+
+You can invoke these workflows by referencing them in conversation:
+
+- `@specify` - Create a feature specification (use with feature description)
+- `@clarify` - Resolve ambiguities in current spec (interactive, max 5 questions)
+- `@plan` - Generate implementation plan from specification
+- `@tasks` - Create actionable task breakdown from plan
+- `@implement` - Execute tasks from tasks.md following TDD
+- `@analyze` - Cross-artifact consistency analysis (read-only)
+- `@constitution` - Update project constitution with principle changes
+
+## Usage Patterns
+
+### Starting a New Feature
+
+```
+Please run the specify workflow for: [your feature description]
+```
+
+### Continuing Development
+
+```
+Use @clarify to resolve ambiguities in the current spec
+Use @plan to create the implementation plan
+Use @tasks to generate the task breakdown
+Use @implement to execute the implementation
+```
+
+### Quality Assurance
+
+```
+Use @analyze to check consistency across spec, plan, and tasks
+```
+
+## Workflow Principles
+
+1. **Sequential Execution**: Follow the workflow order (specify → clarify → plan → tasks → implement)
+2. **Constitution Authority**: `.specify/memory/constitution.md` is non-negotiable
+3. **Absolute Paths**: Always use absolute paths for file operations
+4. **Interactive Elements**: Respect interactive workflows (especially clarify)
+5. **TDD Approach**: Tests before implementation
+6. **Validation Gates**: Complete each phase before proceeding
+
+## File Naming Convention
+
+Feature specifications follow: `specs/NNN-feature-slug/` where NNN is a zero-padded sequential number.
+
+## Important Notes
+
+- The constitution must be respected in all workflows
+- Scripts should be run from repository root
+- All generated artifacts use Markdown format
+- Task execution follows dependency order (setup → tests → core → integration → polish)
+
+
+
+
+

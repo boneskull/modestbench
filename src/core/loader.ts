@@ -110,18 +110,23 @@ export class BenchmarkFileLoader implements FileLoader {
       const stats = await stat(filePath);
 
       // Load the module using dynamic import
-      const module = await import(filePath);
+      const module = (await import(filePath)) as {
+        [key: string]: unknown;
+        default?: unknown;
+      };
       const exports = module.default || module;
 
       // Analyze exports for metadata
       const hasDefaultExport = module.default !== undefined;
       const exportNames = Object.keys(module);
-      const hasBenchmarks =
+      const hasBenchmarks = Boolean(
         exports &&
-        typeof exports === 'object' &&
-        exports.suites &&
-        typeof exports.suites === 'object' &&
-        Object.keys(exports.suites).length > 0;
+          typeof exports === 'object' &&
+          'suites' in exports &&
+          exports.suites &&
+          typeof exports.suites === 'object' &&
+          Object.keys(exports.suites as Record<string, unknown>).length > 0,
+      );
 
       return {
         content,
@@ -236,8 +241,8 @@ export class BenchmarkFileLoader implements FileLoader {
    * Watch for file changes (placeholder implementation)
    */
   watch(
-    pattern: string,
-    callback: (changes: FileChange[]) => void,
+    _pattern: string,
+    _callback: (changes: FileChange[]) => void,
   ): FileWatcher {
     // TODO: Implement file watching with chokidar or similar
     // For now, return a no-op watcher

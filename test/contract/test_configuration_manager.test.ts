@@ -1,13 +1,15 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
+import type { ConfigurationManager } from '../../src/types/interfaces.js';
+
 /**
- * Contract tests for ConfigurationManager interface
- * Reference: contracts/core-api.md lines 32-43
+ * Contract tests for ConfigurationManager interface Reference:
+ * contracts/core-api.md lines 32-43
  */
 
 describe('ConfigurationManager interface contract', () => {
-  let configManager: any; // Will be undefined until implementation exists
+  let configManager: ConfigurationManager | undefined; // Will be undefined until implementation exists
 
   describe('interface methods', () => {
     it('should have load method', () => {

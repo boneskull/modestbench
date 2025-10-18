@@ -6,8 +6,8 @@
  * defaults.
  */
 
-import { access, readFile } from 'node:fs/promises';
-import { extname, resolve } from 'node:path';
+import { cosmiconfig } from 'cosmiconfig';
+import { resolve } from 'node:path';
 
 import type {
   ConfigurationManager,
@@ -18,27 +18,13 @@ import type {
 } from '../types/index.js';
 
 /**
- * Configuration file formats supported
- */
-type ConfigFormat = 'js' | 'json' | 'ts' | 'yaml';
-
-/**
- * Configuration loading result
- */
-interface ConfigLoadResult {
-  config: Partial<ModestBenchConfig>;
-  format: ConfigFormat;
-  source: string;
-}
-
-/**
  * Default configuration values Using minimal values to reduce test overhead
  * while maintaining functionality
  */
 const DEFAULT_CONFIG: ModestBenchConfig = {
   bail: false,
   exclude: ['node_modules/**', '.git/**'],
-  iterations: 2, // Reduced from 100 for test efficiency
+  iterations: 100, // Sufficient iterations for reliable statistics
   metadata: {},
   outputDir: './benchmark-results',
   pattern: '**/*.bench.{js,ts,mjs,mts}',
@@ -47,10 +33,10 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   reporters: ['human'],
   tags: [],
   thresholds: {},
-  time: 100, // Reduced from 5000ms (5 seconds) to 100ms
+  time: 1000, // 1 second minimum for tinybench to gather samples
   timeout: 30000, // 30 seconds
   verbose: false,
-  warmup: 0, // Reduced from 10 to 0 for faster tests
+  warmup: 0, // No warmup by default for test speed
 };
 
 /**
@@ -61,20 +47,6 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
  * 3. Default values
  */
 export class ModestBenchConfigurationManager implements ConfigurationManager {
-  private readonly supportedConfigFiles = [
-    'modestbench.config.json',
-    'modestbench.config.yaml',
-    'modestbench.config.yml',
-    'modestbench.config.js',
-    'modestbench.config.mjs',
-    'modestbench.config.ts',
-    '.modestbenchrc.json',
-    '.modestbenchrc.yaml',
-    '.modestbenchrc.yml',
-    '.modestbenchrc.js',
-    '.modestbenchrc.mjs',
-  ];
-
   /**
    * Get default configuration values
    */
@@ -90,30 +62,31 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
     cliArgs?: Record<string, unknown>,
   ): Promise<ModestBenchConfig> {
     try {
-      // 1. Start with defaults
-      let config: Partial<ModestBenchConfig> = { ...DEFAULT_CONFIG };
+      const explorer = this.createExplorer();
 
-      // 2. Load config file (if specified or auto-discovered)
-      const fileConfig = await this.loadConfigFile(configPath);
-      if (fileConfig) {
-        config = this.merge(config, fileConfig.config);
-      }
+      // 1. Load config file using cosmiconfig
+      const result = configPath
+        ? await explorer.load(resolve(configPath))
+        : await explorer.search();
 
-      // 3. Apply CLI arguments (highest precedence)
-      if (cliArgs) {
-        const normalizedCliArgs = this.normalizeCliArgs(cliArgs);
-        config = this.merge(config, normalizedCliArgs);
-      }
+      const fileConfig = (result?.config || {}) as Partial<ModestBenchConfig>;
 
-      // 4. Validate final configuration
-      const validation = this.validate(config);
+      // 2. Merge: defaults <- file <- CLI args
+      const merged = this.merge(
+        DEFAULT_CONFIG,
+        fileConfig,
+        cliArgs ? this.normalizeCliArgs(cliArgs) : {},
+      );
+
+      // 3. Validate final configuration
+      const validation = this.validate(merged);
       if (!validation.valid) {
         throw new Error(
           `Configuration validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
         );
       }
 
-      return config as ModestBenchConfig;
+      return merged;
     } catch (error) {
       throw new Error(
         `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`,
@@ -285,125 +258,37 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
   }
 
   /**
-   * Detect configuration file format from extension
+   * Create a cosmiconfig explorer for loading configuration files
    */
-  private detectConfigFormat(filePath: string): ConfigFormat {
-    const ext = extname(filePath).toLowerCase();
-
-    switch (ext) {
-      case '.js':
-      case '.mjs':
-        return 'js';
-      case '.json':
-        return 'json';
-      case '.ts':
-        return 'ts';
-      case '.yaml':
-      case '.yml':
-        return 'yaml';
-      default:
-        // Check filename patterns for rc files
-        if (filePath.includes('.modestbenchrc')) {
-          return 'json'; // Default rc files to JSON
-        }
-        throw new Error(`Unknown config file format: ${ext}`);
-    }
-  }
-
-  /**
-   * Auto-discover configuration file in current and parent directories
-   */
-  private async discoverConfigFile(): Promise<null | string> {
-    let currentDir = resolve(process.cwd());
-
-    // Search up the directory tree
-    while (true) {
-      // Try each supported config file in the current directory
-      for (const fileName of this.supportedConfigFiles) {
-        try {
-          const filePath = resolve(currentDir, fileName);
-          await access(filePath);
-          return filePath;
-        } catch {
-          // File doesn't exist, try next file
-          continue;
-        }
-      }
-
-      // Move to parent directory
-      const parentDir = resolve(currentDir, '..');
-
-      // Stop if we've reached the root directory
-      if (parentDir === currentDir) {
-        break;
-      }
-
-      currentDir = parentDir;
-    }
-
-    return null;
-  }
-
-  /**
-   * Load configuration from file
-   */
-  private async loadConfigFile(
-    configPath?: string,
-  ): Promise<ConfigLoadResult | null> {
-    try {
-      const filePath = configPath
-        ? resolve(configPath)
-        : await this.discoverConfigFile();
-
-      if (!filePath) {
-        return null;
-      }
-
-      // Check if file exists
-      try {
-        await access(filePath);
-      } catch {
-        if (configPath) {
-          throw new Error(`Config file not found: ${configPath}`);
-        }
-        return null;
-      }
-
-      const format = this.detectConfigFormat(filePath);
-      const content = await readFile(filePath, 'utf-8');
-
-      let config: Partial<ModestBenchConfig>;
-
-      switch (format) {
-        case 'json':
-          config = JSON.parse(content);
-          break;
-
-        case 'yaml':
-          // TODO: Implement YAML parsing
-          throw new Error('YAML configuration files not yet implemented');
-
-        case 'js':
-        case 'ts':
-          // TODO: Implement JS/TS module loading
-          throw new Error(
-            'JavaScript/TypeScript configuration files not yet implemented',
-          );
-
-        default:
-          throw new Error(`Unsupported config format: ${format}`);
-      }
-
-      return {
-        config,
-        format,
-        source: filePath,
-      };
-    } catch (error) {
-      throw new Error(
-        `Failed to load config file: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
+  private createExplorer() {
+    return cosmiconfig('modestbench', {
+      loaders: {
+        '.ts': async (filepath: string) => {
+          // Use dynamic import to load TypeScript files
+          // tsx is already in dev dependencies and will handle TS compilation
+          const module = (await import(filepath)) as {
+            [key: string]: unknown;
+            default?: unknown;
+          };
+          return module.default || module;
+        },
+      },
+      searchPlaces: [
+        'package.json',
+        '.modestbenchrc',
+        '.modestbenchrc.json',
+        '.modestbenchrc.yaml',
+        '.modestbenchrc.yml',
+        '.modestbenchrc.js',
+        '.modestbenchrc.mjs',
+        'modestbench.config.json',
+        'modestbench.config.yaml',
+        'modestbench.config.yml',
+        'modestbench.config.js',
+        'modestbench.config.mjs',
+        'modestbench.config.ts',
+      ],
+    });
   }
 
   /**

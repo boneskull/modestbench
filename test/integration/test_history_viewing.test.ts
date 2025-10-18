@@ -34,7 +34,7 @@ describe('Historical results viewing and trends', () => {
           suites: {
             'Test Suite': {
               benchmarks: {
-                'test task': { fn: () => 1 + 1 }
+                'test task': { fn: () => 1 }
               }
             }
           }
@@ -43,7 +43,7 @@ describe('Historical results viewing and trends', () => {
       );
 
       // Run benchmark to create history
-      await runCommand(['run', benchFile], tempDir);
+      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
 
       // Then list history
       const result = await runCommand(['history', 'list'], tempDir);
@@ -117,8 +117,8 @@ describe('Historical results viewing and trends', () => {
           suites: {
             'Detailed Suite': {
               benchmarks: {
-                'task 1': { fn: () => Array(100).fill(0) },
-                'task 2': { fn: () => Array(200).fill(1) }
+                'task 1': { fn: () => 1 },
+                'task 2': { fn: () => 2 }
               }
             }
           }
@@ -126,7 +126,7 @@ describe('Historical results viewing and trends', () => {
       `,
       );
 
-      await runCommand(['run', benchFile], tempDir);
+      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
 
       // Get run ID and show details
       const listResult = await runCommand([
@@ -143,7 +143,7 @@ describe('Historical results viewing and trends', () => {
 
           if (runId) {
             const showResult = await runCommand(
-              ['history', 'show', runId],
+              ['history', 'show', String(runId)],
               tempDir,
             );
             assert.ok(
@@ -183,7 +183,7 @@ describe('Historical results viewing and trends', () => {
           suites: {
             'Comparison Suite': {
               benchmarks: {
-                'stable task': { fn: () => Math.floor(Math.random() * 100) }
+                'stable task': { fn: () => 1 }
               }
             }
           }
@@ -192,8 +192,8 @@ describe('Historical results viewing and trends', () => {
       );
 
       // Run twice to get two runs
-      await runCommand(['run', benchFile], tempDir);
-      await runCommand(['run', benchFile], tempDir);
+      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
+      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
 
       // Get run IDs
       const listResult = await runCommand([
@@ -214,8 +214,8 @@ describe('Historical results viewing and trends', () => {
             const compareResult = await runCommand([
               'history',
               'compare',
-              runs[0].id,
-              runs[1].id,
+              String(runs[0].id),
+              String(runs[1].id),
             ]);
             assert.ok(
               compareResult.stdout.includes('comparison') ||
@@ -416,7 +416,7 @@ describe('Historical results viewing and trends', () => {
           suites: {
             'Persistent Suite': {
               benchmarks: {
-                'persistent task': { fn: () => 42 }
+                'persistent task': { fn: () => 1 }
               }
             }
           }
@@ -425,7 +425,7 @@ describe('Historical results viewing and trends', () => {
       );
 
       // Run benchmark
-      await runCommand(['run', benchFile], tempDir);
+      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
 
       // Check that history exists
       const historyResult = await runCommand(['history', 'list'], tempDir);

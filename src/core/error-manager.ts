@@ -267,17 +267,11 @@ export class ModestBenchErrorManager implements ErrorManager {
     const result: ErrorStats = {
       byPhase,
       byType,
+      ...(firstError && { firstError }),
+      ...(lastError && { lastError }),
       recent: this.errors.slice(-this.maxRecentErrors),
       total: this.errors.length,
     };
-
-    // Add optional timestamps only if they exist
-    if (firstError) {
-      (result as any).firstError = firstError;
-    }
-    if (lastError) {
-      (result as any).lastError = lastError;
-    }
 
     return result;
   }
@@ -296,12 +290,8 @@ export class ModestBenchErrorManager implements ErrorManager {
       originalError: error,
       processedAt: new Date(),
       recoverable,
+      ...(error.stack && { stack: error.stack }),
     };
-
-    // Add stack if available
-    if (error.stack) {
-      (executionError as any).stack = error.stack;
-    }
 
     // Store error for statistics
     this.errors.push(executionError);

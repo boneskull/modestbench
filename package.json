@@ -17,16 +17,21 @@
     "node": ">=18.0.0"
   },
   "bin": {
-    "modestbench": "dist/src/cli/index.js"
+    "modestbench": "dist/cli/index.js"
   },
-  "main": "./dist/src/cli/index.cjs",
-  "types": "./dist/src/cli/index.d.cts",
-  "module": "./dist/src/cli/index.js",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "module": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./dist/src/cli/index.d.cts",
-      "import": "./dist/src/cli/index.js",
-      "require": "./dist/src/cli/index.cjs"
+      "types": "./dist/index.d.cts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.cts",
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
     }
   },
   "files": [
@@ -45,11 +50,11 @@
   "scripts": {
     "build": "zshy",
     "clean": "rm -rf dist",
-    "commitlint": "commitlint",
     "dev": "zshy --watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
+    "lint:commit": "commitlint",
     "lint:fix": "eslint . --fix",
     "lint:staged": "lint-staged",
     "prepack": "npm run clean && npm run build",
@@ -61,6 +66,7 @@
   "dependencies": {
     "cli-progress": "^3.12.0",
     "consola": "^3.2.3",
+    "cosmiconfig": "^9.0.0",
     "glob": "^11.0.3",
     "tinybench": "^2.6.0",
     "yargs": "^17.7.2"
@@ -161,7 +167,8 @@
   },
   "zshy": {
     "exports": {
-      ".": "./src/cli/index.ts"
+      ".": "./src/index.ts",
+      "./cli": "./src/cli/index.ts"
     }
   }
 }

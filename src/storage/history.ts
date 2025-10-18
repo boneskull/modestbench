@@ -1,21 +1,19 @@
 /**
  * ModestBench History Storage
  *
- * File-based storage system for benchmark run history and results.
- * Provides querying, cleanup, and export capabilities for historical data.
+ * File-based storage system for benchmark run history and results. Provides
+ * querying, cleanup, and export capabilities for historical data.
  */
 
 import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
-  readdirSync,
   readFileSync,
-  statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, dirname, extname, join } from 'node:path';
+import { join } from 'node:path';
 
 import type {
   BenchmarkRun,
@@ -63,7 +61,7 @@ export class FileHistoryStorage implements HistoryStorage {
     options: {
       maxFileSize?: number;
       storageDir?: string;
-    } = {}
+    } = {},
   ) {
     this.storageDir =
       options.storageDir || join(process.cwd(), '.modestbench', 'history');
@@ -89,7 +87,7 @@ export class FileHistoryStorage implements HistoryStorage {
 
       // Sort entries by date (oldest first) for cleanup
       const sortedEntries = [...index.entries].sort(
-        (a, b) => a.date.getTime() - b.date.getTime()
+        (a, b) => a.date.getTime() - b.date.getTime(),
       );
 
       // Apply retention policies
@@ -149,7 +147,7 @@ export class FileHistoryStorage implements HistoryStorage {
       };
     } catch (error) {
       throw new Error(
-        `Failed to cleanup storage: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to cleanup storage: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -170,7 +168,7 @@ export class FileHistoryStorage implements HistoryStorage {
       }
     } catch (error) {
       throw new Error(
-        `Failed to export data: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to export data: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -183,14 +181,14 @@ export class FileHistoryStorage implements HistoryStorage {
   > {
     try {
       const index = await this.loadIndex();
-      return index.entries.map(entry => ({
+      return index.entries.map((entry) => ({
         date: entry.date,
         id: entry.id,
         summary: entry.summary,
       }));
     } catch (error) {
       throw new Error(
-        `Failed to get storage index: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to get storage index: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -207,7 +205,7 @@ export class FileHistoryStorage implements HistoryStorage {
     try {
       const index = await this.loadIndex();
       const dates = index.entries
-        .map(e => e.date)
+        .map((e) => e.date)
         .sort((a, b) => a.getTime() - b.getTime());
 
       return {
@@ -216,7 +214,7 @@ export class FileHistoryStorage implements HistoryStorage {
         totalRuns: index.entries.length,
         totalSize: index.entries.reduce(
           (total, entry) => total + entry.sizeBytes,
-          0
+          0,
         ),
       };
     } catch {
@@ -249,7 +247,7 @@ export class FileHistoryStorage implements HistoryStorage {
   async loadRun(id: string): Promise<BenchmarkRun | null> {
     try {
       const index = await this.loadIndex();
-      const entry = index.entries.find(e => e.id === id);
+      const entry = index.entries.find((e) => e.id === id);
 
       if (!entry) {
         return null;
@@ -274,7 +272,7 @@ export class FileHistoryStorage implements HistoryStorage {
       return run;
     } catch (error) {
       throw new Error(
-        `Failed to load benchmark run ${id}: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to load benchmark run ${id}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -289,21 +287,21 @@ export class FileHistoryStorage implements HistoryStorage {
 
       // Apply filters
       if (query.since) {
-        filteredEntries = filteredEntries.filter(e => e.date >= query.since!);
+        filteredEntries = filteredEntries.filter((e) => e.date >= query.since!);
       }
 
       if (query.until) {
-        filteredEntries = filteredEntries.filter(e => e.date <= query.until!);
+        filteredEntries = filteredEntries.filter((e) => e.date <= query.until!);
       }
 
       if (query.pattern) {
         const regex = new RegExp(query.pattern, 'i');
-        filteredEntries = filteredEntries.filter(e => regex.test(e.summary));
+        filteredEntries = filteredEntries.filter((e) => regex.test(e.summary));
       }
 
       if (query.tags && query.tags.length > 0) {
-        filteredEntries = filteredEntries.filter(e =>
-          query.tags!.some(tag => e.tags.includes(tag))
+        filteredEntries = filteredEntries.filter((e) =>
+          query.tags!.some((tag) => e.tags.includes(tag)),
         );
       }
 
@@ -345,7 +343,7 @@ export class FileHistoryStorage implements HistoryStorage {
       return runs;
     } catch (error) {
       throw new Error(
-        `Failed to query benchmark runs: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to query benchmark runs: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -367,7 +365,7 @@ export class FileHistoryStorage implements HistoryStorage {
       // Check file size limit
       if (Buffer.byteLength(data, 'utf8') > this.maxFileSize) {
         throw new Error(
-          `Benchmark run data exceeds maximum file size of ${this.maxFileSize} bytes`
+          `Benchmark run data exceeds maximum file size of ${this.maxFileSize} bytes`,
         );
       }
 
@@ -378,7 +376,7 @@ export class FileHistoryStorage implements HistoryStorage {
       await this.updateIndex(run, filename, Buffer.byteLength(data, 'utf8'));
     } catch (error) {
       throw new Error(
-        `Failed to save benchmark run: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to save benchmark run: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -413,7 +411,7 @@ export class FileHistoryStorage implements HistoryStorage {
       'gitBranch',
     ];
 
-    const rows = runs.map(run => [
+    const rows = runs.map((run) => [
       run.id,
       run.startTime.toISOString(),
       run.endTime.toISOString(),
@@ -432,7 +430,9 @@ export class FileHistoryStorage implements HistoryStorage {
 
     const csvLines = [headers, ...rows];
     return csvLines
-      .map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(','))
+      .map((row) =>
+        row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(','),
+      )
       .join('\n');
   }
 
@@ -463,14 +463,23 @@ export class FileHistoryStorage implements HistoryStorage {
   /**
    * Validate that an object is a valid BenchmarkRun
    */
+
   private isValidBenchmarkRun(obj: any): obj is BenchmarkRun {
+    // Type guard function that checks properties on unknown object
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return (
       obj &&
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       typeof obj.id === 'string' &&
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       Array.isArray(obj.files) &&
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       obj.startTime &&
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       obj.endTime &&
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       obj.environment &&
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       obj.summary
     );
   }
@@ -496,23 +505,29 @@ export class FileHistoryStorage implements HistoryStorage {
 
     try {
       const data = readFileSync(this.indexFile, 'utf8');
-      const parsed = JSON.parse(data);
+      const parsed = JSON.parse(data) as {
+        [key: string]: unknown;
+        created: string;
+        entries: Array<{ [key: string]: unknown; date: string }>;
+        lastModified: string;
+      };
 
       // Convert date strings back to Date objects
       this.index = {
-        ...parsed,
         created: new Date(parsed.created),
-        entries: parsed.entries.map((entry: any) => ({
+        entries: parsed.entries.map((entry) => ({
           ...entry,
-          date: new Date(entry.date),
-        })),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+          date: new Date((entry as any).date),
+        })) as IndexEntry[],
         lastModified: new Date(parsed.lastModified),
+        version: '1.0.0',
       };
 
-      return this.index!; // We just assigned it, so it's not null
+      return this.index; // We just assigned it, so it's not null
     } catch (error) {
       throw new Error(
-        `Failed to load storage index: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to load storage index: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -522,7 +537,7 @@ export class FileHistoryStorage implements HistoryStorage {
    */
   private async removeFromIndex(id: string): Promise<void> {
     const index = await this.loadIndex();
-    const entryIndex = index.entries.findIndex(e => e.id === id);
+    const entryIndex = index.entries.findIndex((e) => e.id === id);
 
     if (entryIndex >= 0) {
       index.entries.splice(entryIndex, 1);
@@ -549,7 +564,7 @@ export class FileHistoryStorage implements HistoryStorage {
       writeFileSync(this.indexFile, data, 'utf8');
     } catch (error) {
       throw new Error(
-        `Failed to save storage index: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to save storage index: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -560,7 +575,7 @@ export class FileHistoryStorage implements HistoryStorage {
   private async updateIndex(
     run: BenchmarkRun,
     filename: string,
-    sizeBytes: number
+    sizeBytes: number,
   ): Promise<void> {
     const index = await this.loadIndex();
 
@@ -574,7 +589,7 @@ export class FileHistoryStorage implements HistoryStorage {
     };
 
     // Remove existing entry if it exists
-    const existingIndex = index.entries.findIndex(e => e.id === run.id);
+    const existingIndex = index.entries.findIndex((e) => e.id === run.id);
     if (existingIndex >= 0) {
       index.entries.splice(existingIndex, 1);
     }

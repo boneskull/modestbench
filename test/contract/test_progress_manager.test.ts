@@ -1,13 +1,15 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
+import type { ProgressManager } from '../../src/types/interfaces.js';
+
 /**
- * Contract tests for ProgressManager interface
- * Reference: contracts/core-api.md lines 75-95
+ * Contract tests for ProgressManager interface Reference: contracts/core-api.md
+ * lines 75-95
  */
 
 describe('ProgressManager interface contract', () => {
-  let progressManager: any; // Will be undefined until implementation exists
+  let progressManager: ProgressManager | undefined; // Will be undefined until implementation exists
 
   describe('interface methods', () => {
     it('should have initialize method', () => {
@@ -422,6 +424,7 @@ describe('ProgressManager interface contract', () => {
     it('should handle invalid progress updates gracefully', () => {
       if (progressManager) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           progressManager.update({
             filesCompleted: 'invalid',
             totalFiles: -1,

@@ -1,13 +1,15 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
+import type { BenchmarkEngine } from '../../src/types/interfaces.js';
+
 /**
- * Contract tests for BenchmarkEngine interface
- * Reference: contracts/core-api.md lines 5-30
+ * Contract tests for BenchmarkEngine interface Reference: contracts/core-api.md
+ * lines 5-30
  */
 
 describe('BenchmarkEngine interface contract', () => {
-  let engine: any; // Will be undefined until implementation exists
+  let engine: BenchmarkEngine | undefined; // Will be undefined until implementation exists
 
   describe('interface methods', () => {
     it('should have execute method', () => {
@@ -183,7 +185,7 @@ describe('BenchmarkEngine interface contract', () => {
           const result = await promise;
           assert.ok(Array.isArray(result));
           // Should be array of file paths
-          result.forEach(path => {
+          result.forEach((path) => {
             assert.ok(typeof path === 'string');
           });
         } catch {

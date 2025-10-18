@@ -28,7 +28,10 @@
     "coverage",
     "dist",
     "docs",
-    "node_modules"
+    "node_modules",
+    ".specify",
+    "specs",
+    "*.csv"
   ],
   "ignoreRandomStrings": true,
   "ignoreWords": [
@@ -41,7 +44,8 @@
     "tyvm",
     "zshy",
     "wallabyjs",
-    "qwen"
+    "qwen",
+    "TKTK"
   ],
   "words": ["bupkis"]
 }

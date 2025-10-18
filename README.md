@@ -7,7 +7,7 @@ A modern, TypeScript-first benchmarking framework designed for simplicity, accur
 - **Fast & Accurate**: High-precision timing with statistical analysis
 - **Real-time Progress**: Live progress bars and ETA calculations
 - **Multiple Output Formats**: Human-readable, JSON, and CSV reports
-- **Flexible Configuration**: JSON configuration files (YAML, JS, TS support planned)
+- **Flexible Configuration**: JSON, YAML, JavaScript, and TypeScript configuration files
 - **Historical Tracking**: Store and compare benchmark results over time
 - **Tagging System**: Organize and filter benchmarks by categories
 - **Async Support**: First-class support for asynchronous operations
@@ -166,32 +166,37 @@ Create `modestbench.config.json`:
 
 ```json
 {
-  "pattern": "benchmarks/**/*.bench.{js,ts}",
-  "exclude": ["node_modules/**"],
-  "reporters": ["human", "json"],
-  "outputDir": "./benchmark-results",
-  "iterations": 1000,
-  "warmup": 50,
   "concurrent": false,
-  "timeout": 30000
+  "exclude": ["node_modules/**"],
+  "iterations": 1000,
+  "outputDir": "./benchmark-results",
+  "pattern": "benchmarks/**/*.bench.{js,ts}",
+  "reporters": ["human", "json"],
+  "timeout": 30000,
+  "warmup": 50
 }
 ```
 
 ### Configuration File Support
 
-Currently, only JSON configuration files are supported. Support for YAML, JavaScript, and TypeScript configuration files is planned for future releases.
+ModestBench supports multiple configuration file formats, powered by [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig):
 
-You can generate template configuration files using:
+- **JSON**: `modestbench.config.json`, `.modestbenchrc.json`, `.modestbenchrc`
+- **YAML**: `modestbench.config.yaml`, `modestbench.config.yml`, `.modestbenchrc.yaml`, `.modestbenchrc.yml`
+- **JavaScript**: `modestbench.config.js`, `modestbench.config.mjs`, `.modestbenchrc.js`, `.modestbenchrc.mjs`
+- **TypeScript**: `modestbench.config.ts`
+- **package.json**: Use a `"modestbench"` field
+
+Generate a configuration file using:
 
 ```bash
-# Generate JSON config (supported)
-modestbench init --config json
-
-# Generate other formats (templates only, not yet loadable)
-modestbench init --config yaml
-modestbench init --config js
-modestbench init --config ts
+modestbench init --config-type json   # JSON format
+modestbench init --config-type yaml   # YAML format
+modestbench init --config-type js     # JavaScript format
+modestbench init --config-type ts     # TypeScript format
 ```
+
+**Configuration Discovery**: ModestBench automatically searches for configuration files in the current directory and parent directories, following standard conventions.
 
 ## Output Formats
 
@@ -205,12 +210,6 @@ Structured data perfect for programmatic analysis and integration:
 
 ```json
 {
-  "run": {
-    "id": "run-2025-10-07-001",
-    "timestamp": "2025-10-07T10:30:00.000Z",
-    "duration": 15420,
-    "status": "completed"
-  },
   "results": [
     {
       "file": "example.bench.js",
@@ -223,7 +222,13 @@ Structured data perfect for programmatic analysis and integration:
         "marginOfError": 2.45
       }
     }
-  ]
+  ],
+  "run": {
+    "id": "run-2025-10-07-001",
+    "timestamp": "2025-10-07T10:30:00.000Z",
+    "duration": 15420,
+    "status": "completed"
+  }
 }
 ```
 
@@ -378,7 +383,7 @@ const baseline = JSON.parse(readFileSync('./baseline/results.json'));
 // Check for significant regressions
 for (const result of current.results) {
   const baselineResult = baseline.results.find(
-    r => r.file === result.file && r.task === result.task
+    (r) => r.file === result.file && r.task === result.task,
   );
 
   if (baselineResult) {
@@ -386,7 +391,7 @@ for (const result of current.results) {
     if (regression > 0.1) {
       // 10% regression threshold
       console.error(
-        `Performance regression detected in ${result.task}: ${(regression * 100).toFixed(1)}%`
+        `Performance regression detected in ${result.task}: ${(regression * 100).toFixed(1)}%`,
       );
       process.exit(1);
     }
@@ -394,6 +399,23 @@ for (const result of current.results) {
 }
 
 console.log('No performance regressions detected ✅');
+```
+
+## Programmatic API
+
+```typescript
+import { modestbench, HumanReporter } from 'modestbench';
+
+// initialize the engine
+const engine = modestbench();
+
+engine.registerReporter('human', new HumanReporter());
+
+// Execute benchmarks
+const result = await engine.execute({
+  pattern: '**/*.bench.js',
+  iterations: 1000,
+});
 ```
 
 ## Contributing

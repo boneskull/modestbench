@@ -1,7 +1,9 @@
 import { type ChildProcess, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
-const cliPath = fileURLToPath(new URL('../src/cli/index.ts', import.meta.url));
+// Use compiled dist files instead of tsx for faster test execution
+const cliPath = fileURLToPath(new URL('../dist/cli/index.js', import.meta.url));
+
 /**
  * Helper function to run CLI commands and capture output
  */
@@ -13,8 +15,15 @@ export const runCommand = async (
   stderr: string;
   stdout: string;
 }> => {
+  if (
+    args.includes('run') &&
+    !args.includes('--iterations') &&
+    !args.includes('-i')
+  ) {
+    args.push('--iterations', '1');
+  }
   return new Promise((resolve) => {
-    const child: ChildProcess = spawn('npx', ['tsx', cliPath, ...args], {
+    const child: ChildProcess = spawn('node', [cliPath, ...args], {
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
     });

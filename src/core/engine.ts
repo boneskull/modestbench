@@ -63,20 +63,49 @@ export interface ReporterRegistry {
 }
 
 /**
+ * Structure of a benchmark file export
+ */
+interface BenchmarkDefinition {
+  config?: Partial<ModestBenchConfig>;
+  metadata?: Record<string, unknown>;
+  suites: Record<string, BenchmarkSuite>;
+  tags?: string[];
+}
+
+/**
+ * Structure of a benchmark suite definition
+ */
+interface BenchmarkSuite {
+  benchmarks: Record<string, BenchmarkTask>;
+  config?: Partial<ModestBenchConfig>;
+  metadata?: Record<string, unknown>;
+  tags?: string[];
+}
+
+/**
+ * Structure of a benchmark task definition
+ */
+interface BenchmarkTask {
+  fn: () => Promise<void> | void;
+  metadata?: Record<string, unknown>;
+  tags?: string[];
+}
+
+/**
  * Main benchmark execution engine with dependency injection
  */
 export class ModestBenchEngine implements BenchmarkEngine {
-  private readonly configManager: ConfigurationManager;
+  public readonly configManager: ConfigurationManager;
 
-  private readonly errorManager: ErrorManager;
+  public readonly errorManager: ErrorManager;
 
-  private readonly fileLoader: FileLoader;
+  public readonly fileLoader: FileLoader;
 
-  private readonly historyStorage: HistoryStorage;
+  public readonly historyStorage: HistoryStorage;
 
-  private readonly progressManager: ProgressManager;
+  public readonly progressManager: ProgressManager;
 
-  private readonly reporterRegistry: ReporterRegistry;
+  public readonly reporterRegistry: ReporterRegistry;
 
   constructor(dependencies: EngineDependencies) {
     this.configManager = dependencies.configManager;
@@ -165,16 +194,18 @@ export class ModestBenchEngine implements BenchmarkEngine {
       for (const filePath of files) {
         try {
           const benchmarkFile = await this.fileLoader.load(filePath);
-          const benchmarkDef = benchmarkFile.exports as any;
+          const benchmarkDef = benchmarkFile.exports as BenchmarkDefinition;
 
           if (benchmarkDef?.suites && typeof benchmarkDef.suites === 'object') {
-            for (const [suiteName, suiteData] of Object.entries(
+            for (const [_suiteName, suiteData] of Object.entries(
               benchmarkDef.suites,
             )) {
               totalSuites++;
-              const suite = suiteData as any;
-              if (suite?.benchmarks && typeof suite.benchmarks === 'object') {
-                totalTasks += Object.keys(suite.benchmarks).length;
+              if (
+                suiteData?.benchmarks &&
+                typeof suiteData.benchmarks === 'object'
+              ) {
+                totalTasks += Object.keys(suiteData.benchmarks).length;
               }
             }
           }
@@ -220,7 +251,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
       for (const reporter of reporters) {
         if (typeof reporter.onProgress === 'function') {
           this.progressManager.onProgress((state) => {
-            reporter.onProgress(state);
+            void reporter.onProgress(state);
           });
         }
       }
@@ -449,13 +480,19 @@ export class ModestBenchEngine implements BenchmarkEngine {
   private async callReporters(
     reporters: Reporter[],
     method: keyof Reporter,
-    ...args: any[]
+    ...args: unknown[]
   ): Promise<void> {
     for (const reporter of reporters) {
       try {
-        const result = (reporter[method] as any)(...args);
-        if (result && typeof result.then === 'function') {
-          await result;
+        const reporterMethod = reporter[method];
+        if (typeof reporterMethod === 'function') {
+          const result = (
+            reporterMethod as (...args: unknown[]) => unknown
+          ).call(reporter, ...args);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          if (result && typeof (result as any).then === 'function') {
+            await (result as Promise<void>);
+          }
         }
       } catch (error) {
         // Log reporter errors but don't fail the benchmark run
@@ -477,7 +514,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
     try {
       // Load the benchmark file using the file loader
       const benchmarkFile = await this.fileLoader.load(filePath);
-      const benchmarkDef = benchmarkFile.exports as any;
+      const benchmarkDef = benchmarkFile.exports as BenchmarkDefinition;
 
       if (!benchmarkDef || typeof benchmarkDef !== 'object') {
         throw new Error(
@@ -495,7 +532,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
           await this.callReporters(reporters, 'onSuiteStart', suiteName);
           const suiteResult = await this.executeBenchmarkSuite(
             suiteName,
-            suiteData as any,
+            suiteData,
             config,
             reporters,
           );
@@ -535,7 +572,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
    */
   private async executeBenchmarkSuite(
     suiteName: string,
-    suiteData: any,
+    suiteData: BenchmarkSuite,
     config: ModestBenchConfig,
     reporters: Reporter[] = [],
   ): Promise<SuiteResult> {
@@ -558,7 +595,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
 
           const taskResult = await this.executeBenchmarkTask(
             taskName,
-            taskData as any,
+            taskData,
             config,
             reporters,
           );
@@ -575,14 +612,16 @@ export class ModestBenchEngine implements BenchmarkEngine {
       const endTime = new Date();
 
       return {
-        config: suiteData.config,
         duration: endTime.getTime() - startTime.getTime(),
         endTime,
-        metadata: suiteData.metadata,
         name: suiteName,
         startTime,
-        tags: suiteData.tags,
         tasks: taskResults,
+        ...(suiteData.config !== undefined && { config: suiteData.config }),
+        ...(suiteData.metadata !== undefined && {
+          metadata: suiteData.metadata,
+        }),
+        ...(suiteData.tags !== undefined && { tags: suiteData.tags }),
       };
     } catch (error) {
       const endTime = new Date();
@@ -605,9 +644,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
    */
   private async executeBenchmarkTask(
     taskName: string,
-    taskData: any,
+    taskData: BenchmarkTask,
     config: ModestBenchConfig,
-    reporters: Reporter[] = [],
+    _reporters: Reporter[] = [],
   ): Promise<TaskResult> {
     try {
       if (!taskData.fn || typeof taskData.fn !== 'function') {
@@ -618,11 +657,12 @@ export class ModestBenchEngine implements BenchmarkEngine {
       // const { Bench } = await import('tinybench');
 
       // Create benchmark instance using static import
+      // Note: Use time-based benchmarking only to avoid array length issues with very fast operations
+      // tinybench will automatically determine iterations based on time
       const bench = new Bench({
-        iterations: config.iterations,
-        time: config.time || 1000,
+        time: Math.min(config.time || 1000, 2000), // Cap at 2 seconds to prevent overflow
         warmupIterations: 0,
-        warmupTime: config.warmup || 0,
+        warmupTime: Math.min(config.warmup || 0, 500), // Cap warmup too
       });
 
       // Add the task
@@ -637,9 +677,49 @@ export class ModestBenchEngine implements BenchmarkEngine {
       try {
         // Run the benchmark
         await bench.run();
-      } finally {
-        // Clear the progress interval
+      } catch (error) {
         clearInterval(progressInterval);
+        // Handle array length errors for extremely fast operations
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+
+        if (errorMessage.includes('Invalid array length')) {
+          // Retry with minimal time (10ms) for extremely fast operations
+          const minimalBench = new Bench({ time: 10, warmupTime: 0 });
+          minimalBench.add(taskName, taskData.fn);
+          try {
+            await minimalBench.run();
+          } catch {
+            // If still failing, the operation is too fast even for tinybench
+            throw new Error(
+              `Benchmark operation is too fast to measure reliably (execution time < 1ns)`,
+            );
+          }
+          const minimalResults = minimalBench.results[0];
+          if (!minimalResults || minimalResults.error) {
+            throw new Error(
+              `Benchmark too fast to measure reliably: ${minimalResults?.error?.message || 'unknown error'}`,
+            );
+          }
+          // Continue with minimal results
+          const taskResult: TaskResult = {
+            iterations: minimalResults.latency.samples?.length || 0,
+            marginOfError: minimalResults.latency.rme || 0,
+            max: minimalResults.latency.max || 0,
+            mean: minimalResults.latency.mean || 0,
+            metadata: taskData.metadata ?? {},
+            min: minimalResults.latency.min || 0,
+            name: taskName,
+            opsPerSecond: minimalResults.throughput.mean || 0,
+            p95: minimalResults.latency.p75 || 0,
+            p99: minimalResults.latency.p99 || 0,
+            stdDev: minimalResults.latency.sd || 0,
+            ...(taskData.tags ? { tags: taskData.tags } : {}),
+            variance: minimalResults.latency.variance || 0,
+          };
+          return taskResult;
+        }
+        throw error;
       }
 
       // Get results
@@ -650,26 +730,62 @@ export class ModestBenchEngine implements BenchmarkEngine {
 
       // Check if tinybench detected an error during execution
       if (results.error) {
+        const errorMessage =
+          results.error instanceof Error
+            ? results.error.message
+            : String(results.error);
+
+        // Handle array length errors for extremely fast operations
+        if (errorMessage.includes('Invalid array length')) {
+          // Retry with minimal time for extremely fast operations
+          const minimalBench = new Bench({ time: 10, warmupTime: 0 });
+          minimalBench.add(taskName, taskData.fn);
+          await minimalBench.run();
+          const minimalResults = minimalBench.results[0];
+
+          if (!minimalResults || minimalResults.error) {
+            // If retry also fails, just accept it failed
+            throw new Error(
+              `Benchmark operation is too fast to measure reliably`,
+            );
+          }
+
+          // Return minimal results
+          const taskResult: TaskResult = {
+            iterations: minimalResults.latency.samples?.length || 0,
+            marginOfError: minimalResults.latency.rme || 0,
+            max: minimalResults.latency.max || 0,
+            mean: minimalResults.latency.mean || 0,
+            metadata: taskData.metadata ?? {},
+            min: minimalResults.latency.min || 0,
+            name: taskName,
+            opsPerSecond: minimalResults.throughput.mean || 0,
+            p95: minimalResults.latency.p75 || 0,
+            p99: minimalResults.latency.p99 || 0,
+            stdDev: minimalResults.latency.sd || 0,
+            ...(taskData.tags ? { tags: taskData.tags } : {}),
+            variance: minimalResults.latency.variance || 0,
+          };
+          return taskResult;
+        }
+
         throw results.error;
       }
 
-      // Convert nanoseconds to milliseconds for mean calculation
-      const meanMs = results.mean / 1_000_000;
-
-      const taskResult = {
-        iterations: results.samples?.length || 0, // Use samples array length
-        marginOfError: results.rme || 0, // tinybench has relative margin of error
-        max: results.max || 0,
-        mean: results.mean, // Keep in milliseconds from tinybench
-        metadata: taskData.metadata,
-        min: results.min || 0,
+      const taskResult: TaskResult = {
+        iterations: results.latency.samples?.length || 0, // Use samples array length
+        marginOfError: results.latency.rme || 0, // tinybench has relative margin of error
+        max: results.latency.max || 0,
+        mean: results.latency.mean || 0, // Keep in milliseconds from tinybench
+        metadata: taskData.metadata ?? {},
+        min: results.latency.min || 0,
         name: taskName,
-        opsPerSecond: results.hz || 0, // tinybench provides hz (operations per second)
-        p95: results.p75 || 0, // Use p75 as closest to p95
-        p99: results.p99 || 0,
-        stdDev: results.sd || 0, // tinybench uses 'sd' for standard deviation
-        tags: taskData.tags,
-        variance: results.variance || 0,
+        opsPerSecond: results.throughput.mean || 0, // tinybench provides hz (operations per second)
+        p95: results.latency.p75 || 0, // Use p75 as closest to p95
+        p99: results.latency.p99 || 0,
+        stdDev: results.latency.sd || 0, // tinybench uses 'sd' for standard deviation
+        ...(taskData.tags ? { tags: taskData.tags } : {}),
+        variance: results.latency.variance || 0,
       };
 
       return taskResult;
@@ -677,22 +793,23 @@ export class ModestBenchEngine implements BenchmarkEngine {
       const executionError =
         error instanceof Error ? error : new Error(String(error));
 
-      return {
+      const errorResult: TaskResult = {
         error: executionError,
         iterations: 0,
         marginOfError: 0,
         max: 0,
         mean: 0,
-        metadata: taskData.metadata,
+        metadata: taskData.metadata ?? {},
         min: 0,
         name: taskName,
         opsPerSecond: 0,
         p95: 0,
         p99: 0,
         stdDev: 0,
-        tags: taskData.tags,
+        ...(taskData.tags ? { tags: taskData.tags } : {}),
         variance: 0,
       };
+      return errorResult;
     }
   }
 

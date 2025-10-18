@@ -1,7 +1,6 @@
-import { type ModestBenchConfig } from 'modestbench';
+import { type ModestBenchConfig } from '../src/types/index.js';
 
-const config: ModestBenchConfig = {
-  concurrent: true,
+const config: Partial<ModestBenchConfig> = {
   iterations: 2000,
   outputDir: './reports',
   pattern: 'src/**/*.bench.ts',

@@ -1,4 +1,5 @@
 // Performance optimization examples
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return */
 
 export default {
   suites: {
@@ -53,7 +54,7 @@ export default {
               name: `item-${i}`,
               value: Math.random(),
             }));
-            return data.filter(item => item.value > 0.5);
+            return data.filter((item) => item.value > 0.5);
           },
           tags: ['unoptimized', 'slow'],
         },
@@ -67,10 +68,10 @@ export default {
           value: Math.random(),
         }));
 
-        global.processData = data => {
+        global.processData = (data) => {
           return data
-            .filter(item => item.value > 0.5)
-            .map(item => item.name)
+            .filter((item) => item.value > 0.5)
+            .map((item) => item.name)
             .slice(0, 100);
         };
       },
@@ -79,7 +80,9 @@ export default {
         delete global.dataset;
         delete global.processData;
         // Optional garbage collection
-        if (global.gc) {global.gc();}
+        if (global.gc) {
+          global.gc();
+        }
       },
     },
 
@@ -103,15 +106,17 @@ export default {
 
       setup: () => {
         global.unsortedData = Array.from({ length: 1000 }, () =>
-          Math.floor(Math.random() * 1000)
+          Math.floor(Math.random() * 1000),
         );
 
-        global.quickSort = arr => {
-          if (arr.length <= 1) {return arr;}
+        global.quickSort = (arr) => {
+          if (arr.length <= 1) {
+            return arr;
+          }
           const pivot = arr[Math.floor(arr.length / 2)];
-          const left = arr.filter(x => x < pivot);
-          const middle = arr.filter(x => x === pivot);
-          const right = arr.filter(x => x > pivot);
+          const left = arr.filter((x) => x < pivot);
+          const middle = arr.filter((x) => x === pivot);
+          const right = arr.filter((x) => x > pivot);
           return [
             ...global.quickSort(left),
             ...middle,
@@ -119,7 +124,7 @@ export default {
           ];
         };
 
-        global.bubbleSort = arr => {
+        global.bubbleSort = (arr) => {
           const result = [...arr];
           for (let i = 0; i < result.length; i++) {
             for (let j = 0; j < result.length - i - 1; j++) {

@@ -5,136 +5,69 @@
  * comparing, and cleaning historical data.
  */
 
-import { type Argv } from 'yargs';
-
+import type { HistoryQuery, RetentionPolicy } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
 /**
- * History command arguments interface
+ * History command options interface
  */
-interface HistoryArguments {
-  _: string[]; // Subcommand and positional args
-  args?: string[]; // Additional arguments after subcommand
-  confirm?: boolean;
-  format?: 'csv' | 'human' | 'json';
-  id?: string;
-  id1?: string;
-  id2?: string;
-  limit?: number;
-  maxAge?: number;
-  maxRuns?: number;
-  maxSize?: number;
-  output?: string;
-  pattern?: string;
-  quiet?: boolean;
-  since?: string;
-  subcommand?: string; // Parsed subcommand
-  tags?: string[];
-  until?: string;
-  verbose?: boolean;
+export interface HistoryOptions {
+  args?: string[] | undefined; // Additional arguments after subcommand
+  confirm?: boolean | undefined;
+  cwd: string;
+  format?: 'csv' | 'human' | 'json' | undefined;
+  limit?: number | undefined;
+  maxAge?: number | undefined;
+  maxRuns?: number | undefined;
+  maxSize?: number | undefined;
+  output?: string | undefined;
+  pattern?: string | undefined;
+  quiet?: boolean | undefined;
+  since?: string | undefined;
+  subcommand: 'clean' | 'compare' | 'export' | 'list' | 'show' | 'trends';
+  tags?: string[] | undefined;
+  until?: string | undefined;
+  verbose?: boolean | undefined;
 }
 
-export const historyCommand = {
-  builder: (yargs: Argv) => {
-    return yargs
-      .option('since', {
-        description:
-          'Show runs since date (ISO 8601 or relative like "1 week ago")',
-        type: 'string',
-      })
-      .option('until', {
-        description:
-          'Show runs until date (ISO 8601 or relative like "1 day ago")',
-        type: 'string',
-      })
-      .option('pattern', {
-        description: 'Filter by benchmark name pattern',
-        type: 'string',
-      })
-      .option('tags', {
-        description: 'Filter by tags',
-        type: 'array',
-      })
-      .option('limit', {
-        default: 10,
-        description: 'Maximum number of results',
-        type: 'number',
-      })
-      .option('format', {
-        choices: ['human', 'json', 'csv'],
-        default: 'human',
-        description: 'Output format',
-        type: 'string',
-      })
-      .option('maxAge', {
-        description: 'Maximum age in days for cleanup',
-        type: 'number',
-      })
-      .option('maxRuns', {
-        description: 'Maximum number of runs to keep',
-        type: 'number',
-      })
-      .option('maxSize', {
-        description: 'Maximum storage size in bytes',
-        type: 'number',
-      })
-      .option('confirm', {
-        default: false,
-        description: 'Confirm cleanup operations',
-        type: 'boolean',
-      })
-      .option('output', {
-        description: 'Output file path',
-        type: 'string',
-      })
-      .example([
-        ['$0 history list', 'List recent benchmark runs'],
-        ['$0 history show <run-id>', 'Show detailed results for run'],
-        ['$0 history compare <run-id1> <run-id2>', 'Compare two runs'],
-        ['$0 history trends [pattern]', 'Show performance trends'],
-        ['$0 history clean --max-runs 50', 'Keep only latest 50 runs'],
-        ['$0 history export --format csv', 'Export to CSV'],
-      ]);
-  },
+/**
+ * Handle history command
+ */
+export const handleHistoryCommand = async (
+  context: CliContext,
+  options: HistoryOptions,
+): Promise<number> => {
+  try {
+    // Get the subcommand
+    const subcommand = options.subcommand;
 
-  handler: async (
-    context: CliContext,
-    argv: HistoryArguments,
-  ): Promise<number> => {
-    try {
-      // Get the subcommand from yargs parsing
-      const subcommand = argv.subcommand; // yargs should populate this from <subcommand>
-
-      switch (subcommand) {
-        case 'clean':
-          return await handleCleanCommand(context, argv);
-        case 'compare':
-          return await handleCompareCommand(context, argv);
-        case 'export':
-          return await handleExportCommand(context, argv);
-        case 'list':
-          return await handleListCommand(context, argv);
-        case 'show':
-          return await handleShowCommand(context, argv);
-        case 'trends':
-          return await handleTrendsCommand(context, argv);
-        default:
-          console.error(
-            `Unknown history subcommand: ${subcommand || '(none)'}`,
-          );
-          console.error(
-            'Available subcommands: list, show, compare, trends, clean, export',
-          );
-          return 2; // Config error
-      }
-    } catch (error) {
-      console.error(
-        'History command failed:',
-        error instanceof Error ? error.message : String(error),
-      );
-      return 2; // Configuration/runtime errors
+    switch (subcommand) {
+      case 'clean':
+        return await handleCleanCommand(context, options);
+      case 'compare':
+        return await handleCompareCommand(context, options);
+      case 'export':
+        return await handleExportCommand(context, options);
+      case 'list':
+        return await handleListCommand(context, options);
+      case 'show':
+        return await handleShowCommand(context, options);
+      case 'trends':
+        return await handleTrendsCommand(context, options);
+      default:
+        console.error(`Unknown history subcommand: ${subcommand || '(none)'}`);
+        console.error(
+          'Available subcommands: list, show, compare, trends, clean, export',
+        );
+        return 2; // Config error
     }
-  },
+  } catch (error) {
+    console.error(
+      'History command failed:',
+      error instanceof Error ? error.message : String(error),
+    );
+    return 2; // Configuration/runtime errors
+  }
 };
 
 /**
@@ -158,21 +91,15 @@ const formatBytes = (bytes: number): string => {
  */
 const handleCleanCommand = async (
   context: CliContext,
-  argv: HistoryArguments,
+  options: HistoryOptions,
 ): Promise<number> => {
   try {
     // Build retention policy from arguments
-    const policy: any = {};
-
-    if (argv.maxAge) {
-      policy.maxAge = argv.maxAge;
-    }
-    if (argv.maxRuns) {
-      policy.maxRuns = argv.maxRuns;
-    }
-    if (argv.maxSize) {
-      policy.maxSize = argv.maxSize;
-    }
+    const policy = {
+      ...(options.maxAge && { maxAge: options.maxAge }),
+      ...(options.maxRuns && { maxRuns: options.maxRuns }),
+      ...(options.maxSize && { maxSize: options.maxSize }),
+    } as Partial<RetentionPolicy>;
 
     if (Object.keys(policy).length === 0) {
       console.error(
@@ -182,7 +109,7 @@ const handleCleanCommand = async (
     }
 
     // Show what would be cleaned unless confirmed
-    if (!argv.confirm) {
+    if (!options.confirm) {
       console.log(
         'This will clean up historical data based on the following policy:',
       );
@@ -205,12 +132,12 @@ const handleCleanCommand = async (
     // Perform cleanup
     const result = await context.historyStorage.cleanup(policy);
 
-    if (!argv.quiet) {
+    if (!options.quiet) {
       console.log(`Cleanup completed:`);
       console.log(`  Removed ${result.removedRuns} run(s)`);
       console.log(`  Freed ${formatBytes(result.freedBytes)} of storage`);
 
-      if (argv.verbose && result.removedFiles.length > 0) {
+      if (options.verbose && result.removedFiles.length > 0) {
         console.log(`  Removed files:`);
         for (const file of result.removedFiles) {
           console.log(`    ${file}`);
@@ -233,12 +160,12 @@ const handleCleanCommand = async (
  */
 const handleCompareCommand = async (
   context: CliContext,
-  argv: HistoryArguments,
+  options: HistoryOptions,
 ): Promise<number> => {
   try {
     // For compare command, IDs come from args after the subcommand
-    const id1 = argv.args?.[0];
-    const id2 = argv.args?.[1];
+    const id1 = options.args?.[0];
+    const id2 = options.args?.[1];
 
     if (!id1 || !id2) {
       console.error('Two run IDs are required for compare command');
@@ -261,7 +188,7 @@ const handleCompareCommand = async (
       return 1;
     }
 
-    if (argv.format === 'json') {
+    if (options.format === 'json') {
       const comparison = {
         run1: { id: run1.id, summary: run1.summary },
         run2: { id: run2.id, summary: run2.summary },
@@ -309,31 +236,28 @@ const handleCompareCommand = async (
  */
 const handleExportCommand = async (
   context: CliContext,
-  argv: HistoryArguments,
+  options: HistoryOptions,
 ): Promise<number> => {
   try {
-    const format = argv.format || 'json';
+    const format = options.format || 'json';
 
     // Build query for export
-    const query: any = {};
-    if (argv.since) {
-      query.since = parseDate(argv.since);
-    }
-    if (argv.until) {
-      query.until = parseDate(argv.until);
-    }
+    const query = {
+      ...(options.since && { since: parseDate(options.since) }),
+      ...(options.until && { until: parseDate(options.until) }),
+    } as Partial<HistoryQuery>;
 
     const exportData = await context.historyStorage.export(
       format as 'csv' | 'json',
       query,
     );
 
-    if (argv.output) {
+    if (options.output) {
       // Write to file
       const fs = await import('node:fs/promises');
-      await fs.writeFile(argv.output, exportData, 'utf8');
-      if (!argv.quiet) {
-        console.log(`Exported history to ${argv.output}`);
+      await fs.writeFile(options.output, exportData, 'utf8');
+      if (!options.quiet) {
+        console.log(`Exported history to ${options.output}`);
       }
     } else {
       // Write to stdout
@@ -355,15 +279,16 @@ const handleExportCommand = async (
  */
 const handleListCommand = async (
   context: CliContext,
-  argv: HistoryArguments,
+  options: HistoryOptions,
 ): Promise<number> => {
   try {
     // Build query from command line arguments
-    const query: any = {};
+    let parsedSince: Date | undefined;
+    let parsedUntil: Date | undefined;
 
-    if (argv.since) {
+    if (options.since) {
       try {
-        query.since = parseDate(argv.since);
+        parsedSince = parseDate(options.since);
       } catch (error) {
         console.error(
           'Invalid since date:',
@@ -373,9 +298,9 @@ const handleListCommand = async (
       }
     }
 
-    if (argv.until) {
+    if (options.until) {
       try {
-        query.until = parseDate(argv.until);
+        parsedUntil = parseDate(options.until);
       } catch (error) {
         console.error(
           'Invalid until date:',
@@ -385,23 +310,19 @@ const handleListCommand = async (
       }
     }
 
-    if (argv.pattern) {
-      query.pattern = argv.pattern;
-    }
-
-    if (argv.tags && argv.tags.length > 0) {
-      query.tags = argv.tags;
-    }
-
-    if (argv.limit) {
-      query.limit = argv.limit;
-    }
+    const query = {
+      ...(parsedSince && { since: parsedSince }),
+      ...(parsedUntil && { until: parsedUntil }),
+      ...(options.pattern && { pattern: options.pattern }),
+      ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
+      ...(options.limit && { limit: options.limit }),
+    } as Partial<HistoryQuery>;
 
     // Query historical runs
     const runs = await context.historyStorage.queryRuns(query);
 
     // Display results based on format
-    if (argv.format === 'json') {
+    if (options.format === 'json') {
       if (runs.length === 0) {
         console.log('[]'); // Empty JSON array for no data
       } else {
@@ -421,7 +342,7 @@ const handleListCommand = async (
           ),
         );
       }
-    } else if (argv.format === 'csv') {
+    } else if (options.format === 'csv') {
       console.log('id,startTime,duration,files,tasks,passed,failed');
       if (runs.length > 0) {
         for (const run of runs) {
@@ -434,7 +355,7 @@ const handleListCommand = async (
     } else {
       // Human format
       if (runs.length === 0) {
-        if (!argv.quiet) {
+        if (!options.quiet) {
           console.log('No historical data found matching criteria.');
         }
       } else {
@@ -475,11 +396,11 @@ const handleListCommand = async (
  */
 const handleShowCommand = async (
   context: CliContext,
-  argv: HistoryArguments,
+  options: HistoryOptions,
 ): Promise<number> => {
   try {
     // For show command, ID comes from the args after the subcommand
-    const runId = argv.args?.[0]; // yargs populates this from [args..]
+    const runId = options.args?.[0];
 
     if (!runId) {
       console.error('Run ID is required for show command');
@@ -494,7 +415,7 @@ const handleShowCommand = async (
       return 1;
     }
 
-    if (argv.format === 'json') {
+    if (options.format === 'json') {
       console.log(JSON.stringify(run, null, 2));
     } else {
       // Human format
@@ -550,22 +471,16 @@ const handleShowCommand = async (
  */
 const handleTrendsCommand = async (
   context: CliContext,
-  argv: HistoryArguments,
+  options: HistoryOptions,
 ): Promise<number> => {
   try {
     // Build query from command line arguments (same as list command)
-    const query: any = {};
+    let parsedSince: Date | undefined;
+    let parsedUntil: Date | undefined;
 
-    // Get pattern from args or explicit pattern option
-    if (argv.args?.[0]) {
-      query.pattern = argv.args[0];
-    } else if (argv.pattern) {
-      query.pattern = argv.pattern;
-    }
-
-    if (argv.since) {
+    if (options.since) {
       try {
-        query.since = parseDate(argv.since);
+        parsedSince = parseDate(options.since);
       } catch (error) {
         console.error(
           'Invalid since date:',
@@ -575,9 +490,9 @@ const handleTrendsCommand = async (
       }
     }
 
-    if (argv.until) {
+    if (options.until) {
       try {
-        query.until = parseDate(argv.until);
+        parsedUntil = parseDate(options.until);
       } catch (error) {
         console.error(
           'Invalid until date:',
@@ -587,29 +502,28 @@ const handleTrendsCommand = async (
       }
     }
 
-    if (argv.pattern) {
-      query.pattern = argv.pattern;
-    }
+    // Get pattern from args or explicit pattern option
+    const pattern = options.args?.[0] || options.pattern;
 
-    if (argv.tags && argv.tags.length > 0) {
-      query.tags = argv.tags;
-    }
-
-    if (argv.limit) {
-      query.limit = argv.limit;
-    }
+    const query = {
+      ...(parsedSince && { since: parsedSince }),
+      ...(parsedUntil && { until: parsedUntil }),
+      ...(pattern && { pattern }),
+      ...(options.tags && options.tags.length > 0 && { tags: options.tags }),
+      ...(options.limit && { limit: options.limit }),
+    } as Partial<HistoryQuery>;
 
     // Query historical runs
     const runs = await context.historyStorage.queryRuns(query);
 
     if (runs.length === 0) {
-      if (!argv.quiet) {
+      if (!options.quiet) {
         console.log('No historical data found matching criteria');
       }
       return 0; // Success - no data is not an error
     }
 
-    if (argv.format === 'json') {
+    if (options.format === 'json') {
       // TODO: Generate trends data in JSON format
       const trendsData = {
         runs: runs.length,
@@ -622,7 +536,7 @@ const handleTrendsCommand = async (
       console.log(JSON.stringify(trendsData, null, 2));
     } else {
       // Human format trends
-      if (!argv.quiet) {
+      if (!options.quiet) {
         console.log(`Performance trends for ${runs.length} runs:`);
         console.log(
           `Time range: ${runs[runs.length - 1]?.startTime} to ${runs[0]?.startTime}`,

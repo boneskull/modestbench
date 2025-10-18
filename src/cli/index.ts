@@ -2,9 +2,11 @@
 /**
  * ModestBench CLI Entry Point
  *
- * Command-line interface using yargs for command parsing and routing.
- * Provides global options, help generation, and dependency injection setup.
+ * Command-line interface using yargs for command parsing and routing. Provides
+ * global options, help generation, and dependency injection setup.
  */
+
+import type { Argv } from 'yargs';
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -18,23 +20,17 @@ import type {
   ReporterRegistry,
 } from '../types/index.js';
 
-import { ModestBenchConfigurationManager } from '../config/manager.js';
-import { ModestBenchEngine } from '../core/engine.js';
-import { ModestBenchErrorManager } from '../core/error-manager.js';
-import { BenchmarkFileLoader } from '../core/loader.js';
-import { ModestBenchProgressManager } from '../progress/manager.js';
+import { bootstrap } from '../bootstrap.js';
 import {
   CsvReporter,
   HumanReporter,
   JsonReporter,
-  ModestBenchReporterRegistry,
 } from '../reporters/index.js';
-import { FileHistoryStorage } from '../storage/history.js';
-import { historyCommand } from './commands/history.js';
-import { initCommand } from './commands/init.js';
 // Import commands
-import { runCommand } from './commands/run.js';
-import { validateCommand } from './commands/validate.js';
+import { handleHistoryCommand as historyCommand } from './commands/history.js';
+import { handleInitCommand as initCommand } from './commands/init.js';
+import { handleRunCommand as runCommand } from './commands/run.js';
+import { handleValidateCommand as validateCommand } from './commands/validate.js';
 
 /**
  * CLI context with initialized services
@@ -54,7 +50,7 @@ export interface CliContext {
  */
 interface GlobalOptions {
   /** Configuration file path */
-  config?: string;
+  config?: string | undefined;
   /** Working directory */
   cwd: string;
   /** JSON output for machine parsing */
@@ -81,66 +77,395 @@ export const ExitCodes = {
 /**
  * Initialize and run the CLI
  */
-export function cli(argv?: string[]): void {
+export const cli = (argv?: string[]): void => {
   setupSignalHandlers();
-  main(argv).catch(error => {
+  main(argv).catch((error) => {
     console.error('CLI error:', error);
     process.exit(ExitCodes.UNKNOWN_ERROR);
   });
-}
+};
 
 /**
  * Main CLI entry point
  */
-export async function main(argv?: string[]): Promise<void> {
+export const main = async (argv?: string[]): Promise<void> => {
   try {
     const args = argv || hideBin(process.argv);
 
     const cli = yargs(args);
 
     // Configure global options and commands
-    await configureGlobalOptions(cli)
+    await cli
+      .option('config', {
+        alias: 'c',
+        description: 'Path to configuration file',
+        global: true,
+        type: 'string',
+      })
+      .option('verbose', {
+        alias: 'v',
+        default: 1,
+        description: 'Increase verbosity (use multiple times for more verbose)',
+        global: true,
+        type: 'count',
+      })
+      .option('no-color', {
+        default: false,
+        description: 'Disable colored output',
+        global: true,
+        type: 'boolean',
+      })
+      .option('json', {
+        default: false,
+        description: 'Output results in JSON format',
+        global: true,
+        type: 'boolean',
+      })
+      .option('cwd', {
+        default: process.cwd(),
+        description: 'Working directory',
+        global: true,
+        type: 'string',
+      })
+      .help()
+      .alias('help', 'h')
+      .version()
+      .alias('version', 'V')
+      .strict()
+      .demandCommand(1, 'You must specify a command')
+      .recommendCommands()
+      .completion()
+      .wrap(Math.min(120, cli.terminalWidth()))
       .command(
         'run [pattern..]',
         'Run benchmark files',
-        (yargs: any) => runCommand.builder(yargs),
-        async (argv: any) => {
+        (yargs) => {
+          return yargs
+            .positional('pattern', {
+              array: true,
+              default: ['**/*.bench.{js,ts}'],
+              describe: 'Glob patterns for benchmark files',
+              type: 'string',
+            })
+            .option('config', {
+              alias: 'c',
+              description: 'Path to configuration file',
+              type: 'string',
+            })
+            .option('reporters', {
+              alias: 'r',
+              coerce: (value: string | string[]) => {
+                // Handle comma-separated values
+                if (Array.isArray(value)) {
+                  return value.flatMap((v) =>
+                    v.split(',').map((s) => s.trim()),
+                  );
+                }
+                return value.split(',').map((s) => s.trim());
+              },
+              default: ['human'],
+              description: 'Output reporters to use (human,json,csv)',
+              type: 'array',
+            })
+            .option('output', {
+              alias: 'o',
+              description: 'Output directory for reports',
+              type: 'string',
+            })
+            .option('iterations', {
+              alias: 'i',
+              description: 'Number of iterations per benchmark',
+              type: 'number',
+            })
+            .option('time', {
+              alias: 't',
+              description: 'Time budget per benchmark in milliseconds',
+              type: 'number',
+            })
+            .option('warmup', {
+              alias: 'w',
+              description: 'Number of warmup iterations',
+              type: 'number',
+            })
+            .option('bail', {
+              alias: 'b',
+              default: false,
+              description: 'Stop on first failure',
+              type: 'boolean',
+            })
+            .option('exclude', {
+              coerce: (value: string | string[]) => {
+                // Handle comma-separated values
+                if (Array.isArray(value)) {
+                  return value.flatMap((v) =>
+                    v.split(',').map((s) => s.trim()),
+                  );
+                }
+                return value.split(',').map((s) => s.trim());
+              },
+              description: 'Exclude patterns (comma-separated)',
+              type: 'array',
+            })
+            .option('timeout', {
+              description: 'Timeout per benchmark in milliseconds',
+              type: 'number',
+            })
+            .option('quiet', {
+              alias: 'q',
+              default: false,
+              description: 'Minimal output',
+              type: 'boolean',
+            })
+            .example([
+              ['$0 run', 'Run all benchmark files'],
+              ['$0 run "src/**/*.bench.js"', 'Run specific pattern'],
+              ['$0 run --reporters json,csv', 'Use multiple reporters'],
+              ['$0 run --iterations 1000', 'Set iteration count'],
+              ['$0 run --bail', 'Stop on first failure'],
+            ]);
+        },
+        async (argv) => {
           const context = await createCliContext(argv);
-          const exitCode = await runCommand.handler(context, argv);
+          const exitCode = await runCommand(context, {
+            bail: argv.bail,
+            config: argv.config,
+            cwd: argv.cwd,
+            exclude: argv.exclude,
+            iterations: argv.iterations,
+            json: argv.json,
+            noColor: argv.noColor,
+            output: argv.output,
+            pattern: argv.pattern,
+            quiet: argv.quiet,
+            reporters: argv.reporters,
+            time: argv.time,
+            timeout: argv.timeout,
+            verbose: argv.verbose >= 2,
+            warmup: argv.warmup,
+          });
           process.exit(exitCode);
-        }
+        },
       )
       .command(
         'history <subcommand> [args..]',
         'View and manage benchmark history',
-        (yargs: any) => historyCommand.builder(yargs),
-        async (argv: any) => {
+        (yargs) => {
+          return yargs
+            .positional('subcommand', {
+              choices: [
+                'list',
+                'show',
+                'compare',
+                'trends',
+                'clean',
+                'export',
+              ] as const,
+              demandOption: true,
+              describe: 'History subcommand',
+              type: 'string',
+            })
+            .positional('args', {
+              array: true,
+              describe: 'Additional arguments for the subcommand',
+              type: 'string',
+            })
+            .option('since', {
+              description:
+                'Show runs since date (ISO 8601 or relative like "1 week ago")',
+              type: 'string',
+            })
+            .option('until', {
+              description:
+                'Show runs until date (ISO 8601 or relative like "1 day ago")',
+              type: 'string',
+            })
+            .option('pattern', {
+              description: 'Filter by benchmark name pattern',
+              type: 'string',
+            })
+            .option('tags', {
+              description: 'Filter by tags',
+              type: 'array',
+            })
+            .option('limit', {
+              default: 10,
+              description: 'Maximum number of results',
+              type: 'number',
+            })
+            .option('format', {
+              choices: ['human', 'json', 'csv'] as const,
+              default: 'human' as const,
+              description: 'Output format',
+              type: 'string',
+            })
+            .option('maxAge', {
+              description: 'Maximum age in days for cleanup',
+              type: 'number',
+            })
+            .option('maxRuns', {
+              description: 'Maximum number of runs to keep',
+              type: 'number',
+            })
+            .option('maxSize', {
+              description: 'Maximum storage size in bytes',
+              type: 'number',
+            })
+            .option('confirm', {
+              default: false,
+              description: 'Confirm cleanup operations',
+              type: 'boolean',
+            })
+            .option('output', {
+              description: 'Output file path',
+              type: 'string',
+            })
+            .example([
+              ['$0 history list', 'List recent benchmark runs'],
+              ['$0 history show <run-id>', 'Show detailed results for run'],
+              ['$0 history compare <run-id1> <run-id2>', 'Compare two runs'],
+              ['$0 history trends [pattern]', 'Show performance trends'],
+              ['$0 history clean --max-runs 50', 'Keep only latest 50 runs'],
+              ['$0 history export --format csv', 'Export to CSV'],
+            ]);
+        },
+        async (argv) => {
           const context = await createCliContext(argv);
-          const exitCode = await historyCommand.handler(context, argv);
+          const exitCode = await historyCommand(context, {
+            args: argv.args,
+            confirm: argv.confirm,
+            cwd: argv.cwd,
+            format: argv.format,
+            limit: argv.limit,
+            maxAge: argv.maxAge,
+            maxRuns: argv.maxRuns,
+            maxSize: argv.maxSize,
+            output: argv.output,
+            pattern: argv.pattern,
+            quiet: Boolean(argv.quiet),
+            since: argv.since,
+            subcommand: argv.subcommand,
+            tags: argv.tags as string[] | undefined,
+            until: argv.until,
+            verbose: argv.verbose >= 2,
+          });
           process.exit(exitCode);
-        }
+        },
       )
       .command(
         'init [type]',
         'Initialize a new benchmark project',
-        (yargs: any) => initCommand.builder(yargs),
-        async (argv: any) => {
+        (yargs) => {
+          return yargs
+            .positional('type', {
+              choices: ['basic', 'advanced', 'library'] as const,
+              default: 'basic' as const,
+              describe: 'Type of project to initialize',
+              type: 'string',
+            })
+            .option('examples', {
+              default: true,
+              description: 'Include example benchmark files',
+              type: 'boolean',
+            })
+            .option('config-type', {
+              choices: ['json', 'yaml', 'js', 'ts'] as const,
+              default: 'json' as const,
+              description: 'Configuration file format',
+              type: 'string',
+            })
+            .option('force', {
+              default: false,
+              description: 'Overwrite existing files',
+              type: 'boolean',
+            })
+            .example([
+              ['$0 init', 'Initialize a basic project'],
+              [
+                '$0 init advanced --config-type ts',
+                'Initialize advanced project with TypeScript config',
+              ],
+              [
+                '$0 init library --no-examples',
+                'Initialize library project without examples',
+              ],
+            ]);
+        },
+        async (argv) => {
           const context = await createCliContext(argv);
-          const exitCode = await initCommand.handler(context, argv);
+          const exitCode = await initCommand(context, {
+            configType: argv['config-type'],
+            cwd: argv.cwd,
+            examples: argv.examples,
+            force: argv.force,
+            quiet: Boolean(argv.quiet),
+            type: argv.type,
+            verbose: argv.verbose >= 2,
+          });
           process.exit(exitCode);
-        }
+        },
       )
       .command(
         'validate [pattern..]',
         'Validate benchmark files without running',
-        (yargs: any) => validateCommand.builder(yargs),
-        async (argv: any) => {
+        (yargs) => {
+          return yargs
+            .positional('pattern', {
+              array: true,
+              default: ['**/*.bench.{js,ts}'],
+              describe: 'Glob patterns for benchmark files',
+              type: 'string',
+            })
+            .option('fix', {
+              default: false,
+              description: 'Automatically fix issues where possible',
+              type: 'boolean',
+            })
+            .option('strict', {
+              default: false,
+              description:
+                'Enable strict validation (treat warnings as errors)',
+              type: 'boolean',
+            })
+            .option('format', {
+              choices: ['human', 'json'] as const,
+              default: 'human' as const,
+              description: 'Output format',
+              type: 'string',
+            })
+            .option('quiet', {
+              default: false,
+              description: 'Minimal output',
+              type: 'boolean',
+            })
+            .example([
+              ['$0 validate', 'Validate all benchmark files'],
+              [
+                '$0 validate "benchmarks/*.bench.js"',
+                'Validate specific patterns',
+              ],
+              [
+                '$0 validate --strict --format json',
+                'Strict validation with JSON output',
+              ],
+              ['$0 validate --fix', 'Validate and auto-fix issues'],
+            ]);
+        },
+        async (argv) => {
           const context = await createCliContext(argv);
-          const exitCode = await validateCommand.handler(context, argv);
+          const exitCode = await validateCommand(context, {
+            config: argv.config,
+            cwd: argv.cwd,
+            fix: argv.fix,
+            format: argv.format,
+            pattern: argv.pattern,
+            quiet: Boolean(argv.quiet),
+            strict: argv.strict,
+            verbose: argv.verbose >= 2,
+          });
           process.exit(exitCode);
-        }
+        },
       )
-      .fail((msg: string, err: Error, yargs: any) => {
+      .fail((msg: string, err: Error, yargsInstance: Argv) => {
         if (err) {
           console.error('Error:', err.message);
           if (process.env.DEBUG) {
@@ -150,7 +475,7 @@ export async function main(argv?: string[]): Promise<void> {
         } else {
           console.error(msg);
           console.error();
-          yargs.showHelp();
+          yargsInstance.showHelp();
           process.exit(ExitCodes.CONFIG_ERROR);
         }
       })
@@ -158,132 +483,70 @@ export async function main(argv?: string[]): Promise<void> {
   } catch (error) {
     console.error(
       'Unexpected error:',
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     if (process.env.DEBUG) {
       console.error(error);
     }
     process.exit(ExitCodes.UNKNOWN_ERROR);
   }
-}
-
-/**
- * Configure global CLI options
- */
-function configureGlobalOptions(yargs: any): any {
-  return yargs
-    .option('config', {
-      alias: 'c',
-      description: 'Path to configuration file',
-      type: 'string',
-    })
-    .option('verbose', {
-      alias: 'v',
-      default: 1,
-      description: 'Increase verbosity (use multiple times for more verbose)',
-      type: 'count',
-    })
-    .option('no-color', {
-      default: false,
-      description: 'Disable colored output',
-      type: 'boolean',
-    })
-    .option('json', {
-      default: false,
-      description: 'Output results in JSON format',
-      type: 'boolean',
-    })
-    .option('cwd', {
-      default: process.cwd(),
-      description: 'Working directory',
-      type: 'string',
-    })
-    .help()
-    .alias('help', 'h')
-    .version()
-    .alias('version', 'V')
-    .strict()
-    .demandCommand(1, 'You must specify a command')
-    .recommendCommands()
-    .completion()
-    .wrap(Math.min(120, yargs.terminalWidth()));
-}
+};
 
 /**
  * Create CLI context with dependency injection
  */
-async function createCliContext(options: GlobalOptions): Promise<CliContext> {
+const createCliContext = async (
+  options: GlobalOptions,
+): Promise<CliContext> => {
   try {
-    // Initialize configuration manager
-    const configManager = new ModestBenchConfigurationManager();
-
-    // Initialize other services
-    const fileLoader = new BenchmarkFileLoader();
-    const historyStorage = new FileHistoryStorage(); // Use default options
-    const progressManager = new ModestBenchProgressManager();
-
-    // Initialize and configure reporter registry
-    const reporterRegistry = new ModestBenchReporterRegistry();
+    const engine = bootstrap();
 
     // Register built-in reporters
-    reporterRegistry.register(
+    engine.registerReporter(
       'human',
       new HumanReporter({
         color: !options.noColor,
         verbose: options.verbose >= 2,
-      })
+      }),
     );
 
-    reporterRegistry.register(
+    engine.registerReporter(
       'json',
       new JsonReporter({
         prettyPrint: true,
-      })
+      }),
     );
 
-    reporterRegistry.register(
+    engine.registerReporter(
       'csv',
       new CsvReporter({
         includeHeaders: true,
         includeMetadata: true,
-      })
+      }),
     );
 
-    // Initialize error manager
-    const errorManager = new ModestBenchErrorManager();
-
-    // Initialize the main engine
-    const engine = new ModestBenchEngine({
-      configManager,
-      errorManager,
-      fileLoader,
-      historyStorage,
-      progressManager,
-      reporterRegistry,
-    });
-
     return {
-      configManager,
+      configManager: engine.configManager,
       engine,
-      errorManager,
-      historyStorage,
+      errorManager: engine.errorManager,
+      historyStorage: engine.historyStorage,
       options,
-      progressManager,
-      reporterRegistry,
+      progressManager: engine.progressManager,
+      reporterRegistry: engine.reporterRegistry,
     };
   } catch (error) {
     console.error(
       'Failed to initialize ModestBench:',
-      error instanceof Error ? error.message : String(error)
+      error instanceof Error ? error.message : String(error),
     );
     process.exit(ExitCodes.CONFIG_ERROR);
   }
-}
+};
 
 /**
  * Handle process signals gracefully
  */
-function setupSignalHandlers(): void {
+const setupSignalHandlers = (): void => {
   process.on('SIGINT', () => {
     console.log('\nReceived SIGINT, shutting down gracefully...');
     process.exit(ExitCodes.SUCCESS);
@@ -294,7 +557,7 @@ function setupSignalHandlers(): void {
     process.exit(ExitCodes.SUCCESS);
   });
 
-  process.on('uncaughtException', error => {
+  process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);
     process.exit(ExitCodes.RUNTIME_ERROR);
   });
@@ -303,7 +566,7 @@ function setupSignalHandlers(): void {
     console.error('Unhandled rejection at:', promise, 'reason:', reason);
     process.exit(ExitCodes.RUNTIME_ERROR);
   });
-}
+};
 
 // Run CLI if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {

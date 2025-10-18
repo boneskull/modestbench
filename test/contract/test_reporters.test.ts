@@ -1,13 +1,21 @@
 import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 
+import type { Reporter } from '../../src/types/interfaces.js';
+
 /**
- * Contract tests for Reporter interfaces
- * Reference: contracts/core-api.md lines 145-200
+ * Contract tests for Reporter interfaces Reference: contracts/core-api.md lines
+ * 145-200
  */
 
+interface ReportersTestContext {
+  base?: Reporter;
+  human?: Reporter;
+  json?: Reporter;
+}
+
 describe('Reporter interfaces contract', () => {
-  let reporters: any; // Will be undefined until implementation exists
+  let reporters: ReportersTestContext | undefined; // Will be undefined until implementation exists
 
   describe('base Reporter interface', () => {
     it('should have onStart method', () => {
@@ -195,15 +203,11 @@ describe('Reporter interfaces contract', () => {
     it('should produce valid JSON output', () => {
       if (reporters?.json) {
         try {
-          const mockRun = {
-            id: 'test-run-123',
-            results: [],
-            timestamp: new Date(),
-          };
-
           // Should output JSON
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           const output = reporters.json.getOutput();
           if (output) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             JSON.parse(output); // Should not throw
           }
           assert.ok(true, 'Should produce valid JSON');
@@ -240,10 +244,13 @@ describe('Reporter interfaces contract', () => {
           };
 
           // Should output CSV
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           reporters.csv.onTaskResult(mockResult);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           const output = reporters.csv.getOutput();
           if (output) {
             // Should contain commas and proper CSV structure
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             assert.ok(output.includes(','));
           }
           assert.ok(true, 'Should produce valid CSV');
@@ -259,13 +266,18 @@ describe('Reporter interfaces contract', () => {
     it('should include CSV headers', () => {
       if (reporters?.csv) {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           const output = reporters.csv.getOutput();
           if (output) {
             // Should start with headers
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             const lines = output.split('\n');
             const headers = lines[0];
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             assert.ok(headers.includes('file'));
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             assert.ok(headers.includes('suite'));
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             assert.ok(headers.includes('task'));
           }
           assert.ok(true, 'Should include CSV headers');
@@ -282,7 +294,8 @@ describe('Reporter interfaces contract', () => {
       if (reporters?.csv) {
         try {
           // Should accept delimiter options
-          const customCsv = new reporters.csv.constructor({ delimiter: ';' });
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+          const _customCsv = new reporters.csv.constructor({ delimiter: ';' });
           assert.ok(true, 'Should support configurable delimiters');
         } catch (error) {
           // Expected during contract testing phase
@@ -330,7 +343,9 @@ describe('Reporter interfaces contract', () => {
             onStart: () => {},
           };
 
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           reporters.registry.register('test', mockReporter);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call
           const retrieved = reporters.registry.get('test');
           assert.strictEqual(retrieved, mockReporter);
         } catch (error) {

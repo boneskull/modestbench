@@ -141,6 +141,12 @@ export default defineConfig(
       globals: globals.node,
     },
   },
+  {
+    files: ['examples/**/*.js', 'examples/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   /** @type {any} */ (eslintPluginJsonc.configs['flat/prettier'][0]),
   /** @type {any} */ ({
     ...eslintPluginJsonc.configs['flat/prettier'][1],
@@ -155,6 +161,7 @@ export default defineConfig(
       '*.snapshot',
       '.tshy/**/*',
       '.tmp/**/*',
+      '.wallaby.js',
     ],
   },
 );

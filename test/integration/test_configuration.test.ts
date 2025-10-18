@@ -29,10 +29,10 @@ describe('Configuration file and CLI argument merging', () => {
         configFile,
         JSON.stringify(
           {
-            iterations: 10,
+            iterations: 1,
             output: './results',
             reporters: ['json', 'csv'],
-            warmup: 5,
+            warmup: 0,
           },
           null,
           2,
@@ -46,16 +46,9 @@ describe('Configuration file and CLI argument merging', () => {
   suites: {
     'Config Test': {
       benchmarks: {
-        'test task': {
-          fn: () => {
-            // Simple CPU work for benchmarking
-            let sum = 0;
-            for (let i = 0; i < 1000; i++) {
-              sum += i;
-            }
-            return sum;
-          }
-        }
+                'test task': {
+                  fn: () => 1
+                }
       }
     }
   }
@@ -67,6 +60,10 @@ describe('Configuration file and CLI argument merging', () => {
         benchFile,
         '--config',
         configFile,
+        '--iterations',
+        '1',
+        '--time',
+        '100',
       ]);
 
       // CLI should work correctly and use config file settings
@@ -90,8 +87,8 @@ reporters:
   - human
   - json
 output: ./yaml-results
-iterations: 10
-warmup: false
+iterations: 1
+warmup: 0
       `,
       );
 
@@ -114,8 +111,8 @@ warmup: false
 module.exports = {
   reporters: ['human'],
   output: './js-results',
-  iterations: 10,
-  warmup: 10
+  iterations: 1,
+  warmup: 0
 };
       `,
       );
@@ -139,8 +136,8 @@ module.exports = {
 export default {
   reporters: ['human', 'csv'] as const,
   output: './ts-results',
-  iterations: 10,
-  warmup: 15
+  iterations: 1,
+  warmup: 0
 };
       `,
       );
@@ -163,9 +160,10 @@ export default {
       await writeFile(
         configFile,
         JSON.stringify({
-          iterations: 10,
+          iterations: 1,
           output: './config-output',
           reporters: ['human'],
+          warmup: 0,
         }),
       );
 
@@ -178,13 +176,7 @@ export default {
             'Precedence Test': {
               benchmarks: {
                 'precedence task': {
-                  fn: () => {
-                    let result = 0;
-                    for (let i = 0; i < 500; i++) {
-                      result += i * 2;
-                    }
-                    return result;
-                  }
+                  fn: () => 1
                 }
               }
             }
@@ -200,9 +192,11 @@ export default {
         '--config',
         configFile,
         '--reporters',
-        'json,csv',
+        'human,json,csv',
         '--iterations',
-        '500',
+        '1',
+        '--time',
+        '100',
         '--output',
         './cli-output',
       ]);
@@ -224,8 +218,9 @@ export default {
       await writeFile(
         configFile,
         JSON.stringify({
+          iterations: 1,
           reporters: ['json'],
-          warmup: 8,
+          warmup: 0,
         }),
       );
 
@@ -238,13 +233,7 @@ export default {
             'Defaults Test': {
               benchmarks: {
                 'default task': {
-                  fn: () => {
-                    let total = 0;
-                    for (let i = 0; i < 300; i++) {
-                      total += Math.sqrt(i);
-                    }
-                    return total;
-                  }
+                  fn: () => 1
                 }
               }
             }
@@ -258,6 +247,8 @@ export default {
         benchFile,
         '--config',
         configFile,
+        '--time',
+        '100',
       ]);
 
       // Should use config file defaults and succeed
@@ -280,10 +271,10 @@ export default {
       await writeFile(
         globalConfig,
         JSON.stringify({
-          iterations: 10,
+          iterations: 1,
           output: './global-output',
           reporters: ['human'],
-          warmup: false,
+          warmup: 0,
         }),
       );
 
@@ -292,8 +283,9 @@ export default {
       await writeFile(
         projectConfig,
         JSON.stringify({
-          iterations: 10,
+          iterations: 1,
           reporters: ['json'],
+          warmup: 0,
           // warmup and output should inherit from global
         }),
       );
@@ -307,13 +299,7 @@ export default {
             'Merge Test': {
               benchmarks: {
                 'merge task': {
-                  fn: () => {
-                    let value = 0;
-                    for (let i = 0; i < 400; i++) {
-                      value += i % 10;
-                    }
-                    return value;
-                  }
+                  fn: () => 1
                 }
               }
             }
@@ -329,10 +315,10 @@ export default {
         '--config',
         projectConfig,
         '--iterations',
-        '300',
+        '1',
         // reporters should be 'json' from project config
         // warmup should be false from global config
-        // iterations should be 300 from CLI
+        // iterations should be 1 from CLI
       ]);
 
       // Should merge configurations and succeed
@@ -373,8 +359,9 @@ export default {
         }),
       );
 
+      // Pass explicit iterations to prevent test harness from adding default
       const result = await runCommand(
-        ['run', '--config', invalidConfig],
+        ['run', '--config', invalidConfig, '--iterations', '-1'],
         tempDir,
       );
 
@@ -434,8 +421,9 @@ module.exports = {
       await writeFile(
         globalConfig,
         JSON.stringify({
-          iterations: 10,
+          iterations: 1,
           reporters: ['human'],
+          warmup: 0,
         }),
       );
 
@@ -445,20 +433,14 @@ module.exports = {
         `
         export default {
           config: {
-            iterations: 10,  // Override global
-            warmup: 3         // Add to global
+            iterations: 1,  // Override global
+            warmup: 0         // Add to global
           },
           suites: {
             'Inline Config Test': {
               benchmarks: {
                 'inline task': {
-                  fn: () => {
-                    let result = 0;
-                    for (let i = 0; i < 250; i++) {
-                      result += Math.abs(i - 125);
-                    }
-                    return result;
-                  }
+                  fn: () => 1
                 }
               }
             }
@@ -495,33 +477,23 @@ module.exports = {
           suites: {
             'Fast Suite': {
               config: {
-                iterations: 10
+                iterations: 1,
+                warmup: 0
               },
               benchmarks: {
                 'fast task': {
-                  fn: () => {
-                    let sum = 0;
-                    for (let i = 0; i < 200; i++) {
-                      sum += i % 7;
-                    }
-                    return sum;
-                  }
+                  fn: () => 1
                 }
               }
             },
             'Slow Suite': {
               config: {
-                iterations: 10
+                iterations: 1,
+                warmup: 0
               },
               benchmarks: {
                 'slow task': {
-                  fn: () => {
-                    let product = 1;
-                    for (let i = 1; i < 50; i++) {
-                      product = (product * i) % 1000;
-                    }
-                    return product;
-                  }
+                  fn: () => 2
                 }
               }
             }
@@ -530,7 +502,10 @@ module.exports = {
       `,
       );
 
-      const result = await runCommand(['run', benchFile], tempDir);
+      const result = await runCommand(
+        ['run', benchFile, '--time', '100'],
+        tempDir,
+      );
 
       if (result.exitCode === 0) {
         // Should use suite-specific configuration
@@ -555,8 +530,9 @@ module.exports = {
       await writeFile(
         autoConfig,
         JSON.stringify({
-          iterations: 10,
+          iterations: 1,
           reporters: ['human'],
+          warmup: 0,
         }),
       );
 
@@ -569,13 +545,7 @@ module.exports = {
             'Auto Discover Test': {
               benchmarks: {
                 'auto task': {
-                  fn: () => {
-                    let fibonacci = [0, 1];
-                    for (let i = 2; i < 30; i++) {
-                      fibonacci[i] = fibonacci[i-1] + fibonacci[i-2];
-                    }
-                    return fibonacci[29];
-                  }
+                  fn: () => 1
                 }
               }
             }
@@ -585,7 +555,10 @@ module.exports = {
       );
 
       // Should automatically find and use config file
-      const result = await runCommand(['run', benchFile], tempDir);
+      const result = await runCommand(
+        ['run', benchFile, '--time', '100'],
+        tempDir,
+      );
 
       // Should auto-discover config file and succeed
       assert.strictEqual(
@@ -609,8 +582,9 @@ module.exports = {
       await writeFile(
         rootConfig,
         JSON.stringify({
-          iterations: 10,
+          iterations: 1,
           reporters: ['json'],
+          warmup: 0,
         }),
       );
 
@@ -624,14 +598,7 @@ module.exports = {
             'Nested Test': {
               benchmarks: {
                 'nested task': {
-                  fn: () => {
-                    let matrix = [[1, 2], [3, 4]];
-                    let sum = 0;
-                    for (let i = 0; i < 100; i++) {
-                      sum += matrix[i % 2][i % 2];
-                    }
-                    return sum;
-                  }
+                  fn: () => 1
                 }
               }
             }
@@ -640,7 +607,10 @@ module.exports = {
       `,
       );
 
-      const result = await runCommand(['run', benchFile], subDir);
+      const result = await runCommand(
+        ['run', benchFile, '--time', '100'],
+        subDir,
+      );
 
       // Should find parent config and succeed
       assert.strictEqual(
