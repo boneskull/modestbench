@@ -117,6 +117,39 @@ modestbench run \
   --concurrent
 ```
 
+#### Controlling Benchmark Limits
+
+The `--limit-by` flag controls whether benchmarks are limited by time, iteration count, or both:
+
+```bash
+# Limit by iteration count (fast, predictable sample size)
+modestbench run --iterations 100
+
+# Limit by time budget (ensures consistent time investment)
+modestbench run --time 5000
+
+# Limit by whichever comes first (safety bounds)
+modestbench run --iterations 1000 --time 10000
+
+# Explicit control (overrides smart defaults)
+modestbench run --iterations 500 --time 5000 --limit-by time
+
+# Require both thresholds (rare, for statistical rigor)
+modestbench run --iterations 100 --time 2000 --limit-by all
+```
+
+**Smart Defaults:**
+- Only `--iterations` provided → limits by iteration count (fast)
+- Only `--time` provided → limits by time budget
+- Both provided → stops at whichever comes first (`any` mode)
+- Neither provided → uses default iterations (100) with iterations mode
+
+**Modes:**
+- `iterations`: Stop after N samples (time budget set to 1ms)
+- `time`: Run for T milliseconds (collect as many samples as possible)
+- `any`: Stop when either threshold is reached (defaults to iterations behavior for fast completion)
+- `all`: Require both time AND iterations thresholds (tinybench default behavior)
+
 ### Project Management
 
 ```bash
@@ -169,13 +202,22 @@ Create `modestbench.config.json`:
   "concurrent": false,
   "exclude": ["node_modules/**"],
   "iterations": 1000,
+  "limitBy": "iterations",
   "outputDir": "./benchmark-results",
   "pattern": "benchmarks/**/*.bench.{js,ts}",
   "reporters": ["human", "json"],
+  "time": 5000,
   "timeout": 30000,
   "warmup": 50
 }
 ```
+
+**Configuration Options:**
+- `limitBy`: How to limit benchmarks (`"iterations"`, `"time"`, `"any"`, or `"all"`)
+- `iterations`: Number of samples to collect per benchmark
+- `time`: Time budget in milliseconds per benchmark
+- `warmup`: Number of warmup iterations before measurement
+- Smart defaults apply if `limitBy` is not specified
 
 ### Configuration File Support
 

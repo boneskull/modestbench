@@ -37,6 +37,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   timeout: 30000, // 30 seconds
   verbose: false,
   warmup: 0, // No warmup by default for test speed
+  limitBy: 'iterations', // Default to limiting by iteration count
 };
 
 /**
@@ -100,26 +101,67 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       const fileConfig = (result?.config || {}) as Partial<ModestBenchConfig>;
 
       // 2. Merge: defaults <- file <- CLI args
-      const merged = this.merge(
-        DEFAULT_CONFIG,
+      const normalizedCliArgs = cliArgs ? this.normalizeCliArgs(cliArgs) : {};
+      const merged = this.merge(DEFAULT_CONFIG, fileConfig, normalizedCliArgs);
+
+      // 2.5. Apply smart defaults for limitBy if not explicitly provided
+      const finalConfig = this.applySmartDefaults(
+        merged,
+        cliArgs || {},
         fileConfig,
-        cliArgs ? this.normalizeCliArgs(cliArgs) : {},
       );
 
       // 3. Validate final configuration
-      const validation = this.validate(merged);
+      const validation = this.validate(finalConfig);
       if (!validation.valid) {
         throw new Error(
           `Configuration validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
         );
       }
 
-      return merged;
+      return finalConfig;
     } catch (error) {
       throw new Error(
         `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  /**
+   * Apply smart defaults for limitBy based on which flags were provided
+   */
+  private applySmartDefaults(
+    merged: ModestBenchConfig,
+    cliArgs: Record<string, unknown>,
+    fileConfig: Partial<ModestBenchConfig>,
+  ): ModestBenchConfig {
+    // If limitBy was explicitly provided in CLI or file, use it
+    if (cliArgs['limit-by'] || cliArgs.limitBy || fileConfig.limitBy) {
+      return merged;
+    }
+
+    // Determine if user explicitly provided time or iterations
+    const userProvidedTime = 'time' in cliArgs || 't' in cliArgs;
+    const userProvidedIterations =
+      'iterations' in cliArgs || 'i' in cliArgs;
+
+    let smartDefault: 'time' | 'iterations' | 'any';
+
+    if (userProvidedTime && userProvidedIterations) {
+      // Both provided → stop at whichever comes first
+      smartDefault = 'any';
+    } else if (userProvidedTime) {
+      // Only time → limit by time
+      smartDefault = 'time';
+    } else {
+      // Only iterations (or neither) → limit by iterations
+      smartDefault = 'iterations';
+    }
+
+    return {
+      ...merged,
+      limitBy: smartDefault,
+    };
   }
 
   /**
@@ -359,6 +401,8 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       exclude: 'exclude',
       i: 'iterations',
       iterations: 'iterations',
+      'limit-by': 'limitBy',
+      limitBy: 'limitBy',
       o: 'outputDir',
       output: 'outputDir',
       'output-dir': 'outputDir',

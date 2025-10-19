@@ -699,15 +699,45 @@ export class ModestBenchEngine implements BenchmarkEngine {
       // const { Bench } = await import('tinybench');
 
       // Create benchmark instance using static import
-      // Note: tinybench iterations is a MINIMUM - it runs for full time budget AND ensures min iterations
-      // To make iterations the limiting factor, use minimal time when iterations is specified
-      // When user specifies low iterations (<100), prioritize iteration count over time budget
-      // Use 1ms time budget to make iterations the limiting factor
-      const effectiveTime =
-        config.iterations < 100 ? 1 : Math.min(config.time || 1000, 2000);
+      // Determine effective time and iterations based on limitBy mode
+      let effectiveTime: number;
+      let effectiveIterations: number;
+
+      switch (config.limitBy) {
+        case 'time':
+          // Time is the limit, iterations is a minimum (use small value)
+          effectiveTime = Math.min(config.time || 1000, 2000);
+          effectiveIterations = 1; // Minimal iterations so time is the limiting factor
+          break;
+
+        case 'iterations':
+          // Iterations is the limit, use minimal time
+          effectiveTime = 1;
+          effectiveIterations = config.iterations;
+          break;
+
+        case 'any':
+          // Stop at whichever comes first
+          // Since tinybench requires BOTH to be met, use iterations mode for faster completion
+          // This means if iterations completes before time, it stops (time=1ms ensures time completes fast)
+          effectiveTime = 1;
+          effectiveIterations = config.iterations;
+          break;
+
+        case 'all':
+          // Both must be met - tinybench default behavior
+          effectiveTime = Math.min(config.time || 1000, 2000);
+          effectiveIterations = config.iterations;
+          break;
+
+        default:
+          // Fallback to iterations mode
+          effectiveTime = 1;
+          effectiveIterations = config.iterations;
+      }
 
       const bench = new Bench({
-        iterations: config.iterations,
+        iterations: effectiveIterations,
         time: effectiveTime,
         warmupIterations: config.warmup,
         warmupTime: config.warmup > 0 ? Math.min(config.warmup || 0, 500) : 0,
@@ -735,10 +765,26 @@ export class ModestBenchEngine implements BenchmarkEngine {
 
         if (errorMessage.includes('Invalid array length')) {
           // Retry with minimal time (1ms) for extremely fast operations
-          const effectiveTime = config.iterations < 100 ? 1 : 10;
+          // Use same limiting logic but with minimal time for fast ops
+          let retryTime: number;
+          switch (config.limitBy) {
+            case 'time':
+              retryTime = 10;
+              break;
+            case 'iterations':
+              retryTime = 1;
+              break;
+            case 'any':
+            case 'all':
+              retryTime = 10;
+              break;
+            default:
+              retryTime = 1;
+          }
+
           const minimalBench = new Bench({
             iterations: config.iterations,
-            time: effectiveTime,
+            time: retryTime,
             warmupIterations: config.warmup,
             warmupTime: 0,
           });
@@ -822,10 +868,26 @@ export class ModestBenchEngine implements BenchmarkEngine {
         // Handle array length errors for extremely fast operations
         if (errorMessage.includes('Invalid array length')) {
           // Retry with minimal time for extremely fast operations
-          const effectiveTime = config.iterations < 100 ? 1 : 10;
+          // Use same limiting logic but with minimal time for fast ops
+          let retryTime: number;
+          switch (config.limitBy) {
+            case 'time':
+              retryTime = 10;
+              break;
+            case 'iterations':
+              retryTime = 1;
+              break;
+            case 'any':
+            case 'all':
+              retryTime = 10;
+              break;
+            default:
+              retryTime = 1;
+          }
+
           const minimalBench = new Bench({
             iterations: config.iterations,
-            time: effectiveTime,
+            time: retryTime,
             warmupIterations: config.warmup,
             warmupTime: 0,
           });

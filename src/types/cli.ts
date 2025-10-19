@@ -286,6 +286,8 @@ export interface RunCommandArgs extends CommandArguments {
   readonly w?: number;
   /** Warmup iterations */
   readonly warmup?: number;
+  /** How to limit benchmark execution */
+  readonly limitBy?: 'time' | 'iterations' | 'any' | 'all';
 }
 
 /**

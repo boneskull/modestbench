@@ -194,6 +194,12 @@ export const main = async (
               description: 'Number of warmup iterations',
               type: 'number',
             })
+            .option('limit-by', {
+              choices: ['time', 'iterations', 'any', 'all'],
+              description:
+                'How to limit benchmarks: time (time budget), iterations (sample count), any (either threshold), all (both thresholds)',
+              type: 'string',
+            })
             .option('bail', {
               alias: 'b',
               default: false,

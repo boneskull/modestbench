@@ -245,6 +245,8 @@ export interface ModestBenchConfig {
   readonly verbose: boolean;
   /** Number of warmup iterations before measurement */
   readonly warmup: number;
+  /** How to limit benchmark execution: 'time', 'iterations', 'any', or 'all' */
+  readonly limitBy: 'time' | 'iterations' | 'any' | 'all';
 }
 
 /**
