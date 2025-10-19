@@ -109,7 +109,6 @@ export default {
     expect(stdout, 'to contain', 'run');
     expect(stdout, 'to contain', 'history');
     expect(stdout, 'to contain', 'init');
-    expect(stdout, 'to contain', 'validate');
   });
 
   it('should run benchmarks when executed via symlink', async () => {

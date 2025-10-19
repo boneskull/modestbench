@@ -116,7 +116,10 @@ export default {
         testDir,
       );
 
+      // JSON output should still go to stdout (data output)
+      // even in quiet mode when no --output is specified
       expect(result.stdout, 'not to be empty');
+      expect(result.stdout, 'to match', /"meta":/);
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
     });
@@ -135,7 +138,10 @@ export default {
         testDir,
       );
 
-      expect(result.stdout, 'to be empty');
+      // CSV output should still go to stdout (data output)
+      // even in quiet mode when no --output is specified
+      expect(result.stdout.length, 'to be greater than', 0);
+      expect(result.stdout, 'to contain', 'file');
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
     });
@@ -154,7 +160,11 @@ export default {
         testDir,
       );
 
+      // Data reporters (JSON/CSV) should output to stdout
+      // even in quiet mode when no --output is specified
       expect(result.stdout, 'not to be empty');
+      // JSON output should be present
+      expect(result.stdout, 'to match', /"meta":/);
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
     });

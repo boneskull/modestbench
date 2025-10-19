@@ -360,10 +360,8 @@ export class CsvReporter extends BaseReporter {
    * Write CSV content to stdout
    */
   private writeToStdout(csvContent: string): void {
-    if (this.quiet) {
-      return;
-    }
-
+    // Always write to stdout when no output path is specified
+    // The quiet flag only affects progress messages (stderr), not data output
     console.log(csvContent);
   }
 }
