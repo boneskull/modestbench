@@ -13,19 +13,33 @@ A modern, TypeScript-first benchmarking framework designed for simplicity, accur
 - **Async Support**: First-class support for asynchronous operations
 - **CLI & API**: Command-line interface and programmatic API
 - **TypeScript Support**: Full type safety and IntelliSense
-- **Validation**: Built-in benchmark file validation and error reporting
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-# Install globally
-npm install -g modestbench
-
 # Or add to your project
 npm install --save-dev modestbench
 ```
+
+### Optional: Initialize a Project
+
+The `init` command helps you get started by generating a configuration file and example benchmarks. This step is **optional** - you can create benchmark files manually if you prefer.
+
+```bash
+# Initialize with examples and configuration
+modestbench init
+
+# Or specify project type and config format
+modestbench init advanced --config-type typescript
+```
+
+**Project Types:**
+
+- `basic` - Simple setup for small projects (100 iterations, human reporter)
+- `advanced` - Feature-rich with multiple reporters and structured output (1000 iterations, warmup, human + JSON reporters)
+- `library` - Optimized for library performance testing (5000 iterations, high warmup, all reporters, organized suite structure)
 
 ### Create Your First Benchmark
 
@@ -71,33 +85,50 @@ modestbench run --iterations 5000 --reporters human,json
 ### View Results
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                     Modestbench Results                     │
-├─────────────────────────────────────────────────────────────┤
-│ File: example.bench.js                                     │
-│ Suite: Array Operations                ████████████ 100%   │
-├─────────────────────────────────────────────────────────────┤
-│ Array.push()     │  1,234,567 ops/sec  │  ±2.45%  │ fastest │
-│ Array spread     │     12,345 ops/sec  │  ±4.12%  │  1.0%   │
-└─────────────────────────────────────────────────────────────┘
+🚀 ModestBench
+
+Environment:
+  Node.js: v24.10.0
+  Platform: darwin arm64
+  CPU: Apple M4 Max (16 cores)
+  Memory: 48.0 GB
+
+Found 1 benchmark file(s)
+
+▶ benchmarks/example.bench.js
+
+  ▶ Array Operations
+    ✓ Array.push()
+      810.05μs ±2.45% (1.23M ops/sec)
+    ✓ Array spread
+      81.01ms ±4.12% (12.34K ops/sec)
+  ✓ 2 passed
+
+  ✓ All 2 tasks passed
+
+📊 Results
+
+✓ All tests passed: 2
+📁 Files: 1
+📊 Suites: 1
+⏱️ Duration: 1.82s
+
+🎉 All benchmarks completed successfully!
 ```
 
-## Documentation
+## Getting Started
 
-### Core Concepts
+Jump to:
 
-- **[Getting Started](examples/README.md)**: Basic concepts and your first benchmark
-- **[Benchmark Structure](docs/benchmark-structure.md)**: Understanding the benchmark file format
-- **[Configuration](docs/configuration.md)**: Project and runtime configuration options
-- **[CLI Reference](docs/cli-reference.md)**: Complete command-line interface documentation
-- **[API Reference](docs/api-reference.md)**: Programmatic usage and advanced features
+- [Quick Start](#quick-start) - Basic concepts and your first benchmark
+- [Configuration](#configuration) - Project and runtime configuration options
+- [Advanced Features](#advanced-features) - Multiple suites, async operations, and tagging
+- [Integration Examples](#integration-examples) - CI/CD integration and performance monitoring
+- [Programmatic API](#programmatic-api) - Using ModestBench programmatically
 
-### Advanced Topics
+See the **[examples directory](examples/README.md)** for additional guides and sample code.
 
-- **[Async Benchmarks](docs/async-benchmarks.md)**: Testing asynchronous operations
-- **[Performance Optimization](docs/performance-optimization.md)**: Writing efficient benchmarks
-- **[CI/CD Integration](docs/ci-cd-integration.md)**: Continuous performance monitoring
-- **[Custom Reporters](docs/custom-reporters.md)**: Creating custom output formats
+> **Note:** Detailed documentation is currently under development.
 
 ## CLI Commands
 
@@ -139,40 +170,27 @@ modestbench run --iterations 100 --time 2000 --limit-by all
 ```
 
 **Smart Defaults:**
+
 - Only `--iterations` provided → limits by iteration count (fast)
 - Only `--time` provided → limits by time budget
 - Both provided → stops at whichever comes first (`any` mode)
 - Neither provided → uses default iterations (100) with iterations mode
 
 **Modes:**
+
 - `iterations`: Stop after N samples (time budget set to 1ms)
 - `time`: Run for T milliseconds (collect as many samples as possible)
 - `any`: Stop when either threshold is reached (defaults to iterations behavior for fast completion)
 - `all`: Require both time AND iterations thresholds (tinybench default behavior)
 
-### Project Management
-
-```bash
-# Initialize new project
-modestbench init [type] [options]
-
-# Available types: basic, advanced, library
-modestbench init advanced --examples --config typescript
-
-# Note: Only JSON configs are currently loadable by the runtime
-```
-
-### Validation
-
-```bash
-# Validate benchmark files
-modestbench validate [patterns...]
-
-# Strict validation with auto-fix
-modestbench validate --strict --fix
-```
-
 ### History Management
+
+ModestBench automatically tracks benchmark results over time in a local `.modestbench/` directory. This history enables you to:
+
+- **Track performance trends** - See how your code's performance changes across commits
+- **Detect regressions** - Compare current results against previous runs to catch slowdowns
+- **Analyze improvements** - Validate that optimizations actually improve performance
+- **Document progress** - Export historical data for reports and analysis
 
 ```bash
 # List recent runs
@@ -197,27 +215,39 @@ modestbench history clean --older-than 30d
 
 Create `modestbench.config.json`:
 
-```json
+```jsonc
 {
-  "concurrent": false,
-  "exclude": ["node_modules/**"],
-  "iterations": 1000,
-  "limitBy": "iterations",
-  "outputDir": "./benchmark-results",
-  "pattern": "benchmarks/**/*.bench.{js,ts}",
-  "reporters": ["human", "json"],
-  "time": 5000,
-  "timeout": 30000,
-  "warmup": 50
+  "bail": false, // Stop execution on first failure
+  "exclude": ["node_modules/**"], // Patterns to exclude from discovery
+  "iterations": 1000, // Number of samples per benchmark
+  "limitBy": "iterations", // Limit mode: 'iterations', 'time', 'any', 'all'
+  "outputDir": "./benchmark-results", // Directory for results and reports
+  "pattern": "benchmarks/**/*.bench.{js,ts}", // Glob pattern to discover benchmark files
+  "quiet": false, // Minimal output mode
+  "reporters": ["human", "json"], // Output reporters to use
+  "time": 5000, // Time budget in ms per benchmark
+  "timeout": 30000, // Task timeout in ms
+  "verbose": false, // Detailed output with debugging info
+  "warmup": 50, // Warmup iterations before measurement
 }
 ```
 
 **Configuration Options:**
-- `limitBy`: How to limit benchmarks (`"iterations"`, `"time"`, `"any"`, or `"all"`)
-- `iterations`: Number of samples to collect per benchmark
-- `time`: Time budget in milliseconds per benchmark
-- `warmup`: Number of warmup iterations before measurement
-- Smart defaults apply if `limitBy` is not specified
+
+- `pattern` - Glob pattern(s) to discover benchmark files (can be string or array)
+- `exclude` - Glob patterns for files/directories to exclude from discovery
+- `iterations` - Number of samples to collect per benchmark task (default: 100)
+- `time` - Time budget in milliseconds per benchmark task (default: 1000)
+- `limitBy` - How to limit benchmarks: `"iterations"` (sample count), `"time"` (time budget), `"any"` (whichever comes first), or `"all"` (both thresholds required)
+- `warmup` - Number of warmup iterations before measurement begins (default: 0)
+- `timeout` - Maximum time in milliseconds for a single task before timing out (default: 30000)
+- `bail` - Stop execution on first benchmark failure (default: false)
+- `reporters` - Array of reporter names to use for output (available: `"human"`, `"json"`, `"csv"`)
+- `outputDir` - Directory path for saving benchmark results and reports
+- `quiet` - Minimal output mode, suppresses non-essential messages (default: false)
+- `verbose` - Detailed output mode with additional debugging information (default: false)
+
+> **Note:** Smart defaults apply for `limitBy` based on which options you provide. See [Controlling Benchmark Limits](#controlling-benchmark-limits) for details.
 
 ### Configuration File Support
 
@@ -497,7 +527,7 @@ npm run examples
 
 ## License
 
-Blue Oak Model License 1.0.0 - see [LICENSE](LICENSE) file for details.
+Blue Oak Model License 1.0.0 - see [LICENSE](LICENSE.md) file for details.
 
 ---
 
