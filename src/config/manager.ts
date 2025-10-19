@@ -25,6 +25,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   bail: false,
   exclude: ['node_modules/**', '.git/**'],
   iterations: 100, // Sufficient iterations for reliable statistics
+  limitBy: 'iterations', // Default to limiting by iteration count
   metadata: {},
   outputDir: './benchmark-results',
   pattern: '**/*.bench.{js,ts,mjs,cjs,mts}',
@@ -37,7 +38,6 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   timeout: 30000, // 30 seconds
   verbose: false,
   warmup: 0, // No warmup by default for test speed
-  limitBy: 'iterations', // Default to limiting by iteration count
 };
 
 /**
@@ -125,43 +125,6 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
-  }
-
-  /**
-   * Apply smart defaults for limitBy based on which flags were provided
-   */
-  private applySmartDefaults(
-    merged: ModestBenchConfig,
-    cliArgs: Record<string, unknown>,
-    fileConfig: Partial<ModestBenchConfig>,
-  ): ModestBenchConfig {
-    // If limitBy was explicitly provided in CLI or file, use it
-    if (cliArgs['limit-by'] || cliArgs.limitBy || fileConfig.limitBy) {
-      return merged;
-    }
-
-    // Determine if user explicitly provided time or iterations
-    const userProvidedTime = 'time' in cliArgs || 't' in cliArgs;
-    const userProvidedIterations =
-      'iterations' in cliArgs || 'i' in cliArgs;
-
-    let smartDefault: 'time' | 'iterations' | 'any';
-
-    if (userProvidedTime && userProvidedIterations) {
-      // Both provided → stop at whichever comes first
-      smartDefault = 'any';
-    } else if (userProvidedTime) {
-      // Only time → limit by time
-      smartDefault = 'time';
-    } else {
-      // Only iterations (or neither) → limit by iterations
-      smartDefault = 'iterations';
-    }
-
-    return {
-      ...merged,
-      limitBy: smartDefault,
-    };
   }
 
   /**
@@ -345,6 +308,42 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       files: ['configuration'],
       valid: errors.length === 0,
       warnings,
+    };
+  }
+
+  /**
+   * Apply smart defaults for limitBy based on which flags were provided
+   */
+  private applySmartDefaults(
+    merged: ModestBenchConfig,
+    cliArgs: Record<string, unknown>,
+    fileConfig: Partial<ModestBenchConfig>,
+  ): ModestBenchConfig {
+    // If limitBy was explicitly provided in CLI or file, use it
+    if (cliArgs['limit-by'] || cliArgs.limitBy || fileConfig.limitBy) {
+      return merged;
+    }
+
+    // Determine if user explicitly provided time or iterations
+    const userProvidedTime = 'time' in cliArgs || 't' in cliArgs;
+    const userProvidedIterations = 'iterations' in cliArgs || 'i' in cliArgs;
+
+    let smartDefault: 'any' | 'iterations' | 'time';
+
+    if (userProvidedTime && userProvidedIterations) {
+      // Both provided → stop at whichever comes first
+      smartDefault = 'any';
+    } else if (userProvidedTime) {
+      // Only time → limit by time
+      smartDefault = 'time';
+    } else {
+      // Only iterations (or neither) → limit by iterations
+      smartDefault = 'iterations';
+    }
+
+    return {
+      ...merged,
+      limitBy: smartDefault,
     };
   }
 

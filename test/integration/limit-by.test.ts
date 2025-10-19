@@ -1,8 +1,8 @@
 /**
  * Integration tests for --limit-by flag
  *
- * Verifies that the --limit-by flag correctly controls whether benchmarks
- * are limited by time, iterations, or both.
+ * Verifies that the --limit-by flag correctly controls whether benchmarks are
+ * limited by time, iterations, or both.
  */
 
 import { expect } from 'bupkis';
@@ -340,4 +340,3 @@ export default {
     });
   });
 });
-
