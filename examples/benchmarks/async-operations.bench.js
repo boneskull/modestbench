@@ -19,7 +19,8 @@ export default {
           await Promise.resolve('test');
         },
 
-        'setTimeout Promise': () => new Promise((resolve) => setTimeout(resolve, 0)),
+        'setTimeout Promise': () =>
+          new Promise((resolve) => setTimeout(resolve, 0)),
       },
     },
   },
