@@ -117,7 +117,8 @@
       ".wallaby.js",
       "**/*.cts",
       "**/*.d.ts",
-      "site/media/**/*"
+      "site/media/**/*",
+      "worktrees/**/*"
     ],
     "tags": [
       "-knipignore"

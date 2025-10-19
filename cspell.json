@@ -31,7 +31,8 @@
     "node_modules",
     ".specify",
     "specs",
-    "*.csv"
+    "*.csv",
+    "worktrees"
   ],
   "ignoreRandomStrings": true,
   "ignoreWords": [
