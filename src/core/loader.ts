@@ -309,7 +309,6 @@ export class BenchmarkFileLoader implements FileLoader {
       // Analyze exports for metadata (simplified - structure already validated)
       const hasDefaultExport = module.default !== undefined;
       const exportNames = Object.keys(module);
-      const hasBenchmarks = true; // Already validated by Zod schema
 
       return {
         content,
