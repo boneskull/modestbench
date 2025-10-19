@@ -704,15 +704,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
       let effectiveIterations: number;
 
       switch (config.limitBy) {
-        case 'time':
-          // Time is the limit, iterations is a minimum (use small value)
+        case 'all':
+          // Both must be met - tinybench default behavior
           effectiveTime = Math.min(config.time || 1000, 2000);
-          effectiveIterations = 1; // Minimal iterations so time is the limiting factor
-          break;
-
-        case 'iterations':
-          // Iterations is the limit, use minimal time
-          effectiveTime = 1;
           effectiveIterations = config.iterations;
           break;
 
@@ -724,10 +718,16 @@ export class ModestBenchEngine implements BenchmarkEngine {
           effectiveIterations = config.iterations;
           break;
 
-        case 'all':
-          // Both must be met - tinybench default behavior
-          effectiveTime = Math.min(config.time || 1000, 2000);
+        case 'iterations':
+          // Iterations is the limit, use minimal time
+          effectiveTime = 1;
           effectiveIterations = config.iterations;
+          break;
+
+        case 'time':
+          // Time is the limit, iterations is a minimum (use small value)
+          effectiveTime = Math.min(config.time || 1000, 2000);
+          effectiveIterations = 1; // Minimal iterations so time is the limiting factor
           break;
 
         default:
@@ -768,14 +768,14 @@ export class ModestBenchEngine implements BenchmarkEngine {
           // Use same limiting logic but with minimal time for fast ops
           let retryTime: number;
           switch (config.limitBy) {
-            case 'time':
+            case 'all':
+            case 'any':
               retryTime = 10;
               break;
             case 'iterations':
               retryTime = 1;
               break;
-            case 'any':
-            case 'all':
+            case 'time':
               retryTime = 10;
               break;
             default:
@@ -871,14 +871,14 @@ export class ModestBenchEngine implements BenchmarkEngine {
           // Use same limiting logic but with minimal time for fast ops
           let retryTime: number;
           switch (config.limitBy) {
-            case 'time':
+            case 'all':
+            case 'any':
               retryTime = 10;
               break;
             case 'iterations':
               retryTime = 1;
               break;
-            case 'any':
-            case 'all':
+            case 'time':
               retryTime = 10;
               break;
             default:
