@@ -116,13 +116,15 @@ describe('modestbench run command', () => {
         benchFile,
         `
         export default {
-          name: 'Simple Benchmark',
-          benchmarks: [
-            {
-              name: 'fast test',
-              fn: () => { return 1 + 1; }
+          suites: {
+            'Simple Benchmark': {
+              benchmarks: {
+                'fast test': {
+                  fn: () => { return 1 + 1; }
+                }
+              }
             }
-          ]
+          }
         };
       `,
       );

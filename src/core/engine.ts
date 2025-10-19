@@ -217,10 +217,13 @@ export class ModestBenchEngine implements BenchmarkEngine {
           }
         } catch (error) {
           // If we can't load a file for counting, we'll handle it during execution
-          console.warn(
-            `Warning: Could not pre-load ${filePath} for task counting:`,
-            error,
-          );
+          // Only show warning if not in quiet mode
+          if (!mergedConfig.quiet) {
+            console.warn(
+              `Warning: Could not pre-load ${filePath} for task counting:`,
+              error,
+            );
+          }
         }
       }
 
