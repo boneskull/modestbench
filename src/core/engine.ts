@@ -706,6 +706,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
       switch (config.limitBy) {
         case 'all':
           // Both must be met - tinybench default behavior
+
           effectiveTime = Math.min(config.time || 1000, 2000);
           effectiveIterations = config.iterations;
           break;

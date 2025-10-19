@@ -48,7 +48,9 @@
     "testing"
   ],
   "scripts": {
-    "build": "zshy",
+    "build": "run-s -sl build:compile build:schema",
+    "build:compile": "zshy",
+    "build:schema": "node --import tsx scripts/generate-schema.ts",
     "clean": "rm -rf dist",
     "commitlint": "commitlint",
     "dev": "zshy --watch",
@@ -75,7 +77,8 @@
     "cosmiconfig-typescript-loader": "^6.2.0",
     "glob": "^11.0.3",
     "tinybench": "^5.0.1",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@commitlint/cli": "20.1.0",
@@ -127,6 +130,7 @@
     ],
     "node": {
       "entry": [
+        "scripts/**/*.ts",
         "test/**/*.test.ts",
         "src/index.ts",
         "src/cli/index.ts",

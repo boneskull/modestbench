@@ -17,6 +17,8 @@ import type {
   ValidationWarning,
 } from '../types/index.js';
 
+import { safeParseConfig } from './schema.js';
+
 /**
  * Default configuration values Using minimal values to reduce test overhead
  * while maintaining functionality
@@ -161,126 +163,34 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
   }
 
   /**
-   * Validate configuration object
+   * Validate configuration object using Zod schema
    */
-  validate(config: Partial<ModestBenchConfig>): ValidationResult {
+  validate(config: ModestBenchConfig): ValidationResult {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
-    // Required fields validation
-    if (config.iterations !== undefined) {
-      if (typeof config.iterations !== 'number' || config.iterations <= 0) {
+    // Use Zod schema validation
+    const result = safeParseConfig(config);
+
+    if (!result.success) {
+      // Convert Zod errors to ValidationError format
+      for (const issue of result.error.issues) {
+        const path = issue.path.join('.');
         errors.push({
-          code: 'INVALID_ITERATIONS',
+          code: `INVALID_${path.toUpperCase().replace(/\./g, '_') || 'CONFIG'}`,
           file: 'configuration',
-          message: 'iterations must be a positive number',
+          message: `${path ? `${path}: ` : ''}${issue.message}`,
           severity: 'error',
         });
       }
     }
 
-    if (config.time !== undefined) {
-      if (typeof config.time !== 'number' || config.time <= 0) {
-        errors.push({
-          code: 'INVALID_TIME',
-          file: 'configuration',
-          message: 'time must be a positive number',
-          severity: 'error',
-        });
-      }
-    }
+    // Additional logical validations and warnings
+    if (result.success) {
+      const validConfig = result.data;
 
-    if (config.warmup !== undefined) {
-      if (typeof config.warmup !== 'number' || config.warmup < 0) {
-        errors.push({
-          code: 'INVALID_WARMUP',
-          file: 'configuration',
-          message: 'warmup must be a non-negative number',
-          severity: 'error',
-        });
-      }
-    }
-
-    if (config.timeout !== undefined) {
-      if (typeof config.timeout !== 'number' || config.timeout <= 0) {
-        errors.push({
-          code: 'INVALID_TIMEOUT',
-          file: 'configuration',
-          message: 'timeout must be a positive number',
-          severity: 'error',
-        });
-      }
-    }
-
-    if (config.pattern !== undefined) {
-      // Pattern can be a string or an array of strings
-      if (Array.isArray(config.pattern)) {
-        if (config.pattern.length === 0) {
-          errors.push({
-            code: 'INVALID_PATTERN',
-            file: 'configuration',
-            message: 'pattern array must not be empty',
-            severity: 'error',
-          });
-        } else if (
-          !config.pattern.every(
-            (p) => typeof p === 'string' && p.trim().length > 0,
-          )
-        ) {
-          errors.push({
-            code: 'INVALID_PATTERN',
-            file: 'configuration',
-            message: 'pattern array must contain only non-empty strings',
-            severity: 'error',
-          });
-        }
-      } else if (
-        typeof config.pattern !== 'string' ||
-        config.pattern.trim().length === 0
-      ) {
-        errors.push({
-          code: 'INVALID_PATTERN',
-          file: 'configuration',
-          message: 'pattern must be a non-empty string or array of strings',
-          severity: 'error',
-        });
-      }
-    }
-
-    if (config.exclude !== undefined) {
-      if (!Array.isArray(config.exclude)) {
-        errors.push({
-          code: 'INVALID_EXCLUDE',
-          file: 'configuration',
-          message: 'exclude must be an array of strings',
-          severity: 'error',
-        });
-      } else if (!config.exclude.every((item) => typeof item === 'string')) {
-        errors.push({
-          code: 'INVALID_EXCLUDE_ITEMS',
-          file: 'configuration',
-          message: 'exclude array must contain only strings',
-          severity: 'error',
-        });
-      }
-    }
-
-    if (config.reporters !== undefined) {
-      if (!Array.isArray(config.reporters)) {
-        errors.push({
-          code: 'INVALID_REPORTERS',
-          file: 'configuration',
-          message: 'reporters must be an array of strings',
-          severity: 'error',
-        });
-      } else if (!config.reporters.every((item) => typeof item === 'string')) {
-        errors.push({
-          code: 'INVALID_REPORTER_ITEMS',
-          file: 'configuration',
-          message: 'reporters array must contain only strings',
-          severity: 'error',
-        });
-      } else if (config.reporters.length === 0) {
+      // Warn about empty reporters
+      if (validConfig.reporters.length === 0) {
         warnings.push({
           code: 'NO_REPORTERS',
           file: 'configuration',
@@ -288,11 +198,9 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
           severity: 'warning',
         });
       }
-    }
 
-    // Logical validation
-    if (config.iterations !== undefined && config.time !== undefined) {
-      if (config.iterations > 1000 && config.time > 60000) {
+      // Warn about potentially long runtime
+      if (validConfig.iterations > 1000 && validConfig.time > 60000) {
         warnings.push({
           code: 'LONG_RUNTIME_WARNING',
           file: 'configuration',

@@ -116,7 +116,7 @@ export default {
         testDir,
       );
 
-      expect(result.stdout, 'to be empty');
+      expect(result.stdout, 'not to be empty');
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
     });
@@ -154,7 +154,7 @@ export default {
         testDir,
       );
 
-      expect(result.stdout, 'to be empty');
+      expect(result.stdout, 'not to be empty');
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
     });
