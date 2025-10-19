@@ -109,15 +109,13 @@ Performance optimization examples showing:
 
 ```json
 {
-  "concurrent": false,
   "exclude": ["node_modules/**", "dist/**"],
-  "historyLimit": 50,
   "iterations": 1000,
   "outputDir": "./benchmark-results",
   "pattern": "benchmarks/**/*.bench.{js,ts}",
   "reporters": ["human", "json"],
   "timeout": 30000,
-  "warmup": true
+  "warmup": 50
 }
 ```
 
@@ -130,7 +128,7 @@ const config: ModestBenchConfig = {
   pattern: 'src/**/*.bench.ts',
   reporters: ['human', 'csv'],
   iterations: 2000,
-  concurrent: true,
+  warmup: 100,
   outputDir: './reports',
 };
 
@@ -291,7 +289,7 @@ teardown: () => {
 
 ```bash
 # Enable warmup and increase iterations
-modestbench run --warmup --iterations 5000
+modestbench run --warmup 50 --iterations 5000
 ```
 
 ### Debugging Commands
@@ -300,11 +298,8 @@ modestbench run --warmup --iterations 5000
 # Verbose output
 modestbench run --verbose
 
-# Validate files first
-modestbench validate --strict
-
-# Check configuration
-modestbench run --dry-run
+# Run with minimal iterations for quick testing
+modestbench run --iterations 10
 ```
 
 ## Next Steps

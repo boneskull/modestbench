@@ -1,6 +1,5 @@
 {
   "bail": false,
-  "concurrent": false,
   "exclude": ["node_modules/**", "dist/**", "coverage/**"],
   "iterations": 1000,
   "metadata": {
