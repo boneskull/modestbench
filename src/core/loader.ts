@@ -88,9 +88,7 @@ interface FileChange {
  */
 interface FileMetadata {
   readonly exportNames: string[];
-  readonly hasBenchmarks: boolean;
   readonly hasDefaultExport: boolean;
-  readonly isValid: boolean;
   readonly mtime: Date;
   readonly size: number;
 }
@@ -316,7 +314,6 @@ export class BenchmarkFileLoader implements FileLoader {
         filePath,
         metadata: {
           exportNames,
-          hasBenchmarks,
           hasDefaultExport,
           mtime: stats.mtime,
           size: stats.size,
