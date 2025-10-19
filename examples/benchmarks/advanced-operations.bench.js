@@ -18,22 +18,19 @@ export default {
   suites: {
     'Array Algorithms': {
       benchmarks: {
-        'Array.findIndex()': {
-          fn: () => {
-            return arrayState.testArray.findIndex((x) => x === 500);
-          },
+        // Shorthand syntax: simple functions without tags/config
+        'Array.findIndex()': () => {
+          return arrayState.testArray.findIndex((x) => x === 500);
         },
 
-        'Linear Search': {
-          fn: () => {
-            const target = 500;
-            for (let i = 0; i < arrayState.testArray.length; i++) {
-              if (arrayState.testArray[i] === target) {
-                return i;
-              }
+        'Linear Search': () => {
+          const target = 500;
+          for (let i = 0; i < arrayState.testArray.length; i++) {
+            if (arrayState.testArray[i] === target) {
+              return i;
             }
-            return -1;
-          },
+          }
+          return -1;
         },
       },
 

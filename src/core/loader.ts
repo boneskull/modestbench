@@ -18,6 +18,21 @@ import type {
 import type { FileLoader } from './engine.js';
 
 /**
+ * A benchmark file containing one or more suites with configuration and
+ * metadata
+ */
+export interface BenchmarkDefinition {
+  /** File-level configuration overrides */
+  config?: Record<string, unknown>;
+  /** Custom metadata associated with the file */
+  metadata?: Record<string, unknown>;
+  /** Map of suite names to suite definitions */
+  suites: Record<string, BenchmarkSuite>;
+  /** Tags for filtering and grouping files */
+  tags?: string[];
+}
+
+/**
  * Benchmark file structure after parsing
  */
 export interface BenchmarkFile {
@@ -25,6 +40,38 @@ export interface BenchmarkFile {
   readonly exports: unknown;
   readonly filePath: string;
   readonly metadata: FileMetadata;
+}
+
+/**
+ * A benchmark suite containing multiple tasks
+ */
+export interface BenchmarkSuite {
+  /** Map of benchmark task names to task definitions */
+  benchmarks: Record<string, BenchmarkTask>;
+  /** Suite-specific configuration overrides */
+  config?: Record<string, unknown>;
+  /** Custom metadata associated with the suite */
+  metadata?: Record<string, unknown>;
+  /** Function to run before all benchmarks in the suite */
+  setup?: (...args: any[]) => any;
+  /** Tags for filtering and grouping suites */
+  tags?: string[];
+  /** Function to run after all benchmarks in the suite */
+  teardown?: (...args: any[]) => any;
+}
+
+/**
+ * A single benchmark task definition
+ */
+export interface BenchmarkTask {
+  /** Task-specific configuration overrides */
+  config?: Record<string, unknown>;
+  /** The function to benchmark */
+  fn: (...args: any[]) => any;
+  /** Custom metadata associated with the task */
+  metadata?: Record<string, unknown>;
+  /** Tags for filtering and grouping tasks */
+  tags?: string[];
 }
 
 /**
@@ -56,40 +103,101 @@ interface FileWatcher {
 }
 
 /**
- * Zod schema for validating benchmark task structure
+ * Zod schema for the full benchmark task object structure
  */
-const benchmarkTaskSchema = z.object({
-  fn: z.function(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  tags: z.array(z.string()).optional(),
-  config: z.record(z.string(), z.unknown()).optional(),
+const benchmarkTaskObjectSchema = z.object({
+  config: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe('Task-specific configuration overrides'),
+  fn: z.function().describe('The function to benchmark'),
+  metadata: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe('Custom metadata associated with the task'),
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe('Tags for filtering and grouping tasks'),
 });
+
+/**
+ * Zod schema for a benchmark task - accepts either:
+ *
+ * 1. A full task object with fn, config, metadata, tags
+ * 2. A function directly (shorthand syntax)
+ */
+const benchmarkTaskSchema: z.ZodType<BenchmarkTask> = z
+  .union([benchmarkTaskObjectSchema, benchmarkTaskObjectSchema.shape.fn])
+  .transform((value) => {
+    // If it's a function, wrap it in a task object
+    if (typeof value === 'function') {
+      return { fn: value };
+    }
+    // Otherwise it's already a full task object, return as-is
+    return value;
+  })
+  .pipe(benchmarkTaskObjectSchema)
+  .describe('A single benchmark task definition (object or function)');
 
 /**
  * Zod schema for validating benchmark suite structure
  */
-const benchmarkSuiteSchema = z.object({
-  benchmarks: z.record(z.string(), benchmarkTaskSchema),
-  config: z.record(z.string(), z.unknown()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  setup: z.function().optional(),
-  tags: z.array(z.string()).optional(),
-  teardown: z.function().optional(),
-});
+const benchmarkSuiteSchema: z.ZodType<BenchmarkSuite> = z
+  .object({
+    benchmarks: z
+      .record(z.string(), benchmarkTaskSchema)
+      .describe('Map of benchmark task names to task definitions'),
+    config: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('Suite-specific configuration overrides'),
+    metadata: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('Custom metadata associated with the suite'),
+    setup: z
+      .function()
+      .optional()
+      .describe('Function to run before all benchmarks in the suite'),
+    tags: z
+      .array(z.string())
+      .optional()
+      .describe('Tags for filtering and grouping suites'),
+    teardown: z
+      .function()
+      .optional()
+      .describe('Function to run after all benchmarks in the suite'),
+  })
+  .describe('A benchmark suite containing multiple tasks');
 
 /**
  * Zod schema for validating benchmark file structure
  */
-const benchmarkFileSchema = z.object({
-  config: z.record(z.string(), z.unknown()).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  suites: z
-    .record(z.string(), benchmarkSuiteSchema)
-    .refine((suites) => Object.keys(suites).length > 0, {
-      message: 'At least one suite is required',
-    }),
-  tags: z.array(z.string()).optional(),
-});
+const benchmarkFileSchema: z.ZodType<BenchmarkDefinition> = z
+  .object({
+    config: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('File-level configuration overrides'),
+    metadata: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe('Custom metadata associated with the file'),
+    suites: z
+      .record(z.string(), benchmarkSuiteSchema)
+      .refine((suites) => Object.keys(suites).length > 0, {
+        error: 'At least one suite is required',
+      })
+      .describe('Map of suite names to suite definitions'),
+    tags: z
+      .array(z.string())
+      .optional()
+      .describe('Tags for filtering and grouping files'),
+  })
+  .describe(
+    'A benchmark file containing one or more suites with configuration and metadata',
+  );
 
 /**
  * Implementation of FileLoader for benchmark files
@@ -188,11 +296,15 @@ export class BenchmarkFileLoader implements FileLoader {
 
       // Validate the loaded exports structure with Zod
       const structureValidation = this.validateExports(filePath, exports);
-      if (!structureValidation.valid) {
+      if (!structureValidation.valid || !structureValidation.data) {
         throw new Error(
           `Invalid benchmark structure: ${structureValidation.errors.map((e) => e.message).join(', ')}`,
         );
       }
+
+      // Use the transformed/normalized data from Zod
+      // (this ensures shorthand functions are properly wrapped)
+      const normalizedExports = structureValidation.data;
 
       // Analyze exports for metadata (simplified - structure already validated)
       const hasDefaultExport = module.default !== undefined;
@@ -201,7 +313,7 @@ export class BenchmarkFileLoader implements FileLoader {
 
       return {
         content,
-        exports,
+        exports: normalizedExports,
         filePath,
         metadata: {
           exportNames,
@@ -306,14 +418,16 @@ export class BenchmarkFileLoader implements FileLoader {
   }
 
   /**
-   * Validate the structure of loaded exports using Zod schema
+   * Validate the structure of loaded exports using Zod schema Returns the
+   * transformed/normalized data if validation succeeds
    */
   private validateExports(
     filePath: string,
     exports: unknown,
   ): {
-    valid: boolean;
+    data?: BenchmarkDefinition;
     errors: ValidationError[];
+    valid: boolean;
     warnings: ValidationWarning[];
   } {
     const errors: ValidationError[] = [];
@@ -332,9 +446,11 @@ export class BenchmarkFileLoader implements FileLoader {
             severity: 'error',
           });
         }
+        return { errors, valid: false, warnings };
       }
 
-      return { valid: result.success, errors, warnings };
+      // Return the transformed data (with shorthand functions normalized)
+      return { data: result.data, errors, valid: true, warnings };
     } catch (error) {
       errors.push({
         code: 'VALIDATION_ERROR',
@@ -342,7 +458,7 @@ export class BenchmarkFileLoader implements FileLoader {
         message: `Structure validation failed: ${error instanceof Error ? error.message : String(error)}`,
         severity: 'error',
       });
-      return { valid: false, errors, warnings };
+      return { errors, valid: false, warnings };
     }
   }
 }

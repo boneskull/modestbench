@@ -3,22 +3,19 @@ export default {
   suites: {
     'Array Operations': {
       benchmarks: {
-        'Array.push()': {
-          fn: () => {
-            const arr = [];
-            for (let i = 0; i < 1000; i++) {
-              arr.push(i);
-            }
-          },
+        // Shorthand syntax: just pass a function directly
+        'Array.push()': () => {
+          const arr = [];
+          for (let i = 0; i < 1000; i++) {
+            arr.push(i);
+          }
         },
 
-        'Array.unshift()': {
-          fn: () => {
-            const arr = [];
-            for (let i = 0; i < 1000; i++) {
-              arr.unshift(i);
-            }
-          },
+        'Array.unshift()': () => {
+          const arr = [];
+          for (let i = 0; i < 1000; i++) {
+            arr.unshift(i);
+          }
         },
       },
     },

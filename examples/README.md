@@ -194,23 +194,19 @@ array-operations.bench.js,Array Operations,Array.unshift(),987654.32,0.001012,10
 ```javascript
 // ❌ Bad: includes setup in measurement
 {
-  'Slow Benchmark': {
-    fn: () => {
-      const data = generateLargeDataset(); // Setup included!
-      return processData(data);
-    }
+  'Slow Benchmark': () => {
+    const data = generateLargeDataset(); // Setup included!
+    return processData(data);
   }
 }
 
-// ✅ Good: use setup hooks
+// ✅ Good: use setup hooks with shorthand syntax
 {
   setup: () => {
     global.dataset = generateLargeDataset();
   },
   benchmarks: {
-    'Fast Benchmark': {
-      fn: () => processData(global.dataset)
-    }
+    'Fast Benchmark': () => processData(global.dataset)
   }
 }
 ```
@@ -218,13 +214,13 @@ array-operations.bench.js,Array Operations,Array.unshift(),987654.32,0.001012,10
 ### 2. Choose Appropriate Iterations
 
 ```javascript
-// Fast operations need more iterations
+// Fast operations need more iterations (use full syntax with config)
 'Array Access': {
   fn: () => arr[500],
   config: { iterations: 10000 }
 }
 
-// Slow operations need fewer iterations
+// Slow operations need fewer iterations (use full syntax with config)
 'Heavy Computation': {
   fn: () => heavyCalculation(),
   config: { iterations: 10 }
@@ -235,6 +231,7 @@ array-operations.bench.js,Array Operations,Array.unshift(),987654.32,0.001012,10
 
 ```javascript
 benchmarks: {
+  // Use full syntax when you need tags
   'Quick Sort': {
     fn: () => quickSort(data),
     tags: ['sorting', 'algorithm', 'fast']
