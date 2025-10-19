@@ -29,8 +29,6 @@
     "dist",
     "docs",
     "node_modules",
-    ".specify",
-    "specs",
     "*.csv",
     "worktrees"
   ],
