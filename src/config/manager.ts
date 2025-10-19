@@ -197,8 +197,7 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
           errors.push({
             code: 'INVALID_PATTERN',
             file: 'configuration',
-            message:
-              'pattern array must contain only non-empty strings',
+            message: 'pattern array must contain only non-empty strings',
             severity: 'error',
           });
         }
