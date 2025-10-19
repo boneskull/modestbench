@@ -20,7 +20,7 @@ interface HistoryOptions {
   maxAge?: number | undefined;
   maxRuns?: number | undefined;
   maxSize?: number | undefined;
-  output?: string | undefined;
+  outputDir?: string | undefined;
   pattern?: string | undefined;
   quiet?: boolean | undefined;
   since?: string | undefined;
@@ -252,12 +252,12 @@ const handleExportCommand = async (
       query,
     );
 
-    if (options.output) {
+    if (options.outputDir) {
       // Write to file
       const fs = await import('node:fs/promises');
-      await fs.writeFile(options.output, exportData, 'utf8');
+      await fs.writeFile(options.outputDir, exportData, 'utf8');
       if (!options.quiet) {
-        console.log(`Exported history to ${options.output}`);
+        console.log(`Exported history to ${options.outputDir}`);
       }
     } else {
       // Write to stdout

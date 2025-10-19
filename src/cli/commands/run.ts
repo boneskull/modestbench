@@ -23,7 +23,7 @@ interface RunOptions {
   iterations?: number | undefined;
   json?: boolean | undefined;
   noColor?: boolean | undefined;
-  output?: string | undefined;
+  outputDir?: string | undefined;
   pattern: string[];
   quiet?: boolean | undefined;
   reporters: string[];
@@ -45,7 +45,7 @@ export const handleRunCommand = async (
   // (i.e., outputting to stdout where we need clean JSON)
   const isUsingJsonReporter = options.reporters?.includes('json') ?? false;
   const shouldBeQuiet =
-    options.quiet || (isUsingJsonReporter && !options.output);
+    options.quiet || (isUsingJsonReporter && !options.outputDir);
 
   try {
     // Step 1: Load and merge configuration
@@ -62,7 +62,7 @@ export const handleRunCommand = async (
       context,
       config,
       shouldBeQuiet,
-      options.output,
+      options.outputDir,
     );
 
     // Step 3: Discovery phase
@@ -208,8 +208,8 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
     if (options.reporters) {
       cliArgs.reporters = options.reporters;
     }
-    if (options.output) {
-      cliArgs.outputDir = resolve(options.cwd, options.output);
+    if (options.outputDir) {
+      cliArgs.outputDir = resolve(options.cwd, options.outputDir);
     }
     if (options.iterations) {
       cliArgs.iterations = options.iterations;

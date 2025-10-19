@@ -290,10 +290,8 @@ export class JsonReporter extends BaseReporter {
    * Write JSON output to stdout
    */
   private writeToStdout(output: JsonOutput): void {
-    if (this.quiet) {
-      return;
-    }
-
+    // Always write to stdout when no output path is specified
+    // The quiet flag only affects progress messages (stderr), not data output
     const jsonString = this.prettyPrint
       ? JSON.stringify(output, null, 2)
       : JSON.stringify(output);

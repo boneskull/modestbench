@@ -30,7 +30,6 @@ describe('Configuration file and CLI argument merging', () => {
         JSON.stringify(
           {
             iterations: 1,
-            output: './results',
             reporters: ['json', 'csv'],
             warmup: 0,
           },
@@ -79,7 +78,7 @@ describe('Configuration file and CLI argument merging', () => {
 reporters:
   - human
   - json
-output: ./yaml-results
+outputDir: ./yaml-results
 iterations: 1
 warmup: 0
       `,
@@ -103,7 +102,7 @@ warmup: 0
         `
 module.exports = {
   reporters: ['human'],
-  output: './js-results',
+  outputDir: './js-results',
   iterations: 1,
   warmup: 0
 };
@@ -128,7 +127,7 @@ module.exports = {
         `
 export default {
   reporters: ['human', 'csv'] as const,
-  output: './ts-results',
+  outputDir: './ts-results',
   iterations: 1,
   warmup: 0
 };
@@ -154,7 +153,7 @@ export default {
         configFile,
         JSON.stringify({
           iterations: 1,
-          output: './config-output',
+          outputDir: './config-output',
           reporters: ['human'],
           warmup: 0,
         }),
@@ -251,7 +250,7 @@ export default {
         globalConfig,
         JSON.stringify({
           iterations: 1,
-          output: './global-output',
+          outputDir: './global-output',
           reporters: ['human'],
           warmup: 0,
         }),
@@ -329,7 +328,7 @@ export default {
         invalidConfig,
         JSON.stringify({
           iterations: -1,
-          output: null,
+          outputDir: null,
           reporters: 'not-an-array',
         }),
       );

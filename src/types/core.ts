@@ -213,6 +213,23 @@ export interface MemoryInfo {
 
 /**
  * Benchmark configuration
+ *
+ * The JSON Schema for this configuration is available at
+ * `dist/schema/modestbench-config.schema.json` after building the project.
+ *
+ * Config files can optionally include a `$schema` property pointing to the
+ * schema file for IDE autocomplete and validation support.
+ *
+ * @example
+ *
+ * ```json
+ * {
+ *   "$schema": "./node_modules/modestbench/dist/schema/modestbench-config.schema.json",
+ *   "iterations": 1000,
+ *   "reporters": ["human", "json"],
+ *   "time": 5000
+ * }
+ * ```
  */
 export interface ModestBenchConfig {
   /** Whether to stop on first failure */
