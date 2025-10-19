@@ -17,6 +17,11 @@ export { ModestBenchEngine } from './core/engine.js';
 export { ModestBenchErrorManager } from './core/error-manager.js';
 
 export { BenchmarkFileLoader } from './core/loader.js';
+export type {
+  BenchmarkDefinition,
+  BenchmarkSuite,
+  BenchmarkTask,
+} from './core/loader.js';
 
 // Progress tracking
 export { ModestBenchProgressManager } from './progress/manager.js';

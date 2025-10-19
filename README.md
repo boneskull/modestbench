@@ -46,26 +46,25 @@ modestbench init advanced --config-type typescript
 ```javascript
 // benchmarks/example.bench.js
 export default {
-  name: 'Array Operations',
+  suites: {
+    'Array Operations': {
+      benchmarks: {
+        // Shorthand syntax: just pass a function directly
+        'Array.push()': () => {
+          const arr = [];
+          for (let i = 0; i < 1000; i++) {
+            arr.push(i);
+          }
+          return arr;
+        },
 
-  benchmarks: {
-    'Array.push()': {
-      fn() {
-        const arr = [];
-        for (let i = 0; i < 1000; i++) {
-          arr.push(i);
-        }
-        return arr;
-      },
-    },
-
-    'Array spread': {
-      fn() {
-        let arr = [];
-        for (let i = 0; i < 1000; i++) {
-          arr = [...arr, i];
-        }
-        return arr;
+        'Array spread': () => {
+          let arr = [];
+          for (let i = 0; i < 1000; i++) {
+            arr = [...arr, i];
+          }
+          return arr;
+        },
       },
     },
   },
@@ -313,43 +312,31 @@ Tabular data for spreadsheet analysis and historical tracking.
 ### Multiple Suites
 
 ```javascript
-export default {
-  name: 'Complex Algorithms',
+const state = {
+  data: [],
+  sortedData: [],
+};
 
+export default {
   suites: {
     Sorting: {
       setup() {
-        this.data = generateTestData(1000);
+        state.data = generateTestData(1000);
       },
       benchmarks: {
-        'Quick Sort': {
-          fn() {
-            return quickSort(this.data);
-          },
-        },
-        'Merge Sort': {
-          fn() {
-            return mergeSort(this.data);
-          },
-        },
+        // Shorthand syntax for simple benchmarks
+        'Quick Sort': () => quickSort(state.data),
+        'Merge Sort': () => mergeSort(state.data),
       },
     },
 
     Searching: {
       setup() {
-        this.sortedData = generateSortedData(10000);
+        state.sortedData = generateSortedData(10000);
       },
       benchmarks: {
-        'Binary Search': {
-          fn() {
-            return binarySearch(this.sortedData, 5000);
-          },
-        },
-        'Linear Search': {
-          fn() {
-            return linearSearch(this.sortedData, 5000);
-          },
-        },
+        'Binary Search': () => binarySearch(state.sortedData, 5000),
+        'Linear Search': () => linearSearch(state.sortedData, 5000),
       },
     },
   },
@@ -360,22 +347,24 @@ export default {
 
 ```javascript
 export default {
-  name: 'Async Performance',
+  suites: {
+    'Async Performance': {
+      benchmarks: {
+        // Shorthand syntax works with async functions too
+        'Promise.resolve()': async () => {
+          return await Promise.resolve('test');
+        },
 
-  benchmarks: {
-    'Promise.resolve()': {
-      async fn() {
-        return await Promise.resolve('test');
-      },
-    },
-
-    'Fetch Simulation': {
-      async fn() {
-        const response = await simulateApiCall();
-        return response.json();
-      },
-      config: {
-        iterations: 100, // Fewer iterations for slow operations
+        // Full syntax when you need config, tags, or metadata
+        'Fetch Simulation': {
+          async fn() {
+            const response = await simulateApiCall();
+            return response.json();
+          },
+          config: {
+            iterations: 100, // Fewer iterations for slow operations
+          },
+        },
       },
     },
   },
@@ -386,12 +375,13 @@ export default {
 
 ```javascript
 benchmarks: {
+  // Use full syntax when you need tags for filtering
   'Fast Algorithm': {
-    fn() { return fastOperation(); },
+    fn: () => fastOperation(),
     tags: ['algorithm', 'fast', 'optimized']
   },
   'Slow Algorithm': {
-    fn() { return slowOperation(); },
+    fn: () => slowOperation(),
     tags: ['algorithm', 'slow', 'reference']
   }
 }
