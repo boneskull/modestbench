@@ -318,7 +318,6 @@ export class BenchmarkFileLoader implements FileLoader {
           exportNames,
           hasBenchmarks,
           hasDefaultExport,
-          isValid: true,
           mtime: stats.mtime,
           size: stats.size,
         },
