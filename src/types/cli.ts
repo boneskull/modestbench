@@ -305,15 +305,3 @@ export interface TerminalCapabilities {
   /** Terminal width in columns */
   readonly width: number;
 }
-
-/**
- * Arguments for the validate command
- */
-export interface ValidateCommandArgs extends CommandArguments {
-  /** Configuration file to validate */
-  readonly config?: string;
-  /** Quiet output */
-  readonly quiet?: boolean;
-  /** Verbose output */
-  readonly verbose?: boolean;
-}

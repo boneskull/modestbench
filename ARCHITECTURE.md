@@ -621,33 +621,7 @@ private index: null | StorageIndex = null;
 
 ## 7. Rarely-Used Features: Removal Candidates
 
-### 7.1 Validation Command
-
-**Command**: `modestbench validate [patterns..]`  
-**Location**: `src/cli/commands/validate.ts`
-
-#### Opinion: 🤔 CONSIDER REMOVAL
-
-**Current Features**:
-
-- Validates benchmark files without running them
-- `--fix` flag for auto-fixing issues
-- `--strict` mode for treating warnings as errors
-
-**Issues**:
-
-1. **Redundant**: The `run` command validates files before execution anyway
-2. **Limited value**: Syntax validation is superficial (bracket counting)
-3. **No auto-fix implementation**: The `--fix` flag is defined but has no implementation
-4. **Low usage**: Validation is typically done during runs
-
-**Alternative**: Keep validation as part of `run` command, remove standalone command
-
-**Maintenance burden**: ~300 lines of code across command + implementation
-
----
-
-### 7.2 Init Command Templates
+### 7.1 Init Command Templates
 
 **Command**: `modestbench init [type]`  
 **Location**: `src/cli/commands/init.ts`
@@ -1177,8 +1151,7 @@ Provides test helpers and fixtures
 ### Medium Priority
 
 1. **🤔 Remove syntax validation** - Redundant, error-prone
-2. **🤔 Consider removing standalone validate command** - Redundant with run validation
-3. **🤔 Simplify init command** - Remove unused template variations
+2. **🤔 Simplify init command** - Remove unused template variations
 
 ### Low Priority
 
