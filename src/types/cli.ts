@@ -262,6 +262,8 @@ export interface RunCommandArgs extends CommandArguments {
   readonly i?: number;
   /** Number of iterations */
   readonly iterations?: number;
+  /** How to limit benchmark execution */
+  readonly limitBy?: 'all' | 'any' | 'iterations' | 'time';
   readonly o?: string;
   /** Output directory */
   readonly output?: string;
@@ -286,8 +288,6 @@ export interface RunCommandArgs extends CommandArguments {
   readonly w?: number;
   /** Warmup iterations */
   readonly warmup?: number;
-  /** How to limit benchmark execution */
-  readonly limitBy?: 'time' | 'iterations' | 'any' | 'all';
 }
 
 /**

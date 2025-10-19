@@ -221,6 +221,8 @@ export interface ModestBenchConfig {
   readonly exclude: string[];
   /** Default number of iterations per task */
   readonly iterations: number;
+  /** How to limit benchmark execution: 'time', 'iterations', 'any', or 'all' */
+  readonly limitBy: 'all' | 'any' | 'iterations' | 'time';
   /** Custom metadata to attach to runs */
   readonly metadata: Record<string, unknown>;
   /** Output directory for reports */
@@ -245,8 +247,6 @@ export interface ModestBenchConfig {
   readonly verbose: boolean;
   /** Number of warmup iterations before measurement */
   readonly warmup: number;
-  /** How to limit benchmark execution: 'time', 'iterations', 'any', or 'all' */
-  readonly limitBy: 'time' | 'iterations' | 'any' | 'all';
 }
 
 /**
