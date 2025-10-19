@@ -124,21 +124,24 @@ export class BenchmarkFileLoader implements FileLoader {
       const stats = await stat(filePath);
 
       // Load the module using dynamic import
-      // For TypeScript files, use tsx to transpile on-the-fly without type-checking
       const ext = extname(filePath);
       let module: { [key: string]: unknown; default?: unknown };
 
       if (ext === '.ts') {
-        // Dynamically import tsx for TypeScript files
-        // Note: tsx is loaded dynamically to avoid module resolution issues during CJS build
-        const { tsImport } = await import('tsx/esm/api');
-        module = (await tsImport(filePath, import.meta.url)) as {
+        // For TypeScript files, use cosmiconfig-typescript-loader
+        const { TypeScriptLoader: createTypeScriptLoader } = await import(
+          'cosmiconfig-typescript-loader'
+        );
+        const loader = createTypeScriptLoader();
+        module = (await loader(filePath, content)) as {
           [key: string]: unknown;
           default?: unknown;
         };
       } else {
-        // Use native dynamic import for JavaScript files
-        module = (await import(filePath)) as {
+        // Use native dynamic import for JavaScript files with cache busting
+        // Add timestamp to prevent module caching issues across multiple loads
+        const timestamp = Date.now();
+        module = (await import(`${filePath}?t=${timestamp}`)) as {
           [key: string]: unknown;
           default?: unknown;
         };
@@ -338,16 +341,16 @@ export class BenchmarkFileLoader implements FileLoader {
       /benchmark\s*\(/.test(content) ||
       // Check for declarative structure patterns
       /suites\s*:\s*\{/.test(content) ||
-      /benchmarks\s*:\s*\{/.test(content) ||
+      /benchmarks\s*:\s*[[{]/.test(content) ||
       /export\s+default\s+\{[\s\S]*suites/.test(content);
 
     if (!hasBenchmarkPatterns) {
-      warnings.push({
+      errors.push({
         code: 'NO_BENCHMARKS',
         file: filePath,
         message:
           'No benchmark patterns found. Expected suite(), bench(), test(), it(), .add(), benchmark() calls, or declarative structure with suites/benchmarks',
-        severity: 'warning',
+        severity: 'error',
       });
     }
 

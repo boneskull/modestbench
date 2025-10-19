@@ -27,7 +27,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   iterations: 100, // Sufficient iterations for reliable statistics
   metadata: {},
   outputDir: './benchmark-results',
-  pattern: '**/*.bench.{js,ts,mjs,mts}',
+  pattern: '**/*.bench.{js,ts,mjs,cjs,mts}',
   quiet: false,
   reporterConfig: {},
   reporters: ['human'],
@@ -62,12 +62,40 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
     cliArgs?: Record<string, unknown>,
   ): Promise<ModestBenchConfig> {
     try {
+      // Create a fresh explorer for each load to avoid module caching issues
       const explorer = this.createExplorer();
 
       // 1. Load config file using cosmiconfig
-      const result = configPath
-        ? await explorer.load(resolve(configPath))
-        : await explorer.search();
+      let result;
+      if (configPath) {
+        const resolvedPath = resolve(configPath);
+        // For .js/.mjs/.cjs files, add cache busting to the import to avoid Node's module cache
+        if (
+          resolvedPath.endsWith('.js') ||
+          resolvedPath.endsWith('.mjs') ||
+          resolvedPath.endsWith('.cjs')
+        ) {
+          // Clear Node's module cache for this file to ensure fresh load
+          const moduleUrl = `${resolvedPath}?t=${Date.now()}`;
+          try {
+            const module = (await import(moduleUrl)) as {
+              [key: string]: unknown;
+              default?: unknown;
+            };
+            result = {
+              config: module.default || module,
+              filepath: resolvedPath,
+            };
+          } catch {
+            // Fall back to explorer.load if cache busting fails
+            result = await explorer.load(resolvedPath);
+          }
+        } else {
+          result = await explorer.load(resolvedPath);
+        }
+      } else {
+        result = await explorer.search();
+      }
 
       const fileConfig = (result?.config || {}) as Partial<ModestBenchConfig>;
 
@@ -283,15 +311,18 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
    */
   private createExplorer() {
     return cosmiconfig('modestbench', {
+      cache: false, // Disable caching to prevent cross-contamination between different config files
       loaders: {
-        '.ts': async (filepath: string) => {
-          // Use dynamic import to load TypeScript files
-          // tsx is already in dev dependencies and will handle TS compilation
-          const module = (await import(filepath)) as {
-            [key: string]: unknown;
-            default?: unknown;
-          };
-          return module.default || module;
+        '.ts': async (filepath: string): Promise<unknown> => {
+          // Use cosmiconfig-typescript-loader to load TypeScript files
+          // This works without tsx in the import chain
+          const { TypeScriptLoader: createTypeScriptLoader } = await import(
+            'cosmiconfig-typescript-loader'
+          );
+          const loader = createTypeScriptLoader();
+          const { readFile } = await import('node:fs/promises');
+          const content = await readFile(filepath, 'utf-8');
+          return (await loader(filepath, content)) as unknown;
         },
       },
       searchPlaces: [
@@ -302,11 +333,13 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         '.modestbenchrc.yml',
         '.modestbenchrc.js',
         '.modestbenchrc.mjs',
+        '.modestbenchrc.cjs',
         'modestbench.config.json',
         'modestbench.config.yaml',
         'modestbench.config.yml',
         'modestbench.config.js',
         'modestbench.config.mjs',
+        'modestbench.config.cjs',
         'modestbench.config.ts',
       ],
     });

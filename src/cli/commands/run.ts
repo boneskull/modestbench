@@ -41,8 +41,11 @@ export const handleRunCommand = async (
   options: RunOptions,
 ): Promise<number> => {
   // Check if JSON reporter is being used (need quiet output for clean JSON)
+  // Only force quiet mode if json is used AND no output directory is specified
+  // (i.e., outputting to stdout where we need clean JSON)
   const isUsingJsonReporter = options.reporters?.includes('json') ?? false;
-  const shouldBeQuiet = options.quiet || isUsingJsonReporter;
+  const shouldBeQuiet =
+    options.quiet || (isUsingJsonReporter && !options.output);
 
   try {
     // Step 1: Load and merge configuration
