@@ -106,7 +106,7 @@
     "prettier-plugin-sort-json": "4.1.1",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.46.0",
+    "typescript-eslint": "8.46.1",
     "zshy": "0.4.3"
   },
   "publishConfig": {
