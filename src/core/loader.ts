@@ -8,6 +8,7 @@
 import { glob } from 'glob';
 import { access, readFile, stat } from 'node:fs/promises';
 import { extname } from 'node:path';
+import { z } from 'zod';
 
 import type {
   ValidationError,
@@ -53,6 +54,42 @@ interface FileMetadata {
 interface FileWatcher {
   close(): void;
 }
+
+/**
+ * Zod schema for validating benchmark task structure
+ */
+const benchmarkTaskSchema = z.object({
+  fn: z.function(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  tags: z.array(z.string()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
+});
+
+/**
+ * Zod schema for validating benchmark suite structure
+ */
+const benchmarkSuiteSchema = z.object({
+  benchmarks: z.record(z.string(), benchmarkTaskSchema),
+  config: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  setup: z.function().optional(),
+  tags: z.array(z.string()).optional(),
+  teardown: z.function().optional(),
+});
+
+/**
+ * Zod schema for validating benchmark file structure
+ */
+const benchmarkFileSchema = z.object({
+  config: z.record(z.string(), z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  suites: z
+    .record(z.string(), benchmarkSuiteSchema)
+    .refine((suites) => Object.keys(suites).length > 0, {
+      message: 'At least one suite is required',
+    }),
+  tags: z.array(z.string()).optional(),
+});
 
 /**
  * Implementation of FileLoader for benchmark files
@@ -109,11 +146,11 @@ export class BenchmarkFileLoader implements FileLoader {
    */
   async load(filePath: string): Promise<BenchmarkFile> {
     try {
-      // Validate file first
-      const validation = await this.validate(filePath);
-      if (!validation.valid) {
+      // Basic file checks (existence, extension)
+      const basicValidation = await this.validate(filePath);
+      if (!basicValidation.valid) {
         throw new Error(
-          `Invalid benchmark file: ${validation.errors.map((e) => e.message).join(', ')}`,
+          `Invalid benchmark file: ${basicValidation.errors.map((e) => e.message).join(', ')}`,
         );
       }
 
@@ -149,17 +186,18 @@ export class BenchmarkFileLoader implements FileLoader {
 
       const exports = module.default || module;
 
-      // Analyze exports for metadata
+      // Validate the loaded exports structure with Zod
+      const structureValidation = this.validateExports(filePath, exports);
+      if (!structureValidation.valid) {
+        throw new Error(
+          `Invalid benchmark structure: ${structureValidation.errors.map((e) => e.message).join(', ')}`,
+        );
+      }
+
+      // Analyze exports for metadata (simplified - structure already validated)
       const hasDefaultExport = module.default !== undefined;
       const exportNames = Object.keys(module);
-      const hasBenchmarks = Boolean(
-        exports &&
-          typeof exports === 'object' &&
-          'suites' in exports &&
-          exports.suites &&
-          typeof exports.suites === 'object' &&
-          Object.keys(exports.suites as Record<string, unknown>).length > 0,
-      );
+      const hasBenchmarks = true; // Already validated by Zod schema
 
       return {
         content,
@@ -169,7 +207,7 @@ export class BenchmarkFileLoader implements FileLoader {
           exportNames,
           hasBenchmarks,
           hasDefaultExport,
-          isValid: validation.valid,
+          isValid: true,
           mtime: stats.mtime,
           size: stats.size,
         },
@@ -196,7 +234,8 @@ export class BenchmarkFileLoader implements FileLoader {
   }
 
   /**
-   * Validate benchmark file structure
+   * Validate benchmark file (basic checks only - file existence and extension)
+   * Structure validation happens after loading in the load() method
    */
   async validate(filePath: string): Promise<ValidationResult> {
     const errors: ValidationError[] = [];
@@ -226,26 +265,6 @@ export class BenchmarkFileLoader implements FileLoader {
           severity: 'error',
         });
       }
-
-      // Read and validate content
-      let content: string;
-      try {
-        content = await readFile(filePath, 'utf-8');
-      } catch (error) {
-        errors.push({
-          code: 'FILE_READ_ERROR',
-          file: filePath,
-          message: `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
-          severity: 'error',
-        });
-        return { errors, files: [filePath], valid: false, warnings };
-      }
-
-      // Basic syntax validation
-      await this.validateSyntax(filePath, content, errors, warnings);
-
-      // Structure validation
-      await this.validateStructure(filePath, content, errors, warnings);
 
       return {
         errors,
@@ -287,162 +306,43 @@ export class BenchmarkFileLoader implements FileLoader {
   }
 
   /**
-   * Get file metadata for validation and change detection
+   * Validate the structure of loaded exports using Zod schema
    */
-  private async getFileMetadata(
+  private validateExports(
     filePath: string,
-    content: string,
-  ): Promise<FileMetadata> {
-    const { stat } = await import('node:fs/promises');
-    const stats = await stat(filePath);
+    exports: unknown,
+  ): {
+    valid: boolean;
+    errors: ValidationError[];
+    warnings: ValidationWarning[];
+  } {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
 
-    // Basic analysis of file content
-    const hasDefaultExport = /export\s+default/.test(content);
-    const exportMatches =
-      content.match(/export\s+(?:const|let|var|function|class)\s+(\w+)/g) || [];
-    const exportNames = exportMatches
-      .map((match) => {
-        const nameMatch = match.match(
-          /export\s+(?:const|let|var|function|class)\s+(\w+)/,
-        );
-        return nameMatch?.[1];
-      })
-      .filter((name): name is string => Boolean(name));
-
-    // Check for benchmark-like patterns
-    const hasBenchmarks =
-      /(?:suite|bench|test|it)\s*\(/.test(content) ||
-      /\.add\s*\(/.test(content) ||
-      /benchmark\s*\(/.test(content);
-
-    return {
-      exportNames,
-      hasBenchmarks,
-      hasDefaultExport,
-      isValid: true, // Will be set based on validation
-      mtime: stats.mtime,
-      size: stats.size,
-    };
-  }
-
-  /**
-   * Validate benchmark file structure and patterns
-   */
-  private async validateStructure(
-    filePath: string,
-    content: string,
-    errors: ValidationError[],
-    warnings: ValidationWarning[],
-  ): Promise<void> {
-    // Check for benchmark patterns
-    const hasBenchmarkPatterns =
-      /(?:suite|bench|test|it)\s*\(/.test(content) ||
-      /\.add\s*\(/.test(content) ||
-      /benchmark\s*\(/.test(content) ||
-      // Check for declarative structure patterns
-      /suites\s*:\s*\{/.test(content) ||
-      /benchmarks\s*:\s*[[{]/.test(content) ||
-      /export\s+default\s+\{[\s\S]*suites/.test(content);
-
-    if (!hasBenchmarkPatterns) {
-      errors.push({
-        code: 'NO_BENCHMARKS',
-        file: filePath,
-        message:
-          'No benchmark patterns found. Expected suite(), bench(), test(), it(), .add(), benchmark() calls, or declarative structure with suites/benchmarks',
-        severity: 'error',
-      });
-    }
-
-    // Check for anti-patterns
-    if (/console\.time\(/.test(content)) {
-      warnings.push({
-        code: 'CONSOLE_TIMING',
-        file: filePath,
-        message:
-          'Found console.time() usage. Consider using proper benchmark framework instead',
-        severity: 'warning',
-      });
-    }
-
-    if (
-      /Date\.now\(\)/.test(content) &&
-      /Date\.now\(\).*-.*Date\.now\(\)/.test(content)
-    ) {
-      warnings.push({
-        code: 'MANUAL_TIMING',
-        file: filePath,
-        message:
-          'Found manual timing with Date.now(). Consider using proper benchmark framework instead',
-        severity: 'warning',
-      });
-    }
-
-    // Check for async patterns without proper handling
-    if (/async\s+function/.test(content) && !/await/.test(content)) {
-      warnings.push({
-        code: 'ASYNC_WITHOUT_AWAIT',
-        file: filePath,
-        message:
-          'Found async function without await. Make sure async benchmarks are properly handled',
-        severity: 'warning',
-      });
-    }
-  }
-
-  /**
-   * Validate JavaScript/TypeScript syntax
-   */
-  private async validateSyntax(
-    filePath: string,
-    content: string,
-    errors: ValidationError[],
-    warnings: ValidationWarning[],
-  ): Promise<void> {
-    // Basic syntax checks
-    if (content.trim().length === 0) {
-      warnings.push({
-        code: 'EMPTY_FILE',
-        file: filePath,
-        message: 'File is empty',
-        severity: 'warning',
-      });
-      return;
-    }
-
-    // Check for basic JavaScript/TypeScript syntax errors
     try {
-      // Simple checks for common syntax issues
-      const openBraces = (content.match(/\{/g) || []).length;
-      const closeBraces = (content.match(/\}/g) || []).length;
+      const result = benchmarkFileSchema.safeParse(exports);
 
-      if (openBraces !== closeBraces) {
-        errors.push({
-          code: 'SYNTAX_ERROR',
-          file: filePath,
-          message: `Mismatched braces: ${openBraces} open, ${closeBraces} close`,
-          severity: 'error',
-        });
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : '';
+          errors.push({
+            code: 'INVALID_STRUCTURE',
+            file: filePath,
+            message: `${path}${issue.message}`,
+            severity: 'error',
+          });
+        }
       }
 
-      const openParens = (content.match(/\(/g) || []).length;
-      const closeParens = (content.match(/\)/g) || []).length;
-
-      if (openParens !== closeParens) {
-        errors.push({
-          code: 'SYNTAX_ERROR',
-          file: filePath,
-          message: `Mismatched parentheses: ${openParens} open, ${closeParens} close`,
-          severity: 'error',
-        });
-      }
+      return { valid: result.success, errors, warnings };
     } catch (error) {
       errors.push({
-        code: 'SYNTAX_VALIDATION_ERROR',
+        code: 'VALIDATION_ERROR',
         file: filePath,
-        message: `Syntax validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Structure validation failed: ${error instanceof Error ? error.message : String(error)}`,
         severity: 'error',
       });
+      return { valid: false, errors, warnings };
     }
   }
 }

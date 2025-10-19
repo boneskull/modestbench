@@ -180,9 +180,13 @@ const handleResults = (
   // The reporters should handle displaying results
   // This function only determines the exit code
 
+  // Check if any files failed to load/execute
+  const hasFileErrors = executionResult.files.some((file) => file.error);
+
   // Determine exit code based on results
   if (executionResult && executionResult.summary) {
-    return executionResult.summary.failedTasks > 0
+    // Return error if there are failed tasks OR file-level errors
+    return executionResult.summary.failedTasks > 0 || hasFileErrors
       ? ExitCodes.GeneralError
       : ExitCodes.Success;
   }
