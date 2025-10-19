@@ -32,7 +32,6 @@ import {
 import { handleHistoryCommand as historyCommand } from './commands/history.js';
 import { handleInitCommand as initCommand } from './commands/init.js';
 import { handleRunCommand as runCommand } from './commands/run.js';
-import { handleValidateCommand as validateCommand } from './commands/validate.js';
 
 /**
  * CLI context with initialized services
@@ -434,67 +433,6 @@ export const main = async (
             type: argv.type,
             verbose: argv.verbose >= 2,
             yes: argv.yes,
-          });
-          process.exit(exitCode);
-        },
-      )
-      .command(
-        'validate [pattern..]',
-        'Validate benchmark files without running',
-        (yargs) => {
-          return yargs
-            .positional('pattern', {
-              array: true,
-              default: ['**/*.bench.{js,ts}'],
-              describe: 'Glob patterns for benchmark files',
-              type: 'string',
-            })
-            .option('fix', {
-              default: false,
-              description: 'Automatically fix issues where possible',
-              type: 'boolean',
-            })
-            .option('strict', {
-              default: false,
-              description:
-                'Enable strict validation (treat warnings as errors)',
-              type: 'boolean',
-            })
-            .option('format', {
-              choices: ['human', 'json'] as const,
-              default: 'human' as const,
-              description: 'Output format',
-              type: 'string',
-            })
-            .option('quiet', {
-              default: false,
-              description: 'Minimal output',
-              type: 'boolean',
-            })
-            .example([
-              ['$0 validate', 'Validate all benchmark files'],
-              [
-                '$0 validate "benchmarks/*.bench.js"',
-                'Validate specific patterns',
-              ],
-              [
-                '$0 validate --strict --format json',
-                'Strict validation with JSON output',
-              ],
-              ['$0 validate --fix', 'Validate and auto-fix issues'],
-            ]);
-        },
-        async (argv) => {
-          const context = await createCliContext(argv, abortController!);
-          const exitCode = await validateCommand(context, {
-            config: argv.config,
-            cwd: argv.cwd,
-            fix: argv.fix,
-            format: argv.format,
-            pattern: argv.pattern,
-            quiet: Boolean(argv.quiet),
-            strict: argv.strict,
-            verbose: argv.verbose >= 2,
           });
           process.exit(exitCode);
         },
