@@ -699,12 +699,18 @@ export class ModestBenchEngine implements BenchmarkEngine {
       // const { Bench } = await import('tinybench');
 
       // Create benchmark instance using static import
-      // Note: Use time-based benchmarking only to avoid array length issues with very fast operations
-      // tinybench will automatically determine iterations based on time
+      // Note: tinybench iterations is a MINIMUM - it runs for full time budget AND ensures min iterations
+      // To make iterations the limiting factor, use minimal time when iterations is specified
+      // When user specifies low iterations (<100), prioritize iteration count over time budget
+      // Use 1ms time budget to make iterations the limiting factor
+      const effectiveTime =
+        config.iterations < 100 ? 1 : Math.min(config.time || 1000, 2000);
+
       const bench = new Bench({
-        time: Math.min(config.time || 1000, 2000), // Cap at 2 seconds to prevent overflow
-        warmupIterations: 0,
-        warmupTime: Math.min(config.warmup || 0, 500), // Cap warmup too
+        iterations: config.iterations,
+        time: effectiveTime,
+        warmupIterations: config.warmup,
+        warmupTime: config.warmup > 0 ? Math.min(config.warmup || 0, 500) : 0,
       });
 
       // Add the task with signal for task-level abort support
@@ -728,8 +734,14 @@ export class ModestBenchEngine implements BenchmarkEngine {
           error instanceof Error ? error.message : String(error);
 
         if (errorMessage.includes('Invalid array length')) {
-          // Retry with minimal time (10ms) for extremely fast operations
-          const minimalBench = new Bench({ time: 10, warmupTime: 0 });
+          // Retry with minimal time (1ms) for extremely fast operations
+          const effectiveTime = config.iterations < 100 ? 1 : 10;
+          const minimalBench = new Bench({
+            iterations: config.iterations,
+            time: effectiveTime,
+            warmupIterations: config.warmup,
+            warmupTime: 0,
+          });
           minimalBench.add(
             taskName,
             taskData.fn,
@@ -810,7 +822,13 @@ export class ModestBenchEngine implements BenchmarkEngine {
         // Handle array length errors for extremely fast operations
         if (errorMessage.includes('Invalid array length')) {
           // Retry with minimal time for extremely fast operations
-          const minimalBench = new Bench({ time: 10, warmupTime: 0 });
+          const effectiveTime = config.iterations < 100 ? 1 : 10;
+          const minimalBench = new Bench({
+            iterations: config.iterations,
+            time: effectiveTime,
+            warmupIterations: config.warmup,
+            warmupTime: 0,
+          });
           minimalBench.add(
             taskName,
             taskData.fn,
