@@ -5,6 +5,7 @@ const stringState = {
 
 // Shared state for Array Algorithms suite
 const arrayState = {
+  /** @type {number[]} */
   testArray: [],
 };
 
