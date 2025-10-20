@@ -149,8 +149,9 @@ export const main = async (
           return yargs
             .positional('pattern', {
               array: true,
-              default: ['**/*.bench.{js,ts}'],
-              describe: 'Glob patterns for benchmark files',
+              default: [],
+              describe:
+                'File paths, directory paths, or glob patterns for benchmark files',
               type: 'string',
             })
             .option('config', {
@@ -255,16 +256,12 @@ export const main = async (
               type: 'array',
             })
             .example([
-              ['$0 run', 'Run all benchmark files'],
-              ['$0 run "src/**/*.bench.js"', 'Run specific pattern'],
-              [
-                '$0 run file1.bench.js file2.bench.js',
-                'Run multiple specific files',
-              ],
-              [
-                '$0 run "benchmarks/*.bench.js" "tests/*.bench.js"',
-                'Run multiple patterns',
-              ],
+              ['$0 run', 'Run benchmarks in current directory and bench/'],
+              ['$0 run benchmarks/', 'Run all benchmarks in a directory'],
+              ['$0 run src/perf/', 'Run benchmarks in specific directory'],
+              ['$0 run "src/**/*.bench.js"', 'Run specific glob pattern'],
+              ['$0 run file1.bench.js file2.bench.js', 'Run specific files'],
+              ['$0 run benchmarks/ tests/perf/', 'Run multiple directories'],
               ['$0 run --reporters json,csv', 'Use multiple reporters'],
               ['$0 run --iterations 1000', 'Set iteration count'],
               ['$0 run --bail', 'Stop on first failure'],
