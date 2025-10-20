@@ -40,6 +40,7 @@ modestbench init advanced --config-type typescript
 - `basic` - Simple setup for small projects (100 iterations, human reporter)
 - `advanced` - Feature-rich with multiple reporters and structured output (1000 iterations, warmup, human + JSON reporters)
 - `library` - Optimized for library performance testing (5000 iterations, high warmup, all reporters, organized suite structure)
+- `library` - Optimized for library performance testing (5000 iterations, high warmup, human + JSON reporters, organized suite structure)
 
 ### Create Your First Benchmark
 

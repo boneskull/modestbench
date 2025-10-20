@@ -65,7 +65,7 @@ const PROJECT_TEMPLATES = {
       iterations: 5000,
       outputDir: './benchmark-results',
       pattern: 'benchmarks/**/*.bench.{js,ts}',
-      reporters: ['human', 'json', 'csv'],
+      reporters: ['human', 'json'],
       time: 15000,
       warmup: 100,
     },
