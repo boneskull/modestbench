@@ -1,5 +1,6 @@
 import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
+import { scheduler } from 'node:timers/promises';
 
 import type { ErrorContext, ExecutionError } from '../../src/types/index.js';
 
@@ -412,20 +413,24 @@ describe('ModestBenchErrorManager', () => {
       expect(stats.byType.BENCH_004, 'to equal', 1);
     });
 
-    it('should track first and last error timestamps', () => {
+    it('should track first and last error timestamps', async () => {
       const manager = new ModestBenchErrorManager();
 
       manager.handleError(new Error('Error 1'), {
         phase: 'execution',
         timestamp: new Date(),
       });
+
       // Small delay to ensure different timestamps
-      const midStats = manager.getStats();
+      await scheduler.wait(1);
 
       manager.handleError(new Error('Error 2'), {
         phase: 'execution',
         timestamp: new Date(),
       });
+
+      await scheduler.wait(1);
+
       manager.handleError(new Error('Error 3'), {
         phase: 'execution',
         timestamp: new Date(),
@@ -501,7 +506,7 @@ describe('ModestBenchErrorManager', () => {
 
       expect(callCount, 'to equal', 1);
       expect(receivedError, 'not to be null');
-      expect(receivedError?.message, 'to be a string');
+      expect(receivedError!.message, 'to be a string');
     });
 
     it('should register multiple handlers', () => {
