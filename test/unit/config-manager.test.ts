@@ -137,7 +137,11 @@ describe('ModestBenchConfigurationManager', () => {
     it('should default to iterations when neither time nor iterations provided', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({});
-      const result = (manager as any).applySmartDefaults(merged, {}, {});
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
+        merged,
+        {},
+        {},
+      );
 
       expect(result.limitBy, 'to equal', 'iterations');
     });
@@ -145,7 +149,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should use time when only --time provided', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({});
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { time: 5000 },
         {},
@@ -157,7 +161,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should use iterations when only --iterations provided', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({});
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { iterations: 1000 },
         {},
@@ -169,7 +173,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should use any when both --time and --iterations provided', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({});
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { iterations: 1000, time: 5000 },
         {},
@@ -181,7 +185,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should use time when only -t short flag provided', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({});
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { t: 5000 },
         {},
@@ -193,7 +197,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should use iterations when only -i short flag provided', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({});
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { i: 1000 },
         {},
@@ -205,7 +209,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should respect explicit limitBy from CLI', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({ limitBy: 'any' as any });
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { iterations: 1000, 'limit-by': 'any', time: 5000 },
         {},
@@ -218,7 +222,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should respect explicit limitBy from file config', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({ limitBy: 'time' });
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { iterations: 1000 },
         { limitBy: 'time' },
@@ -235,7 +239,7 @@ describe('ModestBenchConfigurationManager', () => {
         { limitBy: 'time' },
         { limitBy: 'any' as any },
       );
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { limitBy: 'any' },
         { limitBy: 'time' },
@@ -248,7 +252,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should not change limitBy if already set in merged config and present in fileConfig', () => {
       const manager = new ModestBenchConfigurationManager();
       const merged = manager.merge({ limitBy: 'any' as any });
-      const result = (manager as any).applySmartDefaults(
+      const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { iterations: 1000, time: 5000 },
         { limitBy: 'any' },
