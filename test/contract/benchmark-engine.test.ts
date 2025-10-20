@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
+import type { BenchmarkEngine } from '../../src/types/interfaces.js';
+
 import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
 import { ModestBenchEngine } from '../../src/core/engine.js';
 import { ModestBenchErrorManager } from '../../src/core/error-manager.js';
@@ -11,7 +13,6 @@ import { BenchmarkFileLoader } from '../../src/core/loader.js';
 import { ModestBenchProgressManager } from '../../src/progress/manager.js';
 import { ModestBenchReporterRegistry } from '../../src/reporters/registry.js';
 import { FileHistoryStorage } from '../../src/storage/history.js';
-import type { BenchmarkEngine } from '../../src/types/interfaces.js';
 
 /**
  * Contract tests for BenchmarkEngine interface Reference: contracts/core-api.md
@@ -231,7 +232,7 @@ describe('BenchmarkEngine interface contract', () => {
       ]);
       // Should mark as invalid or have errors
       expect(
-        result.valid === false || (result.errors && result.errors.length > 0),
+        !result.valid || (result.errors && result.errors.length > 0),
         'to be truthy',
       );
     });

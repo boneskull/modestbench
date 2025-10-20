@@ -28,9 +28,9 @@ import type {
 /**
  * Build a mock benchmark run object
  */
-export function buildMockBenchmarkRun(
+export const buildMockBenchmarkRun = (
   overrides?: Partial<BenchmarkRun>,
-): BenchmarkRun {
+): BenchmarkRun => {
   const startTime = new Date();
   const endTime = new Date(startTime.getTime() + 5000);
 
@@ -45,14 +45,14 @@ export function buildMockBenchmarkRun(
     summary: buildMockSummary(),
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock configuration object
  */
-export function buildMockConfig(
+export const buildMockConfig = (
   overrides?: Partial<ModestBenchConfig>,
-): ModestBenchConfig {
+): ModestBenchConfig => {
   return {
     bail: false,
     exclude: ['node_modules/**'],
@@ -73,12 +73,12 @@ export function buildMockConfig(
     warmup: 0,
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock CPU info object
  */
-export function buildMockCpuInfo(overrides?: Partial<CpuInfo>): CpuInfo {
+export const buildMockCpuInfo = (overrides?: Partial<CpuInfo>): CpuInfo => {
   const realCpus = cpus();
   return {
     cores: realCpus.length,
@@ -86,14 +86,14 @@ export function buildMockCpuInfo(overrides?: Partial<CpuInfo>): CpuInfo {
     speed: realCpus[0]?.speed || 2000,
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock environment info object
  */
-export function buildMockEnvironment(
+export const buildMockEnvironment = (
   overrides?: Partial<EnvironmentInfo>,
-): EnvironmentInfo {
+): EnvironmentInfo => {
   return {
     arch: arch(),
     availableMemory: freemem(),
@@ -105,14 +105,14 @@ export function buildMockEnvironment(
     platform: platform(),
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock file result object
  */
-export function buildMockFileResult(
+export const buildMockFileResult = (
   overrides?: Partial<FileResult>,
-): FileResult {
+): FileResult => {
   const startTime = new Date();
   const endTime = new Date(startTime.getTime() + 2000);
 
@@ -124,14 +124,14 @@ export function buildMockFileResult(
     suites: [buildMockSuiteResult()],
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock memory info object
  */
-export function buildMockMemoryInfo(
+export const buildMockMemoryInfo = (
   overrides?: Partial<MemoryInfo>,
-): MemoryInfo {
+): MemoryInfo => {
   const total = totalmem();
   const free = freemem();
   return {
@@ -140,14 +140,14 @@ export function buildMockMemoryInfo(
     used: total - free,
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock progress state object
  */
-export function buildMockProgressState(
+export const buildMockProgressState = (
   overrides?: Partial<ProgressState>,
-): ProgressState {
+): ProgressState => {
   return {
     currentFile: 'test.bench.js',
     currentSuite: 'test suite',
@@ -162,14 +162,14 @@ export function buildMockProgressState(
     totalTasks: 5,
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock suite result object
  */
-export function buildMockSuiteResult(
+export const buildMockSuiteResult = (
   overrides?: Partial<SuiteResult>,
-): SuiteResult {
+): SuiteResult => {
   const startTime = new Date();
   const endTime = new Date(startTime.getTime() + 1000);
 
@@ -181,12 +181,14 @@ export function buildMockSuiteResult(
     tasks: [buildMockTaskResult()],
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock run summary object
  */
-export function buildMockSummary(overrides?: Partial<RunSummary>): RunSummary {
+export const buildMockSummary = (
+  overrides?: Partial<RunSummary>,
+): RunSummary => {
   return {
     failedTasks: 0,
     fastest: null,
@@ -199,14 +201,14 @@ export function buildMockSummary(overrides?: Partial<RunSummary>): RunSummary {
     totalTasks: 1,
     ...overrides,
   };
-}
+};
 
 /**
  * Build a mock task result object
  */
-export function buildMockTaskResult(
+export const buildMockTaskResult = (
   overrides?: Partial<TaskResult>,
-): TaskResult {
+): TaskResult => {
   return {
     iterations: 1000,
     marginOfError: 1.5,
@@ -221,4 +223,4 @@ export function buildMockTaskResult(
     variance: 40_000,
     ...overrides,
   };
-}
+};

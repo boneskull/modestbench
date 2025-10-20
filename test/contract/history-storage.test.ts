@@ -256,7 +256,7 @@ describe('HistoryStorage interface contract', () => {
       const result = await historyStorage.export('json');
       expect(result, 'to be a string');
       // Should be valid JSON
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(result) as unknown;
       expect(parsed, 'to be an', Array);
     });
 
@@ -264,15 +264,15 @@ describe('HistoryStorage interface contract', () => {
       // Save a run first with explicit Date objects throughout the hierarchy
       const now = new Date();
       const mockRun = buildMockBenchmarkRun({
-        id: 'export-csv-test',
-        startTime: now,
         endTime: new Date(now.getTime() + 5000),
         files: [
           buildMockFileResult({
-            startTime: now,
             endTime: new Date(now.getTime() + 2000),
+            startTime: now,
           }),
         ],
+        id: 'export-csv-test',
+        startTime: now,
       });
       await historyStorage.saveRun(mockRun);
 
