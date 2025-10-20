@@ -308,7 +308,7 @@ const setupReporters = async (
           includeHeaders: true,
           includeMetadata: true,
           ...(outputDir ? { outputPath: `${outputDir}/results.csv` } : {}),
-          quiet: explicitQuiet, // Only explicit quiet
+          quiet: explicitQuiet, // Only applies explicit --quiet flag; CSV output can coexist with progress messages on different streams
           verbose: isVerbose,
         });
       } else {
