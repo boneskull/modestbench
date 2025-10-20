@@ -293,7 +293,7 @@ const setupReporters = async (
         reporter = new HumanReporter({
           color: true,
           progress: true,
-          quiet: explicitQuiet, // Only explicit quiet, not JSON-forced
+          quiet: explicitQuiet, // Only applies explicit --quiet flag; JSON reporter forcing quiet mode does not affect HumanReporter progress output
           verbose: isVerbose,
         });
       } else if (reporterName === 'json') {
