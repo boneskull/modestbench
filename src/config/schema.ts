@@ -10,6 +10,8 @@ import * as z from 'zod';
 
 import type { ModestBenchConfig } from '../types/core.js';
 
+import { BENCHMARK_FILE_PATTERN } from '../constants.js';
+
 /**
  * Schema for threshold configuration
  *
@@ -105,7 +107,7 @@ const modestBenchConfigSchema = z
     pattern: z
       .union([z.string().min(1), z.array(z.string().min(1))])
       .describe(
-        'Glob pattern(s) for discovering benchmark files. Can be a single pattern string or array of patterns (e.g., "**/*.bench.{js,ts}")',
+        `Glob pattern(s) for discovering benchmark files. Can be a single pattern string or array of patterns (e.g., "**/*${BENCHMARK_FILE_PATTERN}")`,
       ),
     quiet: z
       .boolean()

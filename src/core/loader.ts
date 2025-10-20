@@ -17,6 +17,8 @@ import type {
 } from '../types/index.js';
 import type { FileLoader } from './engine.js';
 
+import { BENCHMARK_FILE_EXTENSIONS } from '../constants.js';
+
 /**
  * A benchmark file containing one or more suites with configuration and
  * metadata
@@ -201,12 +203,7 @@ const benchmarkFileSchema: z.ZodType<BenchmarkDefinition> = z
  * Implementation of FileLoader for benchmark files
  */
 export class BenchmarkFileLoader implements FileLoader {
-  private readonly supportedExtensions = new Set([
-    '.cjs',
-    '.js',
-    '.mjs',
-    '.ts',
-  ]);
+  private readonly supportedExtensions = BENCHMARK_FILE_EXTENSIONS;
 
   /**
    * Discover benchmark files using glob patterns or explicit file paths
