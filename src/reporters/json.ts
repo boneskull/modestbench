@@ -74,6 +74,7 @@ export class JsonReporter extends BaseReporter {
       outputPath?: string;
       prettyPrint?: boolean;
       quiet?: boolean;
+      verbose?: boolean;
     } = {},
   ) {
     super('json', options);

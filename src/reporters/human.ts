@@ -255,20 +255,8 @@ export class HumanReporter extends BaseReporter {
 
     if (run.ci) {
       console.log(`  CI: ${this.colorize('cyan', run.ci.provider)}`);
-    }
-
-    if (this.verbose && run.files.length > 0) {
-      console.log(this.colorize('dim', 'Files to benchmark:'));
-      for (const file of run.files) {
-        console.log(`  ${this.colorize('gray', file.filePath)}`);
-      }
       console.log();
     }
-
-    console.log(
-      this.colorize('dim', `Found ${run.summary.totalFiles} benchmark file(s)`),
-    );
-    console.log();
   }
 
   onSuiteEnd(result: SuiteResult): void {

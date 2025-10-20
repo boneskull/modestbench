@@ -110,7 +110,7 @@ export const main = async (
       })
       .option('verbose', {
         alias: 'v',
-        default: 1,
+        default: 0,
         description: 'Increase verbosity (use multiple times for more verbose)',
         global: true,
         type: 'count',
@@ -288,7 +288,7 @@ export const main = async (
             tags: argv.tags,
             time: argv.time,
             timeout: argv.timeout,
-            verbose: argv.verbose >= 2,
+            verbose: argv.verbose >= 1,
             warmup: argv.warmup,
           });
           process.exit(exitCode);
@@ -394,7 +394,7 @@ export const main = async (
             subcommand: argv.subcommand,
             tags: argv.tags as string[] | undefined,
             until: argv.until,
-            verbose: argv.verbose >= 2,
+            verbose: argv.verbose >= 1,
           });
           process.exit(exitCode);
         },
@@ -459,7 +459,7 @@ export const main = async (
             force: argv.force,
             quiet: Boolean(argv.quiet),
             type: argv.type,
-            verbose: argv.verbose >= 2,
+            verbose: argv.verbose >= 1,
             yes: argv.yes,
           });
           process.exit(exitCode);
@@ -507,7 +507,7 @@ const createCliContext = async (
       'human',
       new HumanReporter({
         color: !options.noColor,
-        verbose: options.verbose >= 2,
+        verbose: options.verbose >= 1,
       }),
     );
 
