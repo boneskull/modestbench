@@ -227,7 +227,7 @@ describe('BaseReporter', () => {
     it('should handle very large values', () => {
       const reporter = new TestReporter();
 
-      const result = reporter.testFormatOpsPerSecond(10000000000000);
+      const result = reporter.testFormatOpsPerSecond(10_000_000_000_000);
       expect(result, 'to contain', 'B ops/sec');
     });
 

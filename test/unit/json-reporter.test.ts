@@ -399,7 +399,6 @@ describe('JsonReporter', () => {
         opsPerSecond: 2000,
         p95: 950,
         p99: 980,
-        passed: true,
 
         stdDev: 50,
         variance: 2500,
@@ -417,7 +416,6 @@ describe('JsonReporter', () => {
         opsPerSecond: 0,
         p95: 0,
         p99: 0,
-        passed: false,
 
         stdDev: 0,
         variance: 0,
