@@ -31,7 +31,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   limitBy: 'iterations', // Default to limiting by iteration count
   metadata: {},
   outputDir: './benchmark-results',
-  pattern: '**/*.bench.{js,ts,mjs,cjs,mts}',
+  pattern: '**/*.bench.{js,ts,mjs,cjs,mts,cts}',
   quiet: false,
   reporterConfig: {},
   reporters: ['human'],
@@ -177,6 +177,12 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         ...result,
         ...config,
         // Special handling for arrays - replace rather than merge
+        // Allow empty arrays to override defaults (for pattern defaulting in loader)
+        ...(config.pattern !== undefined && {
+          pattern: Array.isArray(config.pattern)
+            ? [...config.pattern]
+            : config.pattern,
+        }),
         ...(config.exclude && { exclude: [...config.exclude] }),
         ...(config.excludeTags && { excludeTags: [...config.excludeTags] }),
         ...(config.reporters && { reporters: [...config.reporters] }),

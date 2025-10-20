@@ -204,9 +204,9 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
     const cliArgs: Record<string, unknown> = {};
 
     // Map CLI arguments to config properties
-    // Always pass pattern as-is (string or array) to support multiple patterns
-    if (options.pattern && options.pattern.length > 0) {
-      // If only one pattern, pass as string; otherwise pass as array
+    // Pass pattern as-is, even if empty (loader will provide defaults)
+    if (options.pattern !== undefined) {
+      // If pattern is provided, use it; if empty array, pass it (for defaults)
       cliArgs.pattern =
         options.pattern.length === 1 ? options.pattern[0] : options.pattern;
     }
