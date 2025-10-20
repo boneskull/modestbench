@@ -17,7 +17,10 @@ import type {
 } from '../types/index.js';
 import type { FileLoader } from './engine.js';
 
-import { BENCHMARK_FILE_EXTENSIONS } from '../constants.js';
+import {
+  BENCHMARK_FILE_EXTENSIONS,
+  BENCHMARK_FILE_PATTERN,
+} from '../constants.js';
 
 /**
  * A benchmark file containing one or more suites with configuration and
@@ -213,11 +216,38 @@ export class BenchmarkFileLoader implements FileLoader {
     exclude: string[] = [],
   ): Promise<string[]> {
     try {
-      const patterns = Array.isArray(pattern) ? pattern : [pattern];
+      let patterns = Array.isArray(pattern) ? pattern : [pattern];
+
+      // Handle empty patterns - use sensible defaults
+      if (patterns.length === 0) {
+        patterns = [
+          `*${BENCHMARK_FILE_PATTERN}`, // top-level current directory
+          `bench/*${BENCHMARK_FILE_PATTERN}`, // top-level bench/ directory
+        ];
+      }
+
+      // Expand directory paths to recursive glob patterns
+      const expandedPatterns: string[] = [];
+      for (const p of patterns) {
+        try {
+          const stats = await stat(p);
+          if (stats.isDirectory()) {
+            // Directory: search recursively
+            expandedPatterns.push(`${p}/**/*${BENCHMARK_FILE_PATTERN}`);
+          } else {
+            // File or doesn't exist: use as-is (glob will handle it)
+            expandedPatterns.push(p);
+          }
+        } catch {
+          // Path doesn't exist, treat as glob pattern
+          expandedPatterns.push(p);
+        }
+      }
+
       const allFiles = new Set<string>();
 
       // Process each pattern
-      for (const p of patterns) {
+      for (const p of expandedPatterns) {
         const files = await glob(p, {
           absolute: true,
           ignore: exclude,
