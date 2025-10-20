@@ -48,27 +48,33 @@ export const handleRunCommand = async (
   const isUsingJsonReporter = options.reporters?.includes('json') ?? false;
   const shouldBeQuiet =
     options.quiet || (isUsingJsonReporter && !options.outputDir);
+  const isVerbose = options.verbose ?? false;
+  // CLI messages on stderr should only be suppressed by explicit --quiet, not JSON-forced quiet
+  const showCliMessages = isVerbose && !options.quiet;
 
   try {
     // Step 1: Load and merge configuration
-    if (!shouldBeQuiet) {
+    if (showCliMessages) {
       console.error('Loading configuration...');
     }
     const config = await loadConfiguration(context, options);
 
     // Step 2: Configure reporters
-    if (!shouldBeQuiet) {
+    if (showCliMessages) {
       console.error('Setting up reporters...');
     }
     const reporters = await setupReporters(
       context,
       config,
       shouldBeQuiet,
+      isVerbose,
+      showCliMessages,
+      options.quiet ?? false,
       options.outputDir,
     );
 
     // Step 3: Discovery phase
-    if (!shouldBeQuiet) {
+    if (showCliMessages) {
       console.error('Discovering benchmark files...');
     }
     const discoveredFiles = await context.engine.discover(
@@ -76,18 +82,18 @@ export const handleRunCommand = async (
       config.exclude,
     );
 
-    if (!shouldBeQuiet) {
+    if (showCliMessages) {
       console.error(`Found ${discoveredFiles.length} benchmark file(s)`);
     }
 
     // Step 4: Validation phase
-    if (!shouldBeQuiet) {
+    if (showCliMessages) {
       console.error('Validating benchmark files...');
     }
     const validationResult = await context.engine.validate(discoveredFiles);
 
     if (validationResult.warnings.length > 0) {
-      if (!shouldBeQuiet) {
+      if (showCliMessages) {
         console.error('Validation warnings:');
         for (const warning of validationResult.warnings) {
           console.error(`  ${warning.code}: ${warning.message}`);
@@ -106,7 +112,7 @@ export const handleRunCommand = async (
     }
 
     // Step 5: Execution phase
-    if (!shouldBeQuiet) {
+    if (showCliMessages) {
       console.error('Starting benchmark execution...');
     }
 
@@ -133,13 +139,6 @@ export const handleRunCommand = async (
     }
 
     const exitCode = handleResults(executionResult, options, shouldBeQuiet);
-
-    if (!shouldBeQuiet) {
-      console.error('Run completed successfully!');
-      console.error(
-        `Total tasks: ${executionResult.summary?.totalTasks ?? 0}, Failed: ${executionResult.summary?.failedTasks ?? 0}`,
-      );
-    }
 
     return exitCode;
   } catch (error) {
@@ -266,6 +265,9 @@ const setupReporters = async (
   context: CliContext,
   config: { outputDir?: string; reporters?: string[] },
   shouldBeQuiet: boolean,
+  isVerbose: boolean,
+  showCliMessages: boolean,
+  explicitQuiet: boolean,
   explicitOutputDir?: string,
 ) => {
   try {
@@ -291,21 +293,23 @@ const setupReporters = async (
         reporter = new HumanReporter({
           color: true,
           progress: true,
-          quiet: shouldBeQuiet,
-          verbose: false,
+          quiet: explicitQuiet, // Only explicit quiet, not JSON-forced
+          verbose: isVerbose,
         });
       } else if (reporterName === 'json') {
         reporter = new JsonReporter({
           ...(outputDir ? { outputPath: `${outputDir}/results.json` } : {}),
           prettyPrint: true,
-          quiet: shouldBeQuiet,
+          quiet: shouldBeQuiet, // JSON uses shouldBeQuiet to avoid polluting stdout
+          verbose: isVerbose,
         });
       } else if (reporterName === 'csv') {
         reporter = new CsvReporter({
           includeHeaders: true,
           includeMetadata: true,
           ...(outputDir ? { outputPath: `${outputDir}/results.csv` } : {}),
-          quiet: shouldBeQuiet,
+          quiet: explicitQuiet, // Only explicit quiet
+          verbose: isVerbose,
         });
       } else {
         // Fall back to registry for custom reporters
@@ -321,7 +325,7 @@ const setupReporters = async (
       reporters.push(reporter);
     }
 
-    if (outputDir && !shouldBeQuiet) {
+    if (outputDir && showCliMessages) {
       console.error(`Output directory configured: ${outputDir}`);
     }
 

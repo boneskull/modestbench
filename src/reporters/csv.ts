@@ -81,6 +81,7 @@ export class CsvReporter extends BaseReporter {
       outputPath?: string;
       quiet?: boolean;
       quote?: string;
+      verbose?: boolean;
     } = {},
   ) {
     super('csv', options);
