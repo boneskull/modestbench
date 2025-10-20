@@ -133,9 +133,23 @@ See the **[examples directory](examples/README.md)** for additional guides and s
 
 ### Run Benchmarks
 
+Run benchmarks with sensible defaults:
+
 ```bash
-# Basic usage
-modestbench run [patterns...]
+# Run benchmarks in current directory and bench/ (top-level only)
+modestbench run
+
+# Run all benchmarks in a directory (searches recursively)
+modestbench run benchmarks/
+
+# Run benchmarks from multiple directories
+modestbench run src/perf/ tests/benchmarks/
+
+# Run specific files
+modestbench run benchmarks/critical.bench.js
+
+# Mix files, directories, and glob patterns
+modestbench run file.bench.js benchmarks/ "tests/**/*.bench.ts"
 
 # With options
 modestbench run \
@@ -146,6 +160,11 @@ modestbench run \
   --tags performance,algorithm \
   --concurrent
 ```
+
+**Supported file extensions:**
+
+- JavaScript: `.js`, `.mjs`, `.cjs`
+- TypeScript: `.ts`, `.mts`, `.cts`
 
 #### Controlling Benchmark Limits
 
