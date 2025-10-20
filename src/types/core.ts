@@ -236,6 +236,8 @@ export interface ModestBenchConfig {
   readonly bail: boolean;
   /** Patterns to exclude from discovery */
   readonly exclude: string[];
+  /** Tags to exclude from execution */
+  readonly excludeTags: string[];
   /** Default number of iterations per task */
   readonly iterations: number;
   /** How to limit benchmark execution: 'time', 'iterations', 'any', or 'all' */

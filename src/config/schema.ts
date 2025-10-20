@@ -74,6 +74,11 @@ const modestBenchConfigSchema = z
       .describe(
         'Glob patterns to exclude from benchmark file discovery (e.g., "node_modules/**", ".git/**")',
       ),
+    excludeTags: z
+      .array(z.string())
+      .describe(
+        'Tags to exclude from benchmark execution. Benchmarks matching any of these tags will be skipped.',
+      ),
     iterations: z
       .number()
       .int()

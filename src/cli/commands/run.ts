@@ -20,6 +20,7 @@ interface RunOptions {
   config?: string | undefined;
   cwd: string;
   exclude?: string[] | undefined;
+  excludeTags?: string[] | undefined;
   iterations?: number | undefined;
   json?: boolean | undefined;
   noColor?: boolean | undefined;
@@ -27,6 +28,7 @@ interface RunOptions {
   pattern: string[];
   quiet?: boolean | undefined;
   reporters: string[];
+  tags?: string[] | undefined;
   time?: number | undefined;
   timeout?: number | undefined;
   verbose?: boolean | undefined;
@@ -238,6 +240,12 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
     }
     if (options.verbose !== undefined) {
       cliArgs.verbose = options.verbose;
+    }
+    if (options.tags) {
+      cliArgs.tags = options.tags;
+    }
+    if (options.excludeTags) {
+      cliArgs.excludeTags = options.excludeTags;
     }
 
     // Load configuration with CLI argument precedence
