@@ -1,4 +1,4 @@
-import { expect } from 'bupkis';
+import { expect, expectAsync } from 'bupkis';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -51,9 +51,7 @@ describe('ConfigurationManager interface contract', () => {
   describe('load method contract', () => {
     it('should load configuration without parameters', async () => {
       const config = await configManager.load();
-      expect(config, 'to be an object');
-      expect(config, 'not to be null');
-      expect('reporters' in config, 'to be truthy');
+      expect(config, 'to be an object', 'and', 'to have property', 'reporters');
     });
 
     it('should load configuration with config path', async () => {
@@ -64,10 +62,10 @@ describe('ConfigurationManager interface contract', () => {
       );
 
       const config = await configManager.load(configFile);
-      expect(config, 'to be an object');
-      expect(config.iterations, 'to equal', 500);
-      expect(config.reporters[0], 'to equal', 'json');
-      expect(config.reporters.length, 'to equal', 1);
+      expect(config, 'to satisfy', {
+        iterations: 500,
+        reporters: expect.it('to deep equal', ['json']),
+      });
     });
 
     it('should load configuration with CLI args', async () => {
@@ -77,10 +75,8 @@ describe('ConfigurationManager interface contract', () => {
       };
 
       const config = await configManager.load(undefined, cliArgs);
-      expect(config, 'to be an object');
       // CLI args should merge with defaults
-      expect('outputDir' in config, 'to be truthy');
-      expect('reporters' in config, 'to be truthy');
+      expect(config, 'to have properties', ['outputDir', 'reporters']);
     });
 
     it('should return Promise<ModestBenchConfig>', async () => {
@@ -89,10 +85,11 @@ describe('ConfigurationManager interface contract', () => {
 
       const config = await promise;
       // Should have ModestBenchConfig properties
-      expect(config, 'to be an object');
-      expect('reporters' in config, 'to be truthy');
-      expect('iterations' in config, 'to be truthy');
-      expect('pattern' in config, 'to be truthy');
+      expect(config, 'to satisfy', {
+        iterations: expect.it('to be defined'),
+        pattern: expect.it('to be defined'),
+        reporters: expect.it('to be defined'),
+      });
     });
   });
 
@@ -104,17 +101,16 @@ describe('ConfigurationManager interface contract', () => {
       };
 
       const result = configManager.validate(partialConfig);
-      expect(result, 'to be an object');
-      expect('valid' in result, 'to be truthy');
-      // Partial config validation returns valid state
-      expect(typeof result.valid, 'to equal', 'boolean');
+      expect(result, 'to satisfy', {
+        valid: expect.it('to be a boolean'),
+      });
     });
 
     it('should return ValidationResult', () => {
       const result = configManager.validate({});
-      expect(result, 'to be an object');
-      expect('valid' in result, 'to be truthy');
-      expect(result.valid, 'to be a boolean');
+      expect(result, 'to satisfy', {
+        valid: expect.it('to be a boolean'),
+      });
     });
   });
 
@@ -125,13 +121,11 @@ describe('ConfigurationManager interface contract', () => {
       const config3 = { bail: true };
 
       const merged = configManager.merge(config1, config2, config3);
-      expect(typeof merged === 'object', 'to be truthy');
-      expect('reporters' in merged, 'to be truthy');
-      expect('outputDir' in merged, 'to be truthy');
-      expect('bail' in merged, 'to be truthy');
-      expect(merged.reporters[0], 'to equal', 'human');
-      expect(merged.outputDir, 'to equal', './results');
-      expect(merged.bail, 'to be', true);
+      expect(merged, 'to satisfy', {
+        bail: true,
+        outputDir: './results',
+        reporters: expect.it('to deep equal', ['human']),
+      });
     });
 
     it('should handle precedence correctly', () => {
@@ -140,32 +134,31 @@ describe('ConfigurationManager interface contract', () => {
 
       const merged = configManager.merge(config1, config2);
       // Later configs should override earlier ones
-      expect(merged.reporters, 'to be an array');
-      expect(merged.reporters[0], 'to equal', 'json');
-      expect(merged.reporters.length, 'to equal', 1);
+      expect(merged, 'to satisfy', {
+        reporters: expect.it('to deep equal', ['json']),
+      });
     });
 
     it('should return complete ModestBenchConfig', () => {
       const merged = configManager.merge({});
-      expect(typeof merged === 'object', 'to be truthy');
       // Should have all required properties filled in
-      expect('reporters' in merged, 'to be truthy');
-      expect('iterations' in merged, 'to be truthy');
-      expect('pattern' in merged, 'to be truthy');
+      expect(merged, 'to satisfy', {
+        iterations: expect.it('to be defined'),
+        pattern: expect.it('to be defined'),
+        reporters: expect.it('to be defined'),
+      });
     });
   });
 
   describe('getDefaults method contract', () => {
     it('should return default configuration', () => {
       const defaults = configManager.getDefaults();
-      expect(typeof defaults === 'object', 'to be truthy');
-      expect(defaults, 'not to be null');
-
       // Should have expected default properties
-      expect('reporters' in defaults, 'to be truthy');
-      expect(defaults.reporters, 'to be an array');
-      expect('iterations' in defaults, 'to be truthy');
-      expect('pattern' in defaults, 'to be truthy');
+      expect(defaults, 'to satisfy', {
+        iterations: expect.it('to be defined'),
+        pattern: expect.it('to be defined'),
+        reporters: expect.it('to be an array'),
+      });
     });
 
     it('should return consistent defaults', () => {
@@ -173,9 +166,11 @@ describe('ConfigurationManager interface contract', () => {
       const defaults2 = configManager.getDefaults();
 
       // Should return equivalent objects (check properties, not references)
-      expect(defaults1.iterations, 'to equal', defaults2.iterations);
-      expect(defaults1.reporters[0], 'to equal', defaults2.reporters[0]);
-      expect(defaults1.pattern, 'to equal', defaults2.pattern);
+      expect(defaults1, 'to satisfy', {
+        iterations: defaults2.iterations,
+        pattern: defaults2.pattern,
+        reporters: [defaults2.reporters[0]],
+      });
     });
   });
 
@@ -188,9 +183,10 @@ describe('ConfigurationManager interface contract', () => {
       );
 
       const config = await configManager.load(configFile);
-      expect(config.iterations, 'to equal', 200);
-      expect(config.reporters[0], 'to equal', 'csv');
-      expect(config.reporters.length, 'to equal', 1);
+      expect(config, 'to satisfy', {
+        iterations: 200,
+        reporters: expect.it('to deep equal', ['csv']),
+      });
     });
 
     it('should support YAML configuration files', async () => {
@@ -201,10 +197,10 @@ describe('ConfigurationManager interface contract', () => {
       );
 
       const config = await configManager.load(configFile);
-      expect(config.iterations, 'to equal', 300);
-      expect(config.reporters.length, 'to equal', 2);
-      expect(config.reporters[0], 'to equal', 'human');
-      expect(config.reporters[1], 'to equal', 'json');
+      expect(config, 'to satisfy', {
+        iterations: 300,
+        reporters: expect.it('to deep equal', ['human', 'json']),
+      });
     });
 
     it('should support JavaScript configuration files', async () => {
@@ -215,9 +211,10 @@ describe('ConfigurationManager interface contract', () => {
       );
 
       const config = await configManager.load(configFile);
-      expect(config.iterations, 'to equal', 400);
-      expect(config.reporters[0], 'to equal', 'json');
-      expect(config.reporters.length, 'to equal', 1);
+      expect(config, 'to satisfy', {
+        iterations: 400,
+        reporters: expect.it('to deep equal', ['json']),
+      });
     });
 
     it('should support TypeScript configuration files', async () => {
@@ -228,24 +225,20 @@ describe('ConfigurationManager interface contract', () => {
       );
 
       const config = await configManager.load(configFile);
-      expect(config.iterations, 'to equal', 500);
-      expect(config.reporters[0], 'to equal', 'csv');
-      expect(config.reporters.length, 'to equal', 1);
+      expect(config, 'to satisfy', {
+        iterations: 500,
+        reporters: expect.it('to deep equal', ['csv']),
+      });
     });
   });
 
   describe('error handling contract', () => {
-    it('should handle missing configuration files gracefully', async () => {
+    it('should throw when loading missing configuration file', async () => {
       // ConfigManager throws on missing explicit file paths
-      try {
-        await configManager.load(join(tempDir, 'nonexistent.config.json'));
-        // If it doesn't throw, should return defaults
-        expect(true, 'to be truthy');
-      } catch (error) {
-        // Or it throws a descriptive error
-        expect(error, 'to be an', Error);
-        expect((error as Error).message.length > 0, 'to be truthy');
-      }
+      await expectAsync(
+        configManager.load(join(tempDir, 'nonexistent.config.json')),
+        'to reject',
+      );
     });
 
     it('should handle invalid configuration data', () => {
