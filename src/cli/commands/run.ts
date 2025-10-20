@@ -26,6 +26,7 @@ interface RunOptions {
   noColor?: boolean | undefined;
   outputDir?: string | undefined;
   pattern: string[];
+  progress?: boolean | undefined;
   quiet?: boolean | undefined;
   reporters: string[];
   tags?: string[] | undefined;
@@ -48,9 +49,9 @@ export const handleRunCommand = async (
   const isUsingJsonReporter = options.reporters?.includes('json') ?? false;
   const shouldBeQuiet =
     options.quiet || (isUsingJsonReporter && !options.outputDir);
-  const isVerbose = options.verbose ?? false;
+  const verbose = options.verbose ?? false;
   // CLI messages on stderr should only be suppressed by explicit --quiet, not JSON-forced quiet
-  const showCliMessages = isVerbose && !options.quiet;
+  const showCliMessages = verbose && !options.quiet;
 
   try {
     // Step 1: Load and merge configuration
@@ -67,10 +68,11 @@ export const handleRunCommand = async (
       context,
       config,
       shouldBeQuiet,
-      isVerbose,
+      verbose,
       showCliMessages,
       options.quiet ?? false,
       options.outputDir,
+      options.progress,
     );
 
     // Step 3: Discovery phase
@@ -138,9 +140,7 @@ export const handleRunCommand = async (
       process.exit(130);
     }
 
-    const exitCode = handleResults(executionResult, options, shouldBeQuiet);
-
-    return exitCode;
+    return handleResults(executionResult, options, shouldBeQuiet);
   } catch (error) {
     if (!shouldBeQuiet) {
       console.error(
@@ -269,6 +269,7 @@ const setupReporters = async (
   showCliMessages: boolean,
   explicitQuiet: boolean,
   explicitOutputDir?: string,
+  progressOption?: boolean,
 ) => {
   try {
     const reporters = [];
@@ -292,7 +293,7 @@ const setupReporters = async (
       if (reporterName === 'human') {
         reporter = new HumanReporter({
           color: true,
-          progress: true,
+          progress: progressOption ?? true,
           quiet: explicitQuiet, // Only applies explicit --quiet flag; JSON reporter forcing quiet mode does not affect HumanReporter progress output
           verbose: isVerbose,
         });

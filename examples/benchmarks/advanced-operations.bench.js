@@ -12,7 +12,7 @@ const arrayState = {
 export default {
   config: {
     iterations: 1000,
-    warmup: true,
+    warmup: 100,
   },
 
   suites: {

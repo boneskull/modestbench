@@ -30,7 +30,9 @@
     "docs",
     "node_modules",
     "*.csv",
-    "worktrees"
+    "worktrees",
+    "assets/*.ans",
+    "assets/*.txt"
   ],
   "ignoreRandomStrings": true,
   "ignoreWords": [
@@ -49,7 +51,13 @@
     "toshimaru",
     "wagoid",
     "limitby",
-    "Csvg"
+    "Csvg",
+    "mmodest",
+    "mbench",
+    "mnode",
+    "mplatform",
+    "mcpu",
+    "mmem"
   ],
   "words": ["bupkis"]
 }

@@ -1,18 +1,44 @@
-// Simple benchmark file using the simplified format
-// No explicit suites needed for straightforward benchmarks
-export default {
-  // Shorthand syntax: just pass a function directly
-  'Array.push()': () => {
-    const arr = [];
-    for (let i = 0; i < 1000; i++) {
-      arr.push(i);
-    }
-  },
+// Shared state to avoid recreating arrays each iteration
+const state = {
+  counter: 0,
+  /** @type {number[]} */
+  testArray: [],
+};
 
-  'Array.unshift()': () => {
-    const arr = [];
-    for (let i = 0; i < 1000; i++) {
-      arr.unshift(i);
-    }
+// Simple benchmark file structure
+export default {
+  suites: {
+    'Array Operations': {
+      benchmarks: {
+        // Push to end of array
+        'Array.push()': () => {
+          state.testArray.push(state.counter++);
+          // Keep array size stable to avoid GC variance
+          if (state.testArray.length > 1000) {
+            state.testArray.shift();
+          }
+        },
+
+        // Insert at beginning of array
+        'Array.unshift()': () => {
+          state.testArray.unshift(state.counter++);
+          // Keep array size stable
+          if (state.testArray.length > 1000) {
+            state.testArray.pop();
+          }
+        },
+      },
+
+      setup: () => {
+        // Pre-populate array to stable size
+        state.testArray = Array.from({ length: 500 }, (_, i) => i);
+        state.counter = 0;
+      },
+
+      teardown: () => {
+        // Clean up
+        state.testArray = [];
+      },
+    },
   },
 };

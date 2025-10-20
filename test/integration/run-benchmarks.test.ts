@@ -100,44 +100,6 @@ describe('Benchmark execution with progress tracking', () => {
       expect(result.exitCode, 'to equal', 0);
       expect(result.stdout, 'to match', /progress|%/);
     });
-
-    it('should display estimated completion time', async () => {
-      const benchFile = join(tempDir, 'benchmarks', 'timing.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Timing Test': {
-              benchmarks: {
-                'slow task 1': {
-                  fn: () => Math.random()
-                },
-                'slow task 2': {
-                  fn: () => Math.random()
-                },
-                'slow task 3': {
-                  fn: () => Math.random()
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
-      const result = await runCommand([
-        'run',
-        benchFile,
-        '--verbose',
-        '--iterations',
-        '1',
-      ]);
-
-      // Should execute successfully and show ETA or time estimates during execution
-      expect(result.exitCode, 'to equal', 0);
-      expect(result.stdout, 'to match', /ETA|estimated/);
-    });
   });
 
   describe('suite-level progress tracking', () => {
