@@ -71,6 +71,26 @@ export class FileHistoryStorage implements HistoryStorage {
     this.ensureStorageDir();
   }
 
+  public static isValidBenchmarkRun(obj: unknown): obj is BenchmarkRun {
+    // Type guard function that checks properties on unknown object
+    return (
+      !!obj &&
+      typeof obj === 'object' &&
+      'id' in obj &&
+      typeof obj.id === 'string' &&
+      'files' in obj &&
+      Array.isArray(obj.files) &&
+      'startTime' in obj &&
+      !!obj.startTime &&
+      'endTime' in obj &&
+      !!obj.endTime &&
+      'environment' in obj &&
+      !!obj.environment &&
+      'summary' in obj &&
+      !!obj.summary
+    );
+  }
+
   /**
    * Clean up old data according to retention policy
    */
@@ -265,7 +285,7 @@ export class FileHistoryStorage implements HistoryStorage {
       const run = JSON.parse(data) as BenchmarkRun;
 
       // Validate the loaded run
-      if (!this.isValidBenchmarkRun(run)) {
+      if (!FileHistoryStorage.isValidBenchmarkRun(run)) {
         throw new Error(`Invalid benchmark run data in file ${entry.filename}`);
       }
 
@@ -446,6 +466,10 @@ export class FileHistoryStorage implements HistoryStorage {
   }
 
   /**
+   * Validate that an object is a valid BenchmarkRun
+   */
+
+  /**
    * Generate a human-readable summary for a run
    */
   private generateSummary(run: BenchmarkRun): string {
@@ -458,30 +482,6 @@ export class FileHistoryStorage implements HistoryStorage {
     } else {
       return `${fileCount} files, ${taskCount} tasks`;
     }
-  }
-
-  /**
-   * Validate that an object is a valid BenchmarkRun
-   */
-
-  private isValidBenchmarkRun(obj: any): obj is BenchmarkRun {
-    // Type guard function that checks properties on unknown object
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return (
-      obj &&
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      typeof obj.id === 'string' &&
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      Array.isArray(obj.files) &&
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      obj.startTime &&
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      obj.endTime &&
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      obj.environment &&
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      obj.summary
-    );
   }
 
   /**
