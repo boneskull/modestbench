@@ -106,8 +106,6 @@ describe('ProgressManager interface contract', () => {
       const mockRun = buildMockBenchmarkRun();
       progressManager.initialize(mockRun);
 
-      const initialState = progressManager.getState();
-
       progressManager.update({ filesCompleted: 1 });
       const updatedState = progressManager.getState();
 
@@ -182,19 +180,17 @@ describe('ProgressManager interface contract', () => {
       progressManager.initialize(mockRun);
 
       let callbackRegistered = false;
-      try {
+      expect(() => {
         progressManager.onProgress(() => {
           // Callback registered successfully
         });
         callbackRegistered = true;
-      } catch (error) {
-        // Should not throw
-      }
+      }, 'not to throw');
 
       expect(callbackRegistered, 'to be', true);
     });
 
-    it('should invoke callback with ProgressState', (context, done) => {
+    it('should invoke callback with ProgressState', (_context, done) => {
       const mockRun = buildMockBenchmarkRun();
       progressManager.initialize(mockRun);
 
