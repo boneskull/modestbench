@@ -40,7 +40,6 @@ const createMockRun = (overrides: Partial<BenchmarkRun> = {}): BenchmarkRun => {
 };
 
 describe('FileHistoryStorage', () => {
-  /* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
   describe('isValidBenchmarkRun() - validation type guard', () => {
     it('should return true for valid run', () => {
       const run = createMockRun();
@@ -137,5 +136,4 @@ describe('FileHistoryStorage', () => {
       expect(isValid, 'to be falsy');
     });
   });
-  /* eslint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 });

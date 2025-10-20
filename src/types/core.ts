@@ -232,6 +232,7 @@ export interface MemoryInfo {
  * ```
  */
 export interface ModestBenchConfig {
+  readonly $schema?: string | undefined;
   /** Whether to stop on first failure */
   readonly bail: boolean;
   /** Patterns to exclude from discovery */

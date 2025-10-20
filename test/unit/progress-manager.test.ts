@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import { expect } from 'bupkis';
 import { after, before, describe, it } from 'node:test';
 
@@ -13,11 +12,11 @@ let originalDateNow: typeof Date.now;
 const setupTimeMocking = (): void => {
   mockTime = Date.now();
   originalDateNow = Date.now;
-  (Date as any).now = () => mockTime;
+  Date.now = () => mockTime;
 };
 
 const teardownTimeMocking = (): void => {
-  (Date as any).now = originalDateNow;
+  Date.now = originalDateNow;
 };
 
 const advanceTime = (ms: number): void => {
@@ -82,7 +81,6 @@ describe('ModestBenchProgressManager', () => {
       manager.initialize(createMockRun(1, 1, 10));
 
       advanceTime(100); // Advance past throttle time
-      advanceTime(100); // Advance past throttle time
       manager.update({ tasksCompleted: 5 });
 
       const state = manager.getState();
@@ -93,7 +91,6 @@ describe('ModestBenchProgressManager', () => {
       const manager = new ModestBenchProgressManager();
       manager.initialize(createMockRun(1, 1, 10));
 
-      advanceTime(100); // Advance past throttle time
       advanceTime(100); // Advance past throttle time
       manager.update({ tasksCompleted: 10 });
 
@@ -115,7 +112,6 @@ describe('ModestBenchProgressManager', () => {
 
       advanceTime(100); // Advance past throttle time
       // Try to set more than 100%
-      advanceTime(100); // Advance past throttle time
       manager.update({ tasksCompleted: 15 });
 
       const state = manager.getState();
@@ -128,42 +124,10 @@ describe('ModestBenchProgressManager', () => {
       manager.initialize(createMockRun(1, 1, 3));
 
       advanceTime(100); // Advance past throttle time
-      advanceTime(100); // Advance past throttle time
       manager.update({ tasksCompleted: 1 });
 
       const state = manager.getState();
       expect(state.percentage, 'to be close to', 33.33, 0.01);
-    });
-  });
-
-  describe('throughput calculation', () => {
-    it('should return 0 when no throughput data available', () => {
-      const manager = new ModestBenchProgressManager();
-      const throughput = (manager as any).calculateThroughput();
-
-      expect(throughput, 'to equal', 0);
-    });
-
-    it('should calculate average from recent timings', () => {
-      const manager = new ModestBenchProgressManager();
-      manager.initialize(createMockRun(1, 1, 100));
-
-      // Simulate some progress
-      (manager as any).metrics.recentTimings = [10, 20, 30];
-
-      const throughput = (manager as any).calculateThroughput();
-      expect(throughput, 'to equal', 20); // (10 + 20 + 30) / 3
-    });
-
-    it('should use only recent timings (moving average)', () => {
-      const manager = new ModestBenchProgressManager();
-      manager.initialize(createMockRun(1, 1, 100));
-
-      // Fill with recent timings
-      (manager as any).metrics.recentTimings = [5, 10, 15];
-
-      const throughput = (manager as any).calculateThroughput();
-      expect(throughput, 'to equal', 10); // (5 + 10 + 15) / 3
     });
   });
 

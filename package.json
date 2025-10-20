@@ -70,6 +70,7 @@
     "prepare": "husky; run-s -sl build",
     "test": "npm run test:base -- \"test/**/*.test.ts\"",
     "test:base": "node --import tsx --test --test-reporter=spec",
+    "test:unit": "npm run test:base -- \"test/unit/**/*.test.ts\"",
     "test:watch": "npm run test:base -- --watch"
   },
   "dependencies": {

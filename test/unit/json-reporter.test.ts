@@ -5,8 +5,19 @@ import type { TaskResult } from '../../src/types/index.js';
 
 import { JsonReporter } from '../../src/reporters/json.js';
 
+// Type for internal statistics structure
+interface ReporterStatistics {
+  fastestTask?: TaskResult;
+  slowestTask?: TaskResult;
+  taskCount: number;
+  totalIterations: number;
+  totalOpsPerSecond: number;
+}
+
 // Helper to create a mock task result matching the actual TaskResult interface
-function createMockTaskResult(overrides: Partial<TaskResult> = {}): TaskResult {
+const createMockTaskResult = function (
+  overrides: Partial<TaskResult> = {},
+): TaskResult {
   return {
     error: undefined,
     iterations: 100,
@@ -24,7 +35,7 @@ function createMockTaskResult(overrides: Partial<TaskResult> = {}): TaskResult {
     variance: 2500,
     ...overrides,
   };
-}
+};
 
 describe('JsonReporter', () => {
   describe('statistics calculation', () => {
@@ -80,7 +91,7 @@ describe('JsonReporter', () => {
       reporter.onTaskResult(task3);
 
       // Access internal statistics
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.taskCount, 'to equal', 3);
       expect(stats.totalOpsPerSecond, 'to equal', 6000);
@@ -145,7 +156,7 @@ describe('JsonReporter', () => {
       reporter.onTaskResult(fastTask);
       reporter.onTaskResult(mediumTask);
 
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.fastestTask, 'not to be undefined');
       expect(stats.fastestTask?.name, 'to equal', 'fast-task');
@@ -207,7 +218,7 @@ describe('JsonReporter', () => {
       reporter.onTaskResult(slowTask);
       reporter.onTaskResult(mediumTask);
 
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.slowestTask, 'not to be undefined');
       expect(stats.slowestTask?.name, 'to equal', 'slow-task');
@@ -248,7 +259,7 @@ describe('JsonReporter', () => {
       reporter.onTaskResult(task1);
       reporter.onTaskResult(task2);
 
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.totalIterations, 'to equal', 350); // 100 + 250
     });
@@ -256,7 +267,7 @@ describe('JsonReporter', () => {
     it('should handle empty tasks case (no tasks)', () => {
       const reporter = new JsonReporter();
 
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.taskCount, 'to equal', 0);
       expect(stats.totalOpsPerSecond, 'to equal', 0);
@@ -286,7 +297,7 @@ describe('JsonReporter', () => {
 
       reporter.onTaskResult(task);
 
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.taskCount, 'to equal', 1);
       expect(stats.fastestTask?.name, 'to equal', 'only-task');
@@ -313,7 +324,7 @@ describe('JsonReporter', () => {
       });
 
       reporter.onTaskResult(task1);
-      let stats = (reporter as any).statistics;
+      let stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.taskCount, 'to equal', 1);
       expect(stats.totalOpsPerSecond, 'to equal', 1000);
@@ -333,7 +344,7 @@ describe('JsonReporter', () => {
       });
 
       reporter.onTaskResult(task2);
-      stats = (reporter as any).statistics;
+      stats = (reporter as any).statistics as ReporterStatistics;
 
       expect(stats.taskCount, 'to equal', 2);
       expect(stats.totalOpsPerSecond, 'to equal', 4000);
@@ -378,7 +389,7 @@ describe('JsonReporter', () => {
       reporter.onTaskResult(task1);
       reporter.onTaskResult(task2);
 
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       // Should have both fastest and slowest set (likely both pointing to first task)
       expect(stats.fastestTask, 'not to be undefined');
@@ -424,7 +435,7 @@ describe('JsonReporter', () => {
       reporter.onTaskResult(passedTask);
       reporter.onTaskResult(failedTask);
 
-      const stats = (reporter as any).statistics;
+      const stats = (reporter as any).statistics as ReporterStatistics;
 
       // Only successful tasks are counted in statistics
       expect(stats.taskCount, 'to equal', 1);

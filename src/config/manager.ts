@@ -52,6 +52,42 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
  */
 export class ModestBenchConfigurationManager implements ConfigurationManager {
   /**
+   * Apply smart defaults for limitBy based on which flags were provided
+   */
+  public static applySmartDefaults(
+    merged: ModestBenchConfig,
+    cliArgs: Record<string, unknown>,
+    fileConfig: Partial<ModestBenchConfig>,
+  ): ModestBenchConfig {
+    // If limitBy was explicitly provided in CLI or file, use it
+    if (cliArgs['limit-by'] || cliArgs.limitBy || fileConfig.limitBy) {
+      return merged;
+    }
+
+    // Determine if user explicitly provided time or iterations
+    const userProvidedTime = 'time' in cliArgs || 't' in cliArgs;
+    const userProvidedIterations = 'iterations' in cliArgs || 'i' in cliArgs;
+
+    let smartDefault: 'any' | 'iterations' | 'time';
+
+    if (userProvidedTime && userProvidedIterations) {
+      // Both provided → stop at whichever comes first
+      smartDefault = 'any';
+    } else if (userProvidedTime) {
+      // Only time → limit by time
+      smartDefault = 'time';
+    } else {
+      // Only iterations (or neither) → limit by iterations
+      smartDefault = 'iterations';
+    }
+
+    return {
+      ...merged,
+      limitBy: smartDefault,
+    };
+  }
+
+  /**
    * Get default configuration values
    */
   getDefaults(): ModestBenchConfig {
@@ -108,7 +144,7 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       const merged = this.merge(DEFAULT_CONFIG, fileConfig, normalizedCliArgs);
 
       // 2.5. Apply smart defaults for limitBy if not explicitly provided
-      const finalConfig = this.applySmartDefaults(
+      const finalConfig = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         cliArgs || {},
         fileConfig,
@@ -218,42 +254,6 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       files: ['configuration'],
       valid: errors.length === 0,
       warnings,
-    };
-  }
-
-  /**
-   * Apply smart defaults for limitBy based on which flags were provided
-   */
-  private applySmartDefaults(
-    merged: ModestBenchConfig,
-    cliArgs: Record<string, unknown>,
-    fileConfig: Partial<ModestBenchConfig>,
-  ): ModestBenchConfig {
-    // If limitBy was explicitly provided in CLI or file, use it
-    if (cliArgs['limit-by'] || cliArgs.limitBy || fileConfig.limitBy) {
-      return merged;
-    }
-
-    // Determine if user explicitly provided time or iterations
-    const userProvidedTime = 'time' in cliArgs || 't' in cliArgs;
-    const userProvidedIterations = 'iterations' in cliArgs || 'i' in cliArgs;
-
-    let smartDefault: 'any' | 'iterations' | 'time';
-
-    if (userProvidedTime && userProvidedIterations) {
-      // Both provided → stop at whichever comes first
-      smartDefault = 'any';
-    } else if (userProvidedTime) {
-      // Only time → limit by time
-      smartDefault = 'time';
-    } else {
-      // Only iterations (or neither) → limit by iterations
-      smartDefault = 'iterations';
-    }
-
-    return {
-      ...merged,
-      limitBy: smartDefault,
     };
   }
 

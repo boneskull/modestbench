@@ -466,10 +466,6 @@ export class FileHistoryStorage implements HistoryStorage {
   }
 
   /**
-   * Validate that an object is a valid BenchmarkRun
-   */
-
-  /**
    * Generate a human-readable summary for a run
    */
   private generateSummary(run: BenchmarkRun): string {
