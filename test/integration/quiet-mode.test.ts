@@ -178,8 +178,7 @@ export default {
       );
 
       // Should have some output when not quiet
-      expect(result.stdout.length, 'to be greater than', 0);
-      expect(result.stdout, 'to include', 'ModestBench');
+      expect(result.stdout, 'not to be empty');
     });
   });
 

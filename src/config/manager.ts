@@ -39,7 +39,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   thresholds: {},
   time: 1000, // 1 second minimum for tinybench to gather samples
   timeout: 30000, // 30 seconds
-  verbose: false,
+  verbose: false, // No verbose output by default
   warmup: 0, // No warmup by default for test speed
 };
 

@@ -619,8 +619,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
           await this.callReporters(reporters, 'onTaskStart', taskName);
 
           // Mark task as in-progress (shows as 0.5 progress for current task)
+          const currentState = this.progressManager.getState();
           this.progressManager.update({
-            tasksCompleted: taskResults.length + 0.5,
+            tasksCompleted: currentState.tasksCompleted + 0.5,
           });
 
           const taskResult = await this.executeBenchmarkTask(
@@ -633,9 +634,9 @@ export class ModestBenchEngine implements BenchmarkEngine {
           await this.callReporters(reporters, 'onTaskResult', taskResult);
           taskResults.push(taskResult);
 
-          // Update task-level progress - task is now complete
+          // Update task-level progress - task is now complete (remove the 0.5 and add 1)
           this.progressManager.update({
-            tasksCompleted: taskResults.length,
+            tasksCompleted: currentState.tasksCompleted + 1,
           });
         }
       } finally {

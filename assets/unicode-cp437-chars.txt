@@ -1,0 +1,148 @@
+# Unicode Characters Mimicking CP437 Block & Outline Characters
+# Reference palette for ANSI art editing
+# No colors - just the raw characters for easy copy/paste
+
+# ═══════════════════════════════════════════════════════════════
+# BLOCK ELEMENTS
+# ═══════════════════════════════════════════════════════════════
+
+Full Block:          █
+Dark Shade:          ▓
+Medium Shade:        ▒
+Light Shade:         ░
+Black Square:        ■  (CP437 FE)
+
+Upper Half Block:    ▀
+Lower Half Block:    ▄
+Left Half Block:     ▌
+Right Half Block:    ▐
+
+# ═══════════════════════════════════════════════════════════════
+# BOX DRAWING - SINGLE LINES
+# ═══════════════════════════════════════════════════════════════
+
+Horizontal:          ─
+Vertical:            │
+
+Corners:
+  Top-Left:          ┌
+  Top-Right:         ┐
+  Bottom-Left:       └
+  Bottom-Right:      ┘
+
+T-Junctions:
+  Left:              ├
+  Right:             ┤
+  Top:               ┬
+  Bottom:            ┴
+  Cross:             ┼
+
+# ═══════════════════════════════════════════════════════════════
+# BOX DRAWING - DOUBLE LINES
+# ═══════════════════════════════════════════════════════════════
+
+Horizontal:          ═
+Vertical:            ║
+
+Corners:
+  Top-Left:          ╔
+  Top-Right:         ╗
+  Bottom-Left:       ╚
+  Bottom-Right:      ╝
+
+T-Junctions:
+  Left:              ╠
+  Right:             ╣
+  Top:               ╦
+  Bottom:            ╩
+  Cross:             ╬
+
+# ═══════════════════════════════════════════════════════════════
+# BOX DRAWING - MIXED (Single + Double)
+# ═══════════════════════════════════════════════════════════════
+
+Corners (vert double, horiz single):
+  Top-Left:          ╓
+  Top-Right:         ╖
+  Bottom-Left:       ╙
+  Bottom-Right:      ╜
+
+Corners (vert single, horiz double):
+  Top-Left:          ╒
+  Top-Right:         ╕
+  Bottom-Left:       ╘
+  Bottom-Right:      ╛
+
+# ═══════════════════════════════════════════════════════════════
+# TRIANGLES & ARROWS
+# ═══════════════════════════════════════════════════════════════
+
+Triangles:
+  Up:                ▲ ▴ △
+  Down:              ▼ ▾ ▽
+  Left:              ◄ ◂ ◁
+  Right:             ► ▸ ▷
+
+# ═══════════════════════════════════════════════════════════════
+# GEOMETRIC SHAPES
+# ═══════════════════════════════════════════════════════════════
+
+Squares:
+  Filled:            ■
+  Hollow:            □
+  Small Filled:      ▪
+  Small Hollow:      ▫
+
+Circles:
+  Filled:            ●
+  Hollow:            ○
+  Bullseye:          ◉
+  Target:            ◎
+
+Diamonds:
+  Filled:            ◆
+  Hollow:            ◇
+  Small:             ⬥
+
+# ═══════════════════════════════════════════════════════════════
+# SPECIAL SYMBOLS (Common in CP437)
+# ═══════════════════════════════════════════════════════════════
+
+Card Suits:
+  Spade:             ♠
+  Club:              ♣
+  Heart:             ♥
+  Diamond:           ♦
+
+Music:
+  Note:              ♪
+  Double Note:       ♫
+  Flat:              ♭
+  Sharp:             ♯
+
+Faces:
+  Smiley:            ☺ ☻
+  Sun:               ☼
+  Star:              ★ ☆
+
+Math/Misc:
+  Plus-Minus:        ±
+  Approx Equal:      ≈
+  Not Equal:         ≠
+  Less/Equal:        ≤
+  Greater/Equal:     ≥
+  Degree:            °
+  Bullet:            •
+  Middle Dot:        ·
+  Check:             √
+  Cross:             ×
+
+# ═══════════════════════════════════════════════════════════════
+# USEFUL COMBINATIONS FOR GRADIENTS
+# ═══════════════════════════════════════════════════════════════
+
+Dense to Light:      █▓▒░
+Light to Dense:      ░▒▓█
+
+Horizontal Fill:     ▌▀▐▄
+

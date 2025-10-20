@@ -148,7 +148,7 @@ const modestBenchConfigSchema = z
     verbose: z
       .boolean()
       .describe(
-        'Run in verbose mode with detailed console output including progress, intermediate results, and diagnostic information',
+        'Enable verbose output. Provides more detailed console output including progress, intermediate results, and diagnostic information',
       ),
     warmup: z
       .number()

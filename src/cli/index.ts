@@ -59,8 +59,8 @@ interface GlobalOptions {
   json: boolean;
   /** Disable colored output */
   noColor: boolean;
-  /** Verbosity level (0=quiet, 1=normal, 2=verbose, 3=debug) */
-  verbose: number;
+  /** Enable verbose output */
+  verbose: boolean;
 }
 
 /**
@@ -110,14 +110,20 @@ export const main = async (
       })
       .option('verbose', {
         alias: 'v',
-        default: 0,
-        description: 'Increase verbosity (use multiple times for more verbose)',
+        default: false,
+        description: 'Enable verbose output',
         global: true,
-        type: 'count',
+        type: 'boolean',
       })
       .option('no-color', {
         default: false,
         description: 'Disable colored output',
+        global: true,
+        type: 'boolean',
+      })
+      .option('progress', {
+        default: true,
+        description: 'Show animated progress bar',
         global: true,
         type: 'boolean',
       })
@@ -280,12 +286,13 @@ export const main = async (
             noColor: argv.noColor,
             outputDir: argv.output,
             pattern: argv.pattern,
+            progress: argv.progress,
             quiet: argv.quiet,
             reporters: argv.reporters,
             tags: argv.tags,
             time: argv.time,
             timeout: argv.timeout,
-            verbose: argv.verbose >= 1,
+            verbose: argv.verbose,
             warmup: argv.warmup,
           });
           process.exit(exitCode);
@@ -391,7 +398,7 @@ export const main = async (
             subcommand: argv.subcommand,
             tags: argv.tags as string[] | undefined,
             until: argv.until,
-            verbose: argv.verbose >= 1,
+            verbose: argv.verbose,
           });
           process.exit(exitCode);
         },
@@ -456,7 +463,7 @@ export const main = async (
             force: argv.force,
             quiet: Boolean(argv.quiet),
             type: argv.type,
-            verbose: argv.verbose >= 1,
+            verbose: argv.verbose,
             yes: argv.yes,
           });
           process.exit(exitCode);
@@ -504,7 +511,7 @@ const createCliContext = async (
       'human',
       new HumanReporter({
         color: !options.noColor,
-        verbose: options.verbose >= 1,
+        verbose: options.verbose,
       }),
     );
 
