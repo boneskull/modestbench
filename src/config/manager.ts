@@ -26,6 +26,7 @@ import { safeParseConfig } from './schema.js';
 const DEFAULT_CONFIG: ModestBenchConfig = {
   bail: false,
   exclude: ['node_modules/**', '.git/**'],
+  excludeTags: [],
   iterations: 100, // Sufficient iterations for reliable statistics
   limitBy: 'iterations', // Default to limiting by iteration count
   metadata: {},
@@ -141,6 +142,7 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         ...config,
         // Special handling for arrays - replace rather than merge
         ...(config.exclude && { exclude: [...config.exclude] }),
+        ...(config.excludeTags && { excludeTags: [...config.excludeTags] }),
         ...(config.reporters && { reporters: [...config.reporters] }),
         ...(config.tags && { tags: [...config.tags] }),
         // Deep merge for objects
@@ -306,6 +308,8 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
     const argMap: Record<string, keyof ModestBenchConfig> = {
       bail: 'bail',
       exclude: 'exclude',
+      'exclude-tags': 'excludeTags',
+      excludeTags: 'excludeTags',
       i: 'iterations',
       iterations: 'iterations',
       'limit-by': 'limitBy',
@@ -335,6 +339,7 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         // Handle array arguments that might come as strings
         if (
           configKey === 'exclude' ||
+          configKey === 'excludeTags' ||
           configKey === 'reporters' ||
           configKey === 'tags'
         ) {

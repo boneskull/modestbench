@@ -228,6 +228,32 @@ export const main = async (
               description: 'Minimal output',
               type: 'boolean',
             })
+            .option('tags', {
+              coerce: (value: string | string[]) => {
+                // Handle comma-separated values
+                if (Array.isArray(value)) {
+                  return value.flatMap((v) =>
+                    v.split(',').map((s) => s.trim()),
+                  );
+                }
+                return value.split(',').map((s) => s.trim());
+              },
+              description: 'Include only benchmarks with any of these tags',
+              type: 'array',
+            })
+            .option('exclude-tags', {
+              coerce: (value: string | string[]) => {
+                // Handle comma-separated values
+                if (Array.isArray(value)) {
+                  return value.flatMap((v) =>
+                    v.split(',').map((s) => s.trim()),
+                  );
+                }
+                return value.split(',').map((s) => s.trim());
+              },
+              description: 'Exclude benchmarks with any of these tags',
+              type: 'array',
+            })
             .example([
               ['$0 run', 'Run all benchmark files'],
               ['$0 run "src/**/*.bench.js"', 'Run specific pattern'],
@@ -251,6 +277,7 @@ export const main = async (
             config: argv.config,
             cwd: argv.cwd,
             exclude: argv.exclude,
+            excludeTags: argv['exclude-tags'],
             iterations: argv.iterations,
             json: argv.json,
             noColor: argv.noColor,
@@ -258,6 +285,7 @@ export const main = async (
             pattern: argv.pattern,
             quiet: argv.quiet,
             reporters: argv.reporters,
+            tags: argv.tags,
             time: argv.time,
             timeout: argv.timeout,
             verbose: argv.verbose >= 2,

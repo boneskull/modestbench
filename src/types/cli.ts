@@ -259,6 +259,8 @@ export interface RunCommandArgs extends CommandArguments {
   readonly config?: string;
   /** Files to exclude */
   readonly exclude?: string | string[];
+  /** Tags to exclude */
+  readonly excludeTags?: string | string[];
   readonly i?: number;
   /** Number of iterations */
   readonly iterations?: number;

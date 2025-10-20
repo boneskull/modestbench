@@ -203,15 +203,24 @@ export class ModestBenchEngine implements BenchmarkEngine {
           const benchmarkDef = benchmarkFile.exports as BenchmarkDefinition;
 
           if (benchmarkDef?.suites && typeof benchmarkDef.suites === 'object') {
+            const fileTags = benchmarkDef.tags;
+
             for (const [_suiteName, suiteData] of Object.entries(
               benchmarkDef.suites,
             )) {
-              totalSuites++;
-              if (
-                suiteData?.benchmarks &&
-                typeof suiteData.benchmarks === 'object'
-              ) {
-                totalTasks += Object.keys(suiteData.benchmarks).length;
+              // Use shared filtering logic
+              const { anyTaskMatches, suiteMatches, tasksToRun } =
+                this.getFilteredTasksForSuite(
+                  suiteData,
+                  fileTags,
+                  mergedConfig.tags,
+                  mergedConfig.excludeTags,
+                );
+
+              // Count suite only if it or any of its tasks match
+              if (suiteMatches || anyTaskMatches) {
+                totalSuites++;
+                totalTasks += tasksToRun.length;
               }
             }
           }
@@ -534,12 +543,27 @@ export class ModestBenchEngine implements BenchmarkEngine {
       }
 
       const suiteResults: SuiteResult[] = [];
+      const fileTags = benchmarkDef.tags;
 
       // Process each suite in the file
       if (benchmarkDef.suites && typeof benchmarkDef.suites === 'object') {
         for (const [suiteName, suiteData] of Object.entries(
           benchmarkDef.suites,
         )) {
+          // Use shared filtering logic
+          const { anyTaskMatches, suiteMatches } =
+            this.getFilteredTasksForSuite(
+              suiteData,
+              fileTags,
+              config.tags,
+              config.excludeTags,
+            );
+
+          // Skip suite only if neither the suite nor any of its tasks match
+          if (!suiteMatches && !anyTaskMatches) {
+            continue;
+          }
+
           await this.callReporters(reporters, 'onSuiteStart', suiteName);
           const suiteResult = await this.executeBenchmarkSuite(
             suiteName,
@@ -547,6 +571,7 @@ export class ModestBenchEngine implements BenchmarkEngine {
             config,
             reporters,
             signal,
+            fileTags,
           );
           await this.callReporters(reporters, 'onSuiteEnd', suiteResult);
           suiteResults.push(suiteResult);
@@ -588,11 +613,38 @@ export class ModestBenchEngine implements BenchmarkEngine {
     config: ModestBenchConfig,
     reporters: Reporter[] = [],
     signal?: AbortSignal,
+    fileTags?: string[],
   ): Promise<SuiteResult> {
     const startTime = new Date();
 
     try {
       const taskResults: TaskResult[] = [];
+
+      // Use shared filtering logic to determine which tasks will run
+      const { tasksToRun } = this.getFilteredTasksForSuite(
+        suiteData,
+        fileTags,
+        config.tags,
+        config.excludeTags,
+      );
+
+      // Only run setup/teardown if there are tasks to execute
+      if (tasksToRun.length === 0) {
+        // No tasks match the filters, return empty suite result
+        const endTime = new Date();
+        return {
+          duration: endTime.getTime() - startTime.getTime(),
+          endTime,
+          name: suiteName,
+          startTime,
+          tasks: [],
+          ...(suiteData.config !== undefined && { config: suiteData.config }),
+          ...(suiteData.metadata !== undefined && {
+            metadata: suiteData.metadata,
+          }),
+          ...(suiteData.tags !== undefined && { tags: suiteData.tags }),
+        };
+      }
 
       // Run suite setup if provided
       if (suiteData.setup && typeof suiteData.setup === 'function') {
@@ -608,33 +660,29 @@ export class ModestBenchEngine implements BenchmarkEngine {
       }
 
       try {
-        // Process each benchmark in the suite
-        if (suiteData.benchmarks && typeof suiteData.benchmarks === 'object') {
-          for (const [taskName, taskData] of Object.entries(
-            suiteData.benchmarks,
-          )) {
-            await this.callReporters(reporters, 'onTaskStart', taskName);
+        // Process each task that passed filtering
+        for (const [taskName, taskData] of tasksToRun) {
+          await this.callReporters(reporters, 'onTaskStart', taskName);
 
-            // Mark task as in-progress (shows as 0.5 progress for current task)
-            this.progressManager.update({
-              tasksCompleted: taskResults.length + 0.5,
-            });
+          // Mark task as in-progress (shows as 0.5 progress for current task)
+          this.progressManager.update({
+            tasksCompleted: taskResults.length + 0.5,
+          });
 
-            const taskResult = await this.executeBenchmarkTask(
-              taskName,
-              taskData,
-              config,
-              reporters,
-              signal,
-            );
-            await this.callReporters(reporters, 'onTaskResult', taskResult);
-            taskResults.push(taskResult);
+          const taskResult = await this.executeBenchmarkTask(
+            taskName,
+            taskData,
+            config,
+            reporters,
+            signal,
+          );
+          await this.callReporters(reporters, 'onTaskResult', taskResult);
+          taskResults.push(taskResult);
 
-            // Update task-level progress - task is now complete
-            this.progressManager.update({
-              tasksCompleted: taskResults.length,
-            });
-          }
+          // Update task-level progress - task is now complete
+          this.progressManager.update({
+            tasksCompleted: taskResults.length,
+          });
         }
       } finally {
         // Run suite teardown if provided (always runs, even if benchmarks fail)
@@ -1053,11 +1101,102 @@ export class ModestBenchEngine implements BenchmarkEngine {
   }
 
   /**
+   * Get filtered tasks for a suite based on tag filtering Returns suite match
+   * status and list of tasks to run
+   */
+  private getFilteredTasksForSuite(
+    suiteData: BenchmarkSuite,
+    fileTags: string[] | undefined,
+    includeTags: string[],
+    excludeTags: string[],
+  ): {
+    anyTaskMatches: boolean;
+    suiteMatches: boolean;
+    tasksToRun: Array<[string, BenchmarkTask]>;
+  } {
+    // Check if suite itself matches filters
+    const mergedSuiteTags = this.mergeTags(fileTags, suiteData.tags);
+    const suiteMatches = this.matchesTags(
+      mergedSuiteTags,
+      includeTags,
+      excludeTags,
+    );
+
+    // Check which tasks match filters
+    const tasksToRun: Array<[string, BenchmarkTask]> = [];
+    if (suiteData.benchmarks && typeof suiteData.benchmarks === 'object') {
+      for (const [taskName, taskData] of Object.entries(suiteData.benchmarks)) {
+        // Merge task tags with suite and file tags (cascading)
+        const mergedTaskTags = this.mergeTags(mergedSuiteTags, taskData.tags);
+
+        // Check if task matches tag filters
+        if (this.matchesTags(mergedTaskTags, includeTags, excludeTags)) {
+          tasksToRun.push([taskName, taskData]);
+        }
+      }
+    }
+
+    return {
+      anyTaskMatches: tasksToRun.length > 0,
+      suiteMatches,
+      tasksToRun,
+    };
+  }
+
+  /**
    * Get Git information if available
    */
   private async getGitInfo(): Promise<GitInfo | undefined> {
     // TODO: Implement Git information extraction
     // This would use child_process to run git commands
     return undefined;
+  }
+
+  /**
+   * Check if item tags match the filter criteria (OR logic)
+   */
+  private matchesTags(
+    itemTags: string[] | undefined,
+    includeTags: string[],
+    excludeTags: string[],
+  ): boolean {
+    const tags = itemTags || [];
+
+    // If exclude tags specified and any match, exclude this item
+    if (
+      excludeTags.length > 0 &&
+      excludeTags.some((tag) => tags.includes(tag))
+    ) {
+      return false;
+    }
+
+    // If include tags specified, at least one must match
+    if (includeTags.length > 0) {
+      return includeTags.some((tag) => tags.includes(tag));
+    }
+
+    // No filters = include everything
+    return true;
+  }
+
+  /**
+   * Merge tags from parent to child (cascading)
+   */
+  private mergeTags(
+    parentTags?: string[],
+    childTags?: string[],
+  ): string[] | undefined {
+    const merged = new Set<string>();
+    if (parentTags) {
+      for (const tag of parentTags) {
+        merged.add(tag);
+      }
+    }
+    if (childTags) {
+      for (const tag of childTags) {
+        merged.add(tag);
+      }
+    }
+    return merged.size > 0 ? Array.from(merged) : undefined;
   }
 }

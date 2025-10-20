@@ -182,6 +182,33 @@ modestbench run --iterations 100 --time 2000 --limit-by all
 - `any`: Stop when either threshold is reached (defaults to iterations behavior for fast completion)
 - `all`: Require both time AND iterations thresholds (tinybench default behavior)
 
+#### Filtering by Tags
+
+Run specific subsets of benchmarks using tags:
+
+```bash
+# Run only benchmarks tagged with 'fast'
+modestbench run --tags fast
+
+# Run benchmarks with multiple tags (OR logic - matches ANY)
+modestbench run --tags string,array,algorithm
+
+# Exclude specific benchmarks
+modestbench run --exclude-tags slow,experimental
+
+# Combine: run fast benchmarks except experimental ones
+modestbench run --tags fast --exclude-tags experimental
+```
+
+**Key Features:**
+
+- Tags cascade from file → suite → task levels
+- `--tags` uses OR logic (matches ANY specified tag)
+- `--exclude-tags` takes precedence over `--tags`
+- Suite setup/teardown only runs if at least one task matches
+
+See [Tagging and Filtering](#tagging-and-filtering) for detailed examples.
+
 ### History Management
 
 ModestBench automatically tracks benchmark results over time in a local `.modestbench/` directory. This history enables you to:
@@ -218,12 +245,14 @@ Create `modestbench.config.json`:
 {
   "bail": false, // Stop execution on first failure
   "exclude": ["node_modules/**"], // Patterns to exclude from discovery
+  "excludeTags": ["slow", "experimental"], // Tags to exclude from execution
   "iterations": 1000, // Number of samples per benchmark
   "limitBy": "iterations", // Limit mode: 'iterations', 'time', 'any', 'all'
   "outputDir": "./benchmark-results", // Directory for results and reports
   "pattern": "benchmarks/**/*.bench.{js,ts}", // Glob pattern to discover benchmark files
   "quiet": false, // Minimal output mode
   "reporters": ["human", "json"], // Output reporters to use
+  "tags": ["fast", "critical"], // Tags to include (if empty, all benchmarks run)
   "time": 5000, // Time budget in ms per benchmark
   "timeout": 30000, // Task timeout in ms
   "verbose": false, // Detailed output with debugging info
@@ -235,6 +264,7 @@ Create `modestbench.config.json`:
 
 - `pattern` - Glob pattern(s) to discover benchmark files (can be string or array)
 - `exclude` - Glob patterns for files/directories to exclude from discovery
+- `excludeTags` - Array of tags to exclude from execution; benchmarks with ANY of these tags will be skipped (default: [])
 - `iterations` - Number of samples to collect per benchmark task (default: 100)
 - `time` - Time budget in milliseconds per benchmark task (default: 1000)
 - `limitBy` - How to limit benchmarks: `"iterations"` (sample count), `"time"` (time budget), `"any"` (whichever comes first), or `"all"` (both thresholds required)
@@ -244,6 +274,7 @@ Create `modestbench.config.json`:
 - `reporters` - Array of reporter names to use for output (available: `"human"`, `"json"`, `"csv"`)
 - `outputDir` - Directory path for saving benchmark results and reports
 - `quiet` - Minimal output mode, suppresses non-essential messages (default: false)
+- `tags` - Array of tags to include; if non-empty, only benchmarks with ANY of these tags will run (default: [])
 - `verbose` - Detailed output mode with additional debugging information (default: false)
 
 > **Note:** Smart defaults apply for `limitBy` based on which options you provide. See [Controlling Benchmark Limits](#controlling-benchmark-limits) for details.
@@ -373,27 +404,103 @@ export default {
 
 ### Tagging and Filtering
 
+ModestBench supports a powerful tagging system that lets you organize and selectively run benchmarks. Tags can be applied at three levels: file, suite, and task. Tags automatically cascade from parent to child, so tasks inherit tags from their suite and file.
+
+#### Adding Tags
+
+Tags can be added at any level:
+
 ```javascript
-benchmarks: {
-  // Use full syntax when you need tags for filtering
-  'Fast Algorithm': {
-    fn: () => fastOperation(),
-    tags: ['algorithm', 'fast', 'optimized']
+export default {
+  // File-level tags (inherited by all suites and tasks)
+  tags: ['performance', 'core'],
+
+  suites: {
+    'String Operations': {
+      // Suite-level tags (inherited by all tasks in this suite)
+      tags: ['string', 'fast'],
+
+      benchmarks: {
+        // Task inherits: ['performance', 'core', 'string', 'fast', 'regex']
+        'RegExp Test': {
+          fn: () => /pattern/.test(str),
+          tags: ['regex'], // Task-specific tags
+        },
+
+        // Task inherits: ['performance', 'core', 'string', 'fast']
+        'String Includes': () => str.includes('pattern'),
+      },
+    },
   },
-  'Slow Algorithm': {
-    fn: () => slowOperation(),
-    tags: ['algorithm', 'slow', 'reference']
-  }
-}
+};
 ```
+
+#### Filtering Benchmarks
+
+Use `--tags` to include only benchmarks with specific tags (OR logic - matches ANY tag):
 
 ```bash
 # Run only fast algorithms
 modestbench run --tags fast
 
+# Run benchmarks tagged with 'string' OR 'array'
+modestbench run --tags string,array
+
+# Multiple tags can be space-separated too
+modestbench run --tags fast optimized
+```
+
+Use `--exclude-tags` to skip benchmarks with specific tags:
+
+```bash
 # Exclude slow benchmarks
 modestbench run --exclude-tags slow
+
+# Exclude experimental and unstable benchmarks
+modestbench run --exclude-tags experimental,unstable
 ```
+
+Combine both to fine-tune your benchmark runs (exclusion takes precedence):
+
+```bash
+# Run fast benchmarks, but exclude experimental ones
+modestbench run --tags fast --exclude-tags experimental
+
+# Run algorithm benchmarks but skip slow reference implementations
+modestbench run --tags algorithm --exclude-tags slow,reference
+```
+
+#### Tag Cascading Example
+
+```javascript
+export default {
+  tags: ['file-level'], // All tasks get this tag
+
+  suites: {
+    'Fast Suite': {
+      tags: ['fast'], // Tasks get: ['file-level', 'fast']
+      benchmarks: {
+        'Task A': {
+          fn: () => {},
+          tags: ['math'], // This task has: ['file-level', 'fast', 'math']
+        },
+        'Task B': () => {}, // This task has: ['file-level', 'fast']
+      },
+    },
+  },
+};
+```
+
+**Filtering Behavior:**
+
+- `--tags math` → Runs only Task A (matches 'math')
+- `--tags fast` → Runs both Task A and Task B (both have 'fast')
+- `--tags file-level` → Runs both tasks (both inherit 'file-level')
+- `--exclude-tags math` → Runs only Task B (Task A excluded)
+
+#### Suite Lifecycle with Filtering
+
+Suite `setup()` and `teardown()` only run if at least one task in the suite matches the filter. This prevents unnecessary setup work for filtered-out suites.
 
 ## Integration Examples
 
