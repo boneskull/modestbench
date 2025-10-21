@@ -3,25 +3,32 @@
  *
  * Zod schemas for validating and parsing benchmark file structure. Supports
  * both traditional suite-based format and simplified flat task definitions.
+ *
+ * Types are derived from schemas using z.infer (output) and z.input (input).
  */
 
 import { z } from 'zod';
 
-import type {
-  BenchmarkDefinition,
-  BenchmarkSuite,
-  BenchmarkTask,
-} from '../types/index.js';
+import type { ModestBenchConfig } from '../types/core.js';
+
+import { partialModestBenchConfigSchema } from '../config/schema.js';
 
 /**
- * Zod schema for the full benchmark task object structure
+ * Schema for benchmark functions
+ */
+const benchmarkFnSchema = z.custom<(...args: any[]) => unknown>(
+  (value) => typeof value === 'function',
+  { message: 'Expected a function' },
+);
+
+/**
+ * Zod schema for the full benchmark task object structure (normalized output)
  */
 const benchmarkTaskObjectSchema = z.object({
-  config: z
-    .record(z.string(), z.unknown())
+  config: partialModestBenchConfigSchema
     .optional()
     .describe('Task-specific configuration overrides'),
-  fn: z.function().describe('The function to benchmark'),
+  fn: benchmarkFnSchema.describe('The function to benchmark'),
   metadata: z
     .record(z.string(), z.unknown())
     .optional()
@@ -37,46 +44,41 @@ const benchmarkTaskObjectSchema = z.object({
  *
  * 1. A full task object with fn, config, metadata, tags
  * 2. A function directly (shorthand syntax)
+ *
+ * Input: function OR object Output: always normalized to object with fn
+ * property
  */
-const benchmarkTaskSchema: z.ZodType<BenchmarkTask> = z
-  .union([benchmarkTaskObjectSchema, benchmarkTaskObjectSchema.shape.fn])
-  .transform((value) => {
-    // If it's a function, wrap it in a task object
-    if (typeof value === 'function') {
-      return { fn: value };
-    }
-    // Otherwise it's already a full task object, return as-is
-    return value;
-  })
+const benchmarkTaskSchema = z
+  .union([
+    benchmarkTaskObjectSchema,
+    benchmarkFnSchema.transform((fn) => ({ fn })),
+  ])
   .pipe(benchmarkTaskObjectSchema)
   .describe('A single benchmark task definition (object or function)');
 
 /**
  * Zod schema for validating benchmark suite structure
  */
-const benchmarkSuiteSchema: z.ZodType<BenchmarkSuite> = z
+const benchmarkSuiteSchema = z
   .object({
     benchmarks: z
       .record(z.string(), benchmarkTaskSchema)
       .describe('Map of benchmark task names to task definitions'),
-    config: z
-      .record(z.string(), z.unknown())
+    config: partialModestBenchConfigSchema
       .optional()
       .describe('Suite-specific configuration overrides'),
     metadata: z
       .record(z.string(), z.unknown())
       .optional()
       .describe('Custom metadata associated with the suite'),
-    setup: z
-      .function()
+    setup: benchmarkFnSchema
       .optional()
       .describe('Function to run before all benchmarks in the suite'),
     tags: z
       .array(z.string())
       .optional()
       .describe('Tags for filtering and grouping suites'),
-    teardown: z
-      .function()
+    teardown: benchmarkFnSchema
       .optional()
       .describe('Function to run after all benchmarks in the suite'),
   })
@@ -87,19 +89,22 @@ const benchmarkSuiteSchema: z.ZodType<BenchmarkSuite> = z
  *
  * Supports two formats:
  *
- * 1. Traditional: { suites: { 'Suite Name': { benchmarks: {...} } } }
- * 2. Simplified: { 'task name': () => {...} } or { 'task name': { fn: () => {...}
- *    } }
+ * 1. Suite format (supports config/metadata/tags): { suites: { 'Suite Name': {
+ *    benchmarks: {...} } }, config: {...} }
+ * 2. Flat format (simple, tasks only - no config/metadata/tags): { 'task name': ()
+ *    => {...} }
  *
- * The simplified format is automatically transformed to the traditional format
- * with a default suite named after the file.
+ * The flat format is automatically transformed to suite format with a default
+ * suite.
+ *
+ * Input: flat Record<string, function> OR suite object Output: always
+ * normalized to suite format
  */
 export const benchmarkFileSchema = z
   .union([
-    // Traditional format: has a 'suites' property
+    // Suite format: explicit structure with config/metadata/tags support
     z.object({
-      config: z
-        .record(z.string(), z.unknown())
+      config: partialModestBenchConfigSchema
         .optional()
         .describe('File-level configuration overrides'),
       metadata: z
@@ -117,132 +122,64 @@ export const benchmarkFileSchema = z
         .optional()
         .describe('Tags for filtering and grouping files'),
     }),
-    // Simplified flat format: direct task definitions
-    z.record(z.string(), z.unknown()),
+    // Flat format: simple tasks only (no config/metadata/tags)
+    z
+      .record(z.string(), benchmarkFnSchema)
+      .refine((tasks) => Object.keys(tasks).length > 0, {
+        message: 'At least one task is required',
+      })
+      .transform((tasks) => ({
+        // Ensure all optional properties exist (as undefined) for type consistency
+        config: undefined as Partial<ModestBenchConfig> | undefined,
+        metadata: undefined as Record<string, unknown> | undefined,
+        suites: {
+          default: {
+            benchmarks: Object.fromEntries(
+              Object.entries(tasks).map(([name, fn]) => [name, { fn }]),
+            ),
+          },
+        },
+        tags: undefined as string[] | undefined,
+      })),
   ])
-  .transform((value) => {
-    // Check if this is traditional format (has suites property)
-    if ('suites' in value && value.suites !== undefined) {
-      // Already in traditional format, return as-is
-      return value as BenchmarkDefinition;
-    }
-
-    // This is flat format - transform to traditional format
-    // Extract known file-level properties
-    const config = 'config' in value ? value.config : undefined;
-    const metadata = 'metadata' in value ? value.metadata : undefined;
-    const tags = 'tags' in value ? value.tags : undefined;
-
-    // Collect task definitions (everything except reserved properties)
-    const reservedKeys = new Set(['config', 'metadata', 'suites', 'tags']);
-    const tasks: Record<string, unknown> = {};
-
-    for (const [key, val] of Object.entries(value)) {
-      if (!reservedKeys.has(key)) {
-        tasks[key] = val;
-      }
-    }
-
-    // If no tasks found, return an empty suites object
-    // This will fail validation in the subsequent superRefine
-    if (Object.keys(tasks).length === 0) {
-      const result: BenchmarkDefinition = {
-        suites: {},
-      };
-
-      // Preserve file-level properties if they exist
-      if (config !== undefined) {
-        result.config = config as Record<string, unknown>;
-      }
-      if (metadata !== undefined) {
-        result.metadata = metadata as Record<string, unknown>;
-      }
-      if (tags !== undefined) {
-        result.tags = tags as string[];
-      }
-
-      return result;
-    }
-
-    // Create a default suite with the tasks
-    // Transform each task through the task schema (converts functions to {fn} format)
-    const transformedBenchmarks: Record<string, BenchmarkTask> = {};
-    for (const [taskName, taskValue] of Object.entries(tasks)) {
-      const taskResult = benchmarkTaskSchema.safeParse(taskValue);
-      if (taskResult.success) {
-        transformedBenchmarks[taskName] = taskResult.data;
-      } else {
-        // Keep the original value; superRefine will catch and report the error
-        transformedBenchmarks[taskName] = taskValue as BenchmarkTask;
-      }
-    }
-
-    const defaultSuite: BenchmarkSuite = {
-      benchmarks: transformedBenchmarks,
-    };
-
-    // Return in traditional format
-    const result: BenchmarkDefinition = {
-      suites: {
-        default: defaultSuite,
-      },
-    };
-
-    // Preserve file-level properties if they exist
-    if (config !== undefined) {
-      result.config = config as Record<string, unknown>;
-    }
-    if (metadata !== undefined) {
-      result.metadata = metadata as Record<string, unknown>;
-    }
-    if (tags !== undefined) {
-      result.tags = tags as string[];
-    }
-
-    return result;
-  })
-  .superRefine((value, ctx) => {
-    // Validate that at least one suite exists
-    if (!value.suites || Object.keys(value.suites).length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'At least one suite is required',
-        path: ['suites'],
-      });
-      return;
-    }
-
-    // Validate each suite's benchmarks
-    for (const [suiteName, suite] of Object.entries(value.suites)) {
-      if (!suite.benchmarks || Object.keys(suite.benchmarks).length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'At least one benchmark is required in each suite',
-          path: ['suites', suiteName, 'benchmarks'],
-        });
-        continue;
-      }
-
-      // Validate each benchmark task
-      for (const [taskName, task] of Object.entries(suite.benchmarks)) {
-        const taskValidation = benchmarkTaskSchema.safeParse(task);
-        if (!taskValidation.success) {
-          for (const issue of taskValidation.error.issues) {
-            ctx.addIssue({
-              ...issue,
-              path: [
-                'suites',
-                suiteName,
-                'benchmarks',
-                taskName,
-                ...issue.path,
-              ],
-            });
-          }
-        }
-      }
-    }
-  })
   .describe(
     'A benchmark file containing one or more suites with configuration and metadata',
-  ) as z.ZodType<BenchmarkDefinition>;
+  );
+
+// ============================================================================
+// Type Exports
+// ============================================================================
+
+/**
+ * Benchmark file definition (normalized) - internal representation Always in
+ * suite format
+ */
+export type BenchmarkDefinition = z.infer<typeof benchmarkFileSchema>;
+
+/**
+ * Benchmark file definition (input) - what users write Can be either flat
+ * format (Record<string, function>) or suite format
+ */
+export type BenchmarkDefinitionInput = z.input<typeof benchmarkFileSchema>;
+
+/**
+ * Benchmark suite (normalized) - internal representation
+ */
+export type BenchmarkSuite = z.infer<typeof benchmarkSuiteSchema>;
+
+/**
+ * Benchmark suite (input) - what users write
+ */
+export type BenchmarkSuiteInput = z.input<typeof benchmarkSuiteSchema>;
+
+/**
+ * Benchmark task (normalized) - internal representation Always an object with
+ * fn property
+ */
+export type BenchmarkTask = z.infer<typeof benchmarkTaskSchema>;
+
+/**
+ * Benchmark task (input) - what users write Can be either a function or an
+ * object with fn property
+ */
+export type BenchmarkTaskInput = z.input<typeof benchmarkTaskSchema>;

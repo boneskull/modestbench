@@ -8,6 +8,8 @@
 import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
+import type { BenchmarkSuite } from '../../src/types/core.js';
+
 import { benchmarkFileSchema } from '../../src/core/benchmark-schema.js';
 
 describe('Benchmark file format validation', () => {
@@ -49,7 +51,7 @@ describe('Benchmark file format validation', () => {
       if (result.success) {
         expect('default' in result.data.suites, 'to be true');
         expect(
-          'task one' in result.data.suites['default']!.benchmarks,
+          'task one' in result.data.suites['default'].benchmarks,
           'to be true',
         );
       }
@@ -110,7 +112,7 @@ describe('Benchmark file format validation', () => {
       expect(result.success, 'to be true');
     });
 
-    it('should accept flat format with task objects', () => {
+    it('should reject flat format with task objects (functions only)', () => {
       const input = {
         'Array.push': {
           fn: () => {
@@ -126,10 +128,10 @@ describe('Benchmark file format validation', () => {
       };
 
       const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      expect(result.success, 'to be false');
     });
 
-    it('should accept flat format with mixed function/object tasks', () => {
+    it('should reject flat format with task objects (use suite format for task metadata)', () => {
       const input = {
         'task one': () => {},
         'task two': {
@@ -139,10 +141,28 @@ describe('Benchmark file format validation', () => {
       };
 
       const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      expect(result.success, 'to be false');
+
+      // Use suite format instead
+      const suiteFormat = {
+        suites: {
+          default: {
+            benchmarks: {
+              'task one': () => {},
+              'task two': {
+                fn: () => {},
+                metadata: { note: 'something' },
+              },
+            },
+          },
+        },
+      };
+
+      const suiteResult = benchmarkFileSchema.safeParse(suiteFormat);
+      expect(suiteResult.success, 'to be true');
     });
 
-    it('should accept flat format with config', () => {
+    it('should reject flat format with config (use suite format instead)', () => {
       const input = {
         config: {
           iterations: 1000,
@@ -151,10 +171,10 @@ describe('Benchmark file format validation', () => {
       };
 
       const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      expect(result.success, 'to be false');
     });
 
-    it('should accept flat format with metadata', () => {
+    it('should reject flat format with metadata (use suite format instead)', () => {
       const input = {
         metadata: {
           author: 'test',
@@ -163,20 +183,20 @@ describe('Benchmark file format validation', () => {
       };
 
       const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      expect(result.success, 'to be false');
     });
 
-    it('should accept flat format with tags', () => {
+    it('should reject flat format with tags (use suite format instead)', () => {
       const input = {
         tags: ['performance', 'arrays'],
         'task one': () => {},
       };
 
       const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      expect(result.success, 'to be false');
     });
 
-    it('should accept flat format with all optional fields', () => {
+    it('should reject flat format with config/metadata/tags (use suite format instead)', () => {
       const input = {
         config: { iterations: 500 },
         metadata: { author: 'test' },
@@ -189,7 +209,7 @@ describe('Benchmark file format validation', () => {
       };
 
       const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      expect(result.success, 'to be false');
     });
   });
 
@@ -241,44 +261,49 @@ describe('Benchmark file format validation', () => {
         'task two': () => {},
       };
 
-      const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      const data = benchmarkFileSchema.parse(input);
 
-      if (result.success) {
-        expect(result.data.suites, 'to be truthy');
-        expect(Object.keys(result.data.suites).length, 'to be greater than', 0);
+      expect(Object.keys(data.suites), 'not to be empty');
 
-        // Get the default suite (there should be exactly one)
-        const suiteNames = Object.keys(result.data.suites);
-        expect(suiteNames.length, 'to equal', 1);
+      // Get the default suite (there should be exactly one)
+      const suites = data.suites as Record<string, BenchmarkSuite>;
+      const suiteNames = Object.keys(suites);
+      expect(suiteNames, 'to have length', 1);
 
-        const suiteName = suiteNames[0];
-        expect(suiteName, 'to be truthy');
-
-        const defaultSuite = result.data.suites[suiteName!];
-        expect(defaultSuite?.benchmarks, 'to be truthy');
-        expect('task one' in (defaultSuite?.benchmarks ?? {}), 'to be true');
-        expect('task two' in (defaultSuite?.benchmarks ?? {}), 'to be true');
-      }
+      const suiteName = suiteNames[0]!;
+      const defaultSuite = suites[suiteName]!;
+      expect(defaultSuite, 'to be truthy');
+      expect(defaultSuite.benchmarks, 'to be truthy');
+      expect('task one' in defaultSuite.benchmarks, 'to be true');
+      expect('task two' in defaultSuite.benchmarks, 'to be true');
     });
 
-    it('should preserve config/metadata/tags when transforming flat format', () => {
-      const input = {
+    it('should use suite format for config/metadata/tags support', () => {
+      // Flat format with config/metadata/tags is NOT supported
+      const flatWithConfig = {
         config: { iterations: 1000 },
         metadata: { author: 'test' },
         tags: ['performance'],
         'task one': () => {},
       };
 
-      const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
+      expect(() => benchmarkFileSchema.parse(flatWithConfig), 'to throw');
 
-      if (result.success) {
-        expect(result.data.config, 'to be truthy');
-        expect(result.data.metadata, 'to be truthy');
-        expect(result.data.tags, 'to be truthy');
-        expect(result.data.suites, 'to be truthy');
-      }
+      // Use suite format instead
+      const suiteFormat = {
+        config: { iterations: 1000 },
+        metadata: { author: 'test' },
+        suites: {
+          default: {
+            benchmarks: {
+              'task one': () => {},
+            },
+          },
+        },
+        tags: ['performance'],
+      };
+
+      expect(() => benchmarkFileSchema.parse(suiteFormat), 'not to throw');
     });
 
     it('should not transform traditional format', () => {
@@ -292,12 +317,7 @@ describe('Benchmark file format validation', () => {
         },
       };
 
-      const result = benchmarkFileSchema.safeParse(input);
-      expect(result.success, 'to be true');
-
-      if (result.success) {
-        expect('My Suite' in result.data.suites, 'to be true');
-      }
+      expect(() => benchmarkFileSchema.parse(input), 'not to throw');
     });
   });
 });
