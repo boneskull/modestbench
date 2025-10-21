@@ -8,13 +8,10 @@
 import { glob } from 'glob';
 import { access, readFile, stat } from 'node:fs/promises';
 import { extname } from 'node:path';
-import { z } from 'zod';
 
 import type {
   BenchmarkDefinition,
   BenchmarkFile,
-  BenchmarkSuite,
-  BenchmarkTask,
   FileLoader,
   ValidationError,
   ValidationResult,
@@ -25,6 +22,7 @@ import {
   BENCHMARK_FILE_EXTENSIONS,
   BENCHMARK_FILE_PATTERN,
 } from '../constants.js';
+import { benchmarkFileSchema } from './benchmark-schema.js';
 
 /**
  * File change notification for watch functionality
@@ -41,103 +39,6 @@ interface FileChange {
 interface FileWatcher {
   close(): void;
 }
-
-/**
- * Zod schema for the full benchmark task object structure
- */
-const benchmarkTaskObjectSchema = z.object({
-  config: z
-    .record(z.string(), z.unknown())
-    .optional()
-    .describe('Task-specific configuration overrides'),
-  fn: z.function().describe('The function to benchmark'),
-  metadata: z
-    .record(z.string(), z.unknown())
-    .optional()
-    .describe('Custom metadata associated with the task'),
-  tags: z
-    .array(z.string())
-    .optional()
-    .describe('Tags for filtering and grouping tasks'),
-});
-
-/**
- * Zod schema for a benchmark task - accepts either:
- *
- * 1. A full task object with fn, config, metadata, tags
- * 2. A function directly (shorthand syntax)
- */
-const benchmarkTaskSchema: z.ZodType<BenchmarkTask> = z
-  .union([benchmarkTaskObjectSchema, benchmarkTaskObjectSchema.shape.fn])
-  .transform((value) => {
-    // If it's a function, wrap it in a task object
-    if (typeof value === 'function') {
-      return { fn: value };
-    }
-    // Otherwise it's already a full task object, return as-is
-    return value;
-  })
-  .pipe(benchmarkTaskObjectSchema)
-  .describe('A single benchmark task definition (object or function)');
-
-/**
- * Zod schema for validating benchmark suite structure
- */
-const benchmarkSuiteSchema: z.ZodType<BenchmarkSuite> = z
-  .object({
-    benchmarks: z
-      .record(z.string(), benchmarkTaskSchema)
-      .describe('Map of benchmark task names to task definitions'),
-    config: z
-      .record(z.string(), z.unknown())
-      .optional()
-      .describe('Suite-specific configuration overrides'),
-    metadata: z
-      .record(z.string(), z.unknown())
-      .optional()
-      .describe('Custom metadata associated with the suite'),
-    setup: z
-      .function()
-      .optional()
-      .describe('Function to run before all benchmarks in the suite'),
-    tags: z
-      .array(z.string())
-      .optional()
-      .describe('Tags for filtering and grouping suites'),
-    teardown: z
-      .function()
-      .optional()
-      .describe('Function to run after all benchmarks in the suite'),
-  })
-  .describe('A benchmark suite containing multiple tasks');
-
-/**
- * Zod schema for validating benchmark file structure
- */
-const benchmarkFileSchema: z.ZodType<BenchmarkDefinition> = z
-  .object({
-    config: z
-      .record(z.string(), z.unknown())
-      .optional()
-      .describe('File-level configuration overrides'),
-    metadata: z
-      .record(z.string(), z.unknown())
-      .optional()
-      .describe('Custom metadata associated with the file'),
-    suites: z
-      .record(z.string(), benchmarkSuiteSchema)
-      .refine((suites) => Object.keys(suites).length > 0, {
-        error: 'At least one suite is required',
-      })
-      .describe('Map of suite names to suite definitions'),
-    tags: z
-      .array(z.string())
-      .optional()
-      .describe('Tags for filtering and grouping files'),
-  })
-  .describe(
-    'A benchmark file containing one or more suites with configuration and metadata',
-  );
 
 /**
  * Implementation of FileLoader for benchmark files

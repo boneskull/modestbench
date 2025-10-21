@@ -44,6 +44,37 @@ modestbench init advanced --config-type typescript
 
 ### Create Your First Benchmark
 
+**modestbench** supports two formats for defining benchmarks:
+
+#### Simplified Format (Recommended for Simple Cases)
+
+For quick benchmarks with just a few tasks, you can use the simplified format:
+
+```javascript
+// benchmarks/example.bench.js
+export default {
+  'Array.push()': () => {
+    const arr = [];
+    for (let i = 0; i < 1000; i++) {
+      arr.push(i);
+    }
+    return arr;
+  },
+
+  'Array spread': () => {
+    let arr = [];
+    for (let i = 0; i < 1000; i++) {
+      arr = [...arr, i];
+    }
+    return arr;
+  },
+};
+```
+
+#### Suite-Based Format (For Complex Projects)
+
+When you need to organize benchmarks into groups with setup/teardown hooks:
+
 ```javascript
 // benchmarks/example.bench.js
 export default {
@@ -71,6 +102,11 @@ export default {
   },
 };
 ```
+
+**When to use each format:**
+
+> - **Simplified format**: Quick benchmarks, single file with related tasks, no setup/teardown needed
+> - **Suite format**: Complex projects, multiple groups of benchmarks, need setup/teardown hooks, or want explicit organization
 
 ### Running Your First Benchmarks
 

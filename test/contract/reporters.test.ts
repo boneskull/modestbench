@@ -29,7 +29,8 @@ interface ReportersTestContext {
   registry: ReporterRegistry;
 }
 
-// Squelch stderr output from reporters during tests
+// Squelch stdout and stderr output from reporters during tests
+const originalStdout = process.stdout.write;
 const originalStderr = process.stderr.write;
 const nullStream = new Writable({
   write(_chunk, _encoding, callback) {
@@ -41,7 +42,8 @@ describe('Reporter interfaces contract', () => {
   let reporters: ReportersTestContext;
 
   beforeEach(() => {
-    // Redirect stderr to null stream
+    // Redirect stdout and stderr to null stream
+    process.stdout.write = nullStream.write.bind(nullStream);
     process.stderr.write = nullStream.write.bind(nullStream);
 
     reporters = {
@@ -54,7 +56,8 @@ describe('Reporter interfaces contract', () => {
   });
 
   afterEach(() => {
-    // Restore stderr
+    // Restore stdout and stderr
+    process.stdout.write = originalStdout;
     process.stderr.write = originalStderr;
   });
 

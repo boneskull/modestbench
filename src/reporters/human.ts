@@ -264,6 +264,11 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
+    // Skip displaying summary for the implicit "default" suite
+    if (result.name === 'default') {
+      return;
+    }
+
     const passed = result.tasks.filter((t) => !t.error).length;
     const failed = result.tasks.filter((t) => t.error).length;
 
@@ -279,6 +284,11 @@ export class HumanReporter extends BaseReporter {
 
   onSuiteStart(suite: string): void {
     if (this.quiet) {
+      return;
+    }
+
+    // Skip displaying the implicit "default" suite
+    if (suite === 'default') {
       return;
     }
 
