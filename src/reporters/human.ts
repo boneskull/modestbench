@@ -447,6 +447,7 @@ export class HumanReporter extends BaseReporter {
       const line = `${this.colorize('cyan', frame!)} ${message}`;
       this.updateProgressLine(line);
     }, 100);
+    this.progressTimer.unref(); // Allow process to exit even if timer is active
   }
 
   /**

@@ -695,6 +695,8 @@ export class ModestBenchEngine implements BenchmarkEngine {
     _reporters: Reporter[] = [],
     signal?: AbortSignal,
   ): Promise<TaskResult> {
+    let progressInterval: NodeJS.Timeout | undefined;
+
     try {
       if (!taskData.fn || typeof taskData.fn !== 'function') {
         throw new Error('Benchmark task must have a "fn" function property');
@@ -755,16 +757,16 @@ export class ModestBenchEngine implements BenchmarkEngine {
       bench.add(taskName, taskData.fn, signal ? { signal } : undefined);
 
       // Set up periodic progress updates during execution
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         // Force progress update to show current state with ETA
         this.progressManager.forceUpdate();
       }, 500); // Update every 500ms during execution
+      progressInterval.unref(); // Allow process to exit even if timer is active
 
       try {
         // Run the benchmark
         await bench.run();
       } catch (error) {
-        clearInterval(progressInterval);
         // Handle array length errors for extremely fast operations
         const errorMessage =
           error instanceof Error ? error.message : String(error);
@@ -974,6 +976,10 @@ export class ModestBenchEngine implements BenchmarkEngine {
         variance: 0,
       };
       return errorResult;
+    } finally {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
     }
   }
 
