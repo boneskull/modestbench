@@ -427,6 +427,194 @@ describe('CsvReporter', () => {
         console.log = originalLog;
       }
     });
+
+    it('should escape suite names containing delimiter', async () => {
+      let output = '';
+      const originalLog = console.log;
+      console.log = (msg: string) => {
+        output = msg;
+      };
+
+      try {
+        const reporter = new CsvReporter();
+        const run = createMockRun();
+
+        reporter.onStart(run);
+        reporter.onFileStart('test.bench.ts');
+        reporter.onSuiteStart('suite, with, commas');
+        reporter.onTaskResult(createMockTaskResult());
+        await reporter.onEnd(run);
+
+        const dataLine = output.trim().split('\n')[1];
+        // Should quote the suite name since it contains commas
+        expect(dataLine, 'to contain', '"suite, with, commas"');
+      } finally {
+        console.log = originalLog;
+      }
+    });
+
+    it('should escape task names containing delimiter', async () => {
+      let output = '';
+      const originalLog = console.log;
+      console.log = (msg: string) => {
+        output = msg;
+      };
+
+      try {
+        const reporter = new CsvReporter();
+        const run = createMockRun();
+
+        reporter.onStart(run);
+        reporter.onFileStart('test.bench.ts');
+        reporter.onSuiteStart('test suite');
+        reporter.onTaskResult(
+          createMockTaskResult({ name: 'task, with, commas' }),
+        );
+        await reporter.onEnd(run);
+
+        const dataLine = output.trim().split('\n')[1];
+        // Should quote the task name since it contains commas
+        expect(dataLine, 'to contain', '"task, with, commas"');
+      } finally {
+        console.log = originalLog;
+      }
+    });
+
+    it('should escape task names containing quotes', async () => {
+      let output = '';
+      const originalLog = console.log;
+      console.log = (msg: string) => {
+        output = msg;
+      };
+
+      try {
+        const reporter = new CsvReporter();
+        const run = createMockRun();
+
+        reporter.onStart(run);
+        reporter.onFileStart('test.bench.ts');
+        reporter.onSuiteStart('test suite');
+        reporter.onTaskResult(
+          createMockTaskResult({ name: 'task "with quotes"' }),
+        );
+        await reporter.onEnd(run);
+
+        const dataLine = output.trim().split('\n')[1];
+        // Should double the quotes and wrap in quotes
+        expect(dataLine, 'to contain', '"task ""with quotes"""');
+      } finally {
+        console.log = originalLog;
+      }
+    });
+
+    it('should escape task names containing newlines', async () => {
+      let output = '';
+      const originalLog = console.log;
+      console.log = (msg: string) => {
+        output = msg;
+      };
+
+      try {
+        const reporter = new CsvReporter();
+        const run = createMockRun();
+
+        reporter.onStart(run);
+        reporter.onFileStart('test.bench.ts');
+        reporter.onSuiteStart('test suite');
+        reporter.onTaskResult(
+          createMockTaskResult({ name: 'task\nwith\nnewlines' }),
+        );
+        await reporter.onEnd(run);
+
+        // The full output should contain the quoted multiline task name
+        expect(output, 'to contain', '"task\nwith\nnewlines"');
+      } finally {
+        console.log = originalLog;
+      }
+    });
+
+    it('should escape multiple special characters in same value', async () => {
+      let output = '';
+      const originalLog = console.log;
+      console.log = (msg: string) => {
+        output = msg;
+      };
+
+      try {
+        const reporter = new CsvReporter();
+        const run = createMockRun();
+
+        reporter.onStart(run);
+        reporter.onFileStart('test.bench.ts');
+        reporter.onSuiteStart('suite, with "quotes" and\nnewlines');
+        reporter.onTaskResult(
+          createMockTaskResult({
+            name: 'task, with "quotes" and\nnewlines',
+          }),
+        );
+        await reporter.onEnd(run);
+
+        // Can't use split('\n') because the values themselves contain newlines
+        // Just verify the full output contains properly escaped values
+        expect(output, 'to contain', '"suite, with ""quotes"" and\nnewlines"');
+        expect(output, 'to contain', '"task, with ""quotes"" and\nnewlines"');
+      } finally {
+        console.log = originalLog;
+      }
+    });
+
+    it('should handle custom delimiter with appropriate escaping', async () => {
+      let output = '';
+      const originalLog = console.log;
+      console.log = (msg: string) => {
+        output = msg;
+      };
+
+      try {
+        const reporter = new CsvReporter({ delimiter: ';' });
+        const run = createMockRun();
+
+        reporter.onStart(run);
+        reporter.onFileStart('test.bench.ts');
+        reporter.onSuiteStart('suite; with; semicolons');
+        reporter.onTaskResult(
+          createMockTaskResult({ name: 'task; with; semicolons' }),
+        );
+        await reporter.onEnd(run);
+
+        const dataLine = output.trim().split('\n')[1];
+        // Should quote values containing the custom delimiter
+        expect(dataLine, 'to contain', '"suite; with; semicolons"');
+        expect(dataLine, 'to contain', '"task; with; semicolons"');
+      } finally {
+        console.log = originalLog;
+      }
+    });
+
+    it('should handle carriage returns in values', async () => {
+      let output = '';
+      const originalLog = console.log;
+      console.log = (msg: string) => {
+        output = msg;
+      };
+
+      try {
+        const reporter = new CsvReporter();
+        const run = createMockRun();
+
+        reporter.onStart(run);
+        reporter.onFileStart('test.bench.ts');
+        reporter.onSuiteStart('suite\rwith\rCR');
+        reporter.onTaskResult(createMockTaskResult({ name: 'task\rwith\rCR' }));
+        await reporter.onEnd(run);
+
+        // The full output should contain the quoted values with CR
+        expect(output, 'to contain', '"suite\rwith\rCR"');
+        expect(output, 'to contain', '"task\rwith\rCR"');
+      } finally {
+        console.log = originalLog;
+      }
+    });
   });
 
   describe('error handling', () => {
