@@ -271,8 +271,8 @@ describe('modestbench init command - integration', () => {
 
       // Library project should have high iterations and all reporters
       expect(config.iterations, 'to equal', 5000);
-      expect(config.reporters.length, 'to be greater than or equal to', 3);
-      expect(config.reporters, 'to contain', 'csv');
+      expect(config.reporters.length, 'to be', 2);
+      expect(config.reporters, 'not to contain', 'csv');
     });
   });
 
