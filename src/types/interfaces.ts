@@ -7,6 +7,7 @@
  */
 
 import type {
+  BenchmarkFile,
   BenchmarkRun,
   ErrorContext,
   ErrorStats,
@@ -139,6 +140,26 @@ export interface ErrorManager {
    * Register error handler callback
    */
   onError(handler: (error: ExecutionError) => void): void;
+}
+
+/**
+ * File loader interface for benchmark discovery and loading
+ */
+export interface FileLoader {
+  /**
+   * Discover benchmark files matching patterns
+   */
+  discover(pattern: string | string[], exclude?: string[]): Promise<string[]>;
+
+  /**
+   * Load a benchmark file
+   */
+  load(filePath: string): Promise<BenchmarkFile>;
+
+  /**
+   * Validate a benchmark file
+   */
+  validate(filePath: string): Promise<ValidationResult>;
 }
 
 /**
@@ -354,6 +375,11 @@ export interface ReporterRegistry {
    * Get all registered reporters
    */
   getAll(): Record<string, Reporter>;
+
+  /**
+   * Get reporters by multiple names
+   */
+  getByNames(names: string[]): Reporter[];
 
   /**
    * Register a reporter

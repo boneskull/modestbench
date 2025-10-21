@@ -9,19 +9,24 @@
 import { Bench } from 'tinybench';
 
 import type {
+  BenchmarkDefinition,
   BenchmarkEngine,
   BenchmarkRun,
+  BenchmarkSuite,
+  BenchmarkTask,
   CiInfo,
   ConfigurationManager,
   EnvironmentInfo,
   ErrorManager,
   ExecutionPhase,
+  FileLoader,
   FileResult,
   GitInfo,
   HistoryStorage,
   ModestBenchConfig,
   ProgressManager,
   Reporter,
+  ReporterRegistry,
   RunConfiguration,
   SuiteResult,
   TaskResult,
@@ -29,57 +34,6 @@ import type {
   ValidationResult,
   ValidationWarning,
 } from '../types/index.js';
-import type { BenchmarkFile } from './loader.js';
-
-/**
- * File loader interface for benchmark discovery and loading
- */
-export interface FileLoader {
-  discover(pattern: string | string[], exclude?: string[]): Promise<string[]>;
-  load(filePath: string): Promise<BenchmarkFile>;
-  validate(filePath: string): Promise<ValidationResult>;
-}
-
-/**
- * Reporter registry for managing output formatters
- */
-export interface ReporterRegistry {
-  get(name: string): Reporter | undefined;
-  getAll(): Record<string, Reporter>;
-  getByNames(names: string[]): Reporter[];
-  register(name: string, reporter: Reporter): void;
-}
-
-/**
- * Structure of a benchmark file export
- */
-interface BenchmarkDefinition {
-  config?: Partial<ModestBenchConfig>;
-  metadata?: Record<string, unknown>;
-  suites: Record<string, BenchmarkSuite>;
-  tags?: string[];
-}
-
-/**
- * Structure of a benchmark suite definition
- */
-interface BenchmarkSuite {
-  benchmarks: Record<string, BenchmarkTask>;
-  config?: Partial<ModestBenchConfig>;
-  metadata?: Record<string, unknown>;
-  setup?: () => Promise<void> | void;
-  tags?: string[];
-  teardown?: () => Promise<void> | void;
-}
-
-/**
- * Structure of a benchmark task definition
- */
-interface BenchmarkTask {
-  fn: () => Promise<void> | void;
-  metadata?: Record<string, unknown>;
-  tags?: string[];
-}
 
 /**
  * Dependencies required by the BenchmarkEngine

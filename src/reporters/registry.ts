@@ -5,12 +5,12 @@
  * registration, retrieval, and lifecycle management of reporters.
  */
 
-import type { ReporterRegistry } from '../core/engine.js';
 import type {
   BenchmarkRun,
   FileResult,
   ProgressState,
   Reporter,
+  ReporterRegistry,
   SuiteResult,
   TaskResult,
 } from '../types/index.js';

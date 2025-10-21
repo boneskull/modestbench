@@ -11,73 +11,20 @@ import { extname } from 'node:path';
 import { z } from 'zod';
 
 import type {
+  BenchmarkDefinition,
+  BenchmarkFile,
+  BenchmarkSuite,
+  BenchmarkTask,
+  FileLoader,
   ValidationError,
   ValidationResult,
   ValidationWarning,
 } from '../types/index.js';
-import type { FileLoader } from './engine.js';
 
 import {
   BENCHMARK_FILE_EXTENSIONS,
   BENCHMARK_FILE_PATTERN,
 } from '../constants.js';
-
-/**
- * A benchmark file containing one or more suites with configuration and
- * metadata
- */
-export interface BenchmarkDefinition {
-  /** File-level configuration overrides */
-  config?: Record<string, unknown>;
-  /** Custom metadata associated with the file */
-  metadata?: Record<string, unknown>;
-  /** Map of suite names to suite definitions */
-  suites: Record<string, BenchmarkSuite>;
-  /** Tags for filtering and grouping files */
-  tags?: string[];
-}
-
-/**
- * Benchmark file structure after parsing
- */
-export interface BenchmarkFile {
-  readonly content: string;
-  readonly exports: unknown;
-  readonly filePath: string;
-  readonly metadata: FileMetadata;
-}
-
-/**
- * A benchmark suite containing multiple tasks
- */
-export interface BenchmarkSuite {
-  /** Map of benchmark task names to task definitions */
-  benchmarks: Record<string, BenchmarkTask>;
-  /** Suite-specific configuration overrides */
-  config?: Record<string, unknown>;
-  /** Custom metadata associated with the suite */
-  metadata?: Record<string, unknown>;
-  /** Function to run before all benchmarks in the suite */
-  setup?: (...args: any[]) => any;
-  /** Tags for filtering and grouping suites */
-  tags?: string[];
-  /** Function to run after all benchmarks in the suite */
-  teardown?: (...args: any[]) => any;
-}
-
-/**
- * A single benchmark task definition
- */
-export interface BenchmarkTask {
-  /** Task-specific configuration overrides */
-  config?: Record<string, unknown>;
-  /** The function to benchmark */
-  fn: (...args: any[]) => any;
-  /** Custom metadata associated with the task */
-  metadata?: Record<string, unknown>;
-  /** Tags for filtering and grouping tasks */
-  tags?: string[];
-}
 
 /**
  * File change notification for watch functionality
@@ -86,16 +33,6 @@ interface FileChange {
   readonly filePath: string;
   readonly timestamp: Date;
   readonly type: 'added' | 'deleted' | 'modified';
-}
-
-/**
- * File metadata for change detection and validation
- */
-interface FileMetadata {
-  readonly exportNames: string[];
-  readonly hasDefaultExport: boolean;
-  readonly mtime: Date;
-  readonly size: number;
 }
 
 /**

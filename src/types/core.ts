@@ -7,6 +7,35 @@
  */
 
 /**
+ * A benchmark file containing one or more suites with configuration and
+ * metadata
+ */
+export interface BenchmarkDefinition {
+  /** File-level configuration overrides */
+  config?: Record<string, unknown>;
+  /** Custom metadata associated with the file */
+  metadata?: Record<string, unknown>;
+  /** Map of suite names to suite definitions */
+  suites: Record<string, BenchmarkSuite>;
+  /** Tags for filtering and grouping files */
+  tags?: string[];
+}
+
+/**
+ * Benchmark file structure after parsing
+ */
+export interface BenchmarkFile {
+  /** Raw file content */
+  readonly content: string;
+  /** Parsed exports from the file */
+  readonly exports: unknown;
+  /** Absolute path to the file */
+  readonly filePath: string;
+  /** File metadata */
+  readonly metadata: FileMetadata;
+}
+
+/**
  * Represents a complete benchmark run across multiple files
  */
 export interface BenchmarkRun {
@@ -34,6 +63,38 @@ export interface BenchmarkRun {
   readonly summary: RunSummary;
   /** Run-level tags */
   readonly tags?: string[];
+}
+
+/**
+ * A benchmark suite containing multiple tasks
+ */
+export interface BenchmarkSuite {
+  /** Map of benchmark task names to task definitions */
+  benchmarks: Record<string, BenchmarkTask>;
+  /** Suite-specific configuration overrides */
+  config?: Record<string, unknown>;
+  /** Custom metadata associated with the suite */
+  metadata?: Record<string, unknown>;
+  /** Function to run before all benchmarks in the suite */
+  setup?: (...args: any[]) => any;
+  /** Tags for filtering and grouping suites */
+  tags?: string[];
+  /** Function to run after all benchmarks in the suite */
+  teardown?: (...args: any[]) => any;
+}
+
+/**
+ * A single benchmark task definition
+ */
+export interface BenchmarkTask {
+  /** Task-specific configuration overrides */
+  config?: Record<string, unknown>;
+  /** The function to benchmark */
+  fn: (...args: any[]) => any;
+  /** Custom metadata associated with the task */
+  metadata?: Record<string, unknown>;
+  /** Tags for filtering and grouping tasks */
+  tags?: string[];
 }
 
 /**
@@ -156,6 +217,20 @@ export type ExecutionPhase =
   | 'setup'
   | 'teardown'
   | 'validation';
+
+/**
+ * File metadata for change detection and validation
+ */
+export interface FileMetadata {
+  /** Names of all exports in the file */
+  readonly exportNames: string[];
+  /** Whether the file has a default export */
+  readonly hasDefaultExport: boolean;
+  /** File modification time */
+  readonly mtime: Date;
+  /** File size in bytes */
+  readonly size: number;
+}
 
 /**
  * Represents results from a benchmark file (collection of suites)
