@@ -1,31 +1,41 @@
-# modestbench
-
-A modern, TypeScript-first benchmarking framework designed for simplicity, accuracy, and comprehensive performance analysis. **modestbench** provides real-time progress tracking, multiple output formats, and extensive configuration options for all your performance testing needs.
+<p align="center">
+  <a href="/"><img src="./assets/logo-512.png" width="512px" align="center" alt="modestbench: a full-ass benchmarking framework for Node.js"/></a>
+  <h1 align="center"><span class="modestbench"><code>modestbench</code><span></h1>
+  <p align="center">
+    <em>“A full-ass benchmarking framework for Node.js”</em>
+    <br/>
+    <small>by <a href="https://github.com/boneskull" title="@boneskull on GitHub">@boneskull</a></small>
+  </p>
+</p>
 
 ## Features
 
 - **Fast & Accurate**: High-precision timing with statistical analysis
-- **Real-time Progress**: Live progress bars and ETA calculations
-- **Multiple Output Formats**: Human-readable, JSON, and CSV reports
-- **Flexible Configuration**: JSON, YAML, JavaScript, and TypeScript configuration files
+- **Multiple Output Formats**: Human-readable, JSON, and CSV reports (at the same time!!)
 - **Historical Tracking**: Store and compare benchmark results over time
 - **Tagging System**: Organize and filter benchmarks by categories
-- **Async Support**: First-class support for asynchronous operations
 - **CLI & API**: Command-line interface and programmatic API
-- **TypeScript Support**: Full type safety and IntelliSense
+- **TypeScript Support**: Full type safety
+
+In summary, **modestbench** wraps [tinybench][] and enhances it with a bunch of crap so you don't have to think.
 
 ## Quick Start
 
 ### Installation
 
+The usual suspects:
+
 ```bash
-# Or add to your project
 npm install --save-dev modestbench
 ```
 
 ### Optional: Initialize a Project
 
-The `init` command helps you get started by generating a configuration file and example benchmarks. This step is **optional** - you can create benchmark files manually if you prefer.
+The `modestbench` CLI provides a `init` command. This command:
+
+1. Generates a configuration file in a format of your choosing
+2. Creates an example benchmark file
+3. Appends `.modestbench/` to `.gitignore` to exclude historical data from version control
 
 ```bash
 # Initialize with examples and configuration
@@ -39,10 +49,11 @@ modestbench init advanced --config-type typescript
 
 - `basic` - Simple setup for small projects (100 iterations, human reporter)
 - `advanced` - Feature-rich with multiple reporters and structured output (1000 iterations, warmup, human + JSON reporters)
-- `library` - Optimized for library performance testing (5000 iterations, high warmup, all reporters, organized suite structure)
 - `library` - Optimized for library performance testing (5000 iterations, high warmup, human + JSON reporters, organized suite structure)
 
-### Create Your First Benchmark
+### My First Benchmark
+
+> **_PRO TIP_**: The convention for **modestbench** benchmark files is to use the `.bench.js` or `.bench.ts` extension.
 
 **modestbench** supports two formats for defining benchmarks:
 
@@ -81,7 +92,6 @@ export default {
   suites: {
     'Array Operations': {
       benchmarks: {
-        // Shorthand syntax: just pass a function directly
         'Array.push()': () => {
           const arr = [];
           for (let i = 0; i < 1000; i++) {
@@ -160,11 +170,9 @@ Jump to:
 - [Configuration](#configuration) - Project and runtime configuration options
 - [Advanced Features](#advanced-features) - Multiple suites, async operations, and tagging
 - [Integration Examples](#integration-examples) - CI/CD integration and performance monitoring
-- [Programmatic API](#programmatic-api) - Using ModestBench programmatically
+- [Programmatic API](#programmatic-api) - Using **modestbench** programmatically
 
 See the **[examples directory](examples/README.md)** for additional guides and sample code.
-
-> **Note:** Detailed documentation is currently under development.
 
 ## CLI Commands
 
@@ -267,7 +275,7 @@ See [Tagging and Filtering](#tagging-and-filtering) for detailed examples.
 
 ### History Management
 
-ModestBench automatically tracks benchmark results over time in a local `.modestbench/` directory. This history enables you to:
+**modestbench** automatically tracks benchmark results over time in a local `.modestbench/` directory. This history enables you to:
 
 - **Track performance trends** - See how your code's performance changes across commits
 - **Detect regressions** - Compare current results against previous runs to catch slowdowns
@@ -337,7 +345,7 @@ Create `modestbench.config.json`:
 
 ### Configuration File Support
 
-ModestBench supports multiple configuration file formats, powered by [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig):
+**modestbench** supports multiple configuration file formats, powered by [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig):
 
 - **JSON**: `modestbench.config.json`, `.modestbenchrc.json`, `.modestbenchrc`
 - **YAML**: `modestbench.config.yaml`, `modestbench.config.yml`, `.modestbenchrc.yaml`, `.modestbenchrc.yml`
@@ -354,7 +362,7 @@ modestbench init --config-type js     # JavaScript format
 modestbench init --config-type ts     # TypeScript format
 ```
 
-**Configuration Discovery**: ModestBench automatically searches for configuration files in the current directory and parent directories, following standard conventions.
+**Configuration Discovery**: **modestbench** automatically searches for configuration files in the current directory and parent directories, following standard conventions.
 
 ## Output Formats
 
@@ -460,7 +468,7 @@ export default {
 
 ### Tagging and Filtering
 
-ModestBench supports a powerful tagging system that lets you organize and selectively run benchmarks. Tags can be applied at three levels: file, suite, and task. Tags automatically cascade from parent to child, so tasks inherit tags from their suite and file.
+**modestbench** supports a powerful tagging system that lets you organize and selectively run benchmarks. Tags can be applied at three levels: file, suite, and task. Tags automatically cascade from parent to child, so tasks inherit tags from their suite and file.
 
 #### Adding Tags
 
@@ -645,7 +653,7 @@ const result = await engine.execute({
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide][contributing] for details.
 
 ### Development Setup
 
@@ -669,19 +677,23 @@ npm run examples
 
 ## Acknowledgments
 
-- Built on top of the mighty [tinybench](https://npm.im/tinybench)
-- Inspired by [Benchmark.js](https://benchmarkjs.com/) and `node:test`
+- Built on top of the small-but-mighty benchmarking library, [tinybench][]
+- Interface inspired by good ol' [Benchmark.js][]
+- Built with [zshy][] for dual ESM/CJS modules
 
 ## Resources
 
-- [Documentation](https://github.com/boneskull/modestbench#readme)
-- [Issue Tracker](https://github.com/boneskull/modestbench/issues)
-- [Discussions](https://github.com/boneskull/modestbench/discussions)
+- [Issue Tracker][bugs]
+- [Discussions][]
 
 ## License
 
-Blue Oak Model License 1.0.0 - see [LICENSE](LICENSE.md) file for details.
+Copyright © 2025 [Christopher Hiller](https://github.com/boneskull). Licensed under the [Blue Oak Model License 1.0.0][license].
 
----
-
-**modestbench** - Modest in name, mighty in performance! 🚀
+[license]: https://blueoakcouncil.org/license/1.0.0
+[tinybench]: https://github.com/tinylibs/tinybench
+[benchmark.js]: https://benchmarkjs.com/
+[bugs]: https://github.com/boneskull/modestbench/issues
+[discussions]: https://github.com/boneskull/modestbench/discussions
+[zshy]: https://github.com/colinhacks/zshy
+[contributing]: CONTRIBUTING.md

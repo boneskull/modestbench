@@ -2,7 +2,7 @@
   "name": "modestbench",
   "version": "0.1.0",
   "type": "module",
-  "description": "A framework which wraps around tinybench to provide structure, consistency and convenience to developers creating and maintaining benchmarks",
+  "description": "A full-ass benchmarking framework for Node.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/boneskull/modestbench.git"
@@ -42,15 +42,25 @@
   ],
   "keywords": [
     "benchmark",
-    "tinybench",
-    "performance",
+    "benchmarking",
     "cli",
-    "testing"
+    "csv",
+    "framework",
+    "json",
+    "measurement",
+    "metrics",
+    "optimization",
+    "perf",
+    "performance",
+    "profiling",
+    "speed",
+    "testing",
+    "tinybench"
   ],
   "scripts": {
     "build": "run-s -sl build:compile build:schema",
     "build:compile": "zshy",
-    "build:schema": "node --import tsx scripts/generate-schema.ts",
+    "build:schema": "tsx scripts/generate-schema.ts",
     "clean": "rm -rf dist",
     "commitlint": "commitlint",
     "dev": "zshy --watch",
@@ -66,8 +76,8 @@
     "lint:markdown": "markdownlint-cli2 \"**/*.md\"",
     "lint:spelling": "cspell .",
     "lint:types": "tsc --noEmit",
-    "prepack": "run-s -sl clean build",
-    "prepare": "husky; run-s -sl build",
+    "prepack": "run-s -s clean build",
+    "prepare": "husky; run-s -s build",
     "pretest:base": "run-s -s build:compile",
     "test": "npm run test:base -- \"test/**/*.test.ts\"",
     "test:base": "node --import tsx --test --test-reporter=spec",
@@ -144,6 +154,9 @@
     }
   },
   "lint-staged": {
+    "package.json": [
+      "npm pkg fix"
+    ],
     "*.{ts,cts,js,cjs,yml,json5}": [
       "eslint --fix",
       "prettier --write",
