@@ -11,7 +11,7 @@ export const BENCHMARK_FILE_EXTENSIONS = new Set([
 ]);
 
 /**
- * Glob pattern fragment for benchmark file extensions Example:
+ * Glob pattern fragment for benchmark file extensions. Example:
  * ".bench.{js,mjs,cjs,ts,mts,cts}"
  */
 export const BENCHMARK_FILE_PATTERN = `.bench.{${Array.from(
