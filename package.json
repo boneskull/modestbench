@@ -68,6 +68,7 @@
     "lint:types": "tsc --noEmit",
     "prepack": "run-s -sl clean build",
     "prepare": "husky; run-s -sl build",
+    "pretest:base": "run-s -s build:compile",
     "test": "npm run test:base -- \"test/**/*.test.ts\"",
     "test:base": "node --import tsx --test --test-reporter=spec",
     "test:contract": "npm run test:base -- \"test/contract/**/*.test.ts\"",
