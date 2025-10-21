@@ -162,6 +162,7 @@ export default defineConfig(
       '.tshy/**/*',
       '.tmp/**/*',
       '.wallaby.js',
+      'worktrees',
     ],
   },
 );
