@@ -85,10 +85,13 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Test',
-          benchmarks: {
-            'test': {
-              fn: () => 1 + 1
+          suites: {
+            'Test': {
+              benchmarks: {
+                'test': {
+                  fn: () => 1 + 1
+                }
+              }
             }
           }
         };
@@ -96,7 +99,7 @@ describe('BenchmarkEngine interface contract', () => {
       );
 
       const config = {
-        config: { iterations: 1, time: 10, warmup: 0 },
+        config: { iterations: 1, quiet: true, time: 10, warmup: 0 },
         files: [benchFile],
         reporters: ['human'],
       };
@@ -113,10 +116,13 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Minimal',
-          benchmarks: {
-            'simple': {
-              fn: () => {}
+          suites: {
+            'Minimal': {
+              benchmarks: {
+                'simple': {
+                  fn: () => {}
+                }
+              }
             }
           }
         };
@@ -124,7 +130,7 @@ describe('BenchmarkEngine interface contract', () => {
       );
 
       const config = {
-        config: { iterations: 1, time: 10, warmup: 0 },
+        config: { iterations: 1, quiet: true, time: 10, warmup: 0 },
         files: [benchFile],
         reporters: ['human'],
       };
@@ -146,10 +152,13 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Execute Test',
-          benchmarks: {
-            'add numbers': {
-              fn: () => 1 + 1
+          suites: {
+            'Execute Test': {
+              benchmarks: {
+                'add numbers': {
+                  fn: () => 1 + 1
+                }
+              }
             }
           }
         };
@@ -157,7 +166,7 @@ describe('BenchmarkEngine interface contract', () => {
       );
 
       const config = {
-        config: { iterations: 1, time: 10, warmup: 0 },
+        config: { iterations: 1, quiet: true, time: 10, warmup: 0 },
         files: [benchFile],
         reporters: ['human'],
       };
@@ -174,8 +183,11 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Validate',
-          benchmarks: { 'test': { fn: () => {} } }
+          suites: {
+            'Validate': {
+              benchmarks: { 'test': { fn: () => {} } }
+            }
+          }
         };
       `,
       );
@@ -190,8 +202,11 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Valid',
-          benchmarks: { 'test': { fn: () => {} } }
+          suites: {
+            'Valid': {
+              benchmarks: { 'test': { fn: () => {} } }
+            }
+          }
         };
       `,
       );
@@ -212,10 +227,13 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Structure Test',
-          benchmarks: {
-            'valid benchmark': {
-              fn: () => 1 + 1
+          suites: {
+            'Structure Test': {
+              benchmarks: {
+                'valid benchmark': {
+                  fn: () => 1 + 1
+                }
+              }
             }
           }
         };
@@ -391,9 +409,12 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Config Test',
-          benchmarks: {
-            'test': { fn: () => {} }
+          suites: {
+            'Config Test': {
+              benchmarks: {
+                'test': { fn: () => {} }
+              }
+            }
           }
         };
       `,
@@ -402,6 +423,7 @@ describe('BenchmarkEngine interface contract', () => {
       const config = {
         config: {
           iterations: 2,
+          quiet: true,
           time: 10,
           warmup: 0,
         },
@@ -425,14 +447,17 @@ describe('BenchmarkEngine interface contract', () => {
         benchFile,
         `
         export default {
-          name: 'Abort Test',
-          benchmarks: { 'test': { fn: () => {} } }
+          suites: {
+            'Abort Test': {
+              benchmarks: { 'test': { fn: () => {} } }
+            }
+          }
         };
       `,
       );
 
       const config = {
-        config: { iterations: 1, time: 10, warmup: 0 },
+        config: { iterations: 1, quiet: true, time: 10, warmup: 0 },
         files: [benchFile],
         reporters: ['human'],
       };

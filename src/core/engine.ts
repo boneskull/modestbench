@@ -180,12 +180,8 @@ export class ModestBenchEngine implements BenchmarkEngine {
           }
         } catch (error) {
           // If we can't load a file for counting, we'll handle it during execution
-          // Only show warning if not in quiet mode and not in test environment
-          if (
-            !mergedConfig.quiet &&
-            process.env.NODE_ENV !== 'test' &&
-            !process.env.npm_lifecycle_event?.includes('test')
-          ) {
+          // Only show warning if not in quiet mode
+          if (!mergedConfig.quiet) {
             console.warn(
               `Warning: Could not pre-load ${filePath} for task counting:`,
               error,
