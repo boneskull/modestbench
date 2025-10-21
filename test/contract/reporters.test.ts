@@ -1,5 +1,4 @@
 import { expect } from 'bupkis';
-import { Writable } from 'node:stream';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import type { Reporter, ReporterRegistry } from '../../src/types/interfaces.js';
@@ -15,6 +14,7 @@ import {
   buildMockSuiteResult,
   buildMockTaskResult,
 } from '../fixtures/data-builders.js';
+import { nullStream } from '../util.js';
 
 /**
  * Contract tests for Reporter interfaces Reference: contracts/core-api.md lines
@@ -32,11 +32,6 @@ interface ReportersTestContext {
 // Squelch stdout and stderr output from reporters during tests
 const originalStdout = process.stdout.write;
 const originalStderr = process.stderr.write;
-const nullStream = new Writable({
-  write(_chunk, _encoding, callback) {
-    callback();
-  },
-});
 
 describe('Reporter interfaces contract', () => {
   let reporters: ReportersTestContext;
