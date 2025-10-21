@@ -1,9 +1,18 @@
 import { expect } from 'bupkis';
-import { describe, it } from 'node:test';
+import { Writable } from 'node:stream';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import type { BenchmarkRun, TaskResult } from '../../src/types/index.js';
 
 import { CsvReporter } from '../../src/reporters/csv.js';
+
+// Squelch stdout during tests
+const originalStdout = process.stdout.write;
+const nullStream = new Writable({
+  write(_chunk, _encoding, callback) {
+    callback();
+  },
+});
 
 /**
  * Create a minimal mock BenchmarkRun for testing
@@ -101,6 +110,16 @@ const createMockTaskResult = (
 };
 
 describe('CsvReporter', () => {
+  beforeEach(() => {
+    // Redirect stdout to null stream
+    process.stdout.write = nullStream.write.bind(nullStream);
+  });
+
+  afterEach(() => {
+    // Restore stdout
+    process.stdout.write = originalStdout;
+  });
+
   describe('configuration options', () => {
     it('should use default delimiter (comma)', () => {
       const reporter = new CsvReporter();
