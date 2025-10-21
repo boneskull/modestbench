@@ -1,5 +1,6 @@
-import { type ChildProcess, spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+import { type ChildProcess, spawn } from 'node:child_process';
+import { Writable } from 'node:stream';
+import { fileURLToPath } from 'node:url';
 
 // Use compiled dist files instead of tsx for faster test execution
 const cliPath = fileURLToPath(new URL('../dist/cli/index.js', import.meta.url));
@@ -56,3 +57,12 @@ export const runCommand = async (
     });
   });
 };
+
+/**
+ * Null stream to suppress output
+ */
+export const nullStream = new Writable({
+  write(_chunk, _encoding, callback) {
+    callback();
+  },
+});

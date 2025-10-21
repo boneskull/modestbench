@@ -1,18 +1,13 @@
 import { expect } from 'bupkis';
-import { Writable } from 'node:stream';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import type { BenchmarkRun, TaskResult } from '../../src/types/index.js';
 
 import { CsvReporter } from '../../src/reporters/csv.js';
+import { nullStream } from '../util.js';
 
 // Squelch stdout during tests
 const originalStdout = process.stdout.write;
-const nullStream = new Writable({
-  write(_chunk, _encoding, callback) {
-    callback();
-  },
-});
 
 /**
  * Create a minimal mock BenchmarkRun for testing
