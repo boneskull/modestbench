@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import type { BenchmarkEngine } from '../../src/types/interfaces.js';
 
 import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
-import { ModestBenchEngine } from '../../src/core/engine.js';
+import { TinybenchEngine } from '../../src/core/engines/index.js';
 import { ModestBenchErrorManager } from '../../src/core/error-manager.js';
 import { BenchmarkFileLoader } from '../../src/core/loader.js';
 import { ModestBenchProgressManager } from '../../src/progress/manager.js';
@@ -15,11 +15,13 @@ import { ModestBenchReporterRegistry } from '../../src/reporters/registry.js';
 import { FileHistoryStorage } from '../../src/storage/history.js';
 
 /**
- * Contract tests for BenchmarkEngine interface Reference: contracts/core-api.md
- * lines 5-30
+ * Contract tests for TinybenchEngine implementation
+ *
+ * Tests the concrete TinybenchEngine implementation of the BenchmarkEngine
+ * interface. Reference: contracts/core-api.md lines 5-30
  */
 
-describe('BenchmarkEngine interface contract', () => {
+describe('TinybenchEngine contract', () => {
   let engine: BenchmarkEngine;
   let tempDir: string;
 
@@ -36,7 +38,7 @@ describe('BenchmarkEngine interface contract', () => {
     const progressManager = new ModestBenchProgressManager();
     const errorManager = new ModestBenchErrorManager();
 
-    engine = new ModestBenchEngine({
+    engine = new TinybenchEngine({
       configManager,
       errorManager,
       fileLoader,

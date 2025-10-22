@@ -12,6 +12,7 @@ export { ModestBenchConfigurationManager } from './config/manager.js';
 
 // Core engine and loader
 export { ModestBenchEngine } from './core/engine.js';
+export { TinybenchEngine } from './core/engines/index.js';
 
 // Error handling
 export { ModestBenchErrorManager } from './core/error-manager.js';
