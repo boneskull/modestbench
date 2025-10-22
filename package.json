@@ -85,10 +85,12 @@
     "prepack": "run-s -s clean build",
     "prepare": "husky; run-s -s build",
     "pretest:base": "run-s -s build:compile",
-    "test": "npm run test:base -- \"test/**/*.test.ts\"",
+    "test": "run-s -s test:runtime test:types",
     "test:base": "node --import tsx --test --test-reporter=spec",
     "test:contract": "npm run test:base -- \"test/contract/**/*.test.ts\"",
     "test:integration": "npm run test:base -- \"test/integration/**/*.test.ts\"",
+    "test:runtime": "npm run test:base -- \"test/**/*.test.ts\"",
+    "test:types": "tsd --files 'test-d/**/*.test-d.ts'",
     "test:unit": "npm run test:base -- \"test/unit/**/*.test.ts\"",
     "test:watch": "npm run test:base -- --watch"
   },
@@ -126,6 +128,7 @@
     "prettier-plugin-jsdoc": "1.3.3",
     "prettier-plugin-pkg": "0.21.2",
     "prettier-plugin-sort-json": "4.1.1",
+    "tsd": "^0.33.0",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
     "typescript-eslint": "8.46.1",
@@ -146,7 +149,8 @@
       "**/*.d.ts",
       "site/media/**/*",
       "worktrees/**/*",
-      "site/src/content/**/*"
+      "site/src/content/**/*",
+      "test-d/**/*"
     ],
     "tags": [
       "-knipignore"
