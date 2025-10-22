@@ -165,6 +165,7 @@ export default defineConfig(
       'worktrees',
       'site',
       'astro.config.js',
+      '.astro/**/*',
     ],
   },
 );
