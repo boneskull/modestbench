@@ -27,20 +27,30 @@
   --sl-color-accent: var(--synthwave-pink);
   --sl-color-accent-high: var(--synthwave-cyan);
 
-  /* Semantic color overrides */
-  --sl-color-red: var(--synthwave-red);
-  --sl-color-red-low: var(--synthwave-red);
-  --sl-color-red-high: var(--synthwave-red);
-  --sl-color-yellow: var(--synthwave-yellow);
-  --sl-color-yellow-low: var(--synthwave-yellow);
-  --sl-color-yellow-high: var(--synthwave-yellow);
+  /* Semantic color overrides - icons use base color, backgrounds use -low variant */
   --sl-color-orange: var(--synthwave-orange);
-  --sl-color-blue: var(--synthwave-blue);
-  --sl-color-blue-low: var(--synthwave-blue);
-  --sl-color-blue-high: var(--synthwave-blue);
+  --sl-color-orange-low: rgba(251, 131, 15, 0.2);
+  --sl-color-orange-high: var(--synthwave-orange);
+
+  --sl-color-purple: var(--synthwave-purple);
+  --sl-color-purple-low: rgba(92, 44, 109, 0.2);
+  --sl-color-purple-high: var(--synthwave-purple);
+
   --sl-color-green: var(--synthwave-cyan);
-  --sl-color-green-low: var(--synthwave-cyan);
+  --sl-color-green-low: rgba(0, 241, 255, 0.2);
   --sl-color-green-high: var(--synthwave-cyan);
+
+  --sl-color-red: var(--synthwave-red);
+  --sl-color-red-low: rgba(246, 81, 29, 0.2);
+  --sl-color-red-high: var(--synthwave-red);
+
+  --sl-color-blue: var(--synthwave-blue);
+  --sl-color-blue-low: rgba(44, 84, 139, 0.2);
+  --sl-color-blue-high: var(--synthwave-blue);
+
+  --sl-color-yellow: var(--synthwave-yellow);
+  --sl-color-yellow-low: rgba(255, 180, 0, 0.2);
+  --sl-color-yellow-high: var(--synthwave-yellow);
 }
 
 :root[data-theme='dark'] {
@@ -216,35 +226,7 @@
   box-shadow: 0 0 10px rgba(255, 1, 154, 0.3);
 }
 
-/* Card icons - use synthwave colors, cycling through the palette */
-.card:nth-child(1) :global(svg) {
-  color: var(--synthwave-cyan);
-}
-
-.card:nth-child(2) :global(svg) {
-  color: var(--synthwave-pink);
-}
-
-.card:nth-child(3) :global(svg) {
-  color: var(--synthwave-purple);
-}
-
-.card:nth-child(4) :global(svg) {
-  color: var(--synthwave-cyan);
-}
-
-.card:nth-child(5) :global(svg) {
-  color: var(--synthwave-pink);
-}
-
-.card:nth-child(6) :global(svg) {
-  color: var(--synthwave-purple);
-}
-
-.card:hover :global(svg) {
-  color: var(--synthwave-pink);
-  filter: drop-shadow(0 0 4px rgba(255, 1, 154, 0.4));
-}
+/* Removed custom card icon colors - using Starlight defaults */
 
 :root[data-theme='dark'] .card {
   background: linear-gradient(
@@ -325,6 +307,11 @@ h2,
   font-family: 'Handel Gothic', sans-serif;
 }
 
+/* Site title color in light mode - black instead of purple */
+:root[data-theme='light'] .site-title {
+  color: #000000 !important;
+}
+
 /* Hero title with gradient */
 :root[data-theme='dark'] .hero h1 {
   background: linear-gradient(
@@ -334,11 +321,17 @@ h2,
   );
   font-size: 6rem;
   letter-spacing: -0.04em;
-  /* -webkit-text-stroke: 1px var(--sl-color-black); 
-     Commented out: causes unwanted outline on hero title in some browsers. 
+  /* -webkit-text-stroke: 1px var(--sl-color-black);
+     Commented out: causes unwanted outline on hero title in some browsers.
      Kept for possible future use if text stroke is desired. */
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Hero title in light mode - same size and kerning as dark mode */
+:root[data-theme='light'] .hero h1 {
+  font-size: 6rem;
+  letter-spacing: -0.04em;
 }
 
 /* Other headers - hot pink */
