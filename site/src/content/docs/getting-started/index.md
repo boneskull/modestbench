@@ -122,6 +122,45 @@ Run benchmarks with options:
 modestbench run --iterations 5000 --reporters human,json
 ```
 
+### Choosing an Engine
+
+modestbench provides two engines with different trade-offs:
+
+```bash
+# Default: tinybench (fast, good for development)
+modestbench run
+
+# Accurate engine (higher precision, recommended for production benchmarks)
+node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+```
+
+**Engine Comparison:**
+
+| Feature | `tinybench` (default) | `accurate` |
+|---------|----------------------|------------|
+| Speed | ⚡ Very fast | 🐢 Slower (more thorough) |
+| Statistical Quality | ✅ Good | ⭐ Excellent |
+| Outlier Removal | ✅ IQR-based | ✅ IQR-based |
+| V8 Optimization Guards | ❌ No | ✅ Yes (prevents JIT interference) |
+| Requirements | None | `--allow-natives-syntax` flag |
+| Best For | Development, CI | Production benchmarks, publications |
+
+:::tip[When to Use Accurate Engine]
+Use the `accurate` engine when:
+
+- Publishing benchmark results
+- Making critical performance decisions
+- Comparing micro-optimizations
+- Needing the highest statistical quality
+
+Use the default `tinybench` engine when:
+
+- Rapid iteration during development
+- CI/CD performance regression tests
+- General performance comparisons
+
+:::
+
 Run specific files or directories:
 
 ```bash

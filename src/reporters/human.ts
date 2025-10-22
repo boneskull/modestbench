@@ -576,7 +576,7 @@ export class HumanReporter extends BaseReporter {
         };
       }
 
-      const duration = this.formatDuration(result.mean * 1000000000);
+      const duration = this.formatDuration(result.mean); // already in nanoseconds
       const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
       const rme = this.formatPercentage(result.marginOfError * 100);
 

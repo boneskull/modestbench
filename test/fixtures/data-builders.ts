@@ -210,6 +210,7 @@ export const buildMockTaskResult = (
   overrides?: Partial<TaskResult>,
 ): TaskResult => {
   return {
+    cv: 20, // 200/1000 * 100 = 20%
     iterations: 1000,
     marginOfError: 1.5,
     max: 2000,

@@ -89,6 +89,7 @@ const createMockTaskResult = (
   overrides: Partial<TaskResult> = {},
 ): TaskResult => {
   return {
+    cv: 5, // 50000/1000000 * 100 = 5%
     iterations: 100,
     marginOfError: 2.5,
     max: 1050000,

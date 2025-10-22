@@ -19,6 +19,7 @@ interface RunOptions {
   bail?: boolean | undefined;
   config?: string | undefined;
   cwd: string;
+  engine?: 'accurate' | 'tinybench' | undefined;
   exclude?: string[] | undefined;
   excludeTags?: string[] | undefined;
   iterations?: number | undefined;

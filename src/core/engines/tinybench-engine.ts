@@ -15,6 +15,7 @@ import type {
 } from '../../types/index.js';
 
 import { ModestBenchEngine } from '../engine.js';
+import { calculateStatistics, removeOutliersIQR } from '../stats-utils.js';
 
 /**
  * Tinybench-specific benchmark execution engine
@@ -146,21 +147,27 @@ export class TinybenchEngine extends ModestBenchEngine {
               `Benchmark too fast to measure reliably: ${minimalResults?.error?.message || 'unknown error'}`,
             );
           }
-          // Continue with minimal results
+          // Continue with minimal results - apply outlier removal
+          const minimalRawSamples = minimalResults.latency.samples || [];
+          const minimalSamplesInNs = minimalRawSamples.map((s) => s * 1e6);
+          const minimalCleanedSamples = removeOutliersIQR(minimalSamplesInNs);
+          const minimalStats = calculateStatistics(minimalCleanedSamples);
+
           const taskResult: TaskResult = {
-            iterations: minimalResults.latency.samples?.length || 0,
-            marginOfError: minimalResults.latency.rme || 0,
-            max: minimalResults.latency.max || 0,
-            mean: minimalResults.latency.mean || 0,
+            cv: minimalStats.cv,
+            iterations: minimalCleanedSamples.length,
+            marginOfError: minimalStats.marginOfError,
+            max: minimalStats.max,
+            mean: minimalStats.mean,
             metadata: taskData.metadata ?? {},
-            min: minimalResults.latency.min || 0,
+            min: minimalStats.min,
             name: taskName,
             opsPerSecond: minimalResults.throughput.mean || 0,
-            p95: minimalResults.latency.p75 || 0,
-            p99: minimalResults.latency.p99 || 0,
-            stdDev: minimalResults.latency.sd || 0,
+            p95: minimalStats.p95,
+            p99: minimalStats.p99,
+            stdDev: minimalStats.stdDev,
             ...(taskData.tags ? { tags: taskData.tags } : {}),
-            variance: minimalResults.latency.variance || 0,
+            variance: minimalStats.variance,
           };
           return taskResult;
         }
@@ -180,6 +187,7 @@ export class TinybenchEngine extends ModestBenchEngine {
       if (results.aborted) {
         // Task was aborted via signal - return minimal valid result with error
         const taskResult: TaskResult = {
+          cv: 0,
           error: new Error('Benchmark aborted by user signal'),
           iterations: results.latency?.samples?.length || 0,
           marginOfError: 0,
@@ -248,21 +256,27 @@ export class TinybenchEngine extends ModestBenchEngine {
             );
           }
 
-          // Return minimal results
+          // Return minimal results - apply outlier removal
+          const minimalRawSamples2 = minimalResults.latency.samples || [];
+          const minimalSamplesInNs2 = minimalRawSamples2.map((s) => s * 1e6);
+          const minimalCleanedSamples2 = removeOutliersIQR(minimalSamplesInNs2);
+          const minimalStats2 = calculateStatistics(minimalCleanedSamples2);
+
           const taskResult: TaskResult = {
-            iterations: minimalResults.latency.samples?.length || 0,
-            marginOfError: minimalResults.latency.rme || 0,
-            max: minimalResults.latency.max || 0,
-            mean: minimalResults.latency.mean || 0,
+            cv: minimalStats2.cv,
+            iterations: minimalCleanedSamples2.length,
+            marginOfError: minimalStats2.marginOfError,
+            max: minimalStats2.max,
+            mean: minimalStats2.mean,
             metadata: taskData.metadata ?? {},
-            min: minimalResults.latency.min || 0,
+            min: minimalStats2.min,
             name: taskName,
             opsPerSecond: minimalResults.throughput.mean || 0,
-            p95: minimalResults.latency.p75 || 0,
-            p99: minimalResults.latency.p99 || 0,
-            stdDev: minimalResults.latency.sd || 0,
+            p95: minimalStats2.p95,
+            p99: minimalStats2.p99,
+            stdDev: minimalStats2.stdDev,
             ...(taskData.tags ? { tags: taskData.tags } : {}),
-            variance: minimalResults.latency.variance || 0,
+            variance: minimalStats2.variance,
           };
           return taskResult;
         }
@@ -270,20 +284,27 @@ export class TinybenchEngine extends ModestBenchEngine {
         throw results.error;
       }
 
+      // Apply IQR outlier removal to raw samples
+      const rawSamples = results.latency.samples || [];
+      const samplesInNs = rawSamples.map((s) => s * 1e6); // Convert ms to ns
+      const cleanedSamples = removeOutliersIQR(samplesInNs);
+      const stats = calculateStatistics(cleanedSamples);
+
       const taskResult: TaskResult = {
-        iterations: results.latency.samples?.length || 0, // Use samples array length
-        marginOfError: results.latency.rme || 0, // tinybench has relative margin of error
-        max: results.latency.max || 0,
-        mean: results.latency.mean || 0, // Keep in milliseconds from tinybench
+        cv: stats.cv,
+        iterations: cleanedSamples.length,
+        marginOfError: stats.marginOfError,
+        max: stats.max,
+        mean: stats.mean,
         metadata: taskData.metadata ?? {},
-        min: results.latency.min || 0,
+        min: stats.min,
         name: taskName,
-        opsPerSecond: results.throughput.mean || 0, // tinybench provides hz (operations per second)
-        p95: results.latency.p75 || 0, // Use p75 as closest to p95
-        p99: results.latency.p99 || 0,
-        stdDev: results.latency.sd || 0, // tinybench uses 'sd' for standard deviation
+        opsPerSecond: results.throughput.mean || 0, // Keep tinybench's ops/sec
+        p95: stats.p95,
+        p99: stats.p99,
+        stdDev: stats.stdDev,
         ...(taskData.tags ? { tags: taskData.tags } : {}),
-        variance: results.latency.variance || 0,
+        variance: stats.variance,
       };
 
       return taskResult;
@@ -292,6 +313,7 @@ export class TinybenchEngine extends ModestBenchEngine {
         error instanceof Error ? error : new Error(String(error));
 
       const errorResult: TaskResult = {
+        cv: 0,
         error: executionError,
         iterations: 0,
         marginOfError: 0,

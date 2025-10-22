@@ -23,6 +23,7 @@ import type {
 } from '../types/index.js';
 
 import { bootstrap } from '../bootstrap.js';
+import { AccurateEngine, TinybenchEngine } from '../core/engines/index.js';
 import {
   CsvReporter,
   HumanReporter,
@@ -262,6 +263,14 @@ export const main = async (
               description: 'Exclude benchmarks with any of these tags',
               type: 'array',
             })
+            .option('engine', {
+              alias: 'e',
+              choices: ['tinybench', 'accurate'] as const,
+              default: 'tinybench' as const,
+              description:
+                'Benchmark engine: tinybench (default) or accurate (requires --allow-natives-syntax)',
+              type: 'string',
+            })
             .example([
               ['$0 run', 'Run benchmarks in current directory and bench/'],
               ['$0 run benchmarks/', 'Run all benchmarks in a directory'],
@@ -271,15 +280,21 @@ export const main = async (
               ['$0 run benchmarks/ tests/perf/', 'Run multiple directories'],
               ['$0 run --reporters json,csv', 'Use multiple reporters'],
               ['$0 run --iterations 1000', 'Set iteration count'],
+              ['$0 run --engine accurate', 'Use high-accuracy engine'],
               ['$0 run --bail', 'Stop on first failure'],
             ]);
         },
         async (argv) => {
-          const context = await createCliContext(argv, abortController!);
+          const context = await createCliContext(
+            argv,
+            abortController!,
+            argv.engine,
+          );
           const exitCode = await runCommand(context, {
             bail: argv.bail,
             config: argv.config,
             cwd: argv.cwd,
+            engine: argv.engine,
             exclude: argv.exclude,
             excludeTags: argv['exclude-tags'],
             iterations: argv.iterations,
@@ -503,9 +518,16 @@ export const main = async (
 const createCliContext = async (
   options: GlobalOptions,
   abortController: AbortController,
+  engineType: 'accurate' | 'tinybench' = 'tinybench',
 ): Promise<CliContext> => {
   try {
-    const engine = bootstrap();
+    const dependencies = bootstrap();
+
+    // Select engine based on type
+    const engine =
+      engineType === 'accurate'
+        ? new AccurateEngine(dependencies)
+        : new TinybenchEngine(dependencies);
 
     // Register built-in reporters
     engine.registerReporter(

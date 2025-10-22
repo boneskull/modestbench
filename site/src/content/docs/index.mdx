@@ -22,7 +22,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid stagger>
   <Card title="Fast & Accurate" icon="rocket">
-    High-precision timing with statistical analysis powered by `tinybench`. Get reliable measurements you can trust.
+    High-precision timing with advanced statistical analysis. Choose between the fast `tinybench` engine or the `accurate` engine with V8 optimization guards and IQR outlier removal.
   </Card>
 
   <Card title="Multiple Output Formats" icon="document">
@@ -84,8 +84,10 @@ modestbench run --iterations 5000 --reporters human,json
 
 ## Why modestbench?
 
-modestbench wraps [tinybench](https://github.com/tinylibs/tinybench) and enhances it with a bunch of features so you don't have to think:
+modestbench provides a powerful benchmarking framework with dual engines and rich features:
 
+- **Dual engines** - Fast `tinybench` for development, `accurate` for precision measurements
+- **Advanced statistics** - IQR outlier removal, coefficient of variation, percentiles
 - **Project structure** - Organized benchmark files and suites
 - **Configuration management** - Multiple formats (JSON, YAML, JS, TS)
 - **Rich CLI** - Discover and run benchmarks with powerful options
