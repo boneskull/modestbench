@@ -28,6 +28,7 @@
   "include": [
     "src/**/*.ts",
     "test/**/*.ts",
+    "test-d/**/*.ts",
     "examples/**/*.ts",
     "examples/**/*.js",
     "*.js",
