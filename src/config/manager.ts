@@ -20,17 +20,6 @@ import type {
 import { safeParseConfig } from './schema.js';
 
 /**
- * Check if color output has been forced via environment variables
- */
-const isColorForced = (): boolean => {
-  return (
-    process.env.FORCE_COLOR !== undefined &&
-    process.env.FORCE_COLOR !== '0' &&
-    process.env.NO_COLOR === undefined
-  );
-};
-
-/**
  * Get the default reporter based on TTY status and environment
  */
 const getDefaultReporter = (): string => {
@@ -39,6 +28,17 @@ const getDefaultReporter = (): string => {
     return 'simple';
   }
   return 'human';
+};
+
+/**
+ * Check if color output has been forced via environment variables
+ */
+const isColorForced = (): boolean => {
+  return (
+    process.env.FORCE_COLOR !== undefined &&
+    process.env.FORCE_COLOR !== '0' &&
+    process.env.NO_COLOR === undefined
+  );
 };
 
 /**
