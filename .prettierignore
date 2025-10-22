@@ -1,0 +1,9 @@
+# Starlight MDX files with frontmatter
+site/src/content/docs/**/*.mdx
+site/src/content/docs/**/*.md
+
+# Build output
+docs/
+
+# Dependencies
+node_modules/

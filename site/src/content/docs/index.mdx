@@ -1,0 +1,97 @@
+---
+title: modestbench
+description: A full-ass benchmarking framework for Node.js
+template: splash
+hero:
+  tagline: A full-ass benchmarking framework for Node.js
+  image:
+    file: ../../assets/logo-512.png
+  actions:
+    - text: Get Started
+      link: /modestbench/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/boneskull/modestbench
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Features
+
+<CardGrid stagger>
+  <Card title="Fast & Accurate" icon="rocket">
+    High-precision timing with statistical analysis powered by tinybench. Get reliable measurements you can trust.
+  </Card>
+
+<Card title="Multiple Output Formats" icon="document">
+  Generate human-readable, JSON, and CSV reports simultaneously. Perfect for
+  CI/CD and analysis tools.
+</Card>
+
+<Card title="Historical Tracking" icon="seti:clock">
+  Store and compare benchmark results over time. Track performance trends and
+  catch regressions early.
+</Card>
+
+<Card title="Tagging System" icon="pencil">
+  Organize and filter benchmarks by categories. Run specific subsets with
+  flexible tag-based filtering.
+</Card>
+
+<Card title="CLI & API" icon="setting">
+  Powerful command-line interface with sensible defaults, plus a programmatic
+  API for advanced usage.
+</Card>
+
+  <Card title="TypeScript Support" icon="approve-check">
+    Full type safety with comprehensive TypeScript definitions. Write benchmarks in JS or TS.
+  </Card>
+</CardGrid>
+
+## Quick Example
+
+```javascript
+// benchmarks/example.bench.js
+export default {
+  'Array.push()': () => {
+    const arr = [];
+    for (let i = 0; i < 1000; i++) {
+      arr.push(i);
+    }
+    return arr;
+  },
+
+  'Array spread': () => {
+    let arr = [];
+    for (let i = 0; i < 1000; i++) {
+      arr = [...arr, i];
+    }
+    return arr;
+  },
+};
+```
+
+## Running Your First Benchmarks
+
+```bash
+# Run all benchmarks
+modestbench run
+
+# Run with specific options
+modestbench run --iterations 5000 --reporters human,json
+```
+
+## Why modestbench?
+
+modestbench wraps [tinybench](https://github.com/tinylibs/tinybench) and enhances it with a bunch of features so you don't have to think:
+
+- **Project structure** - Organized benchmark files and suites
+- **Configuration management** - Multiple formats (JSON, YAML, JS, TS)
+- **Rich CLI** - Discover and run benchmarks with powerful options
+- **Multiple reporters** - Get output in the format you need
+- **Historical data** - Track performance over time automatically
+- **Tagging and filtering** - Run exactly what you need
+
+Whether you're optimizing a hot code path, comparing algorithm implementations, or setting up performance regression testing in CI, modestbench has you covered.

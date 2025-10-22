@@ -163,6 +163,7 @@ export default defineConfig(
       '.tmp/**/*',
       '.wallaby.js',
       'worktrees',
+      'site',
     ],
   },
 );
