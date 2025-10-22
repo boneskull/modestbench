@@ -164,6 +164,7 @@ export default defineConfig(
       '.wallaby.js',
       'worktrees',
       'site',
+      'astro.config.js',
     ],
   },
 );
