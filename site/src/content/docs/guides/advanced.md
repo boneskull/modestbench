@@ -3,6 +3,107 @@ title: Advanced Usage
 description: Advanced features and patterns for modestbench
 ---
 
+## Benchmark Engines
+
+ModestBench provides two engines with different performance characteristics and statistical approaches.
+
+### Engine Selection
+
+Choose an engine based on your requirements:
+
+```bash
+# Tinybench engine (default) - fast development iteration
+modestbench run --engine tinybench
+
+# Accurate engine - high-precision measurements
+node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+```
+
+### Statistical Improvements
+
+Both engines now use **IQR (Interquartile Range) outlier removal** to filter extreme values caused by:
+
+- Garbage collection pauses
+- System interruptions
+- Background processes
+- OS scheduler variations
+
+This results in more stable and reliable measurements compared to raw statistical analysis.
+
+#### AccurateEngine Statistical Features
+
+The `accurate` engine provides enhanced statistical analysis:
+
+1. **V8 Optimization Guards**: Uses V8 intrinsics (`%NeverOptimizeFunction`) to prevent JIT compiler interference with measurements
+2. **IQR Outlier Removal**: Automatically removes extreme outliers (beyond Q1 - 1.5×IQR and Q3 + 1.5×IQR)
+3. **Comprehensive Statistics**:
+   - Mean, min, max execution times
+   - Standard deviation and variance
+   - **Coefficient of Variation (CV)**: Measures relative variability (`stdDev / mean × 100`)
+   - 95th and 99th percentiles
+   - Margin of error (95% confidence interval)
+
+#### Coefficient of Variation (CV)
+
+The CV metric helps assess benchmark quality:
+
+```text
+CV < 5%    → Excellent (very stable)
+CV 5-10%   → Good (acceptable variance)
+CV 10-20%  → Fair (consider more samples)
+CV > 20%   → Poor (investigate noise sources)
+```
+
+Example output showing CV:
+
+```bash
+$ modestbench run --engine accurate --allow-natives-syntax --reporters json
+{
+  "name": "Array.push()",
+  "mean": 810050,  // nanoseconds
+  "stdDev": 19842,
+  "cv": 2.45,      // 2.45% - excellent stability
+  "marginOfError": 0.024,
+  "p95": 845200,
+  "p99": 862100
+}
+```
+
+### Performance Comparison
+
+Real-world comparison using `examples/benchmarks`:
+
+```bash
+# Tinybench (fast iteration)
+$ modestbench run --engine tinybench --reporters json
+# Typical run time: 3-5 seconds for 5 benchmark files
+
+# Accurate (high precision)
+$ node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate --reporters json
+# Typical run time: 8-12 seconds for 5 benchmark files
+```
+
+The `accurate` engine takes ~2-3x longer but provides:
+
+- More consistent results between runs
+- Better outlier filtering with V8 guards
+- Higher confidence in micro-optimizations
+
+### Choosing the Right Engine
+
+| Use Case | Recommended Engine |
+|----------|-------------------|
+| Development iteration | `tinybench` |
+| CI/CD regression tests | `tinybench` |
+| Blog post/publication | `accurate` |
+| Library optimization | `accurate` |
+| Micro-benchmark comparison | `accurate` |
+| Algorithm selection | Either (results typically consistent) |
+
+:::tip[Best Practice]
+Start with `tinybench` during development for fast feedback. Switch to `accurate` for final measurements and critical decisions.
+:::
+
 ## Multiple Suites
 
 Organize related benchmarks into separate suites with independent setup and teardown:

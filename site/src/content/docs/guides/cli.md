@@ -98,6 +98,43 @@ modestbench run --warmup 100
 
 Helps stabilize JIT compilation for more consistent results.
 
+##### `--engine <name>`
+
+Select the benchmark engine. Options: `tinybench` (default) or `accurate`.
+
+```bash
+# Use the accurate engine for high-precision measurements
+node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+
+# Use tinybench engine (default)
+modestbench run --engine tinybench
+```
+
+**Engine Differences:**
+
+- **`tinybench`** (default): Fast, lightweight engine suitable for development and CI. Uses IQR-based outlier removal.
+- **`accurate`**: High-precision engine with V8 optimization guards to prevent JIT compiler interference. Requires `--allow-natives-syntax` flag. Recommended for production benchmarks and critical performance measurements.
+
+See the [Getting Started](/getting-started/#choosing-an-engine) guide for detailed comparison.
+
+:::caution[Node.js Flag Required]
+The `accurate` engine requires running Node.js with the `--allow-natives-syntax` flag. This flag must be passed to the Node.js runtime, not to modestbench:
+
+```bash
+# Using Node.js directly
+node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+
+# Using npx (pass flag to Node.js)
+npx --node-arg=--allow-natives-syntax modestbench run --engine accurate
+
+# Using package.json script
+# package.json: "bench": "node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate"
+npm run bench
+```
+
+If the flag is not present, AccurateEngine will fall back to a less accurate mode and display a warning.
+:::
+
 ##### `--timeout <number>`
 
 Maximum time in milliseconds for a single task before timing out.

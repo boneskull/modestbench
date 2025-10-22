@@ -257,6 +257,9 @@ export interface RunCommandArgs extends CommandArguments {
   readonly c?: string;
   /** Configuration file path */
   readonly config?: string;
+  readonly e?: 'accurate' | 'tinybench';
+  /** Benchmark engine to use */
+  readonly engine?: 'accurate' | 'tinybench';
   /** Files to exclude */
   readonly exclude?: string | string[];
   /** Tags to exclude */
