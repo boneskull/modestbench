@@ -146,7 +146,7 @@
       "**/*.d.ts",
       "site/media/**/*",
       "worktrees/**/*",
-      "site/src/content/config.ts"
+      "site/src/content/**/*"
     ],
     "tags": [
       "-knipignore"
