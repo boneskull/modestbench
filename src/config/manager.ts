@@ -22,24 +22,24 @@ import { safeParseConfig } from './schema.js';
 /**
  * Check if color output has been forced via environment variables
  */
-function isColorForced(): boolean {
+const isColorForced = (): boolean => {
   return (
     process.env.FORCE_COLOR !== undefined &&
     process.env.FORCE_COLOR !== '0' &&
     process.env.NO_COLOR === undefined
   );
-}
+};
 
 /**
  * Get the default reporter based on TTY status and environment
  */
-function getDefaultReporter(): string {
+const getDefaultReporter = (): string => {
   // Use simple reporter when stdout is not a TTY and color is not forced
   if (!process.stdout.isTTY && !isColorForced()) {
     return 'simple';
   }
   return 'human';
-}
+};
 
 /**
  * Default configuration values Using minimal values to reduce test overhead
