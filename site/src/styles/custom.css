@@ -1,0 +1,431 @@
+/* 80s Synthwave Theme */
+
+/* Custom font from logo */
+@font-face {
+  font-family: 'Handel Gothic';
+  src: url('/modestbench/fonts/HandelGothic Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Core synthwave palette */
+  --synthwave-purple: #5c2c6d;
+  --synthwave-pink: #ff019a;
+  --synthwave-cyan: #00f1ff;
+  --synthwave-yellow: #ffb400;
+  --synthwave-red: #f6511d;
+  --synthwave-blue: #2c548b;
+  --synthwave-dark-cyan: #00a5cf;
+  --synthwave-orange: #fb830f;
+  --synthwave-bg-dark: #262335;
+  --synthwave-bg-darker: #1a1626;
+
+  /* Accent overrides - make it POP! */
+  --sl-color-accent-low: var(--synthwave-purple);
+  --sl-color-accent: var(--synthwave-pink);
+  --sl-color-accent-high: var(--synthwave-cyan);
+
+  /* Semantic color overrides */
+  --sl-color-red: var(--synthwave-red);
+  --sl-color-red-low: var(--synthwave-red);
+  --sl-color-red-high: var(--synthwave-red);
+  --sl-color-yellow: var(--synthwave-yellow);
+  --sl-color-yellow-low: var(--synthwave-yellow);
+  --sl-color-yellow-high: var(--synthwave-yellow);
+  --sl-color-orange: var(--synthwave-orange);
+  --sl-color-blue: var(--synthwave-blue);
+  --sl-color-blue-low: var(--synthwave-blue);
+  --sl-color-blue-high: var(--synthwave-blue);
+  --sl-color-green: var(--synthwave-cyan);
+  --sl-color-green-low: var(--synthwave-cyan);
+  --sl-color-green-high: var(--synthwave-cyan);
+}
+
+:root[data-theme='dark'] {
+  /* Text colors - bright cyan and hot pink */
+  --sl-color-white: #ffffff;
+  --sl-color-text: #e8e8e8;
+  --sl-color-text-accent: var(--synthwave-cyan);
+
+  /* Links - hot pink with cyan hover */
+  --sl-color-link: var(--synthwave-pink);
+  --sl-color-link-hover: var(--synthwave-cyan);
+
+  /* Gray scale adjusted for dark purple background */
+  --sl-color-gray-1: #eeeeee;
+  --sl-color-gray-2: #c4c4c4;
+  --sl-color-gray-3: #8a8a8a;
+  --sl-color-gray-4: #666666;
+  --sl-color-gray-5: #3d3a4d;
+  --sl-color-gray-6: #2d2b38;
+  --sl-color-black: #0d0c12;
+
+  /* Backgrounds - deep purple tones */
+  --sl-color-bg: var(--synthwave-bg-dark);
+  --sl-color-bg-nav: var(--synthwave-bg-darker);
+  --sl-color-bg-sidebar: var(--synthwave-bg-darker);
+
+  /* Borders - hot pink glow */
+  --sl-color-hairline: rgba(255, 1, 154, 0.4);
+  --sl-color-hairline-light: rgba(0, 241, 255, 0.3);
+}
+
+/* Neon glow effect on links (exclude buttons) */
+:root[data-theme='dark'] a:not(.sl-link-button) {
+  color: var(--synthwave-pink);
+  transition: all 0.2s ease;
+}
+
+:root[data-theme='dark'] a:not(.sl-link-button):hover {
+  color: var(--synthwave-cyan);
+  text-shadow: 0 0 10px rgba(0, 241, 255, 0.8);
+}
+
+/* Light mode link styles (exclude buttons) */
+:root[data-theme='light'] a:not(.sl-link-button) {
+  color: var(--synthwave-purple);
+  transition: all 0.2s ease;
+}
+
+:root[data-theme='light'] a:not(.sl-link-button):hover {
+  color: var(--synthwave-pink);
+}
+
+/* Sidebar active state */
+:root[data-theme='dark'] .sidebar a[aria-current='page'],
+:root[data-theme='dark'] .sidebar a[aria-current='page']:hover {
+  color: var(--synthwave-cyan);
+  border-left-color: var(--synthwave-cyan);
+  background-color: rgba(0, 241, 255, 0.1);
+}
+
+/* Hero action buttons - solid pink with glow */
+:root[data-theme='dark'] .actions a.sl-link-button.primary,
+:root[data-theme='dark'] a.sl-link-button.primary {
+  background: var(--synthwave-pink);
+  box-shadow: 0 0 20px rgba(255, 1, 154, 0.6);
+  border: 2px solid var(--synthwave-pink);
+  color: var(--sl-color-black);
+  font-weight: 700;
+  text-shadow: none;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+:root[data-theme='dark'] .actions a.sl-link-button.primary:hover,
+:root[data-theme='dark'] a.sl-link-button.primary:hover {
+  background: var(--synthwave-cyan);
+  border-color: var(--synthwave-cyan);
+  box-shadow:
+    0 0 30px rgba(0, 241, 255, 0.8),
+    0 0 40px rgba(0, 241, 255, 0.4);
+  transform: translateY(-2px);
+  text-shadow: none;
+}
+
+/* Secondary button */
+:root[data-theme='dark'] .actions a.sl-link-button.secondary,
+:root[data-theme='dark'] a.sl-link-button.secondary {
+  border: 2px solid var(--synthwave-cyan);
+  background-color: transparent;
+  color: var(--synthwave-cyan);
+  font-weight: 700;
+  text-shadow: none;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+:root[data-theme='dark'] .actions a.sl-link-button.secondary:hover,
+:root[data-theme='dark'] a.sl-link-button.secondary:hover {
+  background-color: var(--synthwave-cyan);
+  border-color: var(--synthwave-cyan);
+  box-shadow: 0 0 20px rgba(0, 241, 255, 0.6);
+  color: #ffffff;
+  text-decoration: none;
+  text-shadow: none;
+}
+
+/* Light mode buttons */
+:root[data-theme='light'] .actions a.sl-link-button.primary,
+:root[data-theme='light'] a.sl-link-button.primary {
+  background: var(--synthwave-pink);
+  box-shadow: 0 0 15px rgba(255, 1, 154, 0.4);
+  border: 2px solid var(--synthwave-pink);
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: none;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+:root[data-theme='light'] .actions a.sl-link-button.primary:hover,
+:root[data-theme='light'] a.sl-link-button.primary:hover {
+  background: var(--synthwave-cyan);
+  border-color: var(--synthwave-cyan);
+  box-shadow:
+    0 0 20px rgba(0, 241, 255, 0.6),
+    0 0 30px rgba(0, 241, 255, 0.3);
+  transform: translateY(-2px);
+  color: #000000 !important;
+  text-shadow: none;
+}
+
+/* Ensure button text inherits black color on hover */
+:root[data-theme='light'] .actions a.sl-link-button.primary:hover *,
+:root[data-theme='light'] a.sl-link-button.primary:hover * {
+  color: #000000 !important;
+}
+
+:root[data-theme='light'] .actions a.sl-link-button.secondary,
+:root[data-theme='light'] a.sl-link-button.secondary {
+  border: 2px solid var(--synthwave-cyan);
+  background-color: transparent;
+  color: var(--synthwave-cyan);
+  font-weight: 700;
+  text-shadow: none;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+:root[data-theme='light'] .actions a.sl-link-button.secondary:hover,
+:root[data-theme='light'] a.sl-link-button.secondary:hover {
+  background-color: var(--synthwave-cyan);
+  border-color: var(--synthwave-cyan);
+  box-shadow: 0 0 15px rgba(0, 241, 255, 0.4);
+  color: #000000 !important;
+  text-decoration: underline;
+  text-shadow: none;
+}
+
+/* Ensure button text inherits black color on hover */
+:root[data-theme='light'] .actions a.sl-link-button.secondary:hover *,
+:root[data-theme='light'] a.sl-link-button.secondary:hover * {
+  color: #000000 !important;
+}
+
+/* Card components - synthwave colors for both themes */
+.card {
+  border: 2px solid var(--synthwave-purple);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  border-color: var(--synthwave-pink);
+  box-shadow: 0 0 10px rgba(255, 1, 154, 0.3);
+}
+
+/* Card icons - use synthwave colors, cycling through the palette */
+.card:nth-child(1) :global(svg) {
+  color: var(--synthwave-cyan);
+}
+
+.card:nth-child(2) :global(svg) {
+  color: var(--synthwave-pink);
+}
+
+.card:nth-child(3) :global(svg) {
+  color: var(--synthwave-purple);
+}
+
+.card:nth-child(4) :global(svg) {
+  color: var(--synthwave-cyan);
+}
+
+.card:nth-child(5) :global(svg) {
+  color: var(--synthwave-pink);
+}
+
+.card:nth-child(6) :global(svg) {
+  color: var(--synthwave-purple);
+}
+
+.card:hover :global(svg) {
+  color: var(--synthwave-pink);
+  filter: drop-shadow(0 0 4px rgba(255, 1, 154, 0.4));
+}
+
+:root[data-theme='dark'] .card {
+  background: linear-gradient(
+    135deg,
+    rgba(92, 44, 109, 0.2),
+    rgba(26, 22, 38, 0.8)
+  );
+}
+
+:root[data-theme='light'] .card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 1, 154, 0.05),
+    rgba(92, 44, 109, 0.1)
+  );
+}
+
+/* Aside components - synthwave colors */
+:root[data-theme='dark'] aside {
+  border-left-width: 4px !important;
+}
+
+/* Aside title visibility */
+:root[data-theme='dark'] aside .starlight-aside__title,
+:root[data-theme='dark'] aside > p:first-of-type {
+  color: var(--sl-color-white) !important;
+}
+
+/* Aside icon colors matching the aside type */
+:root[data-theme='dark'] aside svg {
+  color: inherit !important;
+}
+
+/* Note aside - blue-ish to match border */
+:root[data-theme='dark'] aside.starlight-aside--note {
+  background-color: var(--synthwave-bg-dark) !important;
+  background-image: linear-gradient(
+    135deg,
+    rgba(44, 84, 139, 0.3),
+    var(--synthwave-bg-dark)
+  ) !important;
+}
+
+/* Tip aside - magenta/purple-ish to match border */
+:root[data-theme='dark'] aside.starlight-aside--tip {
+  background-color: var(--synthwave-bg-dark) !important;
+  background-image: linear-gradient(
+    135deg,
+    rgba(92, 44, 109, 0.4),
+    var(--synthwave-bg-dark)
+  ) !important;
+}
+
+/* Caution aside - orange-ish to match border */
+:root[data-theme='dark'] aside.starlight-aside--caution {
+  background-color: var(--synthwave-bg-dark) !important;
+  background-image: linear-gradient(
+    135deg,
+    rgba(251, 131, 15, 0.25),
+    var(--synthwave-bg-dark)
+  ) !important;
+}
+
+/* Danger aside - red to match border */
+:root[data-theme='dark'] aside.starlight-aside--danger {
+  background-color: var(--synthwave-bg-dark) !important;
+  background-image: linear-gradient(
+    135deg,
+    rgba(246, 81, 29, 0.25),
+    var(--synthwave-bg-dark)
+  ) !important;
+}
+
+/* Apply custom font to h1 and site title */
+h1,
+h2,
+.site-title {
+  font-family: 'Handel Gothic', sans-serif;
+}
+
+/* Hero title with gradient */
+:root[data-theme='dark'] .hero h1 {
+  background: linear-gradient(
+    135deg,
+    var(--synthwave-cyan),
+    var(--synthwave-pink)
+  );
+  font-size: 6rem;
+  letter-spacing: -0.04em;
+  /* -webkit-text-stroke: 1px var(--sl-color-black); */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Other headers - hot pink */
+:root[data-theme='dark'] h2,
+:root[data-theme='dark'] h3,
+:root[data-theme='dark'] h4 {
+  color: var(--synthwave-pink);
+}
+
+/* Exception: keep non-hero h1 also hot pink */
+:root[data-theme='dark'] h1:not(.hero h1) {
+  color: var(--synthwave-pink);
+}
+
+/* Code blocks - purple background with cyan highlights */
+:root[data-theme='dark'] pre {
+  background-color: rgba(26, 22, 38, 0.8);
+  border: 1px solid rgba(255, 1, 154, 0.2);
+}
+
+/* Search button */
+:root[data-theme='dark'] .search-button {
+  background-color: rgba(0, 241, 255, 0.1);
+  border-color: var(--synthwave-cyan);
+}
+
+:root[data-theme='dark'] .search-button:hover {
+  background-color: rgba(0, 241, 255, 0.2);
+  box-shadow: 0 0 15px rgba(0, 241, 255, 0.4);
+}
+
+/* Light theme fallback */
+:root[data-theme='light'] {
+  --sl-color-accent-low: var(--synthwave-purple);
+  --sl-color-accent: var(--synthwave-pink);
+  --sl-color-accent-high: var(--synthwave-purple);
+  --sl-color-link: var(--synthwave-purple);
+  --sl-color-link-hover: var(--synthwave-pink);
+}
+
+/* Pagination links - make visible against grid */
+:root[data-theme='dark'] .pagination-links {
+  background-color: var(--synthwave-bg-dark);
+  border: 2px solid var(--synthwave-purple);
+  border-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.pagination-links span.link-title {
+  font-family: 'Handel Gothic', sans-serif;
+}
+
+:root[data-theme='dark'] .pagination-links:hover {
+  border-color: var(--synthwave-pink);
+  box-shadow: 0 0 20px rgba(255, 1, 154, 0.3);
+}
+
+/* Override Starlight's default gray border on pagination link hover */
+:root[data-theme='dark'] .pagination-links a:hover {
+  border-color: transparent !important;
+}
+
+/* Retro synthwave perspective grid - dark mode only */
+:root[data-theme='dark'] body {
+  position: relative;
+}
+
+:root[data-theme='dark'] body::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40vh;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    /* Perspective grid SVG - hot pink with glow, twice as wide */
+    url("data:image/svg+xml,%3Csvg width='2880' height='400' viewBox='0 0 2880 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='glow'%3E%3CfeGaussianBlur stdDeviation='3' result='blur'/%3E%3CfeMerge%3E%3CfeMergeNode in='blur'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3C/defs%3E%3Cg stroke='%23ff019a' stroke-width='2' fill='none' filter='url(%23glow)' opacity='0.6'%3E%3Cline x1='0' y1='400' x2='2880' y2='400'/%3E%3Cline x1='0' y1='370' x2='2880' y2='370'/%3E%3Cline x1='0' y1='345' x2='2880' y2='345'/%3E%3Cline x1='0' y1='322' x2='2880' y2='322'/%3E%3Cline x1='0' y1='300' x2='2880' y2='300'/%3E%3Cline x1='0' y1='280' x2='2880' y2='280'/%3E%3Cline x1='0' y1='262' x2='2880' y2='262'/%3E%3Cline x1='0' y1='245' x2='2880' y2='245'/%3E%3Cline x1='0' y1='230' x2='2880' y2='230'/%3E%3Cline x1='0' y1='216' x2='2880' y2='216'/%3E%3Cline x1='0' y1='203' x2='2880' y2='203'/%3E%3Cline x1='0' y1='191' x2='2880' y2='191'/%3E%3Cline x1='0' y1='180' x2='2880' y2='180'/%3E%3Cline x1='0' y1='170' x2='2880' y2='170'/%3E%3Cline x1='0' y1='161' x2='2880' y2='161'/%3E%3Cline x1='0' y1='153' x2='2880' y2='153'/%3E%3Cline x1='0' y1='146' x2='2880' y2='146'/%3E%3Cline x1='0' y1='140' x2='2880' y2='140'/%3E%3Cline x1='1440' y1='140' x2='1440' y2='400'/%3E%3Cline x1='1340' y1='140' x2='1200' y2='400'/%3E%3Cline x1='1240' y1='140' x2='960' y2='400'/%3E%3Cline x1='1140' y1='140' x2='720' y2='400'/%3E%3Cline x1='1040' y1='140' x2='480' y2='400'/%3E%3Cline x1='940' y1='140' x2='240' y2='400'/%3E%3Cline x1='840' y1='140' x2='0' y2='400'/%3E%3Cline x1='740' y1='140' x2='-240' y2='400'/%3E%3Cline x1='640' y1='140' x2='-480' y2='400'/%3E%3Cline x1='540' y1='140' x2='-720' y2='400'/%3E%3Cline x1='440' y1='140' x2='-960' y2='400'/%3E%3Cline x1='1540' y1='140' x2='1680' y2='400'/%3E%3Cline x1='1640' y1='140' x2='1920' y2='400'/%3E%3Cline x1='1740' y1='140' x2='2160' y2='400'/%3E%3Cline x1='1840' y1='140' x2='2400' y2='400'/%3E%3Cline x1='1940' y1='140' x2='2640' y2='400'/%3E%3Cline x1='2040' y1='140' x2='2880' y2='400'/%3E%3Cline x1='2140' y1='140' x2='3120' y2='400'/%3E%3Cline x1='2240' y1='140' x2='3360' y2='400'/%3E%3Cline x1='2340' y1='140' x2='3600' y2='400'/%3E%3Cline x1='2440' y1='140' x2='3840' y2='400'/%3E%3C/g%3E%3C/svg%3E")
+      bottom center / 100% 100% no-repeat,
+    /* Gradient background */
+      linear-gradient(
+        to top,
+        #5c2c6d 0%,
+        #2a1339 30%,
+        #1a1626 60%,
+        transparent 100%
+      );
+  opacity: 0.5;
+}

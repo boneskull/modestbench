@@ -1,0 +1,240 @@
+---
+title: Getting Started
+description: Get up and running with modestbench in minutes
+---
+
+## Installation
+
+Install modestbench as a development dependency:
+
+```bash
+npm install --save-dev modestbench
+```
+
+## Initialize Your Project (Optional)
+
+The `modestbench init` command sets up your project with configuration and examples:
+
+```bash
+# Initialize with defaults
+modestbench init
+
+# Or specify project type and config format
+modestbench init advanced --config-type typescript
+```
+
+**Project Types:**
+
+- `basic` - Simple setup for small projects (100 iterations, human reporter)
+- `advanced` - Feature-rich with multiple reporters and structured output
+- `library` - Optimized for library performance testing (5000 iterations, high warmup)
+
+The init command will:
+
+1. Generate a configuration file in your chosen format
+2. Create an example benchmark file
+3. Add `.modestbench/` to `.gitignore` to exclude historical data
+
+## Your First Benchmark
+
+:::tip[Naming Convention]
+modestbench looks for files with `.bench.js` or `.bench.ts` extensions by default.
+:::
+
+### Simplified Format (Recommended)
+
+For quick benchmarks with just a few tasks:
+
+```javascript
+// benchmarks/example.bench.js
+export default {
+  'Array.push()': () => {
+    const arr = [];
+    for (let i = 0; i < 1000; i++) {
+      arr.push(i);
+    }
+    return arr;
+  },
+
+  'Array spread': () => {
+    let arr = [];
+    for (let i = 0; i < 1000; i++) {
+      arr = [...arr, i];
+    }
+    return arr;
+  },
+};
+```
+
+### Suite-Based Format
+
+When you need to organize benchmarks into groups with setup/teardown hooks:
+
+```javascript
+// benchmarks/example.bench.js
+const state = { data: [] };
+
+export default {
+  suites: {
+    'Array Operations': {
+      setup() {
+        state.data = [];
+      },
+      
+      benchmarks: {
+        'Array.push()': () => {
+          const arr = [];
+          for (let i = 0; i < 1000; i++) {
+            arr.push(i);
+          }
+          return arr;
+        },
+
+        'Array spread': () => {
+          let arr = [];
+          for (let i = 0; i < 1000; i++) {
+            arr = [...arr, i];
+          }
+          return arr;
+        },
+      },
+    },
+  },
+};
+```
+
+**When to use each format:**
+
+- **Simplified format**: Quick benchmarks, single file with related tasks, no setup/teardown needed
+- **Suite format**: Complex projects, multiple groups of benchmarks, need setup/teardown hooks
+
+## Running Benchmarks
+
+Run all benchmarks in the current directory:
+
+```bash
+modestbench run
+```
+
+Run benchmarks with options:
+
+```bash
+modestbench run --iterations 5000 --reporters human,json
+```
+
+Run specific files or directories:
+
+```bash
+# Run a specific file
+modestbench run benchmarks/critical.bench.js
+
+# Run all benchmarks in a directory (searches recursively)
+modestbench run benchmarks/
+
+# Run multiple paths
+modestbench run benchmarks/ tests/perf/
+
+# Use glob patterns
+modestbench run "tests/**/*.bench.ts"
+```
+
+## View Results
+
+modestbench provides a clean, colorized output:
+
+```text
+🚀 modestbench
+
+Environment:
+  Node.js: v24.10.0
+  Platform: darwin arm64
+  CPU: Apple M4 Max (16 cores)
+  Memory: 48.0 GB
+
+Found 1 benchmark file(s)
+
+▶ benchmarks/example.bench.js
+
+  ▶ Array Operations
+    ✓ Array.push()
+      810.05μs ±2.45% (1.23M ops/sec)
+    ✓ Array spread
+      81.01ms ±4.12% (12.34K ops/sec)
+  ✓ 2 passed
+
+  ✓ All 2 tasks passed
+
+📊 Results
+
+✓ All tests passed: 2
+📁 Files: 1
+📊 Suites: 1
+⏱️ Duration: 1.82s
+
+🎉 All benchmarks completed successfully!
+```
+
+## Common Options
+
+### Control Benchmark Duration
+
+```bash
+# Limit by iteration count (fast, predictable sample size)
+modestbench run --iterations 100
+
+# Limit by time budget (ensures consistent time investment)
+modestbench run --time 5000
+
+# Limit by whichever comes first (safety bounds)
+modestbench run --iterations 1000 --time 10000
+```
+
+### Filter by Tags
+
+```bash
+# Run only fast benchmarks
+modestbench run --tags fast
+
+# Run benchmarks with multiple tags (OR logic)
+modestbench run --tags string,array,algorithm
+
+# Exclude specific benchmarks
+modestbench run --exclude-tags slow,experimental
+```
+
+### Multiple Output Formats
+
+```bash
+# Generate multiple reports at once
+modestbench run --reporters human,json,csv
+
+# Save reports to a specific directory
+modestbench run --reporters json,csv --output ./results
+```
+
+## Next Steps
+
+- Learn about [Configuration](/guides/configuration/) options
+- Explore the [CLI Reference](/guides/cli/) for all commands and flags
+- Understand [Output Formats](/guides/output/) for integrations
+- Check out [Advanced Usage](/guides/advanced/) for complex scenarios
+
+## Quick Tips
+
+:::tip[Warmup Iterations]
+Use `--warmup` to run warmup iterations before measurement:
+
+```bash
+modestbench run --warmup 100
+```
+
+This helps stabilize JIT compilation for more accurate results.
+:::
+
+:::caution[Time Budget]
+Very high time budgets can cause issues with extremely fast operations. modestbench caps time at 2000ms internally to prevent overflow errors.
+:::
+
+:::note[Historical Tracking]
+Results are automatically saved to `.modestbench/history/`. Use `modestbench history list` to view past runs!
+:::

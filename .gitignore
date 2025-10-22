@@ -147,3 +147,17 @@ vite.config.ts.timestamp-*
 
 worktrees/*
 !worktrees/README.md
+
+# Documentation site build output
+/docs/
+
+# Documentation site copied files (generated during build)
+site/src/content/docs/reference/architecture.md
+site/src/content/docs/reference/contributing.md
+
+# Copied assets (generated during build)
+site/src/assets/logo-no-text-64.png
+site/favicon.svg
+public/logo-512.png
+public/fonts/
+.astro/

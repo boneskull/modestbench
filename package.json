@@ -58,12 +58,18 @@
     "tinybench"
   ],
   "scripts": {
+    "astro:build": "astro build --config astro.config.js",
+    "astro:dev": "astro dev --config astro.config.js",
     "build": "run-s -sl build:compile build:schema",
     "build:compile": "zshy",
     "build:schema": "tsx scripts/generate-schema.ts",
     "clean": "rm -rf dist",
     "commitlint": "commitlint",
     "dev": "zshy --watch",
+    "docs:build": "run-s docs:copy astro:build",
+    "docs:copy": "node scripts/copy-docs.js",
+    "docs:dev": "run-s docs:copy astro:dev",
+    "docs:preview": "astro preview --config astro.config.js",
     "fix": "run-s -sl fix:*",
     "fix:eslint": "eslint --fix .",
     "fix:format": "prettier --write .",
@@ -95,6 +101,7 @@
     "zod": "4.1.12"
   },
   "devDependencies": {
+    "@astrojs/starlight": "^0.36.1",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-conventional": "20.0.0",
     "@eslint/js": "9.38.0",
@@ -102,6 +109,7 @@
     "@types/node": "24.8.1",
     "@types/wallabyjs": "0.0.15",
     "@types/yargs": "17.0.33",
+    "astro": "^5.14.8",
     "bupkis": "0.11.1",
     "cspell": "9.2.1",
     "eslint": "9.38.0",
@@ -137,7 +145,8 @@
       "**/*.cts",
       "**/*.d.ts",
       "site/media/**/*",
-      "worktrees/**/*"
+      "worktrees/**/*",
+      "site/src/content/config.ts"
     ],
     "tags": [
       "-knipignore"
