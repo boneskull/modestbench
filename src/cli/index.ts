@@ -27,6 +27,7 @@ import {
   CsvReporter,
   HumanReporter,
   JsonReporter,
+  SimpleReporter,
 } from '../reporters/index.js';
 // Import commands
 import { handleHistoryCommand as historyCommand } from './commands/history.js';
@@ -527,6 +528,13 @@ const createCliContext = async (
       new CsvReporter({
         includeHeaders: true,
         includeMetadata: true,
+      }),
+    );
+
+    engine.registerReporter(
+      'simple',
+      new SimpleReporter({
+        verbose: options.verbose,
       }),
     );
 

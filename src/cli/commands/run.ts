@@ -279,6 +279,7 @@ const setupReporters = async (
     const { HumanReporter } = await import('../../reporters/human.js');
     const { JsonReporter } = await import('../../reporters/json.js');
     const { CsvReporter } = await import('../../reporters/csv.js');
+    const { SimpleReporter } = await import('../../reporters/simple.js');
 
     // Only use file output if --output was explicitly provided
     // Use the explicit output dir if provided, otherwise check config
@@ -312,11 +313,16 @@ const setupReporters = async (
           quiet: explicitQuiet, // Only applies explicit --quiet flag; CSV output can coexist with progress messages on different streams
           verbose: isVerbose,
         });
+      } else if (reporterName === 'simple') {
+        reporter = new SimpleReporter({
+          quiet: explicitQuiet,
+          verbose: isVerbose,
+        });
       } else {
         // Fall back to registry for custom reporters
         reporter = context.reporterRegistry.get(reporterName);
         if (!reporter) {
-          const availableReporters = ['human', 'json', 'csv'];
+          const availableReporters = ['human', 'json', 'csv', 'simple'];
           throw new Error(
             `Unknown reporter: ${reporterName}. Available: ${availableReporters.join(', ')}`,
           );

@@ -58,7 +58,7 @@ export default {
   describe('default mode (no --verbose)', () => {
     it('should not show CLI setup messages', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5'],
+        ['run', benchmarkFile, '--iterations', '5', '--reporters', 'human'],
         testDir,
       );
 
@@ -78,7 +78,7 @@ export default {
 
     it('should still show reporter output', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5'],
+        ['run', benchmarkFile, '--iterations', '5', '--reporters', 'human'],
         testDir,
       );
 
@@ -89,7 +89,7 @@ export default {
 
     it('should not show redundant completion messages', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5'],
+        ['run', benchmarkFile, '--iterations', '5', '--reporters', 'human'],
         testDir,
       );
 
@@ -103,7 +103,15 @@ export default {
   describe('with --verbose flag', () => {
     it('should show all CLI setup messages', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--verbose', '--iterations', '5'],
+        [
+          'run',
+          benchmarkFile,
+          '--verbose',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
@@ -119,7 +127,15 @@ export default {
 
     it('should still show reporter output', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--verbose', '--iterations', '5'],
+        [
+          'run',
+          benchmarkFile,
+          '--verbose',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
@@ -130,7 +146,15 @@ export default {
 
     it('should work with -v short flag', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '-v', '--iterations', '5'],
+        [
+          'run',
+          benchmarkFile,
+          '-v',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
@@ -142,7 +166,15 @@ export default {
 
     it('should enable human reporter verbose features', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--verbose', '--iterations', '5'],
+        [
+          'run',
+          benchmarkFile,
+          '--verbose',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
@@ -153,7 +185,15 @@ export default {
 
     it('should not show redundant completion messages', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--verbose', '--iterations', '5'],
+        [
+          'run',
+          benchmarkFile,
+          '--verbose',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
@@ -188,7 +228,15 @@ export default {
       );
 
       const result = await runCommand(
-        ['run', errorFile, '--verbose', '--iterations', '5'],
+        [
+          'run',
+          errorFile,
+          '--verbose',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
@@ -202,7 +250,15 @@ export default {
       // This is a placeholder test - actual validation warnings
       // would require specific invalid benchmark structure
       const result = await runCommand(
-        ['run', benchmarkFile, '--verbose', '--iterations', '5'],
+        [
+          'run',
+          benchmarkFile,
+          '--verbose',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
@@ -215,7 +271,16 @@ export default {
   describe('interaction with --quiet flag', () => {
     it('should suppress all output when both --quiet and --verbose are used', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--quiet', '--verbose', '--iterations', '5'],
+        [
+          'run',
+          benchmarkFile,
+          '--quiet',
+          '--verbose',
+          '--iterations',
+          '5',
+          '--reporters',
+          'human',
+        ],
         testDir,
       );
 
