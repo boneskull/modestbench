@@ -97,7 +97,7 @@ export class SimpleReporter extends BaseReporter {
     console.log(`- Files: ${totalFiles}`);
     console.log(`- Suites: ${totalSuites}`);
     console.log(
-      `${symbols.approx} Duration: ${this.formatDuration(duration * 1000000)}`,
+      `${symbols.approx} Duration: ${this.formatDuration(duration * 1e6)}`,
     );
     console.log();
 
@@ -364,7 +364,7 @@ export class SimpleReporter extends BaseReporter {
         };
       }
 
-      const duration = this.formatDuration(result.mean * 1000000000);
+      const duration = this.formatDuration(result.mean * 1e9);
       const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
       const rme = this.formatPercentage(result.marginOfError * 100);
 
