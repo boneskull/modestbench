@@ -624,6 +624,7 @@ describe('Multiple reporter output formats', () => {
       expect(result.stdout, 'to match', /ops\/sec|Simple Output Test/);
 
       // Should NOT contain ANSI escape codes
+      // eslint-disable-next-line no-control-regex
       expect(result.stdout, 'not to match', /\x1b\[/);
     });
 
