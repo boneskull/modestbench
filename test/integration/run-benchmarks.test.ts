@@ -94,6 +94,8 @@ describe('Benchmark execution with progress tracking', () => {
         join(tempDir, 'benchmarks', '*.bench.js'),
         '--iterations',
         '1',
+        '--reporters',
+        'human',
       ]);
 
       // Should execute successfully and show progress across files
@@ -128,7 +130,10 @@ describe('Benchmark execution with progress tracking', () => {
       `,
       );
 
-      const result = await runCommand(['run', benchFile, '--verbose'], tempDir);
+      const result = await runCommand(
+        ['run', benchFile, '--verbose', '--reporters', 'human'],
+        tempDir,
+      );
 
       // Should execute successfully and show suite progress
       expect(result.exitCode, 'to equal', 0);
@@ -161,7 +166,7 @@ describe('Benchmark execution with progress tracking', () => {
       );
 
       const result = await runCommand(
-        ['run', benchFile, '--iterations', '1'],
+        ['run', benchFile, '--iterations', '1', '--reporters', 'human'],
         tempDir,
       );
 
@@ -200,7 +205,10 @@ describe('Benchmark execution with progress tracking', () => {
       `,
       );
 
-      const result = await runCommand(['run', benchFile, '--verbose'], tempDir);
+      const result = await runCommand(
+        ['run', benchFile, '--verbose', '--reporters', 'human'],
+        tempDir,
+      );
 
       // Setup/teardown is not implemented yet
       // The benchmark may succeed (accessing undefined) or fail
@@ -241,7 +249,10 @@ describe('Benchmark execution with progress tracking', () => {
       `,
       );
 
-      const result = await runCommand(['run', benchFile], tempDir);
+      const result = await runCommand(
+        ['run', benchFile, '--reporters', 'human'],
+        tempDir,
+      );
 
       // Should complete with exit code 1 (failures) but continue execution
       expect(

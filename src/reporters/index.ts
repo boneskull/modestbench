@@ -7,3 +7,4 @@
 export { CsvReporter } from './csv.js';
 export { HumanReporter } from './human.js';
 export { JsonReporter } from './json.js';
+export { SimpleReporter } from './simple.js';

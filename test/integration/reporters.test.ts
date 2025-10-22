@@ -592,4 +592,197 @@ describe('Multiple reporter output formats', () => {
       expect(result.exitCode, 'to equal', 1);
     });
   });
+
+  describe('simple reporter', () => {
+    it('should produce plain text output without colors or ANSI codes', async () => {
+      const benchFile = join(tempDir, 'simple-test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Simple Output Test': {
+              benchmarks: {
+                'fast operation': { fn: () => 1 },
+                'slow operation': { fn: () => 2 }
+              }
+            }
+          }
+        };
+      `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'simple',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+      // Should contain plain text elements
+      expect(result.stdout, 'to match', /ops\/sec|Simple Output Test/);
+
+      // Should NOT contain ANSI escape codes
+      expect(result.stdout, 'not to match', /\x1b\[/);
+    });
+
+    it('should not include block characters or decorative symbols', async () => {
+      const benchFile = join(tempDir, 'no-blocks-test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Plain Text Suite': {
+              benchmarks: {
+                'task 1': { fn: () => 1 },
+                'task 2': { fn: () => 2 }
+              }
+            }
+          }
+        };
+      `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'simple',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+
+      // Should NOT contain block characters
+      expect(result.stdout, 'not to match', /[░▒▓█▄▀▌▐■▪◼￭•]/);
+    });
+
+    it('should include basic symbols (√ × ≈ ±)', async () => {
+      const benchFile = join(tempDir, 'basic-symbols-test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Symbols Test': {
+              benchmarks: {
+                'passing task': { fn: () => 1 }
+              }
+            }
+          }
+        };
+      `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'simple',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+
+      // Should contain basic symbols
+      expect(result.stdout, 'to match', /[√×≈±]/);
+    });
+
+    it('should not display progress bars', async () => {
+      const benchFile = join(tempDir, 'no-progress-test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'No Progress Test': {
+              benchmarks: {
+                'task 1': { fn: () => 1 },
+                'task 2': { fn: () => 2 },
+                'task 3': { fn: () => 3 }
+              }
+            }
+          }
+        };
+      `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'simple',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+
+      // Should NOT show progress indicators typical of human reporter
+      // (Progress bars wouldn't show in test output anyway, but verify clean output)
+      expect(result.stdout, 'not to match', /ETA:|Elapsed:/);
+    });
+
+    it('should maintain same structural output as human reporter', async () => {
+      const benchFile = join(tempDir, 'structure-test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Test Suite': {
+              benchmarks: {
+                'test task': { fn: () => 1 }
+              }
+            }
+          }
+        };
+      `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'simple',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+
+      // Should show suite name, task name, and statistics
+      expect(result.stdout, 'to contain', 'Test Suite');
+      expect(result.stdout, 'to contain', 'test task');
+      expect(result.stdout, 'to match', /ops\/sec/);
+    });
+
+    it('should work with verbose mode', async () => {
+      const benchFile = join(tempDir, 'simple-verbose-test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Verbose Test': {
+              benchmarks: {
+                'verbose task': { fn: () => 1 }
+              }
+            }
+          }
+        };
+      `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'simple',
+        '--verbose',
+        '--iterations',
+        '5',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+      // Should show iteration counts in verbose mode
+      expect(result.stdout, 'to contain', 'iterations');
+    });
+  });
 });

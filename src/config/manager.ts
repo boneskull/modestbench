@@ -20,6 +20,28 @@ import type {
 import { safeParseConfig } from './schema.js';
 
 /**
+ * Check if color output has been forced via environment variables
+ */
+function isColorForced(): boolean {
+  return (
+    process.env.FORCE_COLOR !== undefined &&
+    process.env.FORCE_COLOR !== '0' &&
+    process.env.NO_COLOR === undefined
+  );
+}
+
+/**
+ * Get the default reporter based on TTY status and environment
+ */
+function getDefaultReporter(): string {
+  // Use simple reporter when stdout is not a TTY and color is not forced
+  if (!process.stdout.isTTY && !isColorForced()) {
+    return 'simple';
+  }
+  return 'human';
+}
+
+/**
  * Default configuration values Using minimal values to reduce test overhead
  * while maintaining functionality
  */
@@ -34,7 +56,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   pattern: '**/*.bench.{js,ts,mjs,cjs,mts,cts}',
   quiet: false,
   reporterConfig: {},
-  reporters: ['human'],
+  reporters: [getDefaultReporter()],
   tags: [],
   thresholds: {},
   time: 1000, // 1 second minimum for tinybench to gather samples
