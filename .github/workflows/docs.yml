@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'site/**'
-      - 'astro.config.mjs'
+      - 'astro.config.js'
       - 'tsconfig.json'
       - 'scripts/copy-docs.js'
       - 'ARCHITECTURE.md'
