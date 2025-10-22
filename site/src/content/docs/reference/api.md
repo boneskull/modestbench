@@ -49,7 +49,8 @@ console.log(`Completed ${result.summary.totalTasks} benchmarks`);
 The main package exports:
 
 - `modestbench()` - Create a benchmark engine instance
-- `HumanReporter` - Color-coded terminal reporter
+- `HumanReporter` - Color-coded terminal reporter (TTY with colors)
+- `SimpleReporter` - Plain text reporter (non-TTY environments)
 - `JsonReporter` - Structured JSON output reporter
 - `CsvReporter` - Tabular CSV output reporter
 - Type definitions for TypeScript

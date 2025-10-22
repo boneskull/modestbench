@@ -140,7 +140,7 @@ modestbench run "tests/**/*.bench.ts"
 
 ## View Results
 
-modestbench provides a clean, colorized output:
+modestbench provides clean, colorized output in interactive terminals:
 
 ```text
 🚀 modestbench
@@ -173,6 +173,10 @@ Found 1 benchmark file(s)
 
 🎉 All benchmarks completed successfully!
 ```
+
+:::note[Output Format]
+The colorized output above is from the `human` reporter, used automatically in interactive terminals. In CI/CD or when piping output, modestbench uses the `simple` reporter for clean, plain-text output without colors.
+:::
 
 ## Common Options
 

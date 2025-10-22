@@ -27,7 +27,7 @@
     "CHANGELOG.md",
     "coverage",
     "dist",
-    "docs",
+    "/docs",
     "node_modules",
     "*.csv",
     "worktrees",
@@ -57,7 +57,12 @@
     "mnode",
     "mplatform",
     "mcpu",
-    "mmem"
+    "mmem",
+    "pyplot",
+    "ylabel",
+    "xticks",
+    "tolist",
+    "seti"
   ],
   "words": ["bupkis"]
 }

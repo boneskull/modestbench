@@ -5,9 +5,19 @@ description: Understanding modestbench reporter output formats
 
 modestbench supports multiple output formats through its reporter system. You can use multiple reporters simultaneously to get results in different formats.
 
-## Human Reporter (Default)
+## Default Reporter Selection
 
-The human reporter provides color-coded terminal output with real-time progress bars and formatted results.
+modestbench automatically selects the appropriate reporter based on your environment:
+
+- **Interactive terminals** (TTY with color support): `human` reporter with colors and progress bars
+- **Non-TTY environments** (CI/CD, piped output): `simple` reporter with plain text output
+- **Forced color mode** (`FORCE_COLOR=1`): `human` reporter even in non-TTY environments
+
+You can always override the default by explicitly specifying `--reporters`.
+
+## Human Reporter
+
+The human reporter provides color-coded terminal output with real-time progress bars and formatted results. This is the default when running in an interactive terminal (TTY) with color support.
 
 ### Features
 
@@ -70,8 +80,73 @@ modestbench run --reporters human --quiet
 - **stderr** - Progress bars and real-time updates
 
 :::tip[CI/CD Usage]
-Use `--quiet` flag to suppress progress bars while keeping results output.
+In CI/CD environments, modestbench automatically uses the `simple` reporter for clean, parseable output. Use `--quiet` to suppress progress messages if using the `human` reporter explicitly.
 :::
+
+## Simple Reporter
+
+The simple reporter provides clean, text-only output without colors or progress bars. This is the default in non-TTY environments (CI/CD, piped output) or when `FORCE_COLOR` is not set.
+
+### Features
+
+- **Plain text output** - No ANSI colors or escape codes
+- **No progress bars** - Clean output suitable for logs and pipes
+- **Structured results** - Same hierarchy as human reporter (File → Suite → Task)
+- **Machine-readable** - Perfect for parsing and CI/CD logs
+
+### Example Output
+
+```text
+modestbench
+
+Environment:
+  Node.js: v24.10.0
+  Platform: darwin arm64
+  CPU: Apple M4 Max (16 cores)
+  Memory: 48.0 GB
+
+Found 1 benchmark file(s)
+
+> benchmarks/example.bench.js
+
+  > Array Operations
+    ✓ Array.push()
+      810.05μs ±2.45% (1.23M ops/sec)
+    ✓ Array spread
+      81.01ms ±4.12% (12.34K ops/sec)
+  ✓ 2 passed
+
+  ✓ All 2 tasks passed
+
+Results
+
+✓ All tests passed: 2
+Files: 1
+Suites: 1
+Duration: 1.82s
+
+All benchmarks completed successfully!
+```
+
+### Usage
+
+```bash
+# Simple reporter is default in non-TTY environments
+modestbench run | tee results.log
+
+# Explicitly specify simple reporter
+modestbench run --reporters simple
+
+# Force human reporter in non-TTY (requires FORCE_COLOR=1)
+FORCE_COLOR=1 modestbench run --reporters human
+```
+
+### When to Use
+
+- **CI/CD pipelines** - Clean logs without ANSI codes
+- **Piped output** - `modestbench run | grep "passed"`
+- **Log files** - Readable output without color codes
+- **Automated parsing** - Consistent text format
 
 ## JSON Reporter
 
@@ -383,8 +458,11 @@ modestbench run
 #### CI/CD
 
 ```bash
-# JSON + CSV for analysis, quiet mode
+# JSON + CSV for analysis (simple reporter used automatically)
 modestbench run --reporters json,csv --output ./results --quiet
+
+# Or let auto-detection handle it
+modestbench run --output ./results
 ```
 
 #### Documentation
@@ -400,13 +478,13 @@ modestbench run --reporters human,json,csv --output ./benchmark-results
 
 - **JSON reporter**: Writes to `{output}/results.json`
 - **CSV reporter**: Writes to `{output}/results.csv`
-- **Human reporter**: Still writes to stdout/stderr
+- **Human/Simple reporters**: Still write to stdout/stderr
 
 ### When `--output` is NOT Specified
 
 - **JSON reporter**: Writes to stdout
 - **CSV reporter**: Writes to stdout
-- **Human reporter**: Writes to stdout/stderr
+- **Human/Simple reporters**: Write to stdout/stderr
 
 :::caution[Multiple Data Reporters]
 Using both JSON and CSV without `--output` will mix their output on stdout. Always use `--output` when using multiple data reporters.
@@ -414,12 +492,15 @@ Using both JSON and CSV without `--output` will mix their output on stdout. Alwa
 
 ### Quiet Mode
 
-The `--quiet` flag affects only the human reporter:
+The `--quiet` flag affects the human and simple reporters:
 
-- Suppresses progress bars (stderr)
-- Suppresses status messages
+- Suppresses progress bars and status messages (stderr)
 - Keeps final results output
 - Does NOT affect JSON or CSV output
+
+:::note[Simple Reporter]
+The `simple` reporter has no progress bars by default, so `--quiet` primarily affects status messages.
+:::
 
 ## Next Steps
 

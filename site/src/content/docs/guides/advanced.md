@@ -274,7 +274,7 @@ const isProd = process.env.NODE_ENV === 'production';
 export default {
   iterations: isCI ? 5000 : 100,
   warmup: isCI ? 100 : 0,
-  reporters: isCI ? ['json', 'csv'] : ['human'],
+  reporters: isCI ? ['json', 'csv'] : ['simple'], // Simple reporter for CI, auto-detect for local
   quiet: isCI,
   outputDir: isCI ? './benchmark-results' : undefined,
   
@@ -285,6 +285,10 @@ export default {
   excludeTags: isProd ? [] : ['slow'],
 };
 ```
+
+:::tip[Reporter Auto-Selection]
+You can omit the `reporters` option entirely to let modestbench auto-select based on the environment (TTY detection).
+:::
 
 ## CI/CD Integration
 

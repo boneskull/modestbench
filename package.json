@@ -179,6 +179,10 @@
     "**/!(.github/prompts)/*.md": [
       "prettier --write",
       "cspell"
+    ],
+    "*.mdx": [
+      "prettier --write",
+      "cspell"
     ]
   },
   "prettier": {

@@ -208,11 +208,12 @@ Stop execution on first benchmark failure.
 #### `reporters`
 
 **Type:** `string[]`  
-**Default:** `["human"]`
+**Default:** Auto-selected based on environment
 
 Array of reporter names to use for output. Available reporters:
 
-- `human` - Color-coded terminal output with progress bars
+- `human` - Color-coded terminal output with progress bars (default for TTY with colors)
+- `simple` - Plain text output without colors (default for non-TTY environments)
 - `json` - Structured JSON data for programmatic analysis
 - `csv` - Tabular data for spreadsheets
 
@@ -221,6 +222,10 @@ Array of reporter names to use for output. Available reporters:
   "reporters": ["human", "json", "csv"]
 }
 ```
+
+:::note[Auto-Selection]
+When not specified, modestbench automatically selects `human` (TTY + color support) or `simple` (non-TTY). The `human` reporter is used when `FORCE_COLOR=1` even in non-TTY environments.
+:::
 
 :::note[Multiple Reporters]
 You can use multiple reporters simultaneously! Results will be output in all specified formats.
@@ -255,6 +260,10 @@ Minimal output mode. Suppresses progress bars and non-essential messages on stde
   "quiet": true
 }
 ```
+
+:::tip[CI/CD Usage]
+In CI/CD environments, modestbench automatically uses the `simple` reporter which has no progress bars. Use `quiet` to further suppress status messages for completely clean output.
+:::
 
 :::tip[quiet vs output]
 `quiet` suppresses progress (stderr), not data output (stdout). Use it in CI to reduce noise while still getting results.

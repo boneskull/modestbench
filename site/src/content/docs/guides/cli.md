@@ -132,9 +132,14 @@ modestbench run --reporters human,json,csv
 
 Available reporters:
 
-- `human` - Color-coded terminal output (default)
+- `human` - Color-coded terminal output (default for TTY with colors)
+- `simple` - Plain text output (default for non-TTY environments)
 - `json` - Structured JSON data
 - `csv` - Tabular CSV format
+
+:::note[Auto-Selection]
+modestbench automatically selects `human` (TTY with color) or `simple` (non-TTY) as the default. Override with `--reporters` if needed.
+:::
 
 ##### `--output <directory>`
 
@@ -158,8 +163,8 @@ Minimal output mode. Suppresses progress bars and non-essential messages.
 modestbench run --quiet
 ```
 
-:::note
-`--quiet` suppresses progress (stderr), not data output (stdout). Perfect for CI/CD pipelines.
+:::note[CI/CD Pipelines]
+In non-TTY environments, modestbench automatically uses the `simple` reporter which has no progress bars. `--quiet` further suppresses status messages for completely clean output.
 :::
 
 ##### `--verbose`
