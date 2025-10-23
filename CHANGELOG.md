@@ -1,0 +1,45 @@
+# Changelog
+
+## 0.0.1 (2025-10-23)
+
+
+### Features
+
+* add .cts and .mts TypeScript extension support ([fd4d3cc](https://github.com/boneskull/modestbench/commit/fd4d3ccfec18e8e9c3e037c96f0968e2191820c8))
+* add directory path expansion and sensible defaults ([efe4408](https://github.com/boneskull/modestbench/commit/efe4408056940ced4b7d1a94dafe6b9ffd9f6796))
+* add native TypeScript support for benchmark files ([673a61d](https://github.com/boneskull/modestbench/commit/673a61da38d628b1f875eeefb8480688b43afcf3))
+* add simple reporter for non-TTY environments ([a90d570](https://github.com/boneskull/modestbench/commit/a90d570bad89d6187dcb37d52f304bf2b7df8bbd))
+* add support for multiple file patterns and explicit file paths ([db1dc56](https://github.com/boneskull/modestbench/commit/db1dc5647b9d9dfeb908fc738f6b37cfcfcda29e))
+* complete support for multiple file patterns ([36a97c4](https://github.com/boneskull/modestbench/commit/36a97c4e7da2608fb36a1f5891a3e5aea48b2746))
+* config file schema and validation ([f4dfbb3](https://github.com/boneskull/modestbench/commit/f4dfbb3e645038a750f0b93a18401a47ab524637))
+* consolidate benchmark file extensions into constants ([35fd77a](https://github.com/boneskull/modestbench/commit/35fd77ac403082574dd27369b8be2b6e9c066209))
+* **core:** add --limit-by flag with smart defaults for benchmark limiting ([61503b1](https://github.com/boneskull/modestbench/commit/61503b147f12938cada9aae90a3fffe8bd69fefd))
+* **core:** enable streamlined benchmark definition ([dc5a83c](https://github.com/boneskull/modestbench/commit/dc5a83c89269a49f480eb4fe398da79eaaa82bcb))
+* **core:** introduce new "accurate" engine ([795ab1c](https://github.com/boneskull/modestbench/commit/795ab1c828298bc932b8193b6b14944816006a43))
+* **core:** suites are now optional ([0fd83af](https://github.com/boneskull/modestbench/commit/0fd83af4bc17c6c14fe9946bf320cdc8ae366ed1))
+* **core:** tag filtering! ([2d677c8](https://github.com/boneskull/modestbench/commit/2d677c8b7ea29a7d09781a40ea809dc6cf45d48e))
+* implement verbose mode ([f5011bf](https://github.com/boneskull/modestbench/commit/f5011bfcd378f4847392ef57c0a266f52c6def07))
+* **init:** add interactive .gitignore prompt for .modestbench/ ([299224f](https://github.com/boneskull/modestbench/commit/299224ff4f7409e23d5dd6f61cc28a25b79d8c68))
+* update CLI to support directory paths and sensible defaults ([22721d8](https://github.com/boneskull/modestbench/commit/22721d87e6ba3dea9dbecbf36940066a86d27193))
+
+
+### Bug Fixes
+
+* **cli:** implement true quiet mode for --quiet flag ([70c3033](https://github.com/boneskull/modestbench/commit/70c3033bf91c275668cf281e769f162c92627d3e))
+* **cli:** symlinks install now works ([1a5ec4e](https://github.com/boneskull/modestbench/commit/1a5ec4edf873670b6d8470cae2df0c0deea915e5)), closes [#4](https://github.com/boneskull/modestbench/issues/4)
+* **core,reporters:** fix hanging timers ([fc21f32](https://github.com/boneskull/modestbench/commit/fc21f3293ef8bf15d6b4b869f68160838844959b))
+* **core:** fix type errors ([f7e4512](https://github.com/boneskull/modestbench/commit/f7e4512246aeea3a6205cbb27f9321fda3a4b343))
+* **core:** implement --iterations flag to control benchmark iteration count ([827d0a0](https://github.com/boneskull/modestbench/commit/827d0a0e1e73f0ca78c42499efb3c46155d4457c))
+* **core:** remove env checks from engine ([245ae3e](https://github.com/boneskull/modestbench/commit/245ae3e71b7c2e555757dc7d8497b53f890cf874))
+* correct tsx import path for TypeScript support ([38642ad](https://github.com/boneskull/modestbench/commit/38642adc79f8fbfb84dd2f12f86e85c998eb3f26))
+* **deps:** fix tinybench dep ([9a9cb8e](https://github.com/boneskull/modestbench/commit/9a9cb8e0e1ec012a69a9e45f94ef3f79bc3675a4))
+* **deps:** pin dependencies ([#5](https://github.com/boneskull/modestbench/issues/5)) ([2b20bce](https://github.com/boneskull/modestbench/commit/2b20bcebaccfb4e442045cb128b4065f64219979))
+* **deps:** update dependency yargs to v18 ([#13](https://github.com/boneskull/modestbench/issues/13)) ([2686134](https://github.com/boneskull/modestbench/commit/268613480ad2ab46de11fea4f91644d732790ef2))
+* **init:** library proj template does not enable CSV reporter ([32a2046](https://github.com/boneskull/modestbench/commit/32a204618f94c2bd9c0e7ed34b815c00feb1c28d))
+* **loader:** validate benchmarks with zod ([f53d661](https://github.com/boneskull/modestbench/commit/f53d6611c8c0d5a752df9ecefac4d4ebe4acbd5b))
+* **pkg:** add package.json to exports; fix files ([8563ac9](https://github.com/boneskull/modestbench/commit/8563ac9e38b529966b471eeeeea99db3c36c1a3c))
+* quiet mode and TS loading ([de0db5e](https://github.com/boneskull/modestbench/commit/de0db5e1a51e4facef3150397d90ba039997ea94))
+* **reporter:** human reporter improvements ([214afa9](https://github.com/boneskull/modestbench/commit/214afa9fbe549f12cff9aad3cb5eeb95794a141f))
+* **reporters:** fix progress bar ([4143126](https://github.com/boneskull/modestbench/commit/4143126adc77d7d5ae6483b2a858fe63feb2ebc1))
+* **reporters:** fix quiet mode ([5960b1b](https://github.com/boneskull/modestbench/commit/5960b1b7c353e5cf8583a614f36cdd39e06dc47e))
+* **reporters:** make human reporter nice ([afba95f](https://github.com/boneskull/modestbench/commit/afba95f5d233a63a0c385e7e81a59b4722f73907))
