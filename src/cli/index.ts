@@ -151,7 +151,7 @@ export const main = async (
       .completion()
       .wrap(Math.min(120, cli.terminalWidth()))
       .command(
-        'run [pattern..]',
+        ['$0 [pattern..]', 'run [pattern..]'],
         'Run benchmark files',
         (yargs) => {
           return yargs

@@ -115,13 +115,13 @@ export default {
 Run all benchmarks in the current directory:
 
 ```bash
-modestbench run
+modestbench
 ```
 
 Run benchmarks with options:
 
 ```bash
-modestbench run --iterations 5000 --reporters human,json
+modestbench --iterations 5000 --reporters human,json
 ```
 
 ### Choosing an Engine
@@ -130,10 +130,10 @@ modestbench provides two engines with different trade-offs:
 
 ```bash
 # Default: tinybench (fast, good for development)
-modestbench run
+modestbench
 
 # Accurate engine (higher precision, recommended for production benchmarks)
-node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate
 ```
 
 **Engine Comparison:**
@@ -167,16 +167,16 @@ Run specific files or directories:
 
 ```bash
 # Run a specific file
-modestbench run benchmarks/critical.bench.js
+modestbench benchmarks/critical.bench.js
 
 # Run all benchmarks in a directory (searches recursively)
-modestbench run benchmarks/
+modestbench benchmarks/
 
 # Run multiple paths
-modestbench run benchmarks/ tests/perf/
+modestbench benchmarks/ tests/perf/
 
 # Use glob patterns
-modestbench run "tests/**/*.bench.ts"
+modestbench "tests/**/*.bench.ts"
 ```
 
 ## View Results
@@ -202,36 +202,36 @@ The output above is from the `human` reporter, used automatically in interactive
 
 ```bash
 # Limit by iteration count (fast, predictable sample size)
-modestbench run --iterations 100
+modestbench --iterations 100
 
 # Limit by time budget (ensures consistent time investment)
-modestbench run --time 5000
+modestbench --time 5000
 
 # Limit by whichever comes first (safety bounds)
-modestbench run --iterations 1000 --time 10000
+modestbench --iterations 1000 --time 10000
 ```
 
 ### Filter by Tags
 
 ```bash
 # Run only fast benchmarks
-modestbench run --tags fast
+modestbench --tags fast
 
 # Run benchmarks with multiple tags (OR logic)
-modestbench run --tags string,array,algorithm
+modestbench --tags string,array,algorithm
 
 # Exclude specific benchmarks
-modestbench run --exclude-tags slow,experimental
+modestbench --exclude-tags slow,experimental
 ```
 
 ### Multiple Output Formats
 
 ```bash
 # Generate multiple reports at once
-modestbench run --reporters human,json,csv
+modestbench --reporters human,json,csv
 
 # Save reports to a specific directory
-modestbench run --reporters json,csv --output ./results
+modestbench --reporters json,csv --output ./results
 ```
 
 ## Next Steps
@@ -247,7 +247,7 @@ modestbench run --reporters json,csv --output ./results
 Use `--warmup` to run warmup iterations before measurement:
 
 ```bash
-modestbench run --warmup 100
+modestbench --warmup 100
 ```
 
 This helps stabilize JIT compilation for more accurate results.

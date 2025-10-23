@@ -65,13 +65,13 @@ Found 1 benchmark file(s)
 
 ```bash
 # Human reporter is default
-modestbench run
+modestbench
 
 # Explicitly specify
-modestbench run --reporters human
+modestbench --reporters human
 
 # Quiet mode (suppresses progress, keeps results)
-modestbench run --reporters human --quiet
+modestbench --reporters human --quiet
 ```
 
 ### Output Streams
@@ -132,19 +132,19 @@ All benchmarks completed successfully!
 
 ```bash
 # Simple reporter is default in non-TTY environments
-modestbench run | tee results.log
+modestbench | tee results.log
 
 # Explicitly specify simple reporter
-modestbench run --reporters simple
+modestbench --reporters simple
 
 # Force human reporter in non-TTY (requires FORCE_COLOR=1)
-FORCE_COLOR=1 modestbench run --reporters human
+FORCE_COLOR=1 modestbench --reporters human
 ```
 
 ### When to Use
 
 - **CI/CD pipelines** - Clean logs without ANSI codes
-- **Piped output** - `modestbench run | grep "passed"`
+- **Piped output** - `modestbench | grep "passed"`
 - **Log files** - Readable output without color codes
 - **Automated parsing** - Consistent text format
 
@@ -285,14 +285,14 @@ The JSON reporter outputs structured data perfect for programmatic analysis, CI/
 
 ```bash
 # JSON output to stdout
-modestbench run --reporters json
+modestbench --reporters json
 
 # JSON output to file
-modestbench run --reporters json --output ./results
+modestbench --reporters json --output ./results
 # Creates: ./results/results.json
 
 # Multiple reporters
-modestbench run --reporters human,json --output ./results
+modestbench --reporters human,json --output ./results
 ```
 
 ### Integration Examples
@@ -301,13 +301,13 @@ modestbench run --reporters human,json --output ./results
 
 ```bash
 # Extract task names with ops/sec
-modestbench run --reporters json | jq '.results[] | {task: .task, opsPerSecond}'
+modestbench --reporters json | jq '.results[] | {task: .task, opsPerSecond}'
 
 # Find slowest tasks
-modestbench run --reporters json | jq '.results | sort_by(.opsPerSecond) | .[0:5]'
+modestbench --reporters json | jq '.results | sort_by(.opsPerSecond) | .[0:5]'
 
 # Calculate average ops/sec
-modestbench run --reporters json | jq '[.results[].opsPerSecond] | add / length'
+modestbench --reporters json | jq '[.results[].opsPerSecond] | add / length'
 ```
 
 #### Node.js Script
@@ -376,21 +376,21 @@ benchmarks/example.bench.js,Array Operations,Array spread,passed,12345.67,0.0810
 
 ```bash
 # CSV output to stdout
-modestbench run --reporters csv
+modestbench --reporters csv
 
 # CSV output to file
-modestbench run --reporters csv --output ./results
+modestbench --reporters csv --output ./results
 # Creates: ./results/results.csv
 
 # Multiple reporters
-modestbench run --reporters human,csv --output ./results
+modestbench --reporters human,csv --output ./results
 ```
 
 ### Analysis Examples
 
 #### Excel/Google Sheets
 
-1. Run benchmarks: `modestbench run --reporters csv --output ./results`
+1. Run benchmarks: `modestbench --reporters csv --output ./results`
 2. Import `results.csv` into Excel or Google Sheets
 3. Create pivot tables, charts, and statistical analysis
 
@@ -426,7 +426,7 @@ print(f"Tasks with high variance: {outliers['task'].tolist()}")
 # Track performance over time
 
 DATE=$(date +%Y-%m-%d)
-modestbench run --reporters csv --output "./history/${DATE}"
+modestbench --reporters csv --output "./history/${DATE}"
 
 # Append to master CSV
 tail -n +2 "./history/${DATE}/results.csv" >> ./history/all-results.csv
@@ -437,7 +437,7 @@ tail -n +2 "./history/${DATE}/results.csv" >> ./history/all-results.csv
 Run multiple reporters simultaneously to get output in different formats:
 
 ```bash
-modestbench run --reporters human,json,csv --output ./results
+modestbench --reporters human,json,csv --output ./results
 ```
 
 This creates:
@@ -452,24 +452,24 @@ This creates:
 
 ```bash
 # Human output only for quick feedback
-modestbench run
+modestbench
 ```
 
 #### CI/CD
 
 ```bash
 # JSON + CSV for analysis (simple reporter used automatically)
-modestbench run --reporters json,csv --output ./results --quiet
+modestbench --reporters json,csv --output ./results --quiet
 
 # Or let auto-detection handle it
-modestbench run --output ./results
+modestbench --output ./results
 ```
 
 #### Documentation
 
 ```bash
 # All formats for comprehensive reporting
-modestbench run --reporters human,json,csv --output ./benchmark-results
+modestbench --reporters human,json,csv --output ./benchmark-results
 ```
 
 ## Reporter Behavior

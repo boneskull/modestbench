@@ -122,10 +122,10 @@ export default {
 
 ```bash
 # Run all benchmarks
-modestbench run
+modestbench
 
 # Run with specific options
-modestbench run --iterations 5000 --reporters human,json
+modestbench --iterations 5000 --reporters human,json
 ```
 
 ### View Results
@@ -182,22 +182,22 @@ Run benchmarks with sensible defaults:
 
 ```bash
 # Run benchmarks in current directory and bench/ (top-level only)
-modestbench run
+modestbench
 
 # Run all benchmarks in a directory (searches recursively)
-modestbench run benchmarks/
+modestbench benchmarks/
 
 # Run benchmarks from multiple directories
-modestbench run src/perf/ tests/benchmarks/
+modestbench src/perf/ tests/benchmarks/
 
 # Run specific files
-modestbench run benchmarks/critical.bench.js
+modestbench benchmarks/critical.bench.js
 
 # Mix files, directories, and glob patterns
-modestbench run file.bench.js benchmarks/ "tests/**/*.bench.ts"
+modestbench file.bench.js benchmarks/ "tests/**/*.bench.ts"
 
 # With options
-modestbench run \
+modestbench \
   --config ./config.json \
   --iterations 2000 \
   --reporters human,json,csv \
@@ -217,19 +217,19 @@ The `--limit-by` flag controls whether benchmarks are limited by time, iteration
 
 ```bash
 # Limit by iteration count (fast, predictable sample size)
-modestbench run --iterations 100
+modestbench --iterations 100
 
 # Limit by time budget (ensures consistent time investment)
-modestbench run --time 5000
+modestbench --time 5000
 
 # Limit by whichever comes first (safety bounds)
-modestbench run --iterations 1000 --time 10000
+modestbench --iterations 1000 --time 10000
 
 # Explicit control (overrides smart defaults)
-modestbench run --iterations 500 --time 5000 --limit-by time
+modestbench --iterations 500 --time 5000 --limit-by time
 
 # Require both thresholds (rare, for statistical rigor)
-modestbench run --iterations 100 --time 2000 --limit-by all
+modestbench --iterations 100 --time 2000 --limit-by all
 ```
 
 **Smart Defaults:**
@@ -252,16 +252,16 @@ Run specific subsets of benchmarks using tags:
 
 ```bash
 # Run only benchmarks tagged with 'fast'
-modestbench run --tags fast
+modestbench --tags fast
 
 # Run benchmarks with multiple tags (OR logic - matches ANY)
-modestbench run --tags string,array,algorithm
+modestbench --tags string,array,algorithm
 
 # Exclude specific benchmarks
-modestbench run --exclude-tags slow,experimental
+modestbench --exclude-tags slow,experimental
 
 # Combine: run fast benchmarks except experimental ones
-modestbench run --tags fast --exclude-tags experimental
+modestbench --tags fast --exclude-tags experimental
 ```
 
 **Key Features:**
@@ -588,7 +588,7 @@ jobs:
 
       - name: Run Benchmarks
         run: |
-          modestbench run \
+          modestbench \
             --reporters json,csv \
             --output ./results
 
@@ -607,7 +607,7 @@ import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 
 // Run current benchmarks
-execSync('modestbench run --reporters json --output ./current');
+execSync('modestbench --reporters json --output ./current');
 const current = JSON.parse(readFileSync('./current/results.json'));
 
 // Load baseline results
