@@ -121,9 +121,11 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
         (await this.discover(mergedConfig.pattern, mergedConfig.exclude));
 
       if (files.length === 0) {
-        const error = new Error(
-          'No benchmark files found matching the pattern',
-        );
+        let msg = `No benchmark files found matching the pattern "${mergedConfig.pattern}`;
+        if (mergedConfig.exclude?.length) {
+          msg += ` and excluding "${mergedConfig.exclude.join(', ')}"`;
+        }
+        const error = new Error(msg);
         this.errorManager.handleError(error, {
           phase: currentPhase,
           timestamp: new Date(),

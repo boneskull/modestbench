@@ -89,6 +89,18 @@ export const handleRunCommand = async (
       console.error(`Found ${discoveredFiles.length} benchmark file(s)`);
     }
 
+    // Check if no files found and throw to trigger help display
+    if (discoveredFiles.length === 0) {
+      let msg = `No benchmark files found matching pattern "${config.pattern}"`;
+      if (config.exclude?.length) {
+        msg += ` (excluding: ${config.exclude.join(', ')})`;
+      }
+      // Throw error to trigger yargs fail handler which shows help
+      const error = new Error(msg);
+      error.name = 'FileDiscoveryError';
+      throw error;
+    }
+
     // Step 4: Validation phase
     if (showCliMessages) {
       console.error('Validating benchmark files...');
@@ -143,6 +155,11 @@ export const handleRunCommand = async (
 
     return handleResults(executionResult, options, shouldBeQuiet);
   } catch (error) {
+    // Re-throw FileDiscoveryError so yargs fail handler can show help
+    if (error instanceof Error && error.name === 'FileDiscoveryError') {
+      throw error;
+    }
+
     if (!shouldBeQuiet) {
       console.error(
         `Error: ${error instanceof Error ? error.message : String(error)}`,

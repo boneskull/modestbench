@@ -491,8 +491,15 @@ export const main = async (
           if (process.env.DEBUG) {
             console.error(err.stack);
           }
+          // Show help for file discovery errors (similar to usage errors)
+          if (err.name === 'FileDiscoveryError') {
+            console.error();
+            yargsInstance.showHelp();
+            process.exit(ExitCodes.DISCOVERY_ERROR);
+          }
           process.exit(ExitCodes.RUNTIME_ERROR);
         } else {
+          // Show help for usage errors (unknown arguments, etc.)
           console.error(msg);
           console.error();
           yargsInstance.showHelp();
