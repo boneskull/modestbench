@@ -7,3 +7,5 @@ docs/
 
 # Dependencies
 node_modules/
+
+CHANGELOG.md
