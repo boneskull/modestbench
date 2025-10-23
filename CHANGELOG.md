@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.2](https://github.com/boneskull/modestbench/compare/modestbench-v0.0.1...modestbench-v0.0.2) (2025-10-23)
+
+
+### Bug Fixes
+
+* update homepage ([1a2cc63](https://github.com/boneskull/modestbench/commit/1a2cc63137e4a4595536a6590fc3e4019cab8d9d))
+
 ## 0.0.1 (2025-10-23)
 
 
