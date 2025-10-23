@@ -182,39 +182,50 @@ modestbench run "tests/**/*.bench.ts"
 modestbench provides clean, colorized output in interactive terminals:
 
 ```text
-🚀 modestbench
 
-Environment:
-  Node.js: v24.10.0
-  Platform: darwin arm64
-  CPU: Apple M4 Max (16 cores)
-  Memory: 48.0 GB
+           ▄▄▄▄▄▄▄
+        ▄▄▄▄    ▄▄▄▄▄
+    ▄▄▄▄▄           ▄▄▄▄▄
+     ▄     ▄▄▄▄▄▄▄     ▄
+        ▄▄▄▄▄▄▄▄▄ ▄▄      modestbench
+       ▄▄       ▄▄▄▄▄▄
+      ▄▄      ▄▄▄▄ ▄ ▄▄   node.js: v24.10.0
+      ▄      ▄▄▄   ▄▄▄▄   platform: darwin arm64
+     ▄       ▄▄▄       ▄  cpu: Apple M4 Max (16 cores)
+    ▀▀▄▄▄           ▄▄▄▀▀ mem: 48.0 GB
+        ▀▄▄▄     ▄▄▄▀
+           ▀▀▄▄▄▀▀
 
-Found 1 benchmark file(s)
 
-▶ benchmarks/example.bench.js
+▓▓ examples/benchmarks/advanced-operations.bench.js
 
-  ▶ Array Operations
-    ✓ Array.push()
-      810.05μs ±2.45% (1.23M ops/sec)
-    ✓ Array spread
-      81.01ms ±4.12% (12.34K ops/sec)
-  ✓ 2 passed
+  ░░ Array Algorithms
+    √ Array.findIndex(): 166.67ns • ±1.36% • 6.36M ops/sec
+    √ Linear Search    : 166.67ns • ±1.33% • 6.30M ops/sec
+  √ 2 tasks passed
 
-  ✓ All 2 tasks passed
 
-📊 Results
+  ░░ String Operations
+    √ RegExp.test()    : 23.35ns • ±19.75% • 32.04M ops/sec
+    √ String.includes(): 17.91ns • ±17.13% • 42.13M ops/sec
+    √ String.indexOf() : 18.22ns • ±17.33% • 41.29M ops/sec
+  √ 3 tasks passed
 
-✓ All tests passed: 2
-📁 Files: 1
-📊 Suites: 1
-⏱️ Duration: 1.82s
+ √ All 5 tasks passed
 
-🎉 All benchmarks completed successfully!
+██ Results
+
+  Files: 1
+  Suites: 2
+  Tasks: 5
+√ All tests passed: 5
+≈ Duration: 6.96s
+
+Rad. ☮
 ```
 
 :::note[Output Format]
-The colorized output above is from the `human` reporter, used automatically in interactive terminals. In CI/CD or when piping output, modestbench uses the `simple` reporter for clean, plain-text output without colors.
+The output above is from the `human` reporter, used automatically in interactive terminals. In CI/CD or when piping output, modestbench uses the `simple` reporter for clean, plain-text output without colors.
 :::
 
 ## Common Options
