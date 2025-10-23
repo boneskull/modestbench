@@ -25,6 +25,7 @@ export default defineConfig({
             { label: 'Configuration', link: '/guides/configuration/' },
             { label: 'CLI Reference', link: '/guides/cli/' },
             { label: 'Output Formats', link: '/guides/output/' },
+            { label: 'Understanding Statistics', link: '/guides/statistics/' },
             { label: 'Advanced Usage', link: '/guides/advanced/' },
           ],
           label: 'Guides',
