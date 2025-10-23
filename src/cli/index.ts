@@ -157,7 +157,7 @@ export const main = async (
           return yargs
             .positional('pattern', {
               array: true,
-              default: [],
+              default: ['./bench/**/*.bench.{js,mjs,cjs,ts}'],
               describe:
                 'File paths, directory paths, or glob patterns for benchmark files',
               type: 'string',
