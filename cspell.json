@@ -30,6 +30,7 @@
     "/docs",
     "node_modules",
     "*.csv",
+    "*.cast",
     "worktrees",
     "assets/*.ans",
     "assets/*.txt",
@@ -63,7 +64,8 @@
     "ylabel",
     "xticks",
     "tolist",
-    "seti"
+    "seti",
+    "asciinema"
   ],
   "words": ["bupkis"]
 }

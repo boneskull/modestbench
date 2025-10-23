@@ -1,0 +1,63 @@
+---
+interface Props {
+  src: string;
+  autoPlay?: boolean;
+  loop?: boolean;
+  speed?: number;
+  theme?: string;
+  rows?: number;
+  cols?: number;
+}
+
+const {
+  src,
+  autoPlay = false,
+  loop = false,
+  speed = 1.0,
+  theme = 'asciinema',
+  rows,
+  cols
+} = Astro.props;
+---
+
+<div class="asciinema-player-wrapper">
+  <div id="player" data-src={src} data-autoplay={autoPlay} data-loop={loop} data-speed={speed} data-theme={theme} data-rows={rows} data-cols={cols}></div>
+</div>
+
+<script>
+  import * as AsciinemaPlayer from 'asciinema-player';
+import 'asciinema-player/dist/bundle/asciinema-player.css';
+
+  const playerDiv = document.getElementById('player');
+  if (playerDiv) {
+    const src = playerDiv.getAttribute('data-src') || '';
+    const autoPlay = playerDiv.getAttribute('data-autoplay') === 'true';
+    const loop = playerDiv.getAttribute('data-loop') === 'true';
+    const speed = parseFloat(playerDiv.getAttribute('data-speed') || '1.0');
+    const theme = playerDiv.getAttribute('data-theme') || 'asciinema';
+    const rows = playerDiv.getAttribute('data-rows');
+    const cols = playerDiv.getAttribute('data-cols');
+
+    const options: any = {
+      autoPlay,
+      loop,
+      speed,
+      theme,
+      fit: 'width',
+    };
+
+    if (rows) options.rows = parseInt(rows);
+    if (cols) options.cols = parseInt(cols);
+
+    AsciinemaPlayer.create(src, playerDiv, options);
+  }
+</script>
+
+<style>
+  .asciinema-player-wrapper {
+    margin: 1.5rem 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    max-height: 700px;
+  }
+</style>

@@ -3,6 +3,8 @@ title: Getting Started
 description: Get up and running with modestbench in minutes
 ---
 
+import AsciinemaPlayer from '../../../components/AsciinemaPlayer.astro';
+
 ## Installation
 
 Install modestbench as a development dependency:
@@ -80,7 +82,7 @@ export default {
       setup() {
         state.data = [];
       },
-      
+
       benchmarks: {
         'Array.push()': () => {
           const arr = [];
@@ -181,48 +183,14 @@ modestbench run "tests/**/*.bench.ts"
 
 modestbench provides clean, colorized output in interactive terminals:
 
-```text
-
-           ▄▄▄▄▄▄▄
-        ▄▄▄▄    ▄▄▄▄▄
-    ▄▄▄▄▄           ▄▄▄▄▄
-     ▄     ▄▄▄▄▄▄▄     ▄
-        ▄▄▄▄▄▄▄▄▄ ▄▄      modestbench
-       ▄▄       ▄▄▄▄▄▄
-      ▄▄      ▄▄▄▄ ▄ ▄▄   node.js: v24.10.0
-      ▄      ▄▄▄   ▄▄▄▄   platform: darwin arm64
-     ▄       ▄▄▄       ▄  cpu: Apple M4 Max (16 cores)
-    ▀▀▄▄▄           ▄▄▄▀▀ mem: 48.0 GB
-        ▀▄▄▄     ▄▄▄▀
-           ▀▀▄▄▄▀▀
-
-
-▓▓ examples/benchmarks/advanced-operations.bench.js
-
-  ░░ Array Algorithms
-    √ Array.findIndex(): 166.67ns • ±1.36% • 6.36M ops/sec
-    √ Linear Search    : 166.67ns • ±1.33% • 6.30M ops/sec
-  √ 2 tasks passed
-
-
-  ░░ String Operations
-    √ RegExp.test()    : 23.35ns • ±19.75% • 32.04M ops/sec
-    √ String.includes(): 17.91ns • ±17.13% • 42.13M ops/sec
-    √ String.indexOf() : 18.22ns • ±17.33% • 41.29M ops/sec
-  √ 3 tasks passed
-
- √ All 5 tasks passed
-
-██ Results
-
-  Files: 1
-  Suites: 2
-  Tasks: 5
-√ All tests passed: 5
-≈ Duration: 6.96s
-
-Rad. ☮
-```
+<AsciinemaPlayer
+  src="/modestbench/modestbench.cast"
+  autoPlay={true}
+  loop={false}
+  speed={1.0}
+  theme="asciinema"
+  rows={60}
+/>
 
 :::note[Output Format]
 The output above is from the `human` reporter, used automatically in interactive terminals. In CI/CD or when piping output, modestbench uses the `simple` reporter for clean, plain-text output without colors.

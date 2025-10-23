@@ -54,6 +54,9 @@ export default defineConfig({
   srcDir: './site/src',
   // see https://github.com/withastro/astro/issues/14117#issuecomment-3117797751
   vite: {
+    optimizeDeps: {
+      include: ['asciinema-player'],
+    },
     ssr: {
       noExternal: ['zod'],
     },
