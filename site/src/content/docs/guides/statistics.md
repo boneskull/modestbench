@@ -53,7 +53,7 @@ mean: 0.00081005  // 810.05 microseconds
 **modestbench** displays this as `810.05μs`, `12.5ms`, or `1.82s`.
 
 :::tip[But You Said No Greek]
-"μs" means "microseconds." Not even Greek.
+"μs" means "microseconds." Yes, that's the Greek letter 'mu'—but it's just SI shorthand for 'micro-', not scary math notation.
 :::
 
 **The mean is your baseline.** Everything else is about understanding how much you can trust it.
