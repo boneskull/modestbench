@@ -423,3 +423,176 @@ h2,
       );
   opacity: 0.5;
 }
+
+/* Mermaid diagram synthwave styling */
+:root[data-theme='dark'] .mermaid {
+  font-size: 14px !important;
+  font-family:
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* Mermaid node/box elements */
+:root[data-theme='dark'] .mermaid .node rect,
+:root[data-theme='dark'] .mermaid .node circle,
+:root[data-theme='dark'] .mermaid .node ellipse,
+:root[data-theme='dark'] .mermaid .node polygon,
+:root[data-theme='dark'] .mermaid .node path {
+  stroke: var(--synthwave-pink) !important;
+  stroke-width: 2px !important;
+  fill: rgba(92, 44, 109, 0.4) !important;
+}
+
+/* Mermaid text labels */
+:root[data-theme='dark'] .mermaid .nodeLabel,
+:root[data-theme='dark'] .mermaid .edgeLabel,
+:root[data-theme='dark'] .mermaid text {
+  fill: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Mermaid arrows and connectors */
+:root[data-theme='dark'] .mermaid .edgePath path,
+:root[data-theme='dark'] .mermaid .flowchart-link {
+  stroke: var(--synthwave-cyan) !important;
+  stroke-width: 2.5px !important;
+  filter: drop-shadow(0 0 3px rgba(0, 241, 255, 0.5));
+}
+
+/* Mermaid arrow markers */
+:root[data-theme='dark'] .mermaid .arrowheadPath,
+:root[data-theme='dark'] .mermaid marker path {
+  fill: var(--synthwave-cyan) !important;
+  stroke: var(--synthwave-cyan) !important;
+}
+
+/* Mermaid cluster/subgraph backgrounds */
+:root[data-theme='dark'] .mermaid .cluster rect {
+  fill: rgba(26, 22, 38, 0.6) !important;
+  stroke: var(--synthwave-purple) !important;
+  stroke-width: 2px !important;
+}
+/* Mermaid cluster labels */
+:root[data-theme='dark'] .mermaid .cluster-label text,
+:root[data-theme='dark'] .mermaid .cluster-label span {
+  fill: #ffffff !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+/* Special node types - use different colors */
+:root[data-theme='dark'] .mermaid .node.primary rect,
+:root[data-theme='dark'] .mermaid .node.primary path {
+  fill: rgba(0, 241, 255, 0.3) !important;
+  stroke: var(--synthwave-cyan) !important;
+}
+
+:root[data-theme='dark'] .mermaid .node.secondary rect,
+:root[data-theme='dark'] .mermaid .node.secondary path {
+  fill: rgba(255, 180, 0, 0.3) !important;
+  stroke: var(--synthwave-yellow) !important;
+}
+
+/* Hover effects */
+:root[data-theme='dark'] .mermaid .node:hover rect,
+:root[data-theme='dark'] .mermaid .node:hover circle,
+:root[data-theme='dark'] .mermaid .node:hover polygon {
+  filter: drop-shadow(0 0 10px var(--synthwave-pink));
+  cursor: pointer;
+}
+
+/* Edge labels background */
+:root[data-theme='dark'] .mermaid .edgeLabel rect {
+  fill: rgba(26, 22, 38, 0.9) !important;
+  stroke: var(--synthwave-cyan) !important;
+  stroke-width: 1px !important;
+}
+
+/* Light mode Mermaid styling - synthwave-inspired with high contrast */
+:root[data-theme='light'] .mermaid {
+  font-size: 14px !important;
+  font-family:
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* Light mode node/box elements - purple and pink scheme */
+:root[data-theme='light'] .mermaid .node rect,
+:root[data-theme='light'] .mermaid .node circle,
+:root[data-theme='light'] .mermaid .node ellipse,
+:root[data-theme='light'] .mermaid .node polygon,
+:root[data-theme='light'] .mermaid .node path {
+  stroke: var(--synthwave-purple) !important;
+  stroke-width: 2.5px !important;
+  fill: rgba(255, 1, 154, 0.08) !important;
+}
+
+/* Light mode text labels - dark for contrast */
+:root[data-theme='light'] .mermaid .nodeLabel,
+:root[data-theme='light'] .mermaid .edgeLabel,
+:root[data-theme='light'] .mermaid text {
+  fill: #1a1626 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Light mode arrows and connectors - vibrant pink */
+:root[data-theme='light'] .mermaid .edgePath path,
+:root[data-theme='light'] .mermaid .flowchart-link {
+  stroke: var(--synthwave-pink) !important;
+  stroke-width: 2.5px !important;
+}
+
+/* Light mode arrow markers */
+:root[data-theme='light'] .mermaid .arrowheadPath,
+:root[data-theme='light'] .mermaid marker path {
+  fill: var(--synthwave-pink) !important;
+  stroke: var(--synthwave-pink) !important;
+}
+
+/* Light mode cluster/subgraph backgrounds */
+:root[data-theme='light'] .mermaid .cluster rect {
+  fill: rgba(92, 44, 109, 0.05) !important;
+  stroke: var(--synthwave-purple) !important;
+  stroke-width: 2px !important;
+}
+
+/* Light mode cluster labels */
+:root[data-theme='light'] .mermaid .cluster-label text {
+  fill: var(--synthwave-purple) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+/* Light mode special node types */
+:root[data-theme='light'] .mermaid .node.primary rect,
+:root[data-theme='light'] .mermaid .node.primary path {
+  fill: rgba(92, 44, 109, 0.12) !important;
+  stroke: var(--synthwave-purple) !important;
+  stroke-width: 3px !important;
+}
+
+:root[data-theme='light'] .mermaid .node.secondary rect,
+:root[data-theme='light'] .mermaid .node.secondary path {
+  fill: rgba(255, 180, 0, 0.12) !important;
+  stroke: var(--synthwave-orange) !important;
+  stroke-width: 3px !important;
+}
+
+/* Light mode hover effects */
+:root[data-theme='light'] .mermaid .node:hover rect,
+:root[data-theme='light'] .mermaid .node:hover circle,
+:root[data-theme='light'] .mermaid .node:hover polygon {
+  fill: rgba(255, 1, 154, 0.15) !important;
+  stroke: var(--synthwave-pink) !important;
+  stroke-width: 3px !important;
+  cursor: pointer;
+}
+
+/* Light mode edge labels background */
+:root[data-theme='light'] .mermaid .edgeLabel rect {
+  fill: rgba(255, 255, 255, 0.95) !important;
+  stroke: var(--synthwave-pink) !important;
+  stroke-width: 1px !important;
+}

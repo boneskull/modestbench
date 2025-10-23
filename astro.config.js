@@ -1,4 +1,5 @@
 import starlight from '@astrojs/starlight';
+import starlightClientMermaid from '@pasqal-io/starlight-client-mermaid';
 import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
@@ -12,6 +13,7 @@ export default defineConfig({
       logo: {
         src: './assets/logo-no-text-64.png',
       },
+      plugins: [starlightClientMermaid()],
       sidebar: [
         { label: 'Getting Started', link: '/getting-started/' },
         {
