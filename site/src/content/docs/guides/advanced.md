@@ -13,10 +13,10 @@ Choose an engine based on your requirements:
 
 ```bash
 # Tinybench engine (default) - fast development iteration
-modestbench run --engine tinybench
+modestbench --engine tinybench
 
 # Accurate engine - high-precision measurements
-node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate
 ```
 
 ### Statistical Improvements
@@ -57,7 +57,7 @@ CV > 20%   → Poor (investigate noise sources)
 Example output showing CV:
 
 ```bash
-$ modestbench run --engine accurate --allow-natives-syntax --reporters json
+$ modestbench --engine accurate --allow-natives-syntax --reporters json
 {
   "name": "Array.push()",
   "mean": 810050,  // nanoseconds
@@ -75,11 +75,11 @@ Real-world comparison using `examples/benchmarks`:
 
 ```bash
 # Tinybench (fast iteration)
-$ modestbench run --engine tinybench --reporters json
+$ modestbench --engine tinybench --reporters json
 # Typical run time: 3-5 seconds for 5 benchmark files
 
 # Accurate (high precision)
-$ node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate --reporters json
+$ node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate --reporters json
 # Typical run time: 8-12 seconds for 5 benchmark files
 ```
 
@@ -272,19 +272,19 @@ export default {
 
 ```bash
 # Run only fast benchmarks
-modestbench run --tags fast
+modestbench --tags fast
 # Runs: 'RegExp Test', 'String Includes'
 
 # Run string OR array benchmarks
-modestbench run --tags string,array
+modestbench --tags string,array
 # Runs: All tasks in 'String Operations' and 'Array Operations'
 
 # Exclude slow benchmarks
-modestbench run --exclude-tags slow
+modestbench --exclude-tags slow
 # Runs: Only 'String Operations' tasks
 
 # Combine: run fast benchmarks except experimental
-modestbench run --tags fast --exclude-tags experimental
+modestbench --tags fast --exclude-tags experimental
 ```
 
 ### Suite Lifecycle with Filtering
@@ -322,10 +322,10 @@ export default {
 
 ```bash
 # Setup and teardown run (Fast Task matches)
-modestbench run --tags fast
+modestbench --tags fast
 
 # Setup and teardown DON'T run (Slow Task excluded)
-modestbench run --exclude-tags slow
+modestbench --exclude-tags slow
 ```
 
 ## Custom Task Configuration
@@ -417,7 +417,7 @@ jobs:
       
       - name: Run benchmarks
         run: |
-          modestbench run \
+          modestbench \
             --reporters json,csv \
             --output ./results \
             --quiet \
@@ -441,7 +441,7 @@ import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 
 // Run current benchmarks
-execSync('modestbench run --reporters json --output ./current', {
+execSync('modestbench --reporters json --output ./current', {
   stdio: 'inherit',
 });
 
@@ -634,7 +634,7 @@ Concurrent execution is experimental and may produce inconsistent results.
 Run benchmark files concurrently for faster execution:
 
 ```bash
-modestbench run --concurrent
+modestbench --concurrent
 ```
 
 **Considerations:**

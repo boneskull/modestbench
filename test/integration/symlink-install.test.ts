@@ -163,13 +163,14 @@ export default {
         env: { ...process.env, NODE_ENV: 'test' },
       });
       // Should not reach here - should throw
-      throw new Error('Should have thrown an error for missing command');
+      throw new Error('Should have thrown an error for missing files');
     } catch (error: unknown) {
-      // Expect exit code 2 (CONFIG_ERROR) for missing command
+      // With default command being "run", it tries to discover files and returns
+      // exit code 3 (FILE_DISCOVERY_ERROR) when no benchmark files are found
       if (error && typeof error === 'object' && 'code' in error) {
         const execError = error as { code: number; stderr: string };
-        expect(execError.code, 'to equal', 2);
-        expect(execError.stderr, 'to contain', 'You must specify a command');
+        expect(execError.code, 'to equal', 3);
+        expect(execError.stderr, 'to contain', 'No benchmark files found');
       } else {
         throw error;
       }

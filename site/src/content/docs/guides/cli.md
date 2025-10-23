@@ -5,27 +5,30 @@ description: Complete command-line interface reference for modestbench
 
 ## Commands
 
-### `modestbench run`
+### `modestbench [pattern..]`
 
-Run benchmarks with powerful discovery and filtering options.
+Run benchmarks with powerful discovery and filtering options. The `run` command is the default and can be omitted.
 
 #### Basic Usage
 
 ```bash
-# Run all benchmarks in current directory and bench/ (top-level only)
-modestbench run
+# Run all benchmarks matching default pattern (./bench/**/*.bench.{js,mjs,cjs,ts})
+modestbench
 
 # Run all benchmarks in a directory (searches recursively)
-modestbench run benchmarks/
+modestbench benchmarks/
 
 # Run specific files
-modestbench run benchmarks/critical.bench.js
+modestbench benchmarks/critical.bench.js
 
 # Run from multiple directories
-modestbench run src/perf/ tests/benchmarks/
+modestbench src/perf/ tests/benchmarks/
 
 # Mix files, directories, and glob patterns
-modestbench run file.bench.js benchmarks/ "tests/**/*.bench.ts"
+modestbench file.bench.js benchmarks/ "tests/**/*.bench.ts"
+
+# Explicit run command (optional)
+modestbench run benchmarks/
 ```
 
 #### Supported File Extensions
@@ -40,7 +43,7 @@ modestbench run file.bench.js benchmarks/ "tests/**/*.bench.ts"
 Specify a custom configuration file path.
 
 ```bash
-modestbench run --config ./custom-config.json
+modestbench --config ./custom-config.json
 ```
 
 ##### `--iterations <number>`
@@ -48,7 +51,7 @@ modestbench run --config ./custom-config.json
 Number of samples to collect per benchmark task.
 
 ```bash
-modestbench run --iterations 5000
+modestbench --iterations 5000
 ```
 
 Higher values provide more accurate results but take longer to complete.
@@ -58,7 +61,7 @@ Higher values provide more accurate results but take longer to complete.
 Time budget in milliseconds per benchmark task.
 
 ```bash
-modestbench run --time 10000
+modestbench --time 10000
 ```
 
 ##### `--limit-by <mode>`
@@ -72,13 +75,13 @@ Control how benchmarks are limited. Options:
 
 ```bash
 # Explicit control
-modestbench run --iterations 500 --time 5000 --limit-by time
+modestbench --iterations 500 --time 5000 --limit-by time
 
 # Safety bounds (whichever comes first)
-modestbench run --iterations 1000 --time 10000 --limit-by any
+modestbench --iterations 1000 --time 10000 --limit-by any
 
 # Statistical rigor (both required)
-modestbench run --iterations 100 --time 2000 --limit-by all
+modestbench --iterations 100 --time 2000 --limit-by all
 ```
 
 **Smart Defaults:**
@@ -93,7 +96,7 @@ modestbench run --iterations 100 --time 2000 --limit-by all
 Number of warmup iterations before measurement begins.
 
 ```bash
-modestbench run --warmup 100
+modestbench --warmup 100
 ```
 
 Helps stabilize JIT compilation for more consistent results.
@@ -104,10 +107,10 @@ Select the benchmark engine. Options: `tinybench` (default) or `accurate`.
 
 ```bash
 # Use the accurate engine for high-precision measurements
-node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate
 
 # Use tinybench engine (default)
-modestbench run --engine tinybench
+modestbench --engine tinybench
 ```
 
 **Engine Differences:**
@@ -122,13 +125,13 @@ The `accurate` engine requires running Node.js with the `--allow-natives-syntax`
 
 ```bash
 # Using Node.js directly
-node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate
+node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate
 
 # Using npx (pass flag to Node.js)
-npx --node-arg=--allow-natives-syntax modestbench run --engine accurate
+npx --node-arg=--allow-natives-syntax modestbench --engine accurate
 
 # Using package.json script
-# package.json: "bench": "node --allow-natives-syntax ./node_modules/.bin/modestbench run --engine accurate"
+# package.json: "bench": "node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate"
 npm run bench
 ```
 
@@ -140,7 +143,7 @@ If the flag is not present, AccurateEngine will fall back to a less accurate mod
 Maximum time in milliseconds for a single task before timing out.
 
 ```bash
-modestbench run --timeout 60000
+modestbench --timeout 60000
 ```
 
 Default: 30000 (30 seconds)
@@ -150,7 +153,7 @@ Default: 30000 (30 seconds)
 Stop execution on first benchmark failure.
 
 ```bash
-modestbench run --bail
+modestbench --bail
 ```
 
 Useful in CI/CD to fail fast when performance regressions are detected.
@@ -161,10 +164,10 @@ Comma-separated list of reporters to use.
 
 ```bash
 # Single reporter
-modestbench run --reporters json
+modestbench --reporters json
 
 # Multiple reporters simultaneously
-modestbench run --reporters human,json,csv
+modestbench --reporters human,json,csv
 ```
 
 Available reporters:
@@ -183,7 +186,7 @@ modestbench automatically selects `human` (TTY with color) or `simple` (non-TTY)
 Directory path for saving benchmark results and reports.
 
 ```bash
-modestbench run --reporters json,csv --output ./results
+modestbench --reporters json,csv --output ./results
 ```
 
 When specified:
@@ -197,7 +200,7 @@ When specified:
 Minimal output mode. Suppresses progress bars and non-essential messages.
 
 ```bash
-modestbench run --quiet
+modestbench --quiet
 ```
 
 :::note[CI/CD Pipelines]
@@ -209,7 +212,7 @@ In non-TTY environments, modestbench automatically uses the `simple` reporter wh
 Detailed output mode with additional debugging information.
 
 ```bash
-modestbench run --verbose
+modestbench --verbose
 ```
 
 ##### `--tags <tags>`
@@ -218,10 +221,10 @@ Run only benchmarks with specific tags (OR logic - matches ANY).
 
 ```bash
 # Single tag
-modestbench run --tags fast
+modestbench --tags fast
 
 # Multiple tags (matches ANY)
-modestbench run --tags string,array,algorithm
+modestbench --tags string,array,algorithm
 ```
 
 Tags cascade from file → suite → task levels. If a benchmark has ANY of the specified tags, it will run.
@@ -232,10 +235,10 @@ Exclude benchmarks with specific tags.
 
 ```bash
 # Exclude one type
-modestbench run --exclude-tags slow
+modestbench --exclude-tags slow
 
 # Exclude multiple types
-modestbench run --exclude-tags experimental,unstable
+modestbench --exclude-tags experimental,unstable
 ```
 
 :::tip[Tag Precedence]
@@ -247,7 +250,7 @@ modestbench run --exclude-tags experimental,unstable
 Run benchmark files concurrently (experimental).
 
 ```bash
-modestbench run --concurrent
+modestbench --concurrent
 ```
 
 :::caution[Experimental Feature]
@@ -257,7 +260,7 @@ Concurrent execution may produce inconsistent results on systems with limited re
 #### Complete Example
 
 ```bash
-modestbench run \
+modestbench \
   --config ./config.json \
   --iterations 2000 \
   --warmup 50 \
@@ -381,7 +384,7 @@ Show help information.
 
 ```bash
 modestbench --help
-modestbench run --help
+modestbench --help  # shows run command help (default command)
 modestbench history --help
 ```
 
@@ -402,7 +405,7 @@ modestbench respects several environment variables:
 Enable debug mode with detailed logging.
 
 ```bash
-DEBUG=1 modestbench run
+DEBUG=1 modestbench
 ```
 
 Shows full error stack traces and additional debugging information.
@@ -412,7 +415,7 @@ Shows full error stack traces and additional debugging information.
 Automatically detected CI environment flag.
 
 ```bash
-CI=true modestbench run
+CI=true modestbench
 ```
 
 When detected:
@@ -426,7 +429,7 @@ When detected:
 Node.js environment mode. Stored in benchmark results for context.
 
 ```bash
-NODE_ENV=production modestbench run
+NODE_ENV=production modestbench
 ```
 
 ### `FORCE_COLOR` / `NO_COLOR`
@@ -435,10 +438,10 @@ Control color output in terminal.
 
 ```bash
 # Force color output
-FORCE_COLOR=1 modestbench run
+FORCE_COLOR=1 modestbench
 
 # Disable color output
-NO_COLOR=1 modestbench run
+NO_COLOR=1 modestbench
 ```
 
 ## Configuration Priority
@@ -455,7 +458,7 @@ Command-line flags override configuration file settings:
 
 ```bash
 # CLI flags take precedence
-modestbench run --iterations 5000 --reporters json
+modestbench --iterations 5000 --reporters json
 # Result: iterations=5000, reporters=["json"]
 ```
 
@@ -470,13 +473,13 @@ Priority order:
 ### Quick Development Testing
 
 ```bash
-modestbench run --iterations 10 --quiet
+modestbench --iterations 10 --quiet
 ```
 
 ### Production Benchmarking
 
 ```bash
-modestbench run \
+modestbench \
   --iterations 5000 \
   --warmup 100 \
   --reporters human,json,csv \
@@ -486,7 +489,7 @@ modestbench run \
 ### CI/CD Integration
 
 ```bash
-modestbench run \
+modestbench \
   --reporters json,csv \
   --output ./benchmark-results \
   --quiet \
@@ -498,7 +501,7 @@ modestbench run \
 
 ```bash
 # Run current benchmarks
-modestbench run --reporters json --output ./current
+modestbench --reporters json --output ./current
 
 # Compare with baseline
 modestbench history compare baseline-run-id $(modestbench history list --format json | jq -r '.[0].id')

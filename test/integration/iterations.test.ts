@@ -182,4 +182,37 @@ export default {
       expect(result.stdout, 'to be empty');
     });
   });
+
+  describe('default command (omitting "run")', () => {
+    it('should accept --iterations without explicit "run" command', async () => {
+      const startTime = Date.now();
+
+      // Test that default command works with --iterations
+      // This ensures the default command coverage for --iterations
+      const result = await runCommand(
+        [benchmarkFile, '--iterations', '5', '--time', '10000', '--quiet'],
+        testDir,
+      );
+
+      const duration = Date.now() - startTime;
+
+      // Should complete quickly just like with explicit "run" command
+      expect(duration, 'to be less than', 2000);
+      expect(result.exitCode, 'to equal', 0);
+    });
+
+    it('should work with -i short flag without explicit "run" command', async () => {
+      const startTime = Date.now();
+
+      const result = await runCommand(
+        [benchmarkFile, '-i', '5', '--time', '10000', '--quiet'],
+        testDir,
+      );
+
+      const duration = Date.now() - startTime;
+
+      expect(duration, 'to be less than', 2000);
+      expect(result.exitCode, 'to equal', 0);
+    });
+  });
 });
