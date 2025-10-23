@@ -1,5 +1,3 @@
-# This is pre-release software as in IT HASN'T BEEN RELEASED YET but I am making it public so I don't get billed. Go away for now
-
 <p align="center">
   <a href="/"><img src="./assets/logo-512.png" width="512px" align="center" alt="modestbench: a full-ass benchmarking framework for Node.js"/></a>
   <h1 align="center"><span class="modestbench"><code>modestbench</code><span></h1>

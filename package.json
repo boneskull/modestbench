@@ -180,7 +180,7 @@
       "prettier --write",
       "cspell"
     ],
-    "**/!(.github/prompts)/*.md": [
+    "*.md": [
       "markdownlint-cli2 --fix",
       "prettier --write",
       "cspell"
