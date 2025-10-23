@@ -21,38 +21,31 @@
 ### 1.1 High-Level Subsystems
 
 ```mermaid
+
 graph TB
-    CLI[CLI Layer<br/>src/cli/]
-    Config[Configuration<br/>src/config/]
-    Core[Core Engine<br/>src/core/]
-    Progress[Progress Manager<br/>src/progress/]
-    Reporters[Reporters<br/>src/reporters/]
-    Storage[History Storage<br/>src/storage/]
-    Types[Type Definitions<br/>src/types/]
+    subgraph CLI["CLI Layer"]
+        Entry[CLI Entry]
+    end
 
-    CLI --> Config
-    CLI --> Core
-    CLI --> Progress
-    CLI --> Reporters
-    CLI --> Storage
+    subgraph Core["Core Engines"]
+        Abstract[Abstract Engines]
+        Tinybench[TinybenchEngine]
+        Accurate[AccurateEngine]
+    end
 
-    Core --> Config
-    Core --> Progress
-    Core --> Reporters
-    Core --> Storage
-    Core --> Types
+    subgraph Services["Services & Subsystems"]
+        Config[Configuration]
+        Progress[Progress]
+        Reporters[Reporters]
+        Storage[History]
+        Types[Types]
+    end
 
-    Config --> Types
-    Progress --> Types
-    Reporters --> Types
-    Storage --> Types
+    Entry --> Abstract
+    Abstract -.-> Tinybench
+    Abstract -.-> Accurate
+    Abstract --> Services
 
-    Core -.->|wraps| TinyBench[TinyBench<br/>External]
-
-    style CLI fill:#e1f5ff
-    style Core fill:#fff4e1
-    style Storage fill:#f0e1ff
-    style TinyBench fill:#ffe1e1
 ```
 
 ### 1.2 Subsystem Breakdown
@@ -187,11 +180,6 @@ graph TB
 
     Tinybench -->|Delegates to| TinybenchLib[tinybench library]
     Accurate -->|Uses| V8[V8 Intrinsics<br/>+ Node hrtime]
-
-    style Abstract fill:#fff4e1
-    style Tinybench fill:#e1f5ff
-    style Accurate fill:#e1ffe1
-    style TinybenchLib fill:#ffe1e1
 ```
 
 **Abstract Base Class**: `src/core/engine.ts`
@@ -1137,10 +1125,6 @@ flowchart TB
     Reporters -->|Write Files| FS
     Reporters -->|Print Output| Terminal
     History -->|Read/Write| FS
-
-    style CLI fill:#e1f5ff
-    style Services fill:#fff4e1
-    style External fill:#ffe1e1
 ```
 
 ### 11.2 Reporter Lifecycle

@@ -65,7 +65,8 @@
     "xticks",
     "tolist",
     "seti",
-    "asciinema"
+    "asciinema",
+    "pasqal"
   ],
   "words": ["bupkis", "deoptimization"]
 }
