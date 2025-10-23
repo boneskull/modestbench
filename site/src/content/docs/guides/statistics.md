@@ -151,7 +151,7 @@ Yes. What you measured with your benchmarking tool is a _sample mean_—the aver
 Statistics like RME and [CV](#coefficient-of-variation-cv) give you a confidence interval around your sample mean to _estimate_ the _true mean_.
 :::
 
-**Think of it like:** This Gallup poll says "52% ±3%" for a bill to issue govt. quiche to every newborn. They sampled 1,000 voters, but the _actual_ population support is probably between 49-55% (assuming a representative sample, which is a big assumption).
+**Think of it like:** This Gallup poll says "52% ±3%" for a bill to issue government quiche to every newborn. They sampled 1,000 voters, but the _actual_ population support is probably between 49-55% (assuming a representative sample, which is a big assumption).
 
 ```javascript
 // Example output
