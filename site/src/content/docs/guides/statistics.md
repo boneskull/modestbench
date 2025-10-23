@@ -19,7 +19,7 @@ _Fools!_ Hardware throttles because your laptop is _sitting on a blanket_. **Eve
 
 But… statistics. Statistics are real. _They told us so._
 
-This guide explains what **modestbench's** numbers actually mean. No statistics degree required. No hand-waving. Just straight talk about the math ("maths" for some of you) you need to stop embarassing yourself in front of your team.
+This guide explains what **modestbench's** numbers actually mean. No statistics degree required. No hand-waving. Just straight talk about the math ("maths" for some of you) you need to stop embarrassing yourself in front of your team.
 
 :::info[Developers, Developers, Developers]
 This guide assumes you're a _developer_—not a statistician. There are little-to-no equations in this guide and no MathJax. If you want formal proofs and Greek letters, go back to college.
