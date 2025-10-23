@@ -39,20 +39,20 @@ describe('CLI directory path handling', () => {
   });
 
   it('should use sensible defaults when no paths provided', async () => {
-    // Top-level file
+    // Top-level file (should NOT be found with default pattern bench/**/*.bench.*)
     await writeFile(
       join(tempDir, 'top.bench.js'),
       'export default { suites: { "Top": { benchmarks: { "test": { fn: () => 1 } } } } };',
     );
 
-    // bench/ directory file
+    // bench/ directory file (should be found)
     await mkdir(join(tempDir, 'bench'), { recursive: true });
     await writeFile(
       join(tempDir, 'bench', 'inside.bench.js'),
       'export default { suites: { "Inside": { benchmarks: { "test": { fn: () => 1 } } } } };',
     );
 
-    // Nested in bench/ (should NOT be found with defaults)
+    // Nested in bench/ (should be found with recursive ** pattern)
     await mkdir(join(tempDir, 'bench', 'nested'), { recursive: true });
     await writeFile(
       join(tempDir, 'bench', 'nested', 'deep.bench.js'),
@@ -62,9 +62,9 @@ describe('CLI directory path handling', () => {
     const result = await runCommand(['run', '--iterations', '1'], tempDir);
 
     expect(result.exitCode, 'to equal', 0);
-    expect(result.stdout, 'to match', /Top/);
-    expect(result.stdout, 'to match', /Inside/);
-    expect(result.stdout, 'not to match', /Deep/);
+    expect(result.stdout, 'not to match', /Top/); // Top-level not in default pattern
+    expect(result.stdout, 'to match', /Inside/); // bench/ directory
+    expect(result.stdout, 'to match', /Deep/); // Recursive in bench/
   });
 
   it('should support all extensions including .cts and .mts', async () => {
