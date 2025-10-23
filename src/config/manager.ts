@@ -62,7 +62,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   time: 1000, // 1 second minimum for tinybench to gather samples
   timeout: 30000, // 30 seconds
   verbose: false, // No verbose output by default
-  warmup: 0, // No warmup by default for test speed
+  warmup: 30, // Light warmup by default - enough for basic JIT optimization
 };
 
 /**

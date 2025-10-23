@@ -680,6 +680,7 @@ npm run examples
 - Built on top of the small-but-mighty benchmarking library, [tinybench][]
 - Interface inspired by good ol' [Benchmark.js][]
 - Built with [zshy][] for dual ESM/CJS modules
+- `AccurateEngine` statistical analysis inspired by the excellent work of [bench-node][]
 
 ## Resources
 
@@ -697,3 +698,4 @@ Copyright © 2025 [Christopher Hiller](https://github.com/boneskull). Licensed u
 [discussions]: https://github.com/boneskull/modestbench/discussions
 [zshy]: https://github.com/colinhacks/zshy
 [contributing]: CONTRIBUTING.md
+[bench-node]: https://github.com/bench-node/bench-node
