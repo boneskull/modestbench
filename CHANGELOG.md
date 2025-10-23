@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.0.2...modestbench-v0.0.3) (2025-10-23)
+
+
+### Bug Fixes
+
+* **cli:** fix error output when no benchmark files found ([ddc33b7](https://github.com/boneskull/modestbench/commit/ddc33b79d09957ff2fc6011671ae1fe2e3f5a076))
+* **cli:** run is now default command ([a12dfe9](https://github.com/boneskull/modestbench/commit/a12dfe9a71ebf6998c22683be2a41bb53f57f21d))
+* **cli:** set default benchmark pattern to bench/**/*.bench.ext ([524d260](https://github.com/boneskull/modestbench/commit/524d260f4163e05558a9a99bf270a8a60bc7766e))
+* **reporters:** fix human reporter color ([b1dfa8c](https://github.com/boneskull/modestbench/commit/b1dfa8ce46fafd9eba2a0f264e8238a881f9b9b5))
+
 ## [0.0.2](https://github.com/boneskull/modestbench/compare/modestbench-v0.0.1...modestbench-v0.0.2) (2025-10-23)
 
 
