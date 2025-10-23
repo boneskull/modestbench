@@ -81,8 +81,8 @@ When comparing implementations, ops/sec gives you an easy ratio: if Implementati
 
 ```javascript
 // Example output
-min: 0.000785,  // Best case: 785 nanoseconds
-max: 0.000853   // Worst case: 853 nanoseconds
+min: 0.000785,  // Best case: 785 microseconds
+max: 0.000853   // Worst case: 853 microseconds
 ```
 
 A _huge_ gap between min and max? Something else is competing for resources. Quit all those Electron apps and try again.
