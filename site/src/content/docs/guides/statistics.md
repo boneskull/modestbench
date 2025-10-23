@@ -499,7 +499,7 @@ A lot of "performance optimizations" fall into this category. The benchmark says
 - **Iterations**: More = accurate-er but slower to measure
 - **Warmup**: Critical for reliably benchmarking JavaScript
 
-**modestbench** handles the statistical heavy lifting. Your job is interpreting what the numbers mean for your application, and now you can confidently do so. Just don't do it on stage at a statician's conference.
+**modestbench** handles the statistical heavy lifting. Your job is interpreting what the numbers mean for your application, and now you can confidently do so. Just don't do it on stage at a statistician's conference.
 
 ## Next Steps
 
