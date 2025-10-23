@@ -142,7 +142,8 @@
   "knip": {
     "ignoreDependencies": [
       "@types/wallabyjs",
-      "markdownlint-cli2-formatter-pretty"
+      "markdownlint-cli2-formatter-pretty",
+      "asciinema-player"
     ],
     "ignore": [
       ".wallaby.js",
@@ -151,7 +152,8 @@
       "site/media/**/*",
       "worktrees/**/*",
       "site/src/content/**/*",
-      "test-d/**/*"
+      "test-d/**/*",
+      "site/src/components/**/*.astro"
     ],
     "tags": [
       "-knipignore"
