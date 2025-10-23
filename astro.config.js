@@ -13,13 +13,7 @@ export default defineConfig({
         src: './assets/logo-no-text-64.png',
       },
       sidebar: [
-        {
-          items: [
-            { label: 'Introduction', link: '/' },
-            { label: 'Getting Started', link: '/getting-started/' },
-          ],
-          label: 'Start Here',
-        },
+        { label: 'Getting Started', link: '/getting-started/' },
         {
           items: [
             { label: 'Configuration', link: '/guides/configuration/' },
