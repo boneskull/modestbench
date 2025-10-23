@@ -32,7 +32,8 @@
     "*.csv",
     "worktrees",
     "assets/*.ans",
-    "assets/*.txt"
+    "assets/*.txt",
+    ".tmp"
   ],
   "ignoreRandomStrings": true,
   "ignoreWords": [

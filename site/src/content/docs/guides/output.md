@@ -19,7 +19,7 @@ You can always override the default by explicitly specifying `--reporters`.
 
 The human reporter provides color-coded terminal output with real-time progress bars and formatted results. This is the default when running in an interactive terminal (TTY) with color support.
 
-### Features
+### Human Reporter Features
 
 - **Real-time progress bars** - Visual feedback during benchmark execution
 - **Color-coded results** - Green for pass, red for fail, cyan for info
@@ -27,7 +27,7 @@ The human reporter provides color-coded terminal output with real-time progress 
 - **Environment information** - Node.js version, platform, CPU, memory
 - **Structured output** - File → Suite → Task hierarchy
 
-### Example Output
+### Human Reporter Example Output
 
 ```text
 🚀 ModestBench
@@ -61,7 +61,7 @@ Found 1 benchmark file(s)
 🎉 All benchmarks completed successfully!
 ```
 
-### Usage
+### Human Reporter Usage
 
 ```bash
 # Human reporter is default
@@ -87,14 +87,14 @@ In CI/CD environments, modestbench automatically uses the `simple` reporter for 
 
 The simple reporter provides clean, text-only output without colors or progress bars. This is the default in non-TTY environments (CI/CD, piped output) or when `FORCE_COLOR` is not set.
 
-### Features
+### Simple ReporterFeatures
 
 - **Plain text output** - No ANSI colors or escape codes
 - **No progress bars** - Clean output suitable for logs and pipes
 - **Structured results** - Same hierarchy as human reporter (File → Suite → Task)
 - **Machine-readable** - Perfect for parsing and CI/CD logs
 
-### Example Output
+### Simple Reporter Example Output
 
 ```text
 modestbench
@@ -128,7 +128,7 @@ Duration: 1.82s
 All benchmarks completed successfully!
 ```
 
-### Usage
+### Simple Reporter Usage
 
 ```bash
 # Simple reporter is default in non-TTY environments

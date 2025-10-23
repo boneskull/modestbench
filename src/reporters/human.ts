@@ -306,8 +306,6 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    this.clearLine();
-
     let header: string;
     if (run.environment) {
       header = `
@@ -388,8 +386,7 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    this.clearLine();
-    this.lastProgressLine = ''; // Reset for new suite section
+    // Don't clear the sticky progress bar - it should persist through suite transitions
     this.suiteResults = []; // Reset buffer for new suite
 
     // Skip displaying the implicit "default" suite header
