@@ -176,7 +176,7 @@ export default defineConfig(
       'site',
       'astro.config.js',
       '.astro/**/*',
-      'PROTOTYPE_CUSTOM_ENGINE.ts',
+      'test-d/**/*',
     ],
   },
 );
