@@ -21,11 +21,11 @@ import { BaseReporter } from './registry.js';
  * ANSI color codes for terminal output
  */
 const colors = {
-  blue: '\x1b[34m',
   bold: '\x1b[1m',
   brightBlue: '\x1b[94m',
   brightCyan: '\x1b[96m',
   brightMagenta: '\x1b[95m',
+  brightRed: '\x1b[91m',
   brightWhite: '\x1b[97m',
   cyan: '\x1b[36m',
   dim: '\x1b[2m',
@@ -36,7 +36,6 @@ const colors = {
   reset: '\x1b[0m',
   underline: '\x1b[4m',
   white: '\x1b[37m',
-  yellow: '\x1b[33m',
 } as const;
 
 /**
@@ -48,10 +47,6 @@ const ansiChars = {
   block: {
     dark: '▓',
     full: '█',
-    halfBottom: '▄',
-    halfLeft: '▌',
-    halfRight: '▐',
-    halfTop: '▀',
     light: '░',
     medium: '▒',
   },
@@ -59,10 +54,8 @@ const ansiChars = {
   // Symbols
   checkmark: '√',
   cross: '×',
-  mediumSmallSquare: '￭',
-  mediumSquare: '◼',
+  plusMinus: '±',
   smallSquare: '▪',
-  square: '■',
 } as const;
 
 /**
@@ -81,6 +74,8 @@ export class HumanReporter extends BaseReporter {
   }> = [];
 
   private lastProgressLine = '';
+
+  private progressWindowActive = false; // Track if progress window is rendered
 
   private readonly quiet: boolean;
 
@@ -140,62 +135,57 @@ export class HumanReporter extends BaseReporter {
     }
 
     // Results header
-    const resultsHeader = `${this.colorize('magenta', ansiChars.block.full.repeat(2))} ${this.colorize('brightCyan', this.colorize('bold', 'Results'))}`;
-    console.log(resultsHeader);
-    console.log();
+    const resultsHeader = `${this.colorize('magenta', ansiChars.block.full.repeat(2))} ${this.colorize('brightWhite', this.colorize('bold', 'Results'))}`;
+    this.printLine(resultsHeader);
+    this.printLine();
 
+    this.printLine(
+      `${this.colorize('brightBlue', '  Files:')} ${this.colorize('brightWhite', String(totalFiles))}`,
+    );
+    this.printLine(
+      `${this.colorize('brightBlue', '  Suites:')} ${this.colorize('brightWhite', String(totalSuites))}`,
+    );
+    this.printLine(
+      `${this.colorize('brightBlue', '  Tasks:')} ${this.colorize('brightWhite', String(totalPassed + totalFailed))}`,
+    );
     if (totalFailed > 0) {
-      console.log(
-        `${this.colorize('red', ansiChars.cross + ' Failed:')} ${totalFailed}`,
+      this.printLine(
+        `${this.colorize('brightRed', ansiChars.cross + ' Failed:')} ${this.colorize('brightWhite', String(totalFailed))}`,
       );
-      console.log(
-        `${this.colorize('brightCyan', ansiChars.checkmark + ' Passed:')} ${totalPassed}`,
+      this.printLine(
+        `${this.colorize('brightCyan', ansiChars.checkmark + ' Passed:')} ${this.colorize('brightWhite', String(totalPassed))}`,
       );
     } else {
-      console.log(
-        `${this.colorize('brightCyan', ansiChars.checkmark + ' All tests passed:')} ${totalPassed}`,
+      this.printLine(
+        `${this.colorize('brightCyan', ansiChars.checkmark + ' All tests passed:')} ${this.colorize('brightWhite', String(totalPassed))}`,
       );
     }
-
-    console.log(
-      `${this.colorize('brightBlue', ansiChars.block.dark + ' Files:')} ${totalFiles}`,
+    this.printLine(
+      `${this.colorize('cyan', ansiChars.approx + ' Duration:')} ${this.colorize('brightWhite', this.formatDuration(duration * 1000000))}`,
     );
-    console.log(
-      `${this.colorize('brightBlue', ansiChars.block.dark + ' Suites:')} ${totalSuites}`,
-    );
-    console.log(
-      `${this.colorize('brightCyan', ansiChars.approx + ' Duration:')} ${this.formatDuration(duration * 1000000)}`,
-    );
-    console.log();
+    this.printLine();
 
     if (totalFailed > 0) {
-      console.log(
-        this.colorize(
-          'red',
-          ansiChars.cross.repeat(3) + ' Some benchmarks failed',
-        ),
-      );
-
       // Display failed tasks with details
       if (this.failures.length > 0) {
-        console.log();
-        console.log(
-          this.colorize('red', this.colorize('bold', 'Failed Tasks:')),
+        this.printLine();
+        this.printLine(
+          this.colorize('brightRed', this.colorize('bold', 'Failed Tasks:')),
         );
-        console.log();
+        this.printLine();
 
         for (const failure of this.failures) {
           const displayPath = this.formatPath(failure.file);
-          console.log(
-            `  ${this.colorize('dim', displayPath)} ${this.colorize('dim', '›')} ${this.colorize('white', failure.suite)} ${this.colorize('dim', '›')} ${this.colorize('white', failure.task)}`,
+          this.printLine(
+            `  ${this.colorize('dim', displayPath)} ${this.colorize('dim', '›')} ${this.colorize('white', failure.suite)} ${this.colorize('dim', '›')} ${this.colorize('brightWhite', failure.task)}`,
           );
-          console.log(`    ${this.colorize('red', failure.error)}`);
-          console.log();
+          this.printLine(`    ${this.colorize('brightRed', failure.error)}`);
+          this.printLine();
         }
       }
     } else {
-      const successMessage = `${this.colorize('gray', ansiChars.block.light)}${this.colorize('brightCyan', ansiChars.block.medium)}${this.colorize('brightBlue', ansiChars.block.dark)}${this.colorize('brightMagenta', ansiChars.block.full)} ${this.colorize('green', 'All benchmarks completed successfully!')} ${this.colorize('brightMagenta', ansiChars.block.full)}${this.colorize('brightBlue', ansiChars.block.dark)}${this.colorize('brightCyan', ansiChars.block.medium)}${this.colorize('gray', ansiChars.block.light)}`;
-      console.log(successMessage);
+      const successMessage = `${this.colorize('brightMagenta', 'Rad. ☮')}`;
+      this.printLine(successMessage);
     }
   }
 
@@ -231,19 +221,19 @@ export class HumanReporter extends BaseReporter {
     const totalFailed = totalTasks - totalPassed;
 
     if (totalFailed > 0) {
-      console.log(
+      this.printLine(
         this.colorize(
           'red',
           `  ${ansiChars.cross} ${totalFailed} failed, ${totalPassed} passed`,
         ),
       );
     } else {
-      console.log(
+      this.printLine(
         ` ${this.colorize('magenta', ansiChars.checkmark)} ${totalPassed > 1 ? this.colorize('brightMagenta', 'All ') : ''}${this.colorize('bold', this.colorize('brightMagenta', `${totalPassed}`))} ${this.colorize('brightMagenta', `${this.pluralize('task', totalPassed)} passed`)}`,
       );
     }
 
-    console.log();
+    this.printLine();
   }
 
   onFileStart(file: string): void {
@@ -255,7 +245,7 @@ export class HumanReporter extends BaseReporter {
 
     const displayPath = this.formatPath(file);
     const fileMarker = `${colors.magenta}${ansiChars.block.dark}${ansiChars.block.dark}${colors.reset}`;
-    console.log(
+    this.printLine(
       `${fileMarker} ${colors.underline}${this.colorize('brightMagenta', this.colorize('bold', displayPath))}${colors.reset}`,
     );
   }
@@ -273,28 +263,38 @@ export class HumanReporter extends BaseReporter {
 
     const { elapsed, percentage, tasksCompleted, totalTasks } = state;
 
-    // Calculate ETA if we have completed tasks
+    // Pad task counts for alignment
+    const totalTasksWidth = String(totalTasks).length;
+    const paddedTasksCompleted = String(tasksCompleted).padStart(
+      totalTasksWidth,
+      ' ',
+    );
+
+    // Format elapsed time
+    const elapsedSeconds = Math.round(elapsed / 1000);
+    const elapsedStrRaw = this.formatTimeRemaining(elapsedSeconds);
+
+    // Calculate ETA if we have completed tasks and determine padding width
     let etaStr = '';
+    let padWidth = elapsedStrRaw.length;
     if (tasksCompleted > 0) {
       const avgTimePerTask = elapsed / tasksCompleted;
       const remainingTasks = totalTasks - tasksCompleted;
       const etaMs = avgTimePerTask * remainingTasks;
-      etaStr = ` ${this.colorize('dim', '|')} ${this.colorize('dim', 'ETA:')} ${this.colorize('brightBlue', Math.round(etaMs / 1000) + 's')}`;
+      const etaSeconds = Math.round(etaMs / 1000);
+      const etaTimeStr = this.formatTimeRemaining(etaSeconds);
+      padWidth = Math.max(padWidth, etaTimeStr.length);
+      etaStr = ` ${this.colorize('dim', '|')} ${this.colorize('dim', 'ETA:')} ${this.colorize('brightBlue', etaTimeStr)}`;
     }
 
-    const roundedPercentage = percentage.toFixed(2);
-    const line = `${this.colorize('brightCyan', ansiChars.approx)} ${this.colorize('white', String(tasksCompleted))}${this.colorize('dim', '/')}${this.colorize('white', String(totalTasks))} ${this.colorize('dim', 'tasks')} ${this.colorize('dim', '(')}${this.colorize('brightBlue', roundedPercentage + '%')}${this.colorize('dim', ')')} ${this.colorize('dim', '|')} ${this.colorize('dim', 'Elapsed:')} ${this.colorize('cyan', Math.round(elapsed / 1000) + 's')}${etaStr}`;
+    // Pad elapsed time to match the longest time string
+    const elapsedStr = elapsedStrRaw.padStart(padWidth, ' ');
 
-    // Use ANSI codes to fix progress bar at bottom of screen
-    // Save cursor position, move to bottom, clear line, write progress, restore cursor
-    process.stdout.write(
-      '\x1b[s' + // Save cursor position
-        '\x1b[999;0H' + // Move to bottom (row 999, column 0)
-        '\x1b[K' + // Clear line
-        line +
-        '\x1b[u', // Restore cursor position
-    );
+    const roundedPercentage = percentage.toFixed(2);
+    const line = `${this.colorize('brightCyan', ansiChars.approx)} ${this.colorize('white', paddedTasksCompleted)}${this.colorize('dim', '/')}${this.colorize('white', String(totalTasks))} ${this.colorize('dim', 'tasks')} ${this.colorize('dim', '(')}${this.colorize('brightBlue', roundedPercentage + '%')}${this.colorize('dim', ')')} ${this.colorize('dim', '|')} ${this.colorize('dim', 'Elapsed:')} ${this.colorize('cyan', elapsedStr)}${etaStr}`;
+
     this.lastProgressLine = line;
+    this.renderProgressWindow();
   }
 
   onStart(run: BenchmarkRun): void {
@@ -338,16 +338,16 @@ export class HumanReporter extends BaseReporter {
     \x1b[49m       \x1b[49;38;5;0m▀▀\x1b[38;5;0;48;5;37m▄\x1b[38;5;0;48;5;14m▄\x1b[38;5;0;48;5;30m▄\x1b[49;38;5;0m▀▀\x1b[49m       \x1b[m
     `;
     }
-    console.log(header);
-    console.log();
+    this.printLine(header);
+    this.printLine();
 
     if (run.git) {
-      console.log(`  Git: ${this.colorize('cyan', run.git.commit)}`);
+      this.printLine(`  Git: ${this.colorize('cyan', run.git.commit)}`);
     }
 
     if (run.ci) {
-      console.log(`  CI: ${this.colorize('cyan', run.ci.provider)}`);
-      console.log();
+      this.printLine(`  CI: ${this.colorize('cyan', run.ci.provider)}`);
+      this.printLine();
     }
   }
 
@@ -368,15 +368,15 @@ export class HumanReporter extends BaseReporter {
     const failed = result.tasks.filter((t) => t.error).length;
 
     if (failed > 0) {
-      console.log(
+      this.printLine(
         `  ${this.colorize('red', `${ansiChars.cross} ${failed} failed`)}, ${this.colorize('green', `${passed} passed`)}`,
       );
     } else {
-      console.log(
+      this.printLine(
         `  ${this.colorize('magenta', ansiChars.checkmark)} ${this.colorize('bold', this.colorize('brightWhite', `${passed}`))} ${this.colorize('brightWhite', `${this.pluralize('task', passed)} passed`)}`,
       );
     }
-    console.log();
+    this.printLine();
   }
 
   onSuiteStart(suite: string): void {
@@ -386,7 +386,6 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    // Don't clear the sticky progress bar - it should persist through suite transitions
     this.suiteResults = []; // Reset buffer for new suite
 
     // Skip displaying the implicit "default" suite header
@@ -394,9 +393,9 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    console.log();
+    this.printLine();
     const suiteMarker = `${colors.magenta}${ansiChars.block.light}${ansiChars.block.light}${colors.reset}`;
-    console.log(
+    this.printLine(
       `  ${suiteMarker} ${this.colorize('bold', this.colorize('brightWhite', suite))}`,
     );
   }
@@ -417,23 +416,8 @@ export class HumanReporter extends BaseReporter {
 
     // Only show static markers in verbose mode
     if (this.verbose) {
-      console.log(
+      this.printLine(
         `    ${this.colorize('gray', ansiChars.smallSquare)} ${task}`,
-      );
-    }
-  }
-
-  /**
-   * Clear the current terminal line
-   */
-  private clearLine(): void {
-    if (process.stdout.isTTY && this.lastProgressLine) {
-      // Clear the sticky bottom line
-      process.stdout.write(
-        '\x1b[s' + // Save cursor position
-          '\x1b[999;0H' + // Move to bottom
-          '\x1b[K' + // Clear line
-          '\x1b[u', // Restore cursor position
       );
     }
   }
@@ -442,8 +426,22 @@ export class HumanReporter extends BaseReporter {
    * Clear current progress display
    */
   private clearProgress(): void {
-    this.clearLine();
+    this.clearProgressWindow();
     this.lastProgressLine = '';
+  }
+
+  /**
+   * Clear the progress window at the bottom (Vitest-style)
+   */
+  private clearProgressWindow(): void {
+    if (!process.stdout.isTTY || !this.progressWindowActive) {
+      return;
+    }
+    // Move up and clear two lines (blank line + progress line)
+    // '\x1b[1A' moves cursor up one line, '\x1b[K' clears the current line
+    // This sequence moves up and clears two lines in total
+    process.stdout.write('\x1b[1A\x1b[K\x1b[1A\x1b[K');
+    this.progressWindowActive = false;
   }
 
   /**
@@ -496,11 +494,11 @@ export class HumanReporter extends BaseReporter {
     } else if (seconds < 3600) {
       const minutes = Math.floor(seconds / 60);
       const remainingSeconds = seconds % 60;
-      return `${minutes}m ${remainingSeconds}s`;
+      return `${minutes}m${remainingSeconds}s`;
     } else {
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
-      return `${hours}h ${minutes}m`;
+      return `${hours}h${minutes}m`;
     }
   }
 
@@ -632,12 +630,12 @@ export class HumanReporter extends BaseReporter {
           task: task.name,
         });
 
-        console.log(
+        this.printLine(
           `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)} ${this.colorize('red', 'FAILED')}`,
         );
       } else if (task.nameLength > MAX_NAME_WIDTH) {
         // Long name - wrap to next line, but align numbers with unwrapped lines
-        console.log(
+        this.printLine(
           `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)}:`,
         );
 
@@ -648,12 +646,12 @@ export class HumanReporter extends BaseReporter {
         const rmePad = ' '.repeat(maxRmeLen - task.rmeLen);
         const opsPad = ' '.repeat(maxOpsLen - task.opsPerSecLen);
 
-        console.log(
-          `${leadingPad}${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ±${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`,
+        this.printLine(
+          `${leadingPad}${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`,
         );
 
         if (this.verbose && task.iterations > 0) {
-          console.log(
+          this.printLine(
             `      ${this.colorize('dim', `${task.iterations} iterations`)}`,
           );
         }
@@ -664,16 +662,46 @@ export class HumanReporter extends BaseReporter {
         const rmePad = ' '.repeat(maxRmeLen - task.rmeLen);
         const opsPad = ' '.repeat(maxOpsLen - task.opsPerSecLen);
 
-        console.log(
-          `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)}${namePad}: ${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ±${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`,
+        this.printLine(
+          `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)}${namePad}: ${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`,
         );
 
         if (this.verbose && task.iterations > 0) {
-          console.log(
+          this.printLine(
             `      ${this.colorize('dim', `${task.iterations} iterations`)}`,
           );
         }
       }
     }
+  }
+
+  /**
+   * Print a line while maintaining the progress window at the bottom
+   * (Vitest-style)
+   */
+  private printLine(message: string = ''): void {
+    // Clear progress window, print content, re-render progress window
+    this.clearProgressWindow();
+    console.log(message);
+    this.renderProgressWindow();
+  }
+
+  /**
+   * Render the progress window at the bottom
+   */
+  private renderProgressWindow(): void {
+    if (!process.stdout.isTTY || !this.lastProgressLine) {
+      return;
+    }
+
+    // Clear existing window if present
+    if (this.progressWindowActive) {
+      this.clearProgressWindow();
+    }
+
+    // Write blank line for spacing, then progress line
+    console.log('');
+    console.log(this.lastProgressLine);
+    this.progressWindowActive = true;
   }
 }
