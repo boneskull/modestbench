@@ -90,7 +90,7 @@
     "test:contract": "npm run test:base -- \"test/contract/**/*.test.ts\"",
     "test:integration": "npm run test:base -- \"test/integration/**/*.test.ts\"",
     "test:runtime": "npm run test:base -- \"test/**/*.test.ts\"",
-    "test:types": "tsd --files 'test-d/**/*.test-d.ts'",
+    "test:types": "tsd",
     "test:unit": "npm run test:base -- \"test/unit/**/*.test.ts\"",
     "test:watch": "npm run test:base -- --watch"
   },
@@ -141,7 +141,11 @@
   "knip": {
     "ignoreDependencies": [
       "@types/wallabyjs",
-      "markdownlint-cli2-formatter-pretty"
+      "markdownlint-cli2-formatter-pretty",
+      "tsd"
+    ],
+    "ignoreBinaries": [
+      "tsd"
     ],
     "ignore": [
       ".wallaby.js",
