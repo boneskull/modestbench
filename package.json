@@ -177,6 +177,7 @@
       "cspell"
     ],
     "**/!(.github/prompts)/*.md": [
+      "markdownlint-cli2 --fix",
       "prettier --write",
       "cspell"
     ],
