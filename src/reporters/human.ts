@@ -157,7 +157,7 @@ export class HumanReporter extends BaseReporter {
       );
     } else {
       this.printLine(
-        `${this.colorize('brightCyan', ansiChars.checkmark + ' All tests passed:')} ${this.colorize('brightWhite', String(totalPassed))}`,
+        `${this.colorize('brightCyan', ansiChars.checkmark + ' All tasks passed:')} ${this.colorize('brightWhite', String(totalPassed))}`,
       );
     }
     this.printLine(
