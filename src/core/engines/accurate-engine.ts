@@ -26,6 +26,7 @@ import type {
   TaskResult,
 } from '../../types/index.js';
 
+import { StructureValidationError } from '../../errors/index.js';
 import { ModestBenchEngine } from '../engine.js';
 import { calculateStatistics, removeOutliersIQR } from '../stats-utils.js';
 
@@ -59,7 +60,9 @@ export class AccurateEngine extends ModestBenchEngine {
   ): Promise<TaskResult> {
     try {
       if (!taskData.fn || typeof taskData.fn !== 'function') {
-        throw new Error('Benchmark task must have a "fn" function property');
+        throw new StructureValidationError(
+          'Benchmark task must have a "fn" function property',
+        );
       }
 
       // Check for V8 native syntax support

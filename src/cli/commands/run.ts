@@ -10,6 +10,12 @@ import { resolve } from 'node:path';
 import type { BenchmarkRun } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
+import { ErrorCodes } from '../../constants.js';
+import {
+  InvalidArgumentError,
+  type ModestBenchError,
+  UnknownReporterError,
+} from '../../errors/index.js';
 import { ExitCodes } from '../../types/cli.js';
 
 /**
@@ -156,7 +162,7 @@ export const handleRunCommand = async (
     return handleResults(executionResult, options, shouldBeQuiet);
   } catch (error) {
     // Re-throw FileDiscoveryError so yargs fail handler can show help
-    if (error instanceof Error && error.name === 'FileDiscoveryError') {
+    if ((error as ModestBenchError).code === ErrorCodes.FILE_DISCOVERY_FAILED) {
       throw error;
     }
 
@@ -270,8 +276,13 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
 
     return config;
   } catch (error) {
-    throw new Error(
+    // Re-throw our custom errors
+    if ((error as ModestBenchError).code === ErrorCodes.CONFIG_LOAD_FAILED) {
+      throw error;
+    }
+    throw new InvalidArgumentError(
       `Configuration error: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 };
@@ -341,7 +352,7 @@ const setupReporters = async (
         reporter = context.reporterRegistry.get(reporterName);
         if (!reporter) {
           const availableReporters = ['human', 'json', 'csv', 'simple'];
-          throw new Error(
+          throw new UnknownReporterError(
             `Unknown reporter: ${reporterName}. Available: ${availableReporters.join(', ')}`,
           );
         }
@@ -356,8 +367,13 @@ const setupReporters = async (
 
     return reporters;
   } catch (error) {
-    throw new Error(
+    // Re-throw our custom errors
+    if ((error as ModestBenchError).code === ErrorCodes.REPORTER_UNKNOWN) {
+      throw error;
+    }
+    throw new InvalidArgumentError(
       `Reporter setup error: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 };

@@ -3,9 +3,6 @@ import {
   type BenchmarkFile,
   type BenchmarkRun,
   type ConfigurationManager,
-  type ErrorContext,
-  type ErrorManager,
-  type ExecutionError,
   type FileLoader,
   type FileResult,
   type HistoryStorage,
@@ -115,34 +112,6 @@ describe('Interface Types', () => {
       >(manager.merge);
       expectType<(config: Partial<ModestBenchConfig>) => ValidationResult>(
         manager.validate,
-      );
-    });
-  });
-
-  describe('ErrorManager', () => {
-    it('should define error handling methods', () => {
-      const manager: ErrorManager = {
-        clearStats: () => {},
-        formatError: () => '',
-        getErrorCode: () => 'ERROR_001',
-        getStats: () => ({
-          byPhase: {} as Record<string, number>,
-          byType: {} as Record<string, number>,
-          recent: [],
-          total: 0,
-        }),
-        handleError: () => ({}) as ExecutionError,
-        isRecoverable: () => true,
-        onError: () => {},
-      };
-
-      expectType<(error: Error, context: ErrorContext) => ExecutionError>(
-        manager.handleError,
-      );
-      expectType<(error: ExecutionError) => boolean>(manager.isRecoverable);
-      expectType<(error: ExecutionError) => string>(manager.formatError);
-      expectType<(error: Error, context: ErrorContext) => string>(
-        manager.getErrorCode,
       );
     });
   });

@@ -11,7 +11,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ModestBenchConfigurationManager } from '../src/config/manager.js';
-import { ModestBenchErrorManager } from '../src/core/error-manager.js';
 import { BenchmarkFileLoader } from '../src/core/loader.js';
 import { AccurateEngine } from '../src/index.js';
 import { ModestBenchProgressManager } from '../src/progress/manager.js';
@@ -24,7 +23,6 @@ const main = async () => {
   // Create engine with all dependencies
   const engine = new AccurateEngine({
     configManager: new ModestBenchConfigurationManager(),
-    errorManager: new ModestBenchErrorManager(),
     fileLoader: new BenchmarkFileLoader(),
     historyStorage: new FileHistoryStorage({
       storageDir: join(tmpdir(), '.modestbench-example'),

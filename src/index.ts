@@ -14,9 +14,6 @@ export { ModestBenchConfigurationManager } from './config/manager.js';
 export { ModestBenchEngine } from './core/engine.js';
 export { AccurateEngine, TinybenchEngine } from './core/engines/index.js';
 
-// Error handling
-export { ModestBenchErrorManager } from './core/error-manager.js';
-
 export { BenchmarkFileLoader } from './core/loader.js';
 
 // Statistical utilities
@@ -25,6 +22,9 @@ export {
   removeOutliersIQR,
   type SampleStatistics,
 } from './core/stats-utils.js';
+
+// Error classes
+export * from './errors/index.js';
 
 // Progress tracking
 export { ModestBenchProgressManager } from './progress/manager.js';

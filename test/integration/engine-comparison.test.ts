@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
 import { AccurateEngine } from '../../src/core/engines/accurate-engine.js';
 import { TinybenchEngine } from '../../src/core/engines/tinybench-engine.js';
-import { ModestBenchErrorManager } from '../../src/core/error-manager.js';
 import { BenchmarkFileLoader } from '../../src/core/loader.js';
 import { ModestBenchProgressManager } from '../../src/progress/manager.js';
 import { ModestBenchReporterRegistry } from '../../src/reporters/registry.js';
@@ -36,7 +35,6 @@ describe('Engine comparison integration', () => {
     const fileLoader = new BenchmarkFileLoader();
     const reporterRegistry = new ModestBenchReporterRegistry();
     const progressManager = new ModestBenchProgressManager();
-    const errorManager = new ModestBenchErrorManager();
 
     const createHistoryStorage = () =>
       new FileHistoryStorage({
@@ -46,7 +44,6 @@ describe('Engine comparison integration', () => {
     // Create both engines
     accurateEngine = new AccurateEngine({
       configManager,
-      errorManager,
       fileLoader,
       historyStorage: createHistoryStorage(),
       progressManager,
@@ -55,7 +52,6 @@ describe('Engine comparison integration', () => {
 
     tinybenchEngine = new TinybenchEngine({
       configManager,
-      errorManager,
       fileLoader,
       historyStorage: createHistoryStorage(),
       progressManager,

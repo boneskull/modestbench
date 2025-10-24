@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * ModestBench CLI Entry Point
  *
@@ -16,7 +17,6 @@ import { hideBin } from 'yargs/helpers';
 import type {
   BenchmarkEngine,
   ConfigurationManager,
-  ErrorManager,
   HistoryStorage,
   ProgressManager,
   ReporterRegistry,
@@ -24,6 +24,7 @@ import type {
 
 import { bootstrap } from '../bootstrap.js';
 import { AccurateEngine, TinybenchEngine } from '../core/engines/index.js';
+import { isModestBenchError, UnknownError } from '../errors/index.js';
 import {
   CsvReporter,
   HumanReporter,
@@ -42,7 +43,6 @@ export interface CliContext {
   readonly abortController: AbortController;
   readonly configManager: ConfigurationManager;
   readonly engine: BenchmarkEngine;
-  readonly errorManager: ErrorManager;
   readonly historyStorage: HistoryStorage;
   readonly options: GlobalOptions;
   readonly progressManager: ProgressManager;
@@ -571,7 +571,6 @@ const createCliContext = async (
       abortController,
       configManager: engine.configManager,
       engine,
-      errorManager: engine.errorManager,
       historyStorage: engine.historyStorage,
       options,
       progressManager: engine.progressManager,
@@ -596,9 +595,7 @@ const setupSignalHandlers = (abortController: AbortController): void => {
     if (abortRequested) {
       // Second signal, force exit
       console.log(`\nReceived ${signal} again, forcing exit...`);
-      process.exit(
-        128 + (signal === 'SIGINT' ? 2 : signal === 'SIGQUIT' ? 3 : 15),
-      );
+      process.exit(computeExitCode(signal));
     }
 
     console.log(`\nReceived ${signal}, aborting benchmarks...`);
@@ -608,9 +605,7 @@ const setupSignalHandlers = (abortController: AbortController): void => {
     // Give a short grace period for cleanup, then exit
     setTimeout(() => {
       console.log('\nBenchmark aborted.');
-      process.exit(
-        128 + (signal === 'SIGINT' ? 2 : signal === 'SIGQUIT' ? 3 : 15),
-      );
+      process.exit(computeExitCode(signal));
     }, 100);
   };
 
@@ -618,13 +613,27 @@ const setupSignalHandlers = (abortController: AbortController): void => {
   process.on('SIGQUIT', () => handleSignal('SIGQUIT'));
   process.on('SIGTERM', () => handleSignal('SIGTERM'));
 
-  process.on('uncaughtException', (error) => {
-    console.error('Uncaught exception:', error);
+  process.once('uncaughtException', (error) => {
+    // Wrap non-ModestBench errors with UnknownError
+    const wrappedError: Error = isModestBenchError(error)
+      ? error
+      : new UnknownError(
+          error instanceof Error ? error.message : String(error),
+          { cause: error },
+        );
+    console.error(wrappedError.toString());
     process.exit(ExitCodes.RUNTIME_ERROR);
   });
 
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled rejection at:', promise, 'reason:', reason);
+  process.once('unhandledRejection', (reason) => {
+    // Wrap non-ModestBench errors with UnknownError
+    const wrappedError: Error = isModestBenchError(reason)
+      ? (reason as Error)
+      : new UnknownError(
+          reason instanceof Error ? reason.message : String(reason),
+          { cause: reason },
+        );
+    console.error(wrappedError.toString());
     process.exit(ExitCodes.RUNTIME_ERROR);
   });
 };
@@ -647,3 +656,13 @@ try {
     cli();
   }
 }
+
+/**
+ * Compute the exit code based on the signal
+ *
+ * @param signal - The signal that caused the exit
+ * @returns The exit code
+ */
+const computeExitCode = (signal: string): number => {
+  return 128 + (signal === 'SIGINT' ? 2 : signal === 'SIGQUIT' ? 3 : 15);
+};

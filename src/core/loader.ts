@@ -22,6 +22,11 @@ import {
   BENCHMARK_FILE_EXTENSIONS,
   BENCHMARK_FILE_PATTERN,
 } from '../constants.js';
+import {
+  FileDiscoveryError,
+  FileLoadError,
+  StructureValidationError,
+} from '../errors/index.js';
 import { benchmarkFileSchema } from './benchmark-schema.js';
 
 /**
@@ -106,8 +111,9 @@ export class BenchmarkFileLoader implements FileLoader {
 
       return supportedFiles.sort();
     } catch (error) {
-      throw new Error(
+      throw new FileDiscoveryError(
         `File discovery failed: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -120,7 +126,7 @@ export class BenchmarkFileLoader implements FileLoader {
       // Basic file checks (existence, extension)
       const basicValidation = await this.validate(filePath);
       if (!basicValidation.valid) {
-        throw new Error(
+        throw new FileLoadError(
           `Invalid benchmark file: ${basicValidation.errors.map((e) => e.message).join(', ')}`,
         );
       }
@@ -160,7 +166,7 @@ export class BenchmarkFileLoader implements FileLoader {
       // Validate the loaded exports structure with Zod
       const structureValidation = this.validateExports(filePath, exports);
       if (!structureValidation.valid || !structureValidation.data) {
-        throw new Error(
+        throw new StructureValidationError(
           `Invalid benchmark structure: ${structureValidation.errors.map((e) => e.message).join(', ')}`,
         );
       }
@@ -185,8 +191,16 @@ export class BenchmarkFileLoader implements FileLoader {
         },
       };
     } catch (error) {
-      throw new Error(
+      // Re-throw our custom errors
+      if (
+        error instanceof FileLoadError ||
+        error instanceof StructureValidationError
+      ) {
+        throw error;
+      }
+      throw new FileLoadError(
         `Failed to load file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -199,8 +213,16 @@ export class BenchmarkFileLoader implements FileLoader {
       const loadPromises = filePaths.map((filePath) => this.load(filePath));
       return await Promise.all(loadPromises);
     } catch (error) {
-      throw new Error(
+      // Re-throw our custom errors (from individual load calls)
+      if (
+        error instanceof FileLoadError ||
+        error instanceof StructureValidationError
+      ) {
+        throw error;
+      }
+      throw new FileLoadError(
         `Failed to load files: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }

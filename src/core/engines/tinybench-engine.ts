@@ -14,6 +14,11 @@ import type {
   TaskResult,
 } from '../../types/index.js';
 
+import {
+  BenchmarkExecutionError,
+  OperationTooFastError,
+  StructureValidationError,
+} from '../../errors/index.js';
 import { ModestBenchEngine } from '../engine.js';
 import { calculateStatistics, removeOutliersIQR } from '../stats-utils.js';
 
@@ -33,7 +38,9 @@ export class TinybenchEngine extends ModestBenchEngine {
   ): Promise<TaskResult> {
     try {
       if (!taskData.fn || typeof taskData.fn !== 'function') {
-        throw new Error('Benchmark task must have a "fn" function property');
+        throw new StructureValidationError(
+          'Benchmark task must have a "fn" function property',
+        );
       }
 
       // Determine effective time and iterations based on limitBy mode
@@ -137,13 +144,13 @@ export class TinybenchEngine extends ModestBenchEngine {
             await minimalBench.run();
           } catch {
             // If still failing, the operation is too fast even for tinybench
-            throw new Error(
+            throw new OperationTooFastError(
               `Benchmark operation is too fast to measure reliably (execution time < 1ns)`,
             );
           }
           const minimalResults = minimalBench.results[0];
           if (!minimalResults || minimalResults.error) {
-            throw new Error(
+            throw new OperationTooFastError(
               `Benchmark too fast to measure reliably: ${minimalResults?.error?.message || 'unknown error'}`,
             );
           }
@@ -180,7 +187,7 @@ export class TinybenchEngine extends ModestBenchEngine {
       // Get results
       const results = bench.results[0];
       if (!results) {
-        throw new Error('No benchmark results returned');
+        throw new BenchmarkExecutionError('No benchmark results returned');
       }
 
       // Check if the task was aborted
@@ -251,7 +258,7 @@ export class TinybenchEngine extends ModestBenchEngine {
 
           if (!minimalResults || minimalResults.error) {
             // If retry also fails, just accept it failed
-            throw new Error(
+            throw new OperationTooFastError(
               `Benchmark operation is too fast to measure reliably`,
             );
           }

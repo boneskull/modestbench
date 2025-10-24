@@ -15,8 +15,6 @@ import type {
   CiInfo,
   ConfigurationManager,
   EnvironmentInfo,
-  ErrorManager,
-  ExecutionPhase,
   FileLoader,
   FileResult,
   GitInfo,
@@ -33,12 +31,19 @@ import type {
   ValidationWarning,
 } from '../types/index.js';
 
+import {
+  BenchmarkExecutionError,
+  FileDiscoveryError,
+  SchemaValidationError,
+  SetupError,
+  StructureValidationError,
+} from '../errors/index.js';
+
 /**
  * Dependencies required by the BenchmarkEngine
  */
 interface EngineDependencies {
   readonly configManager: ConfigurationManager;
-  readonly errorManager: ErrorManager;
   readonly fileLoader: FileLoader;
   readonly historyStorage: HistoryStorage;
   readonly progressManager: ProgressManager;
@@ -55,8 +60,6 @@ interface EngineDependencies {
 export abstract class ModestBenchEngine implements BenchmarkEngine {
   public readonly configManager: ConfigurationManager;
 
-  public readonly errorManager: ErrorManager;
-
   public readonly fileLoader: FileLoader;
 
   public readonly historyStorage: HistoryStorage;
@@ -71,7 +74,6 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
     this.reporterRegistry = dependencies.reporterRegistry;
     this.historyStorage = dependencies.historyStorage;
     this.progressManager = dependencies.progressManager;
-    this.errorManager = dependencies.errorManager;
   }
 
   /**
@@ -86,13 +88,10 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
     } catch (error) {
       const discoveryError =
         error instanceof Error ? error : new Error(String(error));
-      this.errorManager.handleError(discoveryError, {
-        metadata: { exclude, pattern },
-        phase: 'discovery',
-        timestamp: new Date(),
-      });
-
-      throw new Error(`File discovery failed: ${discoveryError.message}`);
+      throw new FileDiscoveryError(
+        `File discovery failed: ${discoveryError.message}`,
+        { cause: discoveryError },
+      );
     }
   }
 
@@ -105,11 +104,9 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
     signal?: AbortSignal,
   ): Promise<BenchmarkRun> {
     const startTime = new Date();
-    let currentPhase: ExecutionPhase = 'discovery';
 
     try {
       // 1. Merge configuration with defaults
-      currentPhase = 'discovery';
       const mergedConfig = await this.configManager.load(
         undefined, // No specific config path for now
         config as Record<string, unknown>,
@@ -125,30 +122,18 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
         if (mergedConfig.exclude?.length) {
           msg += ` and excluding "${mergedConfig.exclude.join(', ')}"`;
         }
-        const error = new Error(msg);
-        this.errorManager.handleError(error, {
-          phase: currentPhase,
-          timestamp: new Date(),
-        });
-        throw error;
+        throw new FileDiscoveryError(msg);
       }
 
       // 3. Validate files
-      currentPhase = 'validation';
       const validationResult = await this.validate(files);
       if (!validationResult.valid) {
-        const error = new Error(
+        throw new SchemaValidationError(
           `Validation failed: ${validationResult.errors.map((e) => e.message).join(', ')}`,
         );
-        this.errorManager.handleError(error, {
-          phase: currentPhase,
-          timestamp: new Date(),
-        });
-        throw error;
       }
 
       // 4. Initialize progress tracking
-      currentPhase = 'setup';
       const runId = this.generateRunId();
 
       // Pre-calculate total tasks for progress tracking
@@ -236,7 +221,6 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
       await this.callReporters(reporters, 'onStart', initialRun);
 
       // 6. Execute benchmark files
-      currentPhase = 'execution';
       const fileResults: FileResult[] = [];
 
       for (const filePath of files) {
@@ -263,11 +247,6 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
         } catch (error) {
           const fileError =
             error instanceof Error ? error : new Error(String(error));
-          this.errorManager.handleError(fileError, {
-            file: filePath,
-            phase: currentPhase,
-            timestamp: new Date(),
-          });
 
           // Call reporter onError
           await this.callReporters(reporters, 'onError', fileError);
@@ -350,15 +329,23 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
       // 9. Return completed run
       return finalRun;
     } catch (error) {
+      // Re-throw our custom errors
+      if (
+        error instanceof FileDiscoveryError ||
+        error instanceof SchemaValidationError ||
+        error instanceof BenchmarkExecutionError
+      ) {
+        throw error;
+      }
+
       const executionError =
         error instanceof Error ? error : new Error(String(error));
-      const handledError = this.errorManager.handleError(executionError, {
-        phase: currentPhase,
-        timestamp: new Date(),
-      });
 
       // Re-throw the original error with more context
-      throw new Error(`Benchmark execution failed: ${handledError.message}`);
+      throw new BenchmarkExecutionError(
+        `Benchmark execution failed: ${executionError.message}`,
+        { cause: executionError },
+      );
     }
   }
 
@@ -423,11 +410,6 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
         } catch (error) {
           const validationError =
             error instanceof Error ? error : new Error(String(error));
-          this.errorManager.handleError(validationError, {
-            file,
-            phase: 'validation',
-            timestamp: new Date(),
-          });
 
           errors.push({
             code: 'FILE_VALIDATION_ERROR',
@@ -516,7 +498,7 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
       const benchmarkDef = benchmarkFile.exports as BenchmarkDefinition;
 
       if (!benchmarkDef || typeof benchmarkDef !== 'object') {
-        throw new Error(
+        throw new StructureValidationError(
           'Benchmark file must export a default object with suites',
         );
       }
@@ -634,7 +616,9 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
             error instanceof Error
               ? error
               : new Error(`Setup failed: ${String(error)}`);
-          throw new Error(`Suite setup failed: ${setupError.message}`);
+          throw new SetupError(`Suite setup failed: ${setupError.message}`, {
+            cause: setupError,
+          });
         }
       }
 
