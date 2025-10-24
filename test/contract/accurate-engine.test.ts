@@ -8,7 +8,6 @@ import type { BenchmarkEngine } from '../../src/types/interfaces.js';
 
 import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
 import { AccurateEngine } from '../../src/core/engines/index.js';
-import { ModestBenchErrorManager } from '../../src/core/error-manager.js';
 import { BenchmarkFileLoader } from '../../src/core/loader.js';
 import { ModestBenchProgressManager } from '../../src/progress/manager.js';
 import { ModestBenchReporterRegistry } from '../../src/reporters/registry.js';
@@ -37,11 +36,9 @@ describe('AccurateEngine contract', () => {
       storageDir: join(tempDir, '.modestbench'),
     });
     const progressManager = new ModestBenchProgressManager();
-    const errorManager = new ModestBenchErrorManager();
 
     engine = new AccurateEngine({
       configManager,
-      errorManager,
       fileLoader,
       historyStorage,
       progressManager,

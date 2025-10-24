@@ -17,6 +17,7 @@ import type {
   TaskResult,
 } from '../types/index.js';
 
+import { ReporterOutputError } from '../errors/index.js';
 import { BaseReporter } from './registry.js';
 
 /**
@@ -340,7 +341,7 @@ export class CsvReporter extends BaseReporter {
    */
   private async writeToFile(csvContent: string): Promise<void> {
     if (!this.outputPath) {
-      throw new Error('Output path not specified');
+      throw new ReporterOutputError('Output path not specified');
     }
 
     try {
@@ -351,8 +352,9 @@ export class CsvReporter extends BaseReporter {
       // Write CSV file
       writeFileSync(this.outputPath, csvContent, 'utf8');
     } catch (error) {
-      throw new Error(
+      throw new ReporterOutputError(
         `Failed to write CSV output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }

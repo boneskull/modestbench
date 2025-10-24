@@ -8,6 +8,8 @@
 import type { HistoryQuery, RetentionPolicy } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
+import { InvalidDateFormatError } from '../../errors/index.js';
+
 /**
  * History command options interface
  */
@@ -565,5 +567,5 @@ const parseDate = (dateStr: string): Date => {
 
   // TODO: Parse relative dates like "1 week ago", "3 days ago", etc.
   // For now, throw error for invalid dates
-  throw new Error(`Invalid date format: "${dateStr}"`);
+  throw new InvalidDateFormatError(`Invalid date format: "${dateStr}"`);
 };

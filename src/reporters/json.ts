@@ -16,6 +16,7 @@ import type {
   TaskResult,
 } from '../types/index.js';
 
+import { ReporterOutputError } from '../errors/index.js';
 import { BaseReporter } from './registry.js';
 
 /**
@@ -266,7 +267,7 @@ export class JsonReporter extends BaseReporter {
    */
   private async writeToFile(output: JsonOutput): Promise<void> {
     if (!this.outputPath) {
-      throw new Error('Output path not specified');
+      throw new ReporterOutputError('Output path not specified');
     }
 
     try {
@@ -281,8 +282,9 @@ export class JsonReporter extends BaseReporter {
 
       writeFileSync(this.outputPath, jsonString, 'utf8');
     } catch (error) {
-      throw new Error(
+      throw new ReporterOutputError(
         `Failed to write JSON output to ${this.outputPath}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }

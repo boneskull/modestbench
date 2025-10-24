@@ -31,6 +31,7 @@ export default defineConfig({
             { label: 'API Documentation', link: '/reference/api/' },
             { label: 'Architecture', link: '/reference/architecture/' },
             { label: 'Contributing', link: '/reference/contributing/' },
+            { label: 'Error Reference', link: '/reference/errors/' },
           ],
           label: 'Reference',
         },

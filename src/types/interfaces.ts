@@ -9,9 +9,6 @@
 import type {
   BenchmarkFile,
   BenchmarkRun,
-  ErrorContext,
-  ErrorStats,
-  ExecutionError,
   FileResult,
   ModestBenchConfig,
   SuiteResult,
@@ -100,46 +97,6 @@ export interface CsvReporter extends Reporter {
   readonly delimiter: string;
   /** Include CSV headers */
   readonly includeHeaders: boolean;
-}
-
-/**
- * Error management interface for handling execution errors
- */
-export interface ErrorManager {
-  /**
-   * Clear error history
-   */
-  clearStats(): void;
-
-  /**
-   * Format error for display
-   */
-  formatError(error: ExecutionError): string;
-
-  /**
-   * Get error code for a given error
-   */
-  getErrorCode(error: Error, context: ErrorContext): string;
-
-  /**
-   * Get error statistics
-   */
-  getStats(): ErrorStats;
-
-  /**
-   * Handle an execution error
-   */
-  handleError(error: Error, context: ErrorContext): ExecutionError;
-
-  /**
-   * Check if an error is recoverable
-   */
-  isRecoverable(error: ExecutionError): boolean;
-
-  /**
-   * Register error handler callback
-   */
-  onError(handler: (error: ExecutionError) => void): void;
 }
 
 /**

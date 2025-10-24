@@ -9,6 +9,7 @@
 import { cosmiconfig } from 'cosmiconfig';
 import { resolve } from 'node:path';
 
+import type { ModestBenchError } from '../errors/base.js';
 import type {
   ConfigurationManager,
   ModestBenchConfig,
@@ -17,6 +18,8 @@ import type {
   ValidationWarning,
 } from '../types/index.js';
 
+import { ErrorCodes } from '../constants.js';
+import { ConfigLoadError, ConfigValidationError } from '../errors/index.js';
 import { safeParseConfig } from './schema.js';
 
 /**
@@ -175,15 +178,22 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       // 3. Validate final configuration
       const validation = this.validate(finalConfig);
       if (!validation.valid) {
-        throw new Error(
+        throw new ConfigValidationError(
           `Configuration validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
         );
       }
 
       return finalConfig;
     } catch (error) {
-      throw new Error(
+      // Re-throw our custom errors
+      if (
+        (error as ModestBenchError).code === ErrorCodes.CONFIG_VALIDATION_FAILED
+      ) {
+        throw error;
+      }
+      throw new ConfigLoadError(
         `Failed to load configuration: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }

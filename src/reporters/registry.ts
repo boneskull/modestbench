@@ -15,6 +15,11 @@ import type {
   TaskResult,
 } from '../types/index.js';
 
+import {
+  ReporterAlreadyRegisteredError,
+  UnknownReporterError,
+} from '../errors/index.js';
+
 /**
  * Base abstract reporter class providing common functionality
  */
@@ -301,7 +306,7 @@ export class ModestBenchReporterRegistry implements ReporterRegistry {
     }
 
     if (missing.length > 0) {
-      throw new Error(
+      throw new UnknownReporterError(
         `Unknown reporters: ${missing.join(', ')}. Available: ${Array.from(this.reporters.keys()).join(', ')}`,
       );
     }
@@ -328,7 +333,9 @@ export class ModestBenchReporterRegistry implements ReporterRegistry {
    */
   register(name: string, reporter: Reporter): void {
     if (this.reporters.has(name)) {
-      throw new Error(`Reporter with name "${name}" is already registered`);
+      throw new ReporterAlreadyRegisteredError(
+        `Reporter with name "${name}" is already registered`,
+      );
     }
     this.reporters.set(name, reporter);
   }

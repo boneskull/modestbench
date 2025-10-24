@@ -4,7 +4,6 @@ import {
   CompositeReporter,
   type ConfigurationManager,
   CsvReporter,
-  type ErrorManager,
   FileHistoryStorage,
   type FileLoader,
   type HistoryStorage,
@@ -12,7 +11,6 @@ import {
   JsonReporter,
   modestbench,
   ModestBenchConfigurationManager,
-  ModestBenchErrorManager,
   ModestBenchProgressManager,
   ModestBenchReporterRegistry,
   type ProgressManager,
@@ -27,14 +25,12 @@ describe('Exported Classes and Functions', () => {
     it('should export TinybenchEngine as constructable class', () => {
       const configManager = new ModestBenchConfigurationManager();
       const fileLoader = new BenchmarkFileLoader();
-      const errorManager = new ModestBenchErrorManager();
       const progressManager = new ModestBenchProgressManager();
       const reporterRegistry = new ModestBenchReporterRegistry();
       const historyStorage = new FileHistoryStorage();
 
       const engine = new TinybenchEngine({
         configManager,
-        errorManager,
         fileLoader,
         historyStorage,
         progressManager,
@@ -56,14 +52,6 @@ describe('Exported Classes and Functions', () => {
       const manager = new ModestBenchConfigurationManager();
       expectType<ModestBenchConfigurationManager>(manager);
       expectAssignable<ConfigurationManager>(manager);
-    });
-  });
-
-  describe('Error Management', () => {
-    it('should export ModestBenchErrorManager as constructable', () => {
-      const manager = new ModestBenchErrorManager();
-      expectType<ModestBenchErrorManager>(manager);
-      expectAssignable<ErrorManager>(manager);
     });
   });
 

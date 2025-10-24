@@ -23,6 +23,16 @@ import type {
   RetentionPolicy,
 } from '../types/index.js';
 
+import { ErrorCodes } from '../constants.js';
+import {
+  type ModestBenchError,
+  StorageCorruptionError,
+  StorageError,
+  StorageIndexError,
+  StorageSpaceError,
+  UnsupportedExportFormatError,
+} from '../errors/index.js';
+
 /**
  * Index entry for stored benchmark runs
  */
@@ -166,8 +176,9 @@ export class FileHistoryStorage implements HistoryStorage {
         removedRuns: entriesToRemove.length,
       };
     } catch (error) {
-      throw new Error(
+      throw new StorageError(
         `Failed to cleanup storage: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -184,11 +195,21 @@ export class FileHistoryStorage implements HistoryStorage {
       } else if (format === 'csv') {
         return this.exportToCsv(runs);
       } else {
-        throw new Error(`Unsupported export format: ${format}`);
+        throw new UnsupportedExportFormatError(
+          `Unsupported export format: ${format}`,
+        );
       }
     } catch (error) {
-      throw new Error(
+      // Re-throw our custom errors
+      if (
+        (error as ModestBenchError).code ===
+        ErrorCodes.STORAGE_EXPORT_UNSUPPORTED
+      ) {
+        throw error;
+      }
+      throw new StorageError(
         `Failed to export data: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -207,8 +228,9 @@ export class FileHistoryStorage implements HistoryStorage {
         summary: entry.summary,
       }));
     } catch (error) {
-      throw new Error(
+      throw new StorageIndexError(
         `Failed to get storage index: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -286,13 +308,20 @@ export class FileHistoryStorage implements HistoryStorage {
 
       // Validate the loaded run
       if (!FileHistoryStorage.isValidBenchmarkRun(run)) {
-        throw new Error(`Invalid benchmark run data in file ${entry.filename}`);
+        throw new StorageCorruptionError(
+          `Invalid benchmark run data in file ${entry.filename}`,
+        );
       }
 
       return run;
     } catch (error) {
-      throw new Error(
+      // Re-throw our custom errors
+      if ((error as ModestBenchError).code === ErrorCodes.STORAGE_CORRUPTION) {
+        throw error;
+      }
+      throw new StorageError(
         `Failed to load benchmark run ${id}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -362,8 +391,16 @@ export class FileHistoryStorage implements HistoryStorage {
 
       return runs;
     } catch (error) {
-      throw new Error(
+      // Re-throw our custom errors (from loadRun)
+      if (
+        error instanceof StorageError ||
+        error instanceof StorageCorruptionError
+      ) {
+        throw error;
+      }
+      throw new StorageError(
         `Failed to query benchmark runs: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -384,7 +421,7 @@ export class FileHistoryStorage implements HistoryStorage {
 
       // Check file size limit
       if (Buffer.byteLength(data, 'utf8') > this.maxFileSize) {
-        throw new Error(
+        throw new StorageSpaceError(
           `Benchmark run data exceeds maximum file size of ${this.maxFileSize} bytes`,
         );
       }
@@ -395,8 +432,16 @@ export class FileHistoryStorage implements HistoryStorage {
       // Update the index
       await this.updateIndex(run, filename, Buffer.byteLength(data, 'utf8'));
     } catch (error) {
-      throw new Error(
+      // Re-throw our custom errors
+      if (
+        (error as ModestBenchError).code ===
+        ErrorCodes.STORAGE_INSUFFICIENT_SPACE
+      ) {
+        throw error;
+      }
+      throw new StorageError(
         `Failed to save benchmark run: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -522,8 +567,9 @@ export class FileHistoryStorage implements HistoryStorage {
 
       return this.index; // We just assigned it, so it's not null
     } catch (error) {
-      throw new Error(
+      throw new StorageIndexError(
         `Failed to load storage index: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -559,8 +605,9 @@ export class FileHistoryStorage implements HistoryStorage {
       const data = JSON.stringify(this.index, null, 2);
       writeFileSync(this.indexFile, data, 'utf8');
     } catch (error) {
-      throw new Error(
+      throw new StorageIndexError(
         `Failed to save storage index: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }

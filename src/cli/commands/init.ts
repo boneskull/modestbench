@@ -17,6 +17,11 @@ import { createInterface } from 'node:readline';
 
 import type { CliContext } from '../index.js';
 
+import {
+  InvalidArgumentError,
+  UnsupportedConfigFormatError,
+} from '../../errors/index.js';
+
 /**
  * Init command options interface
  */
@@ -566,7 +571,9 @@ export default config;
       break;
 
     default:
-      throw new Error(`Unsupported config format: ${options.configType}`);
+      throw new UnsupportedConfigFormatError(
+        `Unsupported config format: ${options.configType}`,
+      );
   }
 
   try {
@@ -575,8 +582,9 @@ export default config;
       console.log(`  ✓ ${filename}`);
     }
   } catch (error) {
-    throw new Error(
+    throw new InvalidArgumentError(
       `Failed to create config file: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 };
@@ -600,8 +608,9 @@ const createDirectories = async (
         console.log(`  ✓ ${dir}/`);
       }
     } catch (error) {
-      throw new Error(
+      throw new InvalidArgumentError(
         `Failed to create directory ${dir}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }
@@ -626,8 +635,9 @@ const createExampleBenchmarks = async (options: InitOptions): Promise<void> => {
         console.log(`  ✓ ${example.filename}`);
       }
     } catch (error) {
-      throw new Error(
+      throw new InvalidArgumentError(
         `Failed to create example ${name}: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error },
       );
     }
   }

@@ -458,13 +458,11 @@ describe('ModestBenchReporterRegistry', () => {
       registry.register('test1', reporter1);
       registry.register('test2', reporter2);
 
-      try {
-        registry.getByNames(['unknown']);
-      } catch (error) {
-        expect((error as Error).message, 'to contain', 'Available:');
-        expect((error as Error).message, 'to contain', 'test1');
-        expect((error as Error).message, 'to contain', 'test2');
-      }
+      expect(
+        () => registry.getByNames(['unknown']),
+        'to throw',
+        /Unknown reporters: unknown/,
+      );
     });
 
     it('should handle multiple unknown reporters', () => {
