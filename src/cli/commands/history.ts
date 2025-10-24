@@ -8,7 +8,6 @@
 import type { HistoryQuery, RetentionPolicy } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
-import { InvalidDateFormatError } from '../../errors/index.js';
 
 /**
  * History command options interface
@@ -158,6 +157,31 @@ const handleCleanCommand = async (
 };
 
 /**
+ * Task comparison result
+ */
+interface TaskComparison {
+  file: string;
+  inBoth: boolean;
+  percentChange: number;
+  run1?: {
+    cv: number;
+    iterations: number;
+    max: number;
+    mean: number;
+    min: number;
+  };
+  run2?: {
+    cv: number;
+    iterations: number;
+    max: number;
+    mean: number;
+    min: number;
+  };
+  suite: string;
+  task: string;
+}
+
+/**
  * Handle the compare subcommand
  */
 const handleCompareCommand = async (
@@ -190,11 +214,116 @@ const handleCompareCommand = async (
       return 1;
     }
 
+    // Build task maps for comparison
+    const tasksMap1 = new Map<string, TaskComparison>();
+    const tasksMap2 = new Map<string, TaskComparison>();
+
+    // Extract tasks from run1
+    for (const file of run1.files) {
+      for (const suite of file.suites) {
+        for (const task of suite.tasks) {
+          if (!task.error) {
+            const key = `${file.filePath}::${suite.name}::${task.name}`;
+            tasksMap1.set(key, {
+              file: file.filePath,
+              inBoth: false,
+              percentChange: 0,
+              run1: {
+                cv: task.cv,
+                iterations: task.iterations,
+                max: task.max,
+                mean: task.mean,
+                min: task.min,
+              },
+              suite: suite.name,
+              task: task.name,
+            });
+          }
+        }
+      }
+    }
+
+    // Extract tasks from run2 and merge
+    for (const file of run2.files) {
+      for (const suite of file.suites) {
+        for (const task of suite.tasks) {
+          if (!task.error) {
+            const key = `${file.filePath}::${suite.name}::${task.name}`;
+            const existing = tasksMap1.get(key);
+
+            if (existing && existing.run1) {
+              // Task exists in both runs - calculate comparison
+              const percentChange =
+                ((task.mean - existing.run1.mean) / existing.run1.mean) * 100;
+
+              tasksMap1.set(key, {
+                ...existing,
+                inBoth: true,
+                percentChange,
+                run2: {
+                  cv: task.cv,
+                  iterations: task.iterations,
+                  max: task.max,
+                  mean: task.mean,
+                  min: task.min,
+                },
+              });
+            } else {
+              // Task only in run2
+              tasksMap2.set(key, {
+                file: file.filePath,
+                inBoth: false,
+                percentChange: 0,
+                run2: {
+                  cv: task.cv,
+                  iterations: task.iterations,
+                  max: task.max,
+                  mean: task.mean,
+                  min: task.min,
+                },
+                suite: suite.name,
+                task: task.name,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Separate tasks into categories
+    const tasksInBoth: TaskComparison[] = [];
+    const tasksOnlyIn1: TaskComparison[] = [];
+    const tasksOnlyIn2: TaskComparison[] = [];
+
+    for (const task of tasksMap1.values()) {
+      if (task.inBoth) {
+        tasksInBoth.push(task);
+      } else {
+        tasksOnlyIn1.push(task);
+      }
+    }
+
+    for (const task of tasksMap2.values()) {
+      tasksOnlyIn2.push(task);
+    }
+
     if (options.format === 'json') {
       const comparison = {
-        run1: { id: run1.id, summary: run1.summary },
-        run2: { id: run2.id, summary: run2.summary },
-        // TODO: Add detailed comparison logic
+        run1: {
+          endTime: run1.endTime,
+          id: run1.id,
+          startTime: run1.startTime,
+          summary: run1.summary,
+        },
+        run2: {
+          endTime: run2.endTime,
+          id: run2.id,
+          startTime: run2.startTime,
+          summary: run2.summary,
+        },
+        taskComparisons: tasksInBoth,
+        tasksOnlyInRun1: tasksOnlyIn1,
+        tasksOnlyInRun2: tasksOnlyIn2,
       };
       console.log(JSON.stringify(comparison, null, 2));
     } else {
@@ -217,10 +346,51 @@ const handleCompareCommand = async (
       console.log(
         `  Failed: ${run1.summary.failedTasks} vs ${run2.summary.failedTasks}`,
       );
-
-      // TODO: Add detailed performance comparison
       console.log();
-      console.log('Note: Detailed performance comparison not yet implemented.');
+
+      // Detailed task comparison
+      if (tasksInBoth.length > 0) {
+        console.log('Task-by-task comparison:');
+        console.log();
+
+        for (const comparison of tasksInBoth) {
+          const mean1 = comparison.run1!.mean / 1000000; // Convert to ms
+          const mean2 = comparison.run2!.mean / 1000000;
+          const changeSign = comparison.percentChange >= 0 ? '+' : '';
+          const changeStr = `${changeSign}${comparison.percentChange.toFixed(1)}%`;
+
+          console.log(`  ${comparison.suite} › ${comparison.task}`);
+          console.log(
+            `    Mean: ${mean1.toFixed(3)}ms → ${mean2.toFixed(3)}ms (${changeStr})`,
+          );
+          console.log(
+            `    Min: ${(comparison.run1!.min / 1000000).toFixed(3)}ms → ${(comparison.run2!.min / 1000000).toFixed(3)}ms`,
+          );
+          console.log(
+            `    Max: ${(comparison.run1!.max / 1000000).toFixed(3)}ms → ${(comparison.run2!.max / 1000000).toFixed(3)}ms`,
+          );
+          console.log(
+            `    Iterations: ${comparison.run1!.iterations} vs ${comparison.run2!.iterations}`,
+          );
+          console.log();
+        }
+      }
+
+      if (tasksOnlyIn1.length > 0) {
+        console.log(`Tasks only in run 1 (${tasksOnlyIn1.length}):`);
+        for (const task of tasksOnlyIn1) {
+          console.log(`  - ${task.suite} › ${task.task}`);
+        }
+        console.log();
+      }
+
+      if (tasksOnlyIn2.length > 0) {
+        console.log(`Tasks only in run 2 (${tasksOnlyIn2.length}):`);
+        for (const task of tasksOnlyIn2) {
+          console.log(`  - ${task.suite} › ${task.task}`);
+        }
+        console.log();
+      }
     }
 
     return 0;
@@ -556,16 +726,343 @@ const handleTrendsCommand = async (
 };
 
 /**
- * Parse date string (ISO 8601 or relative)
+ * Complete trend analysis result
  */
-const parseDate = (dateStr: string): Date => {
+export interface TrendData {
+  confidence: number;
+  dataPoints: TrendDataPoint[];
+  percentChange: number;
+  runs: number;
+  statistics: TrendStatistics;
+  task: string;
+  trend: 'degrading' | 'improving' | 'stable';
+}
+
+/**
+ * Trend data point representing a single benchmark measurement
+ */
+export interface TrendDataPoint {
+  date: Date;
+  mean: number;
+}
+
+/**
+ * Statistical metrics for trend analysis
+ */
+export interface TrendStatistics {
+  mean: number;
+  median: number;
+  stdDeviation: number;
+  variance: number;
+}
+
+/**
+ * Calculate statistical metrics from data points
+ */
+export const calculateStatistics = (
+  dataPoints: TrendDataPoint[],
+): TrendStatistics => {
+  if (dataPoints.length === 0) {
+    throw new Error('Cannot calculate statistics for empty data points array');
+  }
+
+  const values = dataPoints.map((dp) => dp.mean);
+  const n = values.length;
+
+  // Calculate mean
+  const mean = values.reduce((sum, val) => sum + val, 0) / n;
+
+  // Calculate median
+  const sorted = [...values].sort((a, b) => a - b);
+  const median =
+    n % 2 === 0
+      ? ((sorted[n / 2 - 1] ?? 0) + (sorted[n / 2] ?? 0)) / 2
+      : (sorted[Math.floor(n / 2)] ?? 0);
+
+  // Calculate variance and standard deviation
+  const variance =
+    n === 1
+      ? 0
+      : values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / n;
+  const stdDeviation = Math.sqrt(variance);
+
+  return {
+    mean,
+    median,
+    stdDeviation,
+    variance,
+  };
+};
+
+/**
+ * Calculate trend direction from data points using linear regression
+ */
+export const calculateTrend = (
+  dataPoints: TrendDataPoint[],
+): 'degrading' | 'improving' | 'stable' => {
+  if (dataPoints.length === 0) {
+    return 'stable';
+  }
+
+  if (dataPoints.length === 1) {
+    return 'stable';
+  }
+
+  // Simple linear regression to determine slope
+  const n = dataPoints.length;
+  const x = Array.from({ length: n }, (_, i) => i); // Time indices
+  const y = dataPoints.map((dp) => dp.mean);
+
+  const sumX = x.reduce((a, b) => a + b, 0);
+  const sumY = y.reduce((a, b) => a + b, 0);
+  const sumXY = x.reduce((sum, xi, i) => sum + xi * (y[i] ?? 0), 0);
+  const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0);
+
+  // Calculate slope: (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX)
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+
+  // Determine significance threshold (5% of mean)
+  const meanValue = sumY / n;
+  const significanceThreshold = Math.abs(meanValue * 0.05);
+
+  // Classify trend based on slope
+  if (Math.abs(slope) < significanceThreshold / n) {
+    return 'stable';
+  } else if (slope < 0) {
+    // Negative slope = values decreasing = performance improving
+    return 'improving';
+  } else {
+    // Positive slope = values increasing = performance degrading
+    return 'degrading';
+  }
+};
+
+/**
+ * Calculate percent change from first to last data point
+ */
+export const calculatePercentChange = (
+  dataPoints: TrendDataPoint[],
+): number => {
+  if (dataPoints.length === 0 || dataPoints.length === 1) {
+    return 0;
+  }
+
+  const firstPoint = dataPoints[0];
+  const lastPoint = dataPoints[dataPoints.length - 1];
+
+  if (!firstPoint || !lastPoint) {
+    return 0;
+  }
+
+  const first = firstPoint.mean;
+  const last = lastPoint.mean;
+
+  if (first === 0) {
+    return 0; // Avoid division by zero
+  }
+
+  return ((last - first) / first) * 100;
+};
+
+/**
+ * Detect if a trend represents a performance regression
+ */
+export const detectRegression = (
+  trendData: TrendData,
+  threshold: number,
+): boolean => {
+  // Regression is a degrading trend with percent change exceeding threshold
+  return (
+    trendData.trend === 'degrading' && trendData.percentChange >= threshold
+  );
+};
+
+/**
+ * ANSI color codes for synthwave theme
+ */
+const colors = {
+  bold: '\x1b[1m',
+  brightBlue: '\x1b[94m',
+  brightCyan: '\x1b[96m',
+  brightMagenta: '\x1b[95m',
+  brightRed: '\x1b[91m',
+  brightWhite: '\x1b[97m',
+  cyan: '\x1b[36m',
+  dim: '\x1b[2m',
+  gray: '\x1b[90m',
+  green: '\x1b[32m',
+  magenta: '\x1b[35m',
+  red: '\x1b[31m',
+  reset: '\x1b[0m',
+  white: '\x1b[37m',
+} as const;
+
+/**
+ * Apply synthwave color to text
+ */
+export const colorize = (color: keyof typeof colors, text: string): string => {
+  return `${colors[color]}${text}${colors.reset}`;
+};
+
+/**
+ * Generate ASCII sparkline from values
+ */
+export const generateSparkline = (values: number[], width?: number): string => {
+  if (values.length === 0) {
+    return '';
+  }
+
+  // Sparkline characters from lowest to highest
+  const sparkChars = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+
+  // Downsample if width is specified and values exceed it
+  let processedValues = values;
+  if (width && values.length > width) {
+    const step = values.length / width;
+    processedValues = [];
+    for (let i = 0; i < width; i++) {
+      const idx = Math.floor(i * step);
+      processedValues.push(values[idx] ?? 0);
+    }
+  }
+
+  // Find min and max for scaling
+  const min = Math.min(...processedValues);
+  const max = Math.max(...processedValues);
+  const range = max - min;
+
+  // Handle case where all values are the same
+  if (range === 0) {
+    return (sparkChars[4] ?? '▄').repeat(processedValues.length); // Use middle character
+  }
+
+  // Map each value to a sparkline character
+  return processedValues
+    .map((value) => {
+      const normalized = (value - min) / range;
+      const index = Math.min(
+        Math.floor(normalized * sparkChars.length),
+        sparkChars.length - 1,
+      );
+      return sparkChars[index] ?? '▄';
+    })
+    .join('');
+};
+
+/**
+ * Distribution bucket for bar chart
+ */
+export interface DistributionBucket {
+  count: number;
+  label: string;
+  max: number;
+  min: number;
+}
+
+/**
+ * Generate bar chart histogram from distribution
+ */
+export const generateBarChart = (
+  distribution: DistributionBucket[],
+  maxWidth = 20,
+): string[] => {
+  if (distribution.length === 0) {
+    return [];
+  }
+
+  // Find maximum count for scaling
+  const maxCount = Math.max(...distribution.map((b) => b.count));
+
+  if (maxCount === 0) {
+    return distribution.map((bucket) => `  ${bucket.label} (0 runs)`);
+  }
+
+  // Block characters for bar visualization
+  const fullBlock = '█';
+  const lightBlock = '░';
+
+  return distribution.map((bucket) => {
+    const ratio = bucket.count / maxCount;
+    const barLength = Math.round(ratio * maxWidth);
+    const fullBlocks = fullBlock.repeat(barLength);
+    const emptyBlocks = lightBlock.repeat(maxWidth - barLength);
+
+    return `  ${fullBlocks}${emptyBlocks} ${bucket.label} (${bucket.count} run${bucket.count !== 1 ? 's' : ''})`;
+  });
+};
+
+/**
+ * Parse date string (ISO 8601 or relative)
+ *
+ * Supports:
+ *
+ * - ISO 8601: "2025-10-24T12:00:00Z", "2025-10-24"
+ * - Relative: "1 day ago", "3 weeks ago", "2 hours ago"
+ * - Shorthand: "1d", "2w", "3m", "6h"
+ *
+ * @param dateStr - Date string to parse
+ * @returns Parsed Date object
+ * @throws Error if date format is invalid
+ */
+export const parseDate = (dateStr: string): Date => {
+  if (!dateStr || dateStr.trim() === '') {
+    throw new Error(`Invalid date format: "${dateStr}"`);
+  }
+
   // Try parsing as ISO 8601 first
   const isoDate = new Date(dateStr);
   if (!isNaN(isoDate.getTime())) {
     return isoDate;
   }
 
-  // TODO: Parse relative dates like "1 week ago", "3 days ago", etc.
-  // For now, throw error for invalid dates
-  throw new InvalidDateFormatError(`Invalid date format: "${dateStr}"`);
+  // Parse relative dates like "1 week ago", "3 days ago"
+  const relativePattern = /^(\d+)\s+(hour|day|week|month)s?\s+ago$/i;
+  const relativeMatch = dateStr.trim().match(relativePattern);
+
+  if (relativeMatch && relativeMatch[1] && relativeMatch[2]) {
+    const amount = parseInt(relativeMatch[1], 10);
+    const unit = relativeMatch[2].toLowerCase();
+
+    if (amount <= 0) {
+      throw new Error(`Invalid date format: "${dateStr}"`);
+    }
+
+    const now = new Date();
+    const msPerUnit: Record<string, number> = {
+      day: 24 * 60 * 60 * 1000,
+      hour: 60 * 60 * 1000,
+      month: 30 * 24 * 60 * 60 * 1000, // Approximate
+      week: 7 * 24 * 60 * 60 * 1000,
+    };
+
+    const offset = amount * (msPerUnit[unit] || 0);
+    return new Date(now.getTime() - offset);
+  }
+
+  // Parse shorthand formats like "1d", "2w", "3m", "6h"
+  // cspell:ignore hdwm
+  const shorthandPattern = /^(\d+)([hdwm])$/i;
+  const shorthandMatch = dateStr.trim().match(shorthandPattern);
+
+  if (shorthandMatch && shorthandMatch[1] && shorthandMatch[2]) {
+    const amount = parseInt(shorthandMatch[1], 10);
+    const unit = shorthandMatch[2].toLowerCase();
+
+    if (amount <= 0) {
+      throw new Error(`Invalid date format: "${dateStr}"`);
+    }
+
+    const now = new Date();
+    const msPerUnit: Record<string, number> = {
+      d: 24 * 60 * 60 * 1000,
+      h: 60 * 60 * 1000,
+      m: 30 * 24 * 60 * 60 * 1000, // Approximate month
+      w: 7 * 24 * 60 * 60 * 1000,
+    };
+
+    const offset = amount * (msPerUnit[unit] || 0);
+    return new Date(now.getTime() - offset);
+  }
+
+  throw new Error(`Invalid date format: "${dateStr}"`);
 };
