@@ -102,9 +102,12 @@ describe('AccurateEngine contract', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const result = await engine.execute(config);
@@ -133,9 +136,12 @@ describe('AccurateEngine contract', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const promise = engine.execute(config);
@@ -169,9 +175,12 @@ describe('AccurateEngine contract', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const result = await engine.execute(config);
@@ -389,9 +398,12 @@ describe('AccurateEngine contract', () => {
 
     it('should handle empty file lists', async () => {
       const config = {
-        config: { iterations: 10, time: 50, warmup: 0 },
         files: [],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       try {
@@ -424,14 +436,12 @@ describe('AccurateEngine contract', () => {
       );
 
       const config = {
-        config: {
-          iterations: 20,
-          quiet: true,
-          time: 50,
-          warmup: 0,
-        },
         files: [benchFile],
+        iterations: 20,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const result = await engine.execute(config);
@@ -460,9 +470,12 @@ describe('AccurateEngine contract', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const controller = new AbortController();

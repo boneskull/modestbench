@@ -91,9 +91,12 @@ describe('Engine comparison integration', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const accurateResult = await accurateEngine.execute(config);
@@ -164,9 +167,12 @@ describe('Engine comparison integration', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const accurateResult = await accurateEngine.execute(config);
@@ -208,9 +214,12 @@ describe('Engine comparison integration', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const accurateResult = await accurateEngine.execute(config);
@@ -257,9 +266,12 @@ describe('Engine comparison integration', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const accurateResult = await accurateEngine.execute(config);
@@ -301,9 +313,12 @@ describe('Engine comparison integration', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 50, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 50,
+        warmup: 0,
       };
 
       const accurateResult = await accurateEngine.execute(config);
@@ -347,9 +362,12 @@ describe('Engine comparison integration', () => {
       );
 
       const config = {
-        config: { iterations: 10, quiet: true, time: 100, warmup: 0 },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        time: 100,
+        warmup: 0,
       };
 
       const controller1 = new AbortController();
@@ -414,15 +432,13 @@ describe('Engine comparison integration', () => {
       );
 
       const config = {
-        config: {
-          iterations: 10,
-          quiet: true,
-          tags: ['fast'], // Only run fast tasks
-          time: 50,
-          warmup: 0,
-        },
         files: [benchFile],
+        iterations: 10,
+        quiet: true,
         reporters: ['human'],
+        tags: ['fast'], // Only run fast tasks
+        time: 50,
+        warmup: 0,
       };
 
       const accurateResult = await accurateEngine.execute(config);
