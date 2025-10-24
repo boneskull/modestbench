@@ -1,29 +1,5 @@
 # ModestBench Development Guide
 
-## Skills Wiki
-
-This project includes a personal skills wiki at `.claude-skills/` with proven techniques and patterns.
-
-### How to Use Skills
-
-**Before starting any task:**
-
-1. Search for relevant skills: `.claude-skills/getting-started/skills-search <pattern>`
-2. Read the skill: `.claude-skills/category/skill-name/SKILL.md`
-3. Announce usage: "I'm using the [Skill Name] skill"
-4. Follow the skill's guidance
-
-**Key skills for common tasks:**
-
-- Building features: `skills/collaboration/brainstorming`
-- Writing tests: `skills/testing/test-driven-development`
-- Debugging: `skills/debugging/systematic-debugging`
-- Code review: `skills/collaboration/requesting-code-review`
-- Feature branches: `skills/collaboration/using-git-worktrees`
-- Planning: `skills/collaboration/writing-plans`
-
-**Important:** If a skill exists for your task, use it. Skills prevent mistakes you don't know you make.
-
 ## Project-Specific Practices
 
 ### Git Workflow
