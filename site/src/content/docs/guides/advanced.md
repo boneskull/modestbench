@@ -498,24 +498,259 @@ if (hasRegression) {
 
 ## Historical Tracking
 
-ModestBench automatically saves results to `.modestbench/history/`. Use the history commands for analysis:
+ModestBench automatically saves results to `.modestbench/history/`. Use the history commands for performance analysis, regression detection, and trend visualization.
 
-### View History
+### Viewing Run History
+
+List and filter historical benchmark runs:
 
 ```bash
 # List recent runs
 modestbench history list
 
-# Show specific run
+# List with details (JSON format)
+modestbench history list --format json
+
+# Limit number of runs shown
+modestbench history list --limit 10
+
+# Filter by date range
+modestbench history list --since "7 days ago"
+modestbench history list --since 2025-01-01 --until 2025-12-31
+
+# Filter by pattern (file path matching)
+modestbench history list --pattern "**/*string*"
+
+# Filter by tags
+modestbench history list --tags performance,critical
+```
+
+### Date Range Filtering
+
+ModestBench supports flexible date formats for filtering:
+
+```bash
+# ISO 8601 dates
+modestbench history list --since 2025-10-01T00:00:00Z
+
+# Relative dates
+modestbench history list --since "1 week ago"
+modestbench history list --since "3 days ago"
+
+# Shorthand formats
+modestbench history list --since 1d    # 1 day ago
+modestbench history list --since 2w    # 2 weeks ago
+modestbench history list --since 1m    # 1 month ago
+modestbench history list --since 6h    # 6 hours ago
+```
+
+### Show Specific Run
+
+View detailed information about a specific benchmark run:
+
+```bash
+# Human-readable format
 modestbench history show run-2025-10-07-001
 
-# Compare two runs
-modestbench history compare \
-  run-2025-10-07-001 \
-  run-2025-10-07-002
+# JSON format for parsing
+modestbench history show run-2025-10-07-001 --format json
+```
+
+### Comparing Runs
+
+Compare two benchmark runs with detailed task-by-task analysis:
+
+```bash
+# Compare two specific runs
+modestbench history compare run-2025-10-07-001 run-2025-10-07-002
+
+# JSON output for scripting
+modestbench history compare run-2025-10-07-001 run-2025-10-07-002 --format json
+```
+
+**Human Output:**
+
+```text
+Comparing runs:
+  Run 1: run-2025-10-07-001 (10/7/2025, 10:30:45 AM)
+  Run 2: run-2025-10-07-002 (10/7/2025, 11:45:12 AM)
+
+Summary comparison:
+  Files: 3 vs 3
+  Tasks: 12 vs 12
+  Passed: 12 vs 12
+  Failed: 0 vs 0
+
+Task-by-task comparison:
+
+  String Operations › concat vs join
+    Mean: 0.052ms → 0.048ms (-7.7%)
+    Min: 0.048ms → 0.045ms
+    Max: 0.068ms → 0.062ms
+    Iterations: 1000 vs 1000
+
+  Array Operations › map vs forEach
+    Mean: 0.125ms → 0.128ms (+2.4%)
+    Min: 0.118ms → 0.121ms
+    Max: 0.145ms → 0.149ms
+    Iterations: 1000 vs 1000
+```
+
+**JSON Output Structure:**
+
+```json
+{
+  "run1": {
+    "id": "run-2025-10-07-001",
+    "startTime": "2025-10-07T10:30:45.123Z",
+    "endTime": "2025-10-07T10:31:12.456Z",
+    "summary": { "totalFiles": 3, "totalTasks": 12 }
+  },
+  "run2": {
+    "id": "run-2025-10-07-002",
+    "startTime": "2025-10-07T11:45:12.789Z",
+    "endTime": "2025-10-07T11:45:39.012Z",
+    "summary": { "totalFiles": 3, "totalTasks": 12 }
+  },
+  "taskComparisons": [
+    {
+      "file": "benchmarks/string.bench.js",
+      "suite": "String Operations",
+      "task": "concat vs join",
+      "inBoth": true,
+      "percentChange": -7.7,
+      "run1": {
+        "mean": 52000,
+        "min": 48000,
+        "max": 68000,
+        "iterations": 1000,
+        "cv": 5.2
+      },
+      "run2": {
+        "mean": 48000,
+        "min": 45000,
+        "max": 62000,
+        "iterations": 1000,
+        "cv": 4.8
+      }
+    }
+  ],
+  "tasksOnlyInRun1": [],
+  "tasksOnlyInRun2": []
+}
+```
+
+### Performance Trends Analysis
+
+Analyze performance trends across multiple runs with statistical analysis and visualizations:
+
+```bash
+# Show trends for all tasks
+modestbench history trends
+
+# Filter by date range
+modestbench history trends --since 1w
+
+# Limit number of runs analyzed
+modestbench history trends --limit 20
+
+# JSON format for custom analysis
+modestbench history trends --format json
+
+# Filter by pattern
+modestbench history trends --pattern "**/*array*"
+```
+
+**Human Output with Visualizations:**
+
+```text
+Performance Trends (15 runs)
+Time range: 10/1/2025 to 10/24/2025
+
+Summary:
+  ▲ 4 improving  ▼ 2 degrading  → 6 stable
+
+Task Performance Summary:
+
+  ▲ String Operations › concat vs join     -12.5%   ▂▃▄▅█▇▆▅▃
+  ▼ Array Operations › map vs forEach      +8.3%    ▇▆▅▄▃▂▃▄█
+  → Object Operations › Object.keys        +1.2%    ▄▅▄▃▅▄▅▄▄
+  ▲ RegExp › test vs match                 -5.8%    ▇▆▅▄▄▃▃▂▂
+  → Function Calls › apply vs call         -0.5%    ▄▅▄▅▄▅▄▄▄
+
+⚠ Regressions Detected:
+
+  ▼ Array Operations › map vs forEach: 8.3% slower (15 runs)
+
+Performance Distribution (top task):
+String Operations › concat vs join
+
+  0.045-0.048ms ▇▇▇▇▇▇▇▇▇▇▇▇ 6
+  0.048-0.051ms ▇▇▇▇▇▇ 3
+  0.051-0.054ms ▇▇▇▇ 2
+  0.054-0.057ms ▇▇ 1
+  0.057-0.060ms ▇ 1
+
+  Mean: 0.049ms  Median: 0.048ms  StdDev: 0.004ms
+```
+
+**Trend Analysis Features:**
+
+- **Statistical Metrics**: Mean, median, variance, standard deviation for each task
+- **Trend Classification**: Automatic detection of improving, degrading, or stable trends using linear regression
+- **Regression Detection**: Highlights tasks with performance degradation exceeding 5% threshold
+- **Sparkline Visualization**: Compact ASCII graphs showing trend direction
+- **Bar Chart Histograms**: Performance distribution visualization with synthwave colors
+- **Percent Change Calculation**: First-to-last data point comparison
+
+**JSON Output Structure:**
+
+```json
+{
+  "summary": {
+    "totalTasks": 12,
+    "runs": 15,
+    "improvingTasks": 4,
+    "degradingTasks": 2,
+    "stableTasks": 6,
+    "timespan": {
+      "start": "2025-10-01T10:00:00.000Z",
+      "end": "2025-10-24T15:30:00.000Z"
+    }
+  },
+  "trends": [
+    {
+      "task": "String Operations › concat vs join",
+      "trend": "improving",
+      "runs": 15,
+      "percentChange": -12.5,
+      "confidence": 95,
+      "statistics": {
+        "mean": 48500,
+        "median": 48000,
+        "variance": 16000,
+        "stdDeviation": 4000
+      },
+      "dataPoints": [
+        { "date": "2025-10-01T10:00:00.000Z", "mean": 55000 },
+        { "date": "2025-10-02T10:00:00.000Z", "mean": 52000 },
+        { "date": "2025-10-24T15:30:00.000Z", "mean": 48000 }
+      ]
+    }
+  ],
+  "regressions": [
+    {
+      "task": "Array Operations › map vs forEach",
+      "percentChange": 8.3,
+      "runs": 15
+    }
+  ]
+}
 ```
 
 ### Export Historical Data
+
+Export benchmark history for external analysis or archival:
 
 ```bash
 # Export to CSV for analysis
@@ -527,9 +762,18 @@ modestbench history export \
 modestbench history export \
   --format json \
   --output historical-data.json
+
+# Export filtered data
+modestbench history export \
+  --since 1m \
+  --pattern "**/*critical*" \
+  --format json \
+  --output critical-benchmarks.json
 ```
 
 ### Cleanup Old Data
+
+Manage historical data storage:
 
 ```bash
 # Clean runs older than 30 days
@@ -540,6 +784,79 @@ modestbench history clean --keep 10
 
 # Clean by size
 modestbench history clean --max-size 100mb
+```
+
+### Using History in CI/CD
+
+Track performance trends over time in your CI pipeline:
+
+```yaml
+# .github/workflows/performance.yml
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      
+      - name: Install
+        run: npm ci
+      
+      - name: Run benchmarks
+        run: modestbench --reporters json
+      
+      - name: Check for regressions
+        run: |
+          # Compare with baseline
+          LATEST=$(modestbench history list --format json | jq -r '.[0].id')
+          BASELINE=$(modestbench history list --format json | jq -r '.[1].id')
+          
+          # Get comparison data
+          modestbench history compare "$BASELINE" "$LATEST" --format json > comparison.json
+          
+          # Check for regressions (>5% slower)
+          node scripts/check-trends.js
+```
+
+**Regression Check Script:**
+
+```javascript
+// scripts/check-trends.js
+import { readFileSync } from 'fs';
+import { execSync } from 'child_process';
+
+// Get trends data
+const trendsOutput = execSync(
+  'modestbench history trends --format json --limit 10',
+  { encoding: 'utf8' }
+);
+
+const { regressions } = JSON.parse(trendsOutput);
+
+if (regressions.length > 0) {
+  console.error('⚠️  Performance Regressions Detected:\n');
+  
+  for (const regression of regressions) {
+    console.error(
+      `  ▼ ${regression.task}: ${regression.percentChange.toFixed(1)}% slower`
+    );
+  }
+  
+  process.exit(1);
+} else {
+  console.log('✅ No performance regressions detected');
+}
 ```
 
 ## Programmatic API
