@@ -91,7 +91,7 @@ export class SimpleReporter extends BaseReporter {
       console.log(`${symbols.cross} Failed: ${totalFailed}`);
       console.log(`${symbols.checkmark} Passed: ${totalPassed}`);
     } else {
-      console.log(`${symbols.checkmark} All tests passed: ${totalPassed}`);
+      console.log(`${symbols.checkmark} All tasks passed: ${totalPassed}`);
     }
 
     console.log(`- Files: ${totalFiles}`);
