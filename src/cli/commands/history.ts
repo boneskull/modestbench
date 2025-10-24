@@ -646,7 +646,7 @@ const handleTrendsCommand = async (
   options: HistoryOptions,
 ): Promise<number> => {
   try {
-    // Build query from command line arguments (same as list command)
+    // Build query from command line arguments
     let parsedSince: Date | undefined;
     let parsedUntil: Date | undefined;
 
@@ -658,7 +658,7 @@ const handleTrendsCommand = async (
           'Invalid since date:',
           error instanceof Error ? error.message : String(error),
         );
-        return 2; // Invalid date format
+        return 2;
       }
     }
 
@@ -670,11 +670,10 @@ const handleTrendsCommand = async (
           'Invalid until date:',
           error instanceof Error ? error.message : String(error),
         );
-        return 2; // Invalid date format
+        return 2;
       }
     }
 
-    // Get pattern from args or explicit pattern option
     const pattern = options.args?.[0] || options.pattern;
 
     const query = {
@@ -692,36 +691,246 @@ const handleTrendsCommand = async (
       if (!options.quiet) {
         console.log('No historical data found matching criteria');
       }
-      return 0; // Success - no data is not an error
+      return 0;
     }
 
+    // Build trend data for each task across runs
+    const taskTrendsMap = new Map<string, TrendDataPoint[]>();
+
+    for (const run of runs) {
+      for (const file of run.files) {
+        for (const suite of file.suites) {
+          for (const task of suite.tasks) {
+            if (!task.error) {
+              const key = `${file.filePath}::${suite.name}::${task.name}`;
+              const dataPoints = taskTrendsMap.get(key) || [];
+              dataPoints.push({
+                date: run.startTime,
+                mean: task.mean,
+              });
+              taskTrendsMap.set(key, dataPoints);
+            }
+          }
+        }
+      }
+    }
+
+    // Calculate trends for each task
+    const trendsData: TrendData[] = [];
+
+    for (const [key, dataPoints] of taskTrendsMap.entries()) {
+      // Sort by date (oldest first)
+      dataPoints.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+      const [_filePath, suiteName, taskName] = key.split('::');
+
+      const statistics = calculateStatistics(dataPoints);
+      const trend = calculateTrend(dataPoints);
+      const percentChange = calculatePercentChange(dataPoints);
+
+      trendsData.push({
+        confidence: 95, // Fixed confidence level for now
+        dataPoints,
+        percentChange,
+        runs: dataPoints.length,
+        statistics,
+        task: `${suiteName} › ${taskName}`,
+        trend,
+      });
+    }
+
+    // Sort by absolute percent change (most significant first)
+    trendsData.sort(
+      (a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange),
+    );
+
     if (options.format === 'json') {
-      // TODO: Generate trends data in JSON format
-      const trendsData = {
+      // JSON format output
+      const summary = {
+        degradingTasks: trendsData.filter((t) => t.trend === 'degrading')
+          .length,
+        improvingTasks: trendsData.filter((t) => t.trend === 'improving')
+          .length,
         runs: runs.length,
+        stableTasks: trendsData.filter((t) => t.trend === 'stable').length,
         timespan: {
           end: runs[0]?.startTime,
           start: runs[runs.length - 1]?.startTime,
         },
-        // TODO: Add actual trend calculations
+        totalTasks: trendsData.length,
       };
-      console.log(JSON.stringify(trendsData, null, 2));
+
+      const regressions = trendsData.filter((t) => detectRegression(t, 5));
+
+      console.log(
+        JSON.stringify(
+          {
+            regressions,
+            summary,
+            trends: trendsData,
+          },
+          null,
+          2,
+        ),
+      );
     } else {
-      // Human format trends
+      // Human format output with visualizations
       if (!options.quiet) {
-        console.log(`Performance trends for ${runs.length} runs:`);
+        const firstRun = runs[runs.length - 1];
+        const lastRun = runs[0];
+
         console.log(
-          `Time range: ${runs[runs.length - 1]?.startTime} to ${runs[0]?.startTime}`,
+          colorize(
+            'brightMagenta',
+            colorize('bold', `\nPerformance Trends (${runs.length} runs)`),
+          ),
         );
-        // TODO: Add trend analysis and visualization
-        console.log('(Trend analysis not yet implemented)');
+        console.log(
+          colorize(
+            'dim',
+            `Time range: ${firstRun?.startTime.toLocaleDateString()} to ${lastRun?.startTime.toLocaleDateString()}`,
+          ),
+        );
+        console.log();
+
+        // Summary statistics
+        const improving = trendsData.filter(
+          (t) => t.trend === 'improving',
+        ).length;
+        const degrading = trendsData.filter(
+          (t) => t.trend === 'degrading',
+        ).length;
+        const stable = trendsData.filter((t) => t.trend === 'stable').length;
+
+        console.log(colorize('brightBlue', 'Summary:'));
+        console.log(
+          `  ${colorize('brightCyan', '▲')} ${improving} improving  ${colorize('brightRed', '▼')} ${degrading} degrading  ${colorize('dim', '→')} ${stable} stable`,
+        );
+        console.log();
+
+        // Task Performance Summary Table
+        console.log(colorize('brightMagenta', 'Task Performance Summary:'));
+        console.log();
+
+        for (const trendData of trendsData.slice(0, 20)) {
+          // Show top 20
+          const trendIcon =
+            trendData.trend === 'improving'
+              ? colorize('brightCyan', '▲')
+              : trendData.trend === 'degrading'
+                ? colorize('brightRed', '▼')
+                : colorize('dim', '→');
+
+          const changeColor =
+            trendData.percentChange < -5
+              ? 'brightCyan'
+              : trendData.percentChange > 5
+                ? 'brightRed'
+                : 'dim';
+
+          const changeSign = trendData.percentChange >= 0 ? '+' : '';
+          const changeStr = `${changeSign}${trendData.percentChange.toFixed(1)}%`;
+
+          // Generate sparkline
+          const values = trendData.dataPoints.map((dp) => dp.mean);
+          const sparkline = generateSparkline(values, 12);
+          const sparklineColor =
+            trendData.trend === 'improving'
+              ? 'brightCyan'
+              : trendData.trend === 'degrading'
+                ? 'brightRed'
+                : 'cyan';
+
+          console.log(
+            `  ${trendIcon} ${colorize('white', trendData.task.padEnd(40))} ${colorize(changeColor, changeStr.padStart(8))}  ${colorize(sparklineColor, sparkline)}`,
+          );
+        }
+
+        if (trendsData.length > 20) {
+          console.log(
+            colorize('dim', `  ... and ${trendsData.length - 20} more tasks`),
+          );
+        }
+
+        console.log();
+
+        // Show regressions if any
+        const regressions = trendsData.filter((t) => detectRegression(t, 5));
+
+        if (regressions.length > 0) {
+          console.log(
+            colorize('brightRed', colorize('bold', '⚠ Regressions Detected:')),
+          );
+          console.log();
+
+          for (const regression of regressions) {
+            console.log(
+              `  ${colorize('brightRed', '▼')} ${colorize('white', regression.task)}: ${colorize('brightRed', `${regression.percentChange.toFixed(1)}% slower`)} (${regression.runs} runs)`,
+            );
+          }
+
+          console.log();
+        }
+
+        // Show performance distribution for top task if we have enough data
+        const topTrend = trendsData[0];
+        if (topTrend && topTrend.runs >= 5) {
+          console.log(
+            colorize('brightMagenta', 'Performance Distribution (top task):'),
+          );
+          console.log(colorize('white', topTrend.task));
+          console.log();
+
+          // Create distribution buckets
+          const values = topTrend.dataPoints.map((dp) => dp.mean);
+          const min = Math.min(...values);
+          const max = Math.max(...values);
+          const range = max - min;
+          const numBuckets = Math.min(5, topTrend.runs);
+          const bucketSize = range / numBuckets;
+
+          const buckets: DistributionBucket[] = [];
+          for (let i = 0; i < numBuckets; i++) {
+            const bucketMin = min + i * bucketSize;
+            const bucketMax = min + (i + 1) * bucketSize;
+            const count = values.filter(
+              (v) =>
+                v >= bucketMin &&
+                (i === numBuckets - 1 ? v <= bucketMax : v < bucketMax),
+            ).length;
+
+            const minMs = (bucketMin / 1000000).toFixed(2);
+            const maxMs = (bucketMax / 1000000).toFixed(2);
+
+            buckets.push({
+              count,
+              label: `${minMs}-${maxMs}ms`,
+              max: bucketMax,
+              min: bucketMin,
+            });
+          }
+
+          const chart = generateBarChart(buckets, 25);
+          for (const line of chart) {
+            console.log(colorize('brightCyan', line));
+          }
+
+          console.log();
+          console.log(
+            colorize(
+              'dim',
+              `  Mean: ${(topTrend.statistics.mean / 1000000).toFixed(3)}ms  Median: ${(topTrend.statistics.median / 1000000).toFixed(3)}ms  StdDev: ${(topTrend.statistics.stdDeviation / 1000000).toFixed(3)}ms`,
+            ),
+          );
+          console.log();
+        }
       }
     }
 
-    return 0; // Success
+    return 0;
   } catch (error) {
     console.error('Error showing trends:', error);
-    return 3; // Runtime error
+    return 3;
   }
 };
 
