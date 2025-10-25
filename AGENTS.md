@@ -1,6 +1,10 @@
-# ModestBench Development Guide
+# modestbench Development Guide
 
 ## Project-Specific Practices
+
+### Stylized Name
+
+In Markdown text, refer to the name of this project as `**modestbench**` (bold) instead of `ModestBench` or `Modestbench`.
 
 ### Git Workflow
 

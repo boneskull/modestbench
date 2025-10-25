@@ -32,7 +32,14 @@ import {
   SimpleReporter,
 } from '../reporters/index.js';
 // Import commands
-import { handleHistoryCommand as historyCommand } from './commands/history.js';
+import {
+  handleCleanCommand,
+  handleCompareCommand,
+  handleExportCommand,
+  handleListCommand,
+  handleShowCommand,
+  handleTrendsCommand,
+} from './commands/history.js';
 import { handleInitCommand as initCommand } from './commands/init.js';
 import { handleRunCommand as runCommand } from './commands/run.js';
 
@@ -104,6 +111,7 @@ export const main = async (
 
     // Configure global options and commands
     await cli
+      .scriptName('modestbench')
       .option('config', {
         alias: 'c',
         description: 'Path to configuration file',
@@ -137,6 +145,7 @@ export const main = async (
       })
       .option('cwd', {
         default: process.cwd(),
+        defaultDescription: '.',
         description: 'Working directory',
         global: true,
         type: 'string',
@@ -314,111 +323,349 @@ export const main = async (
           process.exit(exitCode);
         },
       )
-      .command(
-        'history <subcommand> [args..]',
-        'View and manage benchmark history',
-        (yargs) => {
-          return yargs
-            .positional('subcommand', {
-              choices: [
-                'list',
-                'show',
-                'compare',
-                'trends',
-                'clean',
-                'export',
-              ] as const,
-              demandOption: true,
-              describe: 'History subcommand',
-              type: 'string',
-            })
-            .positional('args', {
-              array: true,
-              describe: 'Additional arguments for the subcommand',
-              type: 'string',
-            })
-            .option('since', {
-              description:
-                'Show runs since date (ISO 8601 or relative like "1 week ago")',
-              type: 'string',
-            })
-            .option('until', {
-              description:
-                'Show runs until date (ISO 8601 or relative like "1 day ago")',
-              type: 'string',
-            })
-            .option('pattern', {
-              description: 'Filter by benchmark name pattern',
-              type: 'string',
-            })
-            .option('tags', {
-              description: 'Filter by tags',
-              type: 'array',
-            })
-            .option('limit', {
-              default: 10,
-              description: 'Maximum number of results',
-              type: 'number',
-            })
-            .option('format', {
-              choices: ['human', 'json', 'csv'] as const,
-              default: 'human' as const,
-              description: 'Output format',
-              type: 'string',
-            })
-            .option('maxAge', {
-              description: 'Maximum age in days for cleanup',
-              type: 'number',
-            })
-            .option('maxRuns', {
-              description: 'Maximum number of runs to keep',
-              type: 'number',
-            })
-            .option('maxSize', {
-              description: 'Maximum storage size in bytes',
-              type: 'number',
-            })
-            .option('confirm', {
-              default: false,
-              description: 'Confirm cleanup operations',
-              type: 'boolean',
-            })
-            .option('output', {
-              description: 'Output file path',
-              type: 'string',
-            })
-            .example([
-              ['$0 history list', 'List recent benchmark runs'],
-              ['$0 history show <run-id>', 'Show detailed results for run'],
-              ['$0 history compare <run-id1> <run-id2>', 'Compare two runs'],
-              ['$0 history trends [pattern]', 'Show performance trends'],
-              ['$0 history clean --max-runs 50', 'Keep only latest 50 runs'],
-              ['$0 history export --format csv', 'Export to CSV'],
-            ]);
-        },
-        async (argv) => {
-          const context = await createCliContext(argv, abortController!);
-          const exitCode = await historyCommand(context, {
-            args: argv.args,
-            confirm: argv.confirm,
-            cwd: argv.cwd,
-            format: argv.format,
-            limit: argv.limit,
-            maxAge: argv.maxAge,
-            maxRuns: argv.maxRuns,
-            maxSize: argv.maxSize,
-            outputDir: argv.output,
-            pattern: argv.pattern,
-            quiet: Boolean(argv.quiet),
-            since: argv.since,
-            subcommand: argv.subcommand,
-            tags: argv.tags as string[] | undefined,
-            until: argv.until,
-            verbose: argv.verbose,
-          });
-          process.exit(exitCode);
-        },
-      )
+      .command('history', 'View and manage benchmark history', (yargs) => {
+        return yargs
+          .command(
+            'list',
+            'List recent benchmark runs',
+            (yargs) => {
+              return yargs
+                .option('since', {
+                  description:
+                    'Show runs since date (ISO 8601 or relative like "1 week ago")',
+                  type: 'string',
+                })
+                .option('until', {
+                  description:
+                    'Show runs until date (ISO 8601 or relative like "1 day ago")',
+                  type: 'string',
+                })
+                .option('pattern', {
+                  description: 'Filter by benchmark name pattern',
+                  type: 'string',
+                })
+                .option('tags', {
+                  description: 'Filter by tags (comma-separated)',
+                  type: 'array',
+                })
+                .option('limit', {
+                  default: 10,
+                  description: 'Maximum number of results',
+                  type: 'number',
+                })
+                .option('format', {
+                  choices: ['human', 'json', 'csv'] as const,
+                  default: 'human' as const,
+                  description: 'Output format',
+                  type: 'string',
+                })
+                .example([
+                  ['$0 history list', 'List recent benchmark runs'],
+                  [
+                    '$0 history list --since "1 week ago"',
+                    'List runs from last week',
+                  ],
+                  ['$0 history list --limit 20', 'List 20 most recent runs'],
+                  ['$0 history list --format json', 'List runs in JSON format'],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleListCommand(context, {
+                cwd: argv.cwd,
+                format: argv.format,
+                limit: argv.limit,
+                pattern: argv.pattern,
+                quiet: Boolean(argv.quiet),
+                since: argv.since,
+                tags: argv.tags as string[] | undefined,
+                until: argv.until,
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'show <run-id>',
+            'Show detailed results for a specific run',
+            (yargs) => {
+              return yargs
+                .positional('run-id', {
+                  describe: 'ID of the benchmark run to show',
+                  type: 'string',
+                })
+                .option('format', {
+                  choices: ['human', 'json', 'csv'] as const,
+                  default: 'human' as const,
+                  description: 'Output format',
+                  type: 'string',
+                })
+                .example([
+                  [
+                    '$0 history show abc123',
+                    'Show detailed results for run abc123',
+                  ],
+                  [
+                    '$0 history show abc123 --format json',
+                    'Show run in JSON format',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleShowCommand(context, {
+                cwd: argv.cwd,
+                format: argv.format,
+                quiet: Boolean(argv.quiet),
+                runId: String(argv['run-id']),
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'compare <run-id1> <run-id2>',
+            'Compare two benchmark runs',
+            (yargs) => {
+              return yargs
+                .positional('run-id1', {
+                  describe: 'ID of the first benchmark run',
+                  type: 'string',
+                })
+                .positional('run-id2', {
+                  describe: 'ID of the second benchmark run',
+                  type: 'string',
+                })
+                .option('format', {
+                  choices: ['human', 'json'] as const,
+                  default: 'human' as const,
+                  description: 'Output format',
+                  type: 'string',
+                })
+                .example([
+                  ['$0 history compare abc123 def456', 'Compare two runs'],
+                  [
+                    '$0 history compare abc123 def456 --format json',
+                    'Compare in JSON format',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleCompareCommand(context, {
+                cwd: argv.cwd,
+                format: argv.format,
+                quiet: Boolean(argv.quiet),
+                runId1: String(argv['run-id1']),
+                runId2: String(argv['run-id2']),
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'trends [pattern]',
+            'Show performance trends over time',
+            (yargs) => {
+              return yargs
+                .positional('pattern', {
+                  describe: 'Filter by benchmark name pattern',
+                  type: 'string',
+                })
+                .option('since', {
+                  description:
+                    'Show trends since date (ISO 8601 or relative like "1 week ago")',
+                  type: 'string',
+                })
+                .option('until', {
+                  description:
+                    'Show trends until date (ISO 8601 or relative like "1 day ago")',
+                  type: 'string',
+                })
+                .option('tags', {
+                  description: 'Filter by tags (comma-separated)',
+                  type: 'array',
+                })
+                .option('limit', {
+                  description: 'Maximum number of runs to analyze',
+                  type: 'number',
+                })
+                .option('all', {
+                  alias: 'a',
+                  default: false,
+                  description: 'Analyze all runs (ignore limit)',
+                  type: 'boolean',
+                })
+                .option('format', {
+                  choices: ['human', 'json'] as const,
+                  default: 'human' as const,
+                  description: 'Output format',
+                  type: 'string',
+                })
+                .example([
+                  [
+                    '$0 history trends',
+                    'Show performance trends for all benchmarks',
+                  ],
+                  [
+                    '$0 history trends --since "1 month ago"',
+                    'Show trends from last month',
+                  ],
+                  [
+                    '$0 history trends "array-*"',
+                    'Show trends for array benchmarks',
+                  ],
+                  [
+                    '$0 history trends --format json',
+                    'Output trends in JSON format',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleTrendsCommand(context, {
+                all: Boolean(argv.all),
+                cwd: argv.cwd,
+                format: argv.format,
+                limit: argv.limit,
+                pattern: argv.pattern,
+                quiet: Boolean(argv.quiet),
+                since: argv.since,
+                tags: argv.tags as string[] | undefined,
+                until: argv.until,
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'clean',
+            'Clean up old benchmark history',
+            (yargs) => {
+              return yargs
+                .option('max-age', {
+                  description: 'Remove runs older than this many days',
+                  type: 'number',
+                })
+                .option('max-runs', {
+                  description: 'Keep only this many most recent runs',
+                  type: 'number',
+                })
+                .option('max-size', {
+                  description: 'Keep history under this size in bytes',
+                  type: 'number',
+                })
+                .option('confirm', {
+                  default: false,
+                  description: 'Confirm cleanup without prompting',
+                  type: 'boolean',
+                })
+                .check((argv) => {
+                  if (
+                    !argv['max-age'] &&
+                    !argv['max-runs'] &&
+                    !argv['max-size']
+                  ) {
+                    throw new Error(
+                      'At least one cleanup criterion must be specified (--max-age, --max-runs, or --max-size)',
+                    );
+                  }
+                  return true;
+                })
+                .example([
+                  [
+                    '$0 history clean --max-runs 50 --confirm',
+                    'Keep only latest 50 runs',
+                  ],
+                  [
+                    '$0 history clean --max-age 30',
+                    'Preview removing runs older than 30 days',
+                  ],
+                  [
+                    '$0 history clean --max-size 10485760',
+                    'Keep history under 10MB',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleCleanCommand(context, {
+                confirm: argv.confirm,
+                cwd: argv.cwd,
+                maxAge: argv['max-age'],
+                maxRuns: argv['max-runs'],
+                maxSize: argv['max-size'],
+                quiet: Boolean(argv.quiet),
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'export',
+            'Export benchmark history to a file',
+            (yargs) => {
+              return yargs
+                .option('format', {
+                  choices: ['json', 'csv'] as const,
+                  default: 'json' as const,
+                  description: 'Export format',
+                  type: 'string',
+                })
+                .option('output', {
+                  alias: 'o',
+                  demandOption: true,
+                  description: 'Output file path',
+                  type: 'string',
+                })
+                .option('since', {
+                  description: 'Export runs since date',
+                  type: 'string',
+                })
+                .option('until', {
+                  description: 'Export runs until date',
+                  type: 'string',
+                })
+                .example([
+                  [
+                    '$0 history export -o history.json',
+                    'Export all history to JSON',
+                  ],
+                  [
+                    '$0 history export -o history.csv --format csv',
+                    'Export to CSV',
+                  ],
+                  [
+                    '$0 history export -o recent.json --since "1 week ago"',
+                    'Export recent runs',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleExportCommand(context, {
+                cwd: argv.cwd,
+                format: argv.format,
+                outputPath: argv.output,
+                quiet: Boolean(argv.quiet),
+                since: argv.since,
+                until: argv.until,
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .demandCommand(1, 'You must specify a history subcommand')
+          .strict()
+          .example([
+            ['$0 history list', 'List recent benchmark runs'],
+            ['$0 history show <run-id>', 'Show detailed results'],
+            ['$0 history compare <run-id1> <run-id2>', 'Compare two runs'],
+            ['$0 history trends', 'Show performance trends'],
+            ['$0 history clean --max-runs 50', 'Keep only latest 50 runs'],
+            ['$0 history export -o data.json', 'Export history'],
+          ]);
+      })
       .command(
         'init [type]',
         'Initialize a new benchmark project',

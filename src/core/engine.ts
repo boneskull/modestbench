@@ -6,6 +6,8 @@
  * architecture.
  */
 
+import { randomBytes } from 'node:crypto';
+
 import type {
   BenchmarkDefinition,
   BenchmarkEngine,
@@ -697,9 +699,15 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
 
   /**
    * Generate a unique run ID
+   *
+   * Uses crypto.randomBytes for cryptographically random 7-character IDs.
+   * Format: 7 lowercase alphanumeric characters (e.g., "k3m9x2p")
    */
   private generateRunId(): string {
-    return `run-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+    // Generate random bytes, convert to hex, then to base36, take first 7 chars
+    const hex = randomBytes(4).toString('hex');
+    const num = parseInt(hex, 16);
+    return num.toString(36).padStart(7, '0').substring(0, 7);
   }
 
   /**

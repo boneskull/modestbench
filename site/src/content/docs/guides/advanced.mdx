@@ -3,6 +3,8 @@ title: Advanced Usage
 description: Advanced features and patterns for modestbench
 ---
 
+import AsciinemaPlayer from '../../../components/AsciinemaPlayer.astro';
+
 ## Benchmark Engines
 
 ModestBench provides two engines with different performance characteristics and statistical approaches.
@@ -199,16 +201,16 @@ export default {
         this.db = await connectDatabase();
         await this.db.seed();
       },
-      
+
       async teardown() {
         await this.db.close();
       },
-      
+
       benchmarks: {
         'Read Query': async function() {
           return await this.db.query('SELECT * FROM users LIMIT 100');
         },
-        
+
         'Write Query': async function() {
           return await this.db.insert({ name: 'Test User' });
         },
@@ -249,10 +251,10 @@ export default {
         'String Includes': () => str.includes('pattern'),
       },
     },
-    
+
     'Array Operations': {
       tags: ['array', 'slow'],
-      
+
       benchmarks: {
         // Task inherits: ['performance', 'core', 'array', 'slow']
         'Array spread': () => {
@@ -299,12 +301,12 @@ export default {
         console.log('This only runs if at least one task will execute');
         this.expensiveResource = createExpensiveResource();
       },
-      
+
       teardown() {
         console.log('This only runs if setup ran');
         this.expensiveResource.destroy();
       },
-      
+
       benchmarks: {
         'Fast Task': {
           fn() { /* ... */ },
@@ -378,10 +380,10 @@ export default {
   reporters: isCI ? ['json', 'csv'] : ['simple'], // Simple reporter for CI, auto-detect for local
   quiet: isCI,
   outputDir: isCI ? './benchmark-results' : undefined,
-  
+
   // Only run critical benchmarks in CI
   tags: isCI ? ['critical'] : [],
-  
+
   // Exclude slow benchmarks in development
   excludeTags: isProd ? [] : ['slow'],
 };
@@ -404,17 +406,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build project
         run: npm run build
-      
+
       - name: Run benchmarks
         run: |
           modestbench \
@@ -422,13 +424,13 @@ jobs:
             --output ./results \
             --quiet \
             --tags critical
-      
+
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
           name: benchmark-results
           path: ./results/
-      
+
       - name: Check for regressions
         run: node scripts/check-regression.js
 ```
@@ -498,24 +500,279 @@ if (hasRegression) {
 
 ## Historical Tracking
 
-ModestBench automatically saves results to `.modestbench/history/`. Use the history commands for analysis:
+ModestBench automatically saves results to `.modestbench/history/`. Use the history commands for performance analysis, regression detection, and trend visualization.
 
-### View History
+### Viewing Run History
+
+List and filter historical benchmark runs:
 
 ```bash
 # List recent runs
 modestbench history list
 
-# Show specific run
+# List with details (JSON format)
+modestbench history list --format json
+
+# Limit number of runs shown
+modestbench history list --limit 10
+
+# Filter by date range
+modestbench history list --since "7 days ago"
+modestbench history list --since 2025-01-01 --until 2025-12-31
+
+# Filter by pattern (file path matching)
+modestbench history list --pattern "**/*string*"
+
+# Filter by tags
+modestbench history list --tags performance,critical
+```
+
+<AsciinemaPlayer
+  src="/modestbench/demos/history-list.cast"
+  autoPlay={true}
+  loop={false}
+  speed={1.0}
+  theme="asciinema"
+  rows={24}
+/>
+
+### Date Range Filtering
+
+ModestBench supports flexible date formats for filtering:
+
+```bash
+# ISO 8601 dates
+modestbench history list --since 2025-10-01T00:00:00Z
+
+# Relative dates
+modestbench history list --since "1 week ago"
+modestbench history list --since "3 days ago"
+
+# Shorthand formats
+modestbench history list --since 1d    # 1 day ago
+modestbench history list --since 2w    # 2 weeks ago
+modestbench history list --since 1m    # 1 month ago
+modestbench history list --since 6h    # 6 hours ago
+```
+
+### Show Specific Run
+
+View detailed information about a specific benchmark run:
+
+{/* spell-checker: disable */}
+```bash
+# Human-readable format (synthwave colors with detailed metrics)
 modestbench history show run-2025-10-07-001
 
-# Compare two runs
-modestbench history compare \
-  run-2025-10-07-001 \
-  run-2025-10-07-002
+# JSON format for parsing
+modestbench history show run-2025-10-07-001 --format json
+
+# Partial ID matching (like Git commits)
+modestbench history show 5a63ucbo9w
+```
+{/* spell-checker: enable */}
+
+The show command displays:
+
+- Run metadata (ID, date, duration, environment)
+- CPU and Node.js version information
+- Git branch and commit (if in a repository)
+- Task-by-task results with mean, margin of error, ops/sec, and coefficient of variation (CV)
+- File organization with synthwave color scheme
+
+<AsciinemaPlayer
+  src="/modestbench/demos/history-show.cast"
+  autoPlay={true}
+  loop={false}
+  speed={1.0}
+  theme="asciinema"
+  rows={70}
+/>
+
+### Comparing Runs
+
+Compare two benchmark runs with detailed task-by-task analysis:
+
+{/* spell-checker: disable */}
+
+```bash
+# Compare two specific runs
+modestbench history compare run-2025-10-07-001 run-2025-10-07-002
+
+# JSON output for scripting
+modestbench history compare run-2025-10-07-001 run-2025-10-07-002 --format json
+
+# Using partial IDs
+modestbench history compare 5a63ucbo9w 7f2k9x1m3p
+```
+{/* spell-checker: enable */}
+
+<AsciinemaPlayer
+  src="/modestbench/demos/history-compare.cast"
+  autoPlay={true}
+  loop={false}
+  speed={1.0}
+  theme="asciinema"
+  rows={30}
+/>
+
+**Output Details:**
+
+- **Mean**: Shows percent change in parentheses; higher values are highlighted in bright magenta
+- **Min/Max**: Arrows are dimmed; higher values highlighted
+- **Iterations**: "vs" is dimmed; higher iteration count is bolded
+- **CV**: Coefficient of Variation helps assess measurement consistency (higher = more variable)
+- All metrics use synthwave color scheme for clarity
+
+**JSON Output Structure:**
+
+```json
+{
+  "run1": {
+    "id": "run-2025-10-07-001",
+    "startTime": "2025-10-07T10:30:45.123Z",
+    "summary": { "totalFiles": 3, "totalTasks": 12, "passedTasks": 12, "failedTasks": 0 }
+  },
+  "run2": {
+    "id": "run-2025-10-07-002",
+    "startTime": "2025-10-07T11:45:12.789Z",
+    "summary": { "totalFiles": 3, "totalTasks": 12, "passedTasks": 12, "failedTasks": 0 }
+  },
+  "taskComparisons": [
+    {
+      "file": "benchmarks/string.bench.js",
+      "suite": "String Operations",
+      "task": "concat vs join",
+      "percentChange": -7.7,
+      "run1": {
+        "mean": 52000,
+        "min": 48000,
+        "max": 68000,
+        "iterations": 1000,
+        "cv": 2.1
+      },
+      "run2": {
+        "mean": 48000,
+        "min": 45000,
+        "max": 62000,
+        "iterations": 1000,
+        "cv": 1.9
+      }
+    }
+  ]
+}
+```
+
+### Performance Trends Analysis
+
+Analyze performance trends across multiple runs with statistical analysis and visualizations:
+
+```bash
+# Show trends for all tasks
+modestbench history trends
+
+# Analyze last N runs only (default: 20)
+modestbench history trends --limit 50
+
+# Analyze ALL runs without limit
+modestbench history trends --all
+
+# Filter by date range
+modestbench history trends --since 1w
+
+# JSON format for custom analysis
+modestbench history trends --format json
+
+# Filter by pattern
+modestbench history trends --pattern "**/*array*"
+```
+
+<AsciinemaPlayer
+  src="/modestbench/demos/history-trends.cast"
+  autoPlay={true}
+  loop={false}
+  speed={1.0}
+  theme="asciinema"
+  rows={50}
+/>
+
+**Trend Analysis Features:**
+
+- **Trend Icons**: ▲ improving, ▼ degrading, → stable
+- **Sparklines**: Scaled to data points (longer lines = more runs)
+- **Percent Change**: Overall change from first to last run
+- **Regression Detection**:
+  - **High-confidence** (5+ runs, 5%+ slower): Shown with red ▼
+  - **Low-confidence** (2-4 runs, 5%+ slower): Shown with yellow ! for user awareness
+- **Most Variable Task**: Distribution histogram shows the task with highest measurement variability (most important to investigate)
+- **Bar Chart**: Uses synthwave colors; empty buckets are omitted for clarity
+
+**Regression Detection Logic:**
+
+ModestBench uses a statistically-sound approach:
+
+1. **Requires minimum 5 runs** for high-confidence regression flagging
+2. **Trend direction** must be degrading (negative slope)
+3. **Percent change** must exceed 5% threshold
+4. **Low-confidence warnings** (yellow) shown for 2-4 runs with same conditions
+
+This prevents false alarms from single outliers while still alerting to potential issues with limited data.
+
+**JSON Output Structure:**
+
+```json
+{
+  "runs": 12,
+  "summary": {
+    "totalTasks": 27,
+    "improvingTasks": 4,
+    "degradingTasks": 2,
+    "stableTasks": 21
+  },
+  "timespan": {
+    "start": "2025-10-13T10:00:00.000Z",
+    "end": "2025-10-24T15:30:00.000Z"
+  },
+  "trends": [
+    {
+      "task": "TypeScript Array Processing › Array.reduce()",
+      "trend": "improving",
+      "runs": 12,
+      "percentChange": -79.6,
+      "confidence": 95,
+      "statistics": {
+        "mean": 48500,
+        "median": 48000,
+        "variance": 16000,
+        "stdDeviation": 4000
+      },
+      "dataPoints": [
+        { "date": "2025-10-13T10:00:00.000Z", "mean": 225000 },
+        { "date": "2025-10-14T10:00:00.000Z", "mean": 198000 },
+        { "date": "2025-10-24T15:30:00.000Z", "mean": 48000 }
+      ]
+    }
+  ],
+  "regressions": [
+    {
+      "task": "Sorting Algorithms › Quick Sort",
+      "percentChange": 5.3,
+      "runs": 12
+    }
+  ],
+  "lowConfidenceRegressions": [
+    {
+      "task": "Async Operations › Fetch Simulation",
+      "percentChange": 3.2,
+      "runs": 4
+    }
+  ]
+}
 ```
 
 ### Export Historical Data
+
+Export benchmark history for external analysis or archival:
 
 ```bash
 # Export to CSV for analysis
@@ -527,9 +784,18 @@ modestbench history export \
 modestbench history export \
   --format json \
   --output historical-data.json
+
+# Export filtered data
+modestbench history export \
+  --since 1m \
+  --pattern "**/*critical*" \
+  --format json \
+  --output critical-benchmarks.json
 ```
 
 ### Cleanup Old Data
+
+Manage historical data storage:
 
 ```bash
 # Clean runs older than 30 days
@@ -540,6 +806,95 @@ modestbench history clean --keep 10
 
 # Clean by size
 modestbench history clean --max-size 100mb
+```
+
+### Using History in CI/CD
+
+Track performance trends over time in your CI pipeline:
+
+```yaml
+# .github/workflows/performance.yml
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm ci
+
+      - name: Run benchmarks
+        run: modestbench --reporters json
+
+      - name: Check for regressions
+        run: |
+          # Compare with baseline
+          LATEST=$(modestbench history list --format json | jq -r '.[0].id')
+          BASELINE=$(modestbench history list --format json | jq -r '.[1].id')
+
+          # Get comparison data
+          modestbench history compare "$BASELINE" "$LATEST" --format json > comparison.json
+
+          # Check for regressions (>5% slower)
+          node scripts/check-trends.js
+```
+
+**Regression Check Script:**
+
+```javascript
+// scripts/check-trends.js
+import { readFileSync } from 'fs';
+import { execSync } from 'child_process';
+
+// Get trends data
+const trendsOutput = execSync(
+  'modestbench history trends --format json --limit 10',
+  { encoding: 'utf8' }
+);
+
+const { regressions, lowConfidenceRegressions } = JSON.parse(trendsOutput);
+
+let hasIssues = false;
+
+if (regressions.length > 0) {
+  console.error('⚠️  Performance Regressions Detected:\n');
+
+  for (const regression of regressions) {
+    console.error(
+      `  ▼ ${regression.task}: ${regression.percentChange.toFixed(1)}% slower`
+    );
+  }
+
+  hasIssues = true;
+}
+
+if (lowConfidenceRegressions.length > 0) {
+  console.warn('⚡ Potential Regressions (insufficient data):\n');
+
+  for (const regression of lowConfidenceRegressions) {
+    console.warn(
+      `  ! ${regression.task}: ${regression.percentChange.toFixed(1)}% slower (${regression.runs} runs)`
+    );
+  }
+}
+
+if (hasIssues) {
+  process.exit(1);
+} else {
+  console.log('✅ No performance regressions detected');
+}
 ```
 
 ## Programmatic API
@@ -576,7 +931,7 @@ Full API documentation is coming soon. See the [API reference](/reference/api/) 
 
 ## Handling Fast Operations
 
-Extremely fast operations (<1ns) can cause overflow errors. modestbench handles this automatically:
+Extremely fast operations (&lt;1ns) can cause overflow errors. **modestbench** handles this automatically:
 
 ```javascript
 export default {
@@ -588,7 +943,7 @@ export default {
           const x = 42;
           return x;
         },
-        
+
         // For ultra-fast operations, reduce iterations
         'Constant Return': {
           fn: () => 42,
@@ -751,13 +1106,13 @@ Use tags to organize and filter benchmarks:
 ```javascript
 export default {
   tags: ['core'], // Project-wide tag
-  
+
   suites: {
     'Critical Path': {
       tags: ['critical', 'fast'], // Important, quick benchmarks
       benchmarks: { /* ... */ },
     },
-    
+
     'Edge Cases': {
       tags: ['edge-case', 'slow'], // Thorough but slow tests
       benchmarks: { /* ... */ },
@@ -765,10 +1120,3 @@ export default {
   },
 };
 ```
-
-## Next Steps
-
-- Review [Configuration](/guides/configuration/) for all options
-- Check [CLI Reference](/guides/cli/) for command details
-- See [Output Formats](/guides/output/) for reporter integration
-- Read [Architecture](/reference/architecture/) for internals
