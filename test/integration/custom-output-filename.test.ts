@@ -202,4 +202,112 @@ describe('Custom output filename', () => {
     const content = await readFile(outputPath, 'utf-8');
     expect(content, 'to contain', 'suite,task');
   });
+
+  describe('Edge cases', () => {
+    it('should handle absolute paths for --output-file', async () => {
+      const benchFile = join(tempDir, 'test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Test Suite': {
+              benchmarks: {
+                'simple task': { fn: () => 42 }
+              }
+            }
+          }
+        };
+        `,
+      );
+
+      const absolutePath = join(tempDir, 'absolute', 'custom.json');
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'json',
+        '--output-file',
+        absolutePath,
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+      const content = await readFile(absolutePath, 'utf-8');
+      const data = JSON.parse(content);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      expect(data.meta, 'to be defined');
+    });
+
+    it('should handle outputFile with subdirectories', async () => {
+      const benchFile = join(tempDir, 'test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Test Suite': {
+              benchmarks: {
+                'simple task': { fn: () => 42 }
+              }
+            }
+          }
+        };
+        `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'json',
+        '--output',
+        tempDir,
+        '--output-file',
+        'subdir/custom.json',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+      const outputPath = join(tempDir, 'subdir', 'custom.json');
+      const content = await readFile(outputPath, 'utf-8');
+      const data = JSON.parse(content);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      expect(data.meta, 'to be defined');
+    });
+
+    it('should work with --of short flag', async () => {
+      const benchFile = join(tempDir, 'test.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Test Suite': {
+              benchmarks: {
+                'simple task': { fn: () => 42 }
+              }
+            }
+          }
+        };
+        `,
+      );
+
+      const result = await runCommand([
+        'run',
+        benchFile,
+        '--reporters',
+        'json',
+        '--output',
+        tempDir,
+        '--of',
+        'short-flag.json',
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+      const outputPath = join(tempDir, 'short-flag.json');
+      const content = await readFile(outputPath, 'utf-8');
+      const data = JSON.parse(content);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      expect(data.meta, 'to be defined');
+    });
+  });
 });
