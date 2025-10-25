@@ -2,7 +2,7 @@ import { expect } from 'bupkis';
 import { resolve } from 'node:path';
 import { describe, it } from 'node:test';
 
-import { resolveOutputPath } from '../../src/core/output-path-resolver.ts';
+import { resolveOutputPath } from '../../src/core/output-path-resolver.js';
 
 describe('resolveOutputPath', () => {
   it('should return undefined when no paths provided', () => {

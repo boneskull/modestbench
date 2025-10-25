@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, it } from 'node:test';
 
-import { runCommand } from '../util.ts';
+import { runCommand } from '../util.js';
 
 describe('Custom output filename', () => {
   let tempDir: string;
