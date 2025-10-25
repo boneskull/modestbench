@@ -11,6 +11,7 @@ import type { BenchmarkRun } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
 import { ErrorCodes } from '../../constants.js';
+import { resolveOutputPath } from '../../core/output-path-resolver.js';
 import {
   InvalidArgumentError,
   type ModestBenchError,
@@ -92,6 +93,7 @@ export const handleRunCommand = async (
       showCliMessages,
       options.quiet ?? false,
       options.outputDir,
+      options.outputFile,
       options.progress,
     );
 
@@ -314,6 +316,7 @@ const setupReporters = async (
   showCliMessages: boolean,
   explicitQuiet: boolean,
   explicitOutputDir?: string,
+  explicitOutputFile?: string,
   progressOption?: boolean,
 ) => {
   try {
@@ -344,17 +347,27 @@ const setupReporters = async (
           verbose: isVerbose,
         });
       } else if (reporterName === 'json') {
+        const outputPath = resolveOutputPath(
+          outputDir,
+          explicitOutputFile,
+          'results.json',
+        );
         reporter = new JsonReporter({
-          ...(outputDir ? { outputPath: `${outputDir}/results.json` } : {}),
+          ...(outputPath ? { outputPath } : {}),
           prettyPrint: true,
           quiet: shouldBeQuiet, // JSON uses shouldBeQuiet to avoid polluting stdout
           verbose: isVerbose,
         });
       } else if (reporterName === 'csv') {
+        const outputPath = resolveOutputPath(
+          outputDir,
+          explicitOutputFile,
+          'results.csv',
+        );
         reporter = new CsvReporter({
           includeHeaders: true,
           includeMetadata: true,
-          ...(outputDir ? { outputPath: `${outputDir}/results.csv` } : {}),
+          ...(outputPath ? { outputPath } : {}),
           quiet: explicitQuiet, // Only applies explicit --quiet flag; CSV output can coexist with progress messages on different streams
           verbose: isVerbose,
         });
