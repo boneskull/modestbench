@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.0.3...modestbench-v0.1.0) (2025-10-24)
+
+
+### Features
+
+* new-fangled errors ([dd9128d](https://github.com/boneskull/modestbench/commit/dd9128df0dea260af9d9216a310784cfe3b3126e))
+
+
+### Bug Fixes
+
+* **deps:** @pasqal-io/starlight-client-mermaid is now a dev dep ([82ecb85](https://github.com/boneskull/modestbench/commit/82ecb8555d9e58c630ad7c358b21be37c8bd68b9))
+* **deps:** pin dependency @pasqal-io/starlight-client-mermaid to 0.1.0 ([#58](https://github.com/boneskull/modestbench/issues/58)) ([d167cf9](https://github.com/boneskull/modestbench/commit/d167cf95c0db583c72b605ea8b66a8d28118ed4d))
+* **reporters:** it is a task, not a test ([07f9b5a](https://github.com/boneskull/modestbench/commit/07f9b5a91f847ebd57c4dfca285998b0a817c6b2))
+* **reporters:** it is also a task even in the simple reporter ([592f7b4](https://github.com/boneskull/modestbench/commit/592f7b43a13a66ccbea6955808ea83614303f76e))
+
 ## [0.0.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.0.2...modestbench-v0.0.3) (2025-10-23)
 
 
