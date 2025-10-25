@@ -62,6 +62,18 @@ export const handleRunCommand = async (
   const showCliMessages = verbose && !options.quiet;
 
   try {
+    // Validate --output-file usage
+    if (
+      options.outputFile &&
+      options.reporters &&
+      options.reporters.length > 1
+    ) {
+      throw new InvalidArgumentError(
+        '--output-file can only be used with a single reporter. ' +
+          'Use --output <dir> for multiple reporters.',
+      );
+    }
+
     // Step 1: Load and merge configuration
     if (showCliMessages) {
       console.error('Loading configuration...');
@@ -162,8 +174,11 @@ export const handleRunCommand = async (
 
     return handleResults(executionResult, options, shouldBeQuiet);
   } catch (error) {
-    // Re-throw FileDiscoveryError so yargs fail handler can show help
+    // Re-throw CLI errors so yargs fail handler can show help
     if ((error as ModestBenchError).code === ErrorCodes.FILE_DISCOVERY_FAILED) {
+      throw error;
+    }
+    if ((error as ModestBenchError).code === ErrorCodes.CLI_INVALID_ARGUMENT) {
       throw error;
     }
 
