@@ -4,13 +4,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
 import { AccurateEngine } from '../../src/core/engines/accurate-engine.js';
 import { TinybenchEngine } from '../../src/core/engines/tinybench-engine.js';
-import { BenchmarkFileLoader } from '../../src/core/loader.js';
-import { ModestBenchProgressManager } from '../../src/progress/manager.js';
-import { ModestBenchReporterRegistry } from '../../src/reporters/registry.js';
-import { FileHistoryStorage } from '../../src/storage/history.js';
+import { ModestBenchConfigurationManager } from '../../src/services/config-manager.js';
+import { BenchmarkFileLoader } from '../../src/services/file-loader.js';
+import { FileHistoryStorage } from '../../src/services/history-storage.js';
+import { ModestBenchProgressManager } from '../../src/services/progress-manager.js';
+import { ModestBenchReporterRegistry } from '../../src/services/reporter-registry.js';
 
 /**
  * Integration tests comparing AccurateEngine and TinybenchEngine

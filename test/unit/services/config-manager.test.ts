@@ -1,7 +1,7 @@
 import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
-import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
+import { ModestBenchConfigurationManager } from '../../../src/services/config-manager.js';
 
 describe('ModestBenchConfigurationManager', () => {
   describe('merge()', () => {

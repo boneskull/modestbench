@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import type { ProgressManager } from '../../src/types/interfaces.js';
 
-import { ModestBenchProgressManager } from '../../src/progress/manager.js';
+import { ModestBenchProgressManager } from '../../src/services/progress-manager.js';
 import { buildMockBenchmarkRun } from '../fixtures/data-builders.js';
 
 /**

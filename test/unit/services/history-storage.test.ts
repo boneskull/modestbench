@@ -1,9 +1,9 @@
 import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
-import type { BenchmarkRun } from '../../src/types/index.js';
+import type { BenchmarkRun } from '../../../src/types/index.js';
 
-import { FileHistoryStorage } from '../../src/storage/history.js';
+import { FileHistoryStorage } from '../../../src/services/history-storage.js';
 
 // Helper to create a minimal benchmark run for testing
 const createMockRun = (overrides: Partial<BenchmarkRun> = {}): BenchmarkRun => {

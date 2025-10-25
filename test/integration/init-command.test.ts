@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
+import { ModestBenchConfigurationManager } from '../../src/services/config-manager.js';
 import { runCommand } from '../util.js';
 
 describe('modestbench init command - integration', () => {

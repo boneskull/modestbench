@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import type { ConfigurationManager } from '../../src/types/interfaces.js';
 
-import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
+import { ModestBenchConfigurationManager } from '../../src/services/config-manager.js';
 
 /**
  * Contract tests for ConfigurationManager interface Reference:

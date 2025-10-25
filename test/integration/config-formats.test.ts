@@ -7,7 +7,7 @@ import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { ModestBenchConfigurationManager } from '../../src/config/manager.js';
+import { ModestBenchConfigurationManager } from '../../src/services/config-manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

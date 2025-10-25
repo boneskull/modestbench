@@ -15,7 +15,7 @@ import type {
   TaskResult,
 } from '../types/index.js';
 
-import { BaseReporter } from './registry.js';
+import { BaseReporter } from '../services/reporter-registry.js';
 
 /**
  * Basic symbols for plain text output

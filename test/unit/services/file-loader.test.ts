@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { BenchmarkFileLoader } from '../../src/core/loader.js';
+import { BenchmarkFileLoader } from '../../../src/services/file-loader.js';
 
 describe('BenchmarkFileLoader - path resolution', () => {
   let tempDir: string;

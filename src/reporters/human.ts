@@ -15,8 +15,8 @@ import type {
   TaskResult,
 } from '../types/index.js';
 
+import { BaseReporter } from '../services/reporter-registry.js';
 import { ansiChars, colors } from '../utils/ansi.js';
-import { BaseReporter } from './registry.js';
 
 /**
  * Human-readable console reporter with colorized output

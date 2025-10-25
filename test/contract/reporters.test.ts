@@ -6,7 +6,7 @@ import type { Reporter, ReporterRegistry } from '../../src/types/interfaces.js';
 import { CsvReporter } from '../../src/reporters/csv.js';
 import { HumanReporter } from '../../src/reporters/human.js';
 import { JsonReporter } from '../../src/reporters/json.js';
-import { ModestBenchReporterRegistry } from '../../src/reporters/registry.js';
+import { ModestBenchReporterRegistry } from '../../src/services/reporter-registry.js';
 import {
   buildMockBenchmarkRun,
   buildMockFileResult,
