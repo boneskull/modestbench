@@ -243,6 +243,44 @@ modestbench --tags fast --exclude-tags experimental
 
 See [Tagging and Filtering](#tagging-and-filtering) for detailed examples.
 
+#### Output Options
+
+Control where and how benchmark results are saved:
+
+```bash
+# Write to a directory (creates results.json, results.csv, etc.)
+modestbench --reporters json,csv --output ./results
+
+# Custom filename for single reporter
+modestbench --reporters json --output-file my-benchmarks.json
+
+# Custom filename in specific directory
+modestbench --reporters json --output ./results --output-file benchmarks-2024.json
+
+# Custom filename with absolute path
+modestbench --reporters json --output-file /tmp/my-benchmarks.json
+
+# With subdirectories
+modestbench --reporters csv --output ./results --output-file reports/performance.csv
+
+# Short flag alias
+modestbench --reporters json --of custom.json
+```
+
+**Key Options:**
+
+- `--output <dir>`, `-o <dir>` - Directory to write output files (default: stdout)
+- `--output-file <filename>`, `--of <filename>` - Custom filename for output
+  - Works with absolute or relative paths
+  - Requires exactly one reporter (e.g., `--reporters json`)
+  - When used with `--output`, the filename is relative to that directory
+  - When used alone, the path is relative to current working directory
+
+**Limitations:**
+
+- `--output-file` only works with a single reporter
+- For multiple reporters, use `--output <dir>` (defaults to `results.json`, `results.csv`, etc.)
+
 ### History Management
 
 **modestbench** automatically tracks benchmark results over time in a local `.modestbench/` directory. This history enables you to:
