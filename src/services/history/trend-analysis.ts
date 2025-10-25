@@ -116,7 +116,9 @@ export class TrendAnalysisService {
 /**
  * Calculate percent change from first to last data point
  */
-const calculatePercentChange = (dataPoints: TrendDataPoint[]): number => {
+export const calculatePercentChange = (
+  dataPoints: TrendDataPoint[],
+): number => {
   if (dataPoints.length === 0 || dataPoints.length === 1) {
     return 0;
   }
@@ -141,7 +143,9 @@ const calculatePercentChange = (dataPoints: TrendDataPoint[]): number => {
 /**
  * Calculate statistical metrics from data points
  */
-const calculateStatistics = (dataPoints: TrendDataPoint[]): TrendStatistics => {
+export const calculateStatistics = (
+  dataPoints: TrendDataPoint[],
+): TrendStatistics => {
   if (dataPoints.length === 0) {
     throw new Error('Cannot calculate statistics for empty data points array');
   }
@@ -177,7 +181,7 @@ const calculateStatistics = (dataPoints: TrendDataPoint[]): TrendStatistics => {
 /**
  * Calculate trend direction from data points using linear regression
  */
-const calculateTrend = (
+export const calculateTrend = (
   dataPoints: TrendDataPoint[],
 ): 'degrading' | 'improving' | 'stable' => {
   if (dataPoints.length === 0) {
@@ -220,7 +224,7 @@ const calculateTrend = (
 /**
  * Detect if a trend represents a performance regression
  */
-const detectRegression = (
+export const detectRegression = (
   trendData: TrendData,
   threshold: number,
   minRuns: number,
