@@ -130,37 +130,7 @@ modestbench --iterations 5000 --reporters human,json
 
 ### View Results
 
-```text
-🚀 ModestBench
-
-Environment:
-  Node.js: v24.10.0
-  Platform: darwin arm64
-  CPU: Apple M4 Max (16 cores)
-  Memory: 48.0 GB
-
-Found 1 benchmark file(s)
-
-▶ benchmarks/example.bench.js
-
-  ▶ Array Operations
-    ✓ Array.push()
-      810.05μs ±2.45% (1.23M ops/sec)
-    ✓ Array spread
-      81.01ms ±4.12% (12.34K ops/sec)
-  ✓ 2 passed
-
-  ✓ All 2 tasks passed
-
-📊 Results
-
-✓ All tests passed: 2
-📁 Files: 1
-📊 Suites: 1
-⏱️ Duration: 1.82s
-
-🎉 All benchmarks completed successfully!
-```
+![Example output showing colorful terminal display with benchmark results](./public/human-reporter.png)
 
 ## Getting Started
 
