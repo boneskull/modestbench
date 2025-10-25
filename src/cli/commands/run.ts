@@ -32,6 +32,7 @@ interface RunOptions {
   json?: boolean | undefined;
   noColor?: boolean | undefined;
   outputDir?: string | undefined;
+  outputFile?: string | undefined;
   pattern: string[];
   progress?: boolean | undefined;
   quiet?: boolean | undefined;

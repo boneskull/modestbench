@@ -196,6 +196,13 @@ export const main = async (
               description: 'Output directory for reports',
               type: 'string',
             })
+            .option('output-file', {
+              alias: 'of',
+              description:
+                'Custom filename for reporter output (use with single reporter only)',
+              requiresArg: true,
+              type: 'string',
+            })
             .option('iterations', {
               alias: 'i',
               description: 'Number of iterations per benchmark',
@@ -310,6 +317,7 @@ export const main = async (
             json: argv.json,
             noColor: argv.noColor,
             outputDir: argv.output,
+            outputFile: argv['output-file'],
             pattern: argv.pattern,
             progress: argv.progress,
             quiet: argv.quiet,
