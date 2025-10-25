@@ -1,5 +1,7 @@
 ---
-interface Props {
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<'div'> {
   src: string;
   autoPlay?: boolean;
   loop?: boolean;
@@ -16,40 +18,51 @@ const {
   speed = 1.0,
   theme = 'asciinema',
   rows,
-  cols
+  cols,
+  ...rest
 } = Astro.props;
+
+// Generate a unique ID for this player instance
+const playerId = `player-${Math.random().toString(36).slice(2, 9)}`;
 ---
 
 <div class="asciinema-player-wrapper">
-  <div id="player" data-src={src} data-autoplay={autoPlay} data-loop={loop} data-speed={speed} data-theme={theme} data-rows={rows} data-cols={cols}></div>
+  <div id={playerId}></div>
 </div>
 
-<script>
-  import * as AsciinemaPlayer from 'asciinema-player';
-import 'asciinema-player/dist/bundle/asciinema-player.css';
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.css" />
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.min.js" defer is:inline></script>
 
-  const playerDiv = document.getElementById('player');
-  if (playerDiv) {
-    const src = playerDiv.getAttribute('data-src') || '';
-    const autoPlay = playerDiv.getAttribute('data-autoplay') === 'true';
-    const loop = playerDiv.getAttribute('data-loop') === 'true';
-    const speed = parseFloat(playerDiv.getAttribute('data-speed') || '1.0');
-    const theme = playerDiv.getAttribute('data-theme') || 'asciinema';
-    const rows = playerDiv.getAttribute('data-rows');
-    const cols = playerDiv.getAttribute('data-cols');
+<script define:vars={{ playerId, src, autoPlay, loop, speed, theme, rows, cols }} is:inline>
+  // Wait for AsciinemaPlayer to be available
+  function initPlayer() {
+    const playerDiv = document.getElementById(playerId);
+    if (!playerDiv) return;
 
-    const options: any = {
-      autoPlay,
-      loop,
-      speed,
-      theme,
-      fit: 'width',
-    };
+    if (window.AsciinemaPlayer) {
+      const options = {
+        autoPlay,
+        loop,
+        speed,
+        theme,
+        fit: 'width',
+      };
 
-    if (rows) options.rows = parseInt(rows);
-    if (cols) options.cols = parseInt(cols);
+      if (rows) options.rows = parseInt(rows);
+      if (cols) options.cols = parseInt(cols);
 
-    AsciinemaPlayer.create(src, playerDiv, options);
+      window.AsciinemaPlayer.create(src, playerDiv, options);
+    } else {
+      // Retry if player library not loaded yet
+      setTimeout(initPlayer, 50);
+    }
+  }
+
+  // Wait for DOM to be fully loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPlayer);
+  } else {
+    initPlayer();
   }
 </script>
 
@@ -58,7 +71,6 @@ import 'asciinema-player/dist/bundle/asciinema-player.css';
     margin: 1.5rem 0;
     border-radius: 0.5rem;
     overflow: hidden;
-    max-height: 700px;
   }
 </style>
 
