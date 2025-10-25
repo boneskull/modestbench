@@ -1,14 +1,17 @@
 import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
+import type {
+  TrendData,
+  TrendDataPoint,
+} from '../../dist/services/history/models.js';
+
 import {
   calculatePercentChange,
   calculateStatistics,
   calculateTrend,
   detectRegression,
-  type TrendData,
-  type TrendDataPoint,
-} from '../../dist/cli/commands/history.js';
+} from '../../dist/services/history/trend-analysis.js';
 
 /**
  * Unit tests for trend analysis functionality
@@ -196,7 +199,7 @@ describe('Trend Analysis', () => {
           { date: new Date('2025-01-02'), mean: 120 },
         ],
         percentChange: 20,
-        runs: 2,
+        runs: 5,
         statistics: {
           mean: 110,
           median: 110,
@@ -207,7 +210,7 @@ describe('Trend Analysis', () => {
         trend: 'degrading',
       };
 
-      const isRegression = detectRegression(trendData, 10);
+      const isRegression = detectRegression(trendData, 10, 5);
       expect(isRegression, 'to be', true);
     });
 
@@ -219,7 +222,7 @@ describe('Trend Analysis', () => {
           { date: new Date('2025-01-02'), mean: 105 },
         ],
         percentChange: 5,
-        runs: 2,
+        runs: 5,
         statistics: {
           mean: 102.5,
           median: 102.5,
@@ -230,7 +233,7 @@ describe('Trend Analysis', () => {
         trend: 'stable',
       };
 
-      const isRegression = detectRegression(trendData, 10);
+      const isRegression = detectRegression(trendData, 10, 5);
       expect(isRegression, 'to be', false);
     });
 
@@ -242,7 +245,7 @@ describe('Trend Analysis', () => {
           { date: new Date('2025-01-02'), mean: 80 },
         ],
         percentChange: -20,
-        runs: 2,
+        runs: 5,
         statistics: {
           mean: 90,
           median: 90,
@@ -253,7 +256,7 @@ describe('Trend Analysis', () => {
         trend: 'improving',
       };
 
-      const isRegression = detectRegression(trendData, 10);
+      const isRegression = detectRegression(trendData, 10, 5);
       expect(isRegression, 'to be', false);
     });
 
@@ -276,8 +279,18 @@ describe('Trend Analysis', () => {
         trend: 'degrading',
       };
 
-      const isRegression = detectRegression(trendData, 10);
-      expect(isRegression, 'to be', true);
+      // Should not be flagged as regression with insufficient runs
+      const isRegression = detectRegression(trendData, 10, 5);
+      expect(isRegression, 'to be', false);
+
+      // But high-confidence regression with 5+ runs should be flagged
+      const highConfidenceTrendData = { ...trendData, runs: 5 };
+      const isHighConfidenceRegression = detectRegression(
+        highConfidenceTrendData,
+        10,
+        5,
+      );
+      expect(isHighConfidenceRegression, 'to be', true);
     });
   });
 

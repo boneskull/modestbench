@@ -1,7 +1,7 @@
 import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
-import { parseDate } from '../../dist/cli/commands/history.js';
+import { parseDate } from '../../dist/services/history/query.js';
 
 /**
  * Unit tests for date parsing functionality

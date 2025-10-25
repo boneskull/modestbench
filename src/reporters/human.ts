@@ -15,48 +15,8 @@ import type {
   TaskResult,
 } from '../types/index.js';
 
+import { ansiChars, colors } from '../utils/ansi.js';
 import { BaseReporter } from './registry.js';
-
-/**
- * ANSI color codes for terminal output
- */
-const colors = {
-  bold: '\x1b[1m',
-  brightBlue: '\x1b[94m',
-  brightCyan: '\x1b[96m',
-  brightMagenta: '\x1b[95m',
-  brightRed: '\x1b[91m',
-  brightWhite: '\x1b[97m',
-  cyan: '\x1b[36m',
-  dim: '\x1b[2m',
-  gray: '\x1b[90m',
-  green: '\x1b[32m',
-  magenta: '\x1b[35m',
-  red: '\x1b[31m',
-  reset: '\x1b[0m',
-  underline: '\x1b[4m',
-  white: '\x1b[37m',
-} as const;
-
-/**
- * CP437-inspired ANSI art characters
- */
-const ansiChars = {
-  approx: '≈',
-  // Block elements for gradients
-  block: {
-    dark: '▓',
-    full: '█',
-    light: '░',
-    medium: '▒',
-  },
-  bullet: '•',
-  // Symbols
-  checkmark: '√',
-  cross: '×',
-  plusMinus: '±',
-  smallSquare: '▪',
-} as const;
 
 /**
  * Human-readable console reporter with colorized output

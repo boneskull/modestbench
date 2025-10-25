@@ -1,12 +1,13 @@
 import { expect } from 'bupkis';
 import { describe, it } from 'node:test';
 
+import type { DistributionBucket } from '../../dist/services/history/models.js';
+
 import {
-  colorize,
-  type DistributionBucket,
   generateBarChart,
   generateSparkline,
-} from '../../dist/cli/commands/history.js';
+} from '../../dist/formatters/history/visualization.js';
+import { colorize } from '../../dist/utils/ansi.js';
 
 /**
  * Unit tests for visualization helpers
@@ -106,8 +107,8 @@ describe('Visualization', () => {
       expect(chart.length, 'to equal', 2);
 
       // The larger count should have more blocks
-      const smallBlocks = (chart[0].match(/█/g) || []).length;
-      const largeBlocks = (chart[1].match(/█/g) || []).length;
+      const smallBlocks = (chart[0]?.match(/█/g) || []).length;
+      const largeBlocks = (chart[1]?.match(/█/g) || []).length;
 
       expect(largeBlocks, 'to be greater than', smallBlocks);
     });
@@ -134,7 +135,7 @@ describe('Visualization', () => {
       const chart = generateBarChart(distribution, 10);
 
       // Should not exceed max width (accounting for label and spacing)
-      expect(chart[0].length, 'to be less than or equal to', 50);
+      expect(chart[0]!.length, 'to be less than or equal to', 50);
     });
 
     it('should handle zero counts', () => {
@@ -169,7 +170,7 @@ describe('Visualization', () => {
         'red',
         'gray',
         'dim',
-      ];
+      ] as const;
 
       for (const color of colors) {
         const colored = colorize(color, 'test');

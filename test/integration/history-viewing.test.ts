@@ -49,8 +49,8 @@ describe('Historical results viewing and trends', () => {
       const result = await runCommand(['history', 'list'], tempDir);
 
       if (result.exitCode === 0) {
-        // Should show list of runs
-        expect(result.stdout, 'to match', /run|Test Suite/);
+        // Should show list of runs (now with short IDs like "1010xs6")
+        expect(result.stdout, 'to match', /passed|Test Suite|Recent Benchmark/);
       } else {
         // Implementation doesn't exist yet
         expect(result.stderr, 'to contain', 'not found');
@@ -615,7 +615,7 @@ describe('Historical results viewing and trends', () => {
       expect(
         historyResult.stdout,
         'to match',
-        /Persistent Suite|run|No historical data|No matching/,
+        /Persistent Suite|passed|No historical data|No matching/,
       );
     });
 
