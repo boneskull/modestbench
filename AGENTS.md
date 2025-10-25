@@ -24,13 +24,13 @@ cd worktrees/<feature-name>/
 **Branch Naming:**
 
 - Use `feature/<descriptive-name>` (not `feat/`)
-- Worktrees go in `worktrees/` directory (already gitignored)
+- Worktrees go in `../modestbench.worktree/` directory
 
 ### Code Style
 
 **Testing:**
 
-- Follow TDD principles (see `skills/testing/test-driven-development`)
+- Follow TDD principles (search your user rules for "test-driven development")
 - Contract tests in `test/contract/`
 - Integration tests in `test/integration/`
 - Use the wallaby MCP tools for runtime debugging
@@ -115,7 +115,7 @@ class MyReporter implements Reporter {
 
 ## Getting Help
 
-- Check `.claude-skills/` for development patterns
+- Follow any instructions in user rules for general development patterns
 - See `ARCHITECTURE.md` for system design
 - See `CONTRIBUTING.md` for contribution guidelines
 - See `README.md` for user documentation
