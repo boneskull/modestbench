@@ -270,8 +270,11 @@ export interface RunCommandArgs extends CommandArguments {
   /** How to limit benchmark execution */
   readonly limitBy?: 'all' | 'any' | 'iterations' | 'time';
   readonly o?: string;
+  readonly of?: string;
   /** Output directory */
   readonly output?: string;
+  /** Custom output filename (works with single reporter only) */
+  readonly outputFile?: string;
   /** Pattern for discovering benchmark files */
   readonly pattern?: string;
   readonly q?: boolean;

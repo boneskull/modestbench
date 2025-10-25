@@ -500,8 +500,7 @@ describe('Multiple reporter output formats', () => {
       expect(result.exitCode, 'to equal', 0);
     });
 
-    it.skip('should support custom output filenames', async () => {
-      // Note: --output-file flag not yet implemented
+    it('should support custom output filenames', async () => {
       const benchFile = join(tempDir, 'custom-name-test.bench.js');
       await writeFile(
         benchFile,
@@ -518,17 +517,26 @@ describe('Multiple reporter output formats', () => {
       `,
       );
 
+      const customFile = join(tempDir, 'custom-results.json');
       const result = await runCommand([
         'run',
         benchFile,
         '--reporters',
         'json',
         '--output-file',
-        'custom-results.json',
+        customFile,
       ]);
 
       // Should use custom filename
       expect(result.exitCode, 'to equal', 0);
+
+      // Verify custom filename was used
+      const content = await readFile(customFile, 'utf-8');
+      const data = JSON.parse(content);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      expect(data.meta, 'to be defined');
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      expect(data.run, 'to be defined');
     });
   });
 

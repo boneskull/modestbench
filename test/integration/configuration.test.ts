@@ -340,8 +340,11 @@ export default {
       );
 
       // Should report validation errors
+      expect(result.exitCode, 'to be greater than', 0);
       expect(
-        result.exitCode === 2 || result.stderr.includes('not found'),
+        result.stderr.includes('Configuration validation failed') ||
+          result.stderr.includes('Too small') ||
+          result.stderr.includes('Invalid input'),
         'to be truthy',
       );
     });

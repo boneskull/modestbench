@@ -11,6 +11,7 @@ import type { BenchmarkRun } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
 import { ErrorCodes } from '../../constants.js';
+import { resolveOutputPath } from '../../core/output-path-resolver.js';
 import {
   InvalidArgumentError,
   type ModestBenchError,
@@ -32,6 +33,7 @@ interface RunOptions {
   json?: boolean | undefined;
   noColor?: boolean | undefined;
   outputDir?: string | undefined;
+  outputFile?: string | undefined;
   pattern: string[];
   progress?: boolean | undefined;
   quiet?: boolean | undefined;
@@ -61,6 +63,18 @@ export const handleRunCommand = async (
   const showCliMessages = verbose && !options.quiet;
 
   try {
+    // Validate --output-file usage
+    if (
+      options.outputFile &&
+      options.reporters &&
+      options.reporters.length > 1
+    ) {
+      throw new InvalidArgumentError(
+        '--output-file can only be used with a single reporter. ' +
+          'Use --output <dir> for multiple reporters.',
+      );
+    }
+
     // Step 1: Load and merge configuration
     if (showCliMessages) {
       console.error('Loading configuration...');
@@ -79,6 +93,7 @@ export const handleRunCommand = async (
       showCliMessages,
       options.quiet ?? false,
       options.outputDir,
+      options.outputFile,
       options.progress,
     );
 
@@ -161,8 +176,11 @@ export const handleRunCommand = async (
 
     return handleResults(executionResult, options, shouldBeQuiet);
   } catch (error) {
-    // Re-throw FileDiscoveryError so yargs fail handler can show help
+    // Re-throw CLI errors so yargs fail handler can show help
     if ((error as ModestBenchError).code === ErrorCodes.FILE_DISCOVERY_FAILED) {
+      throw error;
+    }
+    if ((error as ModestBenchError).code === ErrorCodes.CLI_INVALID_ARGUMENT) {
       throw error;
     }
 
@@ -298,6 +316,7 @@ const setupReporters = async (
   showCliMessages: boolean,
   explicitQuiet: boolean,
   explicitOutputDir?: string,
+  explicitOutputFile?: string,
   progressOption?: boolean,
 ) => {
   try {
@@ -328,17 +347,27 @@ const setupReporters = async (
           verbose: isVerbose,
         });
       } else if (reporterName === 'json') {
+        const outputPath = resolveOutputPath(
+          outputDir,
+          explicitOutputFile,
+          'results.json',
+        );
         reporter = new JsonReporter({
-          ...(outputDir ? { outputPath: `${outputDir}/results.json` } : {}),
+          ...(outputPath ? { outputPath } : {}),
           prettyPrint: true,
           quiet: shouldBeQuiet, // JSON uses shouldBeQuiet to avoid polluting stdout
           verbose: isVerbose,
         });
       } else if (reporterName === 'csv') {
+        const outputPath = resolveOutputPath(
+          outputDir,
+          explicitOutputFile,
+          'results.csv',
+        );
         reporter = new CsvReporter({
           includeHeaders: true,
           includeMetadata: true,
-          ...(outputDir ? { outputPath: `${outputDir}/results.csv` } : {}),
+          ...(outputPath ? { outputPath } : {}),
           quiet: explicitQuiet, // Only applies explicit --quiet flag; CSV output can coexist with progress messages on different streams
           verbose: isVerbose,
         });
