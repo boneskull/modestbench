@@ -22,12 +22,12 @@ import {
   BENCHMARK_FILE_EXTENSIONS,
   BENCHMARK_FILE_PATTERN,
 } from '../constants.js';
+import { benchmarkFileSchema } from '../core/benchmark-schema.js';
 import {
   FileDiscoveryError,
   FileLoadError,
   StructureValidationError,
 } from '../errors/index.js';
-import { benchmarkFileSchema } from './benchmark-schema.js';
 
 /**
  * File change notification for watch functionality

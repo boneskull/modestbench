@@ -1,9 +1,9 @@
 import { expect } from 'bupkis';
 import { after, before, describe, it } from 'node:test';
 
-import type { BenchmarkRun, ProgressState } from '../../src/types/index.js';
+import type { BenchmarkRun, ProgressState } from '../../../src/types/index.js';
 
-import { ModestBenchProgressManager } from '../../src/progress/manager.js';
+import { ModestBenchProgressManager } from '../../../src/services/progress-manager.js';
 
 // Time mocking utilities for throttle bypass
 let mockTime = Date.now();

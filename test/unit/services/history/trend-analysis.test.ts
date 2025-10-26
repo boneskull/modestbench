@@ -4,14 +4,14 @@ import { describe, it } from 'node:test';
 import type {
   TrendData,
   TrendDataPoint,
-} from '../../src/services/history/models.js';
+} from '../../../../src/services/history/models.js';
 
 import {
   calculatePercentChange,
   calculateStatistics,
   calculateTrend,
   detectRegression,
-} from '../../src/services/history/trend-analysis.js';
+} from '../../../../src/services/history/trend-analysis.js';
 
 /**
  * Unit tests for trend analysis functionality

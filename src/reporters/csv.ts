@@ -18,7 +18,7 @@ import type {
 } from '../types/index.js';
 
 import { ReporterOutputError } from '../errors/index.js';
-import { BaseReporter } from './registry.js';
+import { BaseReporter } from '../services/reporter-registry.js';
 
 /**
  * CSV column definitions for task results

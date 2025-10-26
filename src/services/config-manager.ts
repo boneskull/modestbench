@@ -18,9 +18,9 @@ import type {
   ValidationWarning,
 } from '../types/index.js';
 
+import { safeParseConfig } from '../config/schema.js';
 import { ErrorCodes } from '../constants.js';
 import { ConfigLoadError, ConfigValidationError } from '../errors/index.js';
-import { safeParseConfig } from './schema.js';
 
 /**
  * Get the default reporter based on TTY status and environment

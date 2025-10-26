@@ -8,12 +8,12 @@ import type {
   Reporter,
   SuiteResult,
   TaskResult,
-} from '../../src/types/index.js';
+} from '../../../src/types/index.js';
 
 import {
   BaseReporter,
   ModestBenchReporterRegistry,
-} from '../../src/reporters/registry.js';
+} from '../../../src/services/reporter-registry.js';
 
 // Helper class to test BaseReporter protected methods
 class TestReporter extends BaseReporter {

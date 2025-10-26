@@ -17,7 +17,7 @@ import type {
 } from '../types/index.js';
 
 import { ReporterOutputError } from '../errors/index.js';
-import { BaseReporter } from './registry.js';
+import { BaseReporter } from '../services/reporter-registry.js';
 
 /**
  * JSON output structure for benchmark results

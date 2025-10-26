@@ -7,14 +7,10 @@
  */
 
 export { bootstrap as modestbench } from './bootstrap.js';
-// Configuration management
-export { ModestBenchConfigurationManager } from './config/manager.js';
 
-// Core engine and loader
+// Core engine
 export { ModestBenchEngine } from './core/engine.js';
 export { AccurateEngine, TinybenchEngine } from './core/engines/index.js';
-
-export { BenchmarkFileLoader } from './core/loader.js';
 
 // Statistical utilities
 export {
@@ -26,21 +22,21 @@ export {
 // Error classes
 export * from './errors/index.js';
 
-// Progress tracking
-export { ModestBenchProgressManager } from './progress/manager.js';
 // Reporters
 export { CsvReporter } from './reporters/csv.js';
 export { HumanReporter } from './reporters/human.js';
 export { JsonReporter } from './reporters/json.js';
 
+// Services
+export { ModestBenchConfigurationManager } from './services/config-manager.js';
+export { BenchmarkFileLoader } from './services/file-loader.js';
+export { FileHistoryStorage } from './services/history-storage.js';
+export { ModestBenchProgressManager } from './services/progress-manager.js';
 export {
   BaseReporter,
   CompositeReporter,
   ModestBenchReporterRegistry,
-} from './reporters/registry.js';
-
-// Storage
-export { FileHistoryStorage } from './storage/history.js';
+} from './services/reporter-registry.js';
 
 // Export all types
 export * from './types/index.js';

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import type { HistoryStorage } from '../../src/types/interfaces.js';
 
-import { FileHistoryStorage } from '../../src/storage/history.js';
+import { FileHistoryStorage } from '../../src/services/history-storage.js';
 import {
   buildMockBenchmarkRun,
   buildMockFileResult,
