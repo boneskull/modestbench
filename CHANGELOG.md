@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.1.0...modestbench-v0.2.0) (2025-10-26)
+
+
+### Features
+
+* add --output-file CLI option ([#66](https://github.com/boneskull/modestbench/issues/66)) ([09bb5ae](https://github.com/boneskull/modestbench/commit/09bb5ae7468c9d5eb9d1e9641c58350a5b3856dd))
+* **history:** implement trend analysis and comparison ([#64](https://github.com/boneskull/modestbench/issues/64)) ([acf7dda](https://github.com/boneskull/modestbench/commit/acf7ddaa91f7ae242c2a2df86fd610ce88f8ac91))
+* **history:** implement trends and comparison ([acf7dda](https://github.com/boneskull/modestbench/commit/acf7ddaa91f7ae242c2a2df86fd610ce88f8ac91))
+* implement date parsing, compare, and trend analysis core ([acf7dda](https://github.com/boneskull/modestbench/commit/acf7ddaa91f7ae242c2a2df86fd610ce88f8ac91))
+* implement full trends command with visualizations ([acf7dda](https://github.com/boneskull/modestbench/commit/acf7ddaa91f7ae242c2a2df86fd610ce88f8ac91))
+
 ## [0.1.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.0.3...modestbench-v0.1.0) (2025-10-24)
 
 
