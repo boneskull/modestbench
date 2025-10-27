@@ -9,8 +9,8 @@ import path from 'node:path';
 
 import type {
   BenchmarkRun,
+  BudgetSummary,
   FileResult,
-  ProgressState,
   SuiteResult,
   TaskResult,
 } from '../types/index.js';
@@ -62,6 +62,78 @@ export class SimpleReporter extends BaseReporter {
     this.quiet = options.quiet ?? false;
   }
 
+  /**
+   * Format bytes in human-readable format
+   */
+  private static formatBytes(this: void, bytes: number): string {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = bytes;
+    let unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
+  }
+
+  /**
+   * Format file path - show relative path if within CWD, otherwise absolute
+   */
+  private static formatPath(this: void, filePath: string): string {
+    const cwd = process.cwd();
+    const absolutePath = path.resolve(filePath);
+
+    // Check if the file is within the current working directory
+    if (absolutePath.startsWith(cwd + path.sep) || absolutePath === cwd) {
+      return path.relative(cwd, absolutePath);
+    }
+
+    return absolutePath;
+  }
+
+  /**
+   * Simple pluralization helper
+   */
+  private static pluralize(this: void, str: string, count: number): string {
+    return count === 1 ? str : `${str}s`;
+  }
+
+  onBudgetResult(summary: BudgetSummary): void {
+    if (summary.total === 0 || this.quiet) {
+      return;
+    }
+
+    console.log('== Performance Budgets');
+    console.log();
+
+    for (const result of summary.results) {
+      const icon = result.passed ? symbols.checkmark : symbols.cross;
+      console.log(`  ${icon} ${result.taskId}`);
+
+      if (!result.passed && result.violations.length > 0) {
+        for (const violation of result.violations) {
+          console.log(`      ${violation.message}`);
+        }
+      }
+    }
+
+    console.log();
+
+    if (summary.failed === 0) {
+      console.log(
+        `  ${symbols.checkmark} All ${summary.total} budget(s) passed`,
+      );
+    } else {
+      console.log(
+        `  ${symbols.cross} ${summary.failed} of ${summary.total} budget(s) failed`,
+      );
+    }
+
+    console.log();
+  }
+
   onEnd(run: BenchmarkRun): void {
     if (this.quiet) {
       return;
@@ -97,7 +169,7 @@ export class SimpleReporter extends BaseReporter {
     console.log(`- Files: ${totalFiles}`);
     console.log(`- Suites: ${totalSuites}`);
     console.log(
-      `${symbols.approx} Duration: ${this.formatDuration(duration * 1e6)}`,
+      `${symbols.approx} Duration: ${BaseReporter.formatDuration(duration * 1e6)}`,
     );
     console.log();
 
@@ -111,7 +183,7 @@ export class SimpleReporter extends BaseReporter {
         console.log();
 
         for (const failure of this.failures) {
-          const displayPath = this.formatPath(failure.file);
+          const displayPath = SimpleReporter.formatPath(failure.file);
           console.log(`  ${displayPath} > ${failure.suite} > ${failure.task}`);
           console.log(`    ${failure.error}`);
           console.log();
@@ -155,7 +227,7 @@ export class SimpleReporter extends BaseReporter {
       );
     } else {
       console.log(
-        ` ${symbols.checkmark} ${totalPassed > 1 ? 'All ' : ''}${totalPassed} ${this.pluralize('task', totalPassed)} passed`,
+        ` ${symbols.checkmark} ${totalPassed > 1 ? 'All ' : ''}${totalPassed} ${SimpleReporter.pluralize('task', totalPassed)} passed`,
       );
     }
 
@@ -169,13 +241,8 @@ export class SimpleReporter extends BaseReporter {
       return;
     }
 
-    const displayPath = this.formatPath(file);
+    const displayPath = SimpleReporter.formatPath(file);
     console.log(`-- ${displayPath}`);
-  }
-
-  onProgress(_state: ProgressState): void {
-    // Simple reporter does not display progress bars
-    return;
   }
 
   onStart(run: BenchmarkRun): void {
@@ -197,7 +264,9 @@ export class SimpleReporter extends BaseReporter {
       console.log(
         `  cpu: ${run.environment.cpu.model} (${run.environment.cpu.cores} cores)`,
       );
-      console.log(`  mem: ${this.formatBytes(run.environment.memory.total)}`);
+      console.log(
+        `  mem: ${SimpleReporter.formatBytes(run.environment.memory.total)}`,
+      );
       console.log();
     }
 
@@ -231,7 +300,7 @@ export class SimpleReporter extends BaseReporter {
       console.log(`  ${symbols.cross} ${failed} failed, ${passed} passed`);
     } else {
       console.log(
-        `  ${symbols.checkmark} ${passed} ${this.pluralize('task', passed)} passed`,
+        `  ${symbols.checkmark} ${passed} ${SimpleReporter.pluralize('task', passed)} passed`,
       );
     }
     console.log();
@@ -273,44 +342,6 @@ export class SimpleReporter extends BaseReporter {
     if (this.verbose) {
       console.log(`    - ${task}`);
     }
-  }
-
-  /**
-   * Format bytes in human-readable format
-   */
-  private formatBytes(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-  }
-
-  /**
-   * Format file path - show relative path if within CWD, otherwise absolute
-   */
-  private formatPath(filePath: string): string {
-    const cwd = process.cwd();
-    const absolutePath = path.resolve(filePath);
-
-    // Check if the file is within the current working directory
-    if (absolutePath.startsWith(cwd + path.sep) || absolutePath === cwd) {
-      return path.relative(cwd, absolutePath);
-    }
-
-    return absolutePath;
-  }
-
-  /**
-   * Simple pluralization helper
-   */
-  private pluralize(str: string, count: number): string {
-    return count === 1 ? str : `${str}s`;
   }
 
   /**
@@ -364,9 +395,9 @@ export class SimpleReporter extends BaseReporter {
         };
       }
 
-      const duration = this.formatDuration(result.mean * 1e9);
-      const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
-      const rme = this.formatPercentage(result.marginOfError * 100);
+      const duration = BaseReporter.formatDuration(result.mean * 1e9);
+      const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
+      const rme = BaseReporter.formatPercentage(result.marginOfError * 100);
 
       return {
         durationLen: duration.length,

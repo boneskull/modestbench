@@ -282,11 +282,6 @@ export type Result<T, E = Error> =
   | { readonly error: E; readonly success: false };
 
 /**
- * Run identifier
- */
-export type RunId = Brand<string, 'RunId'>;
-
-/**
  * Configuration that can be serialized to JSON
  */
 export type SerializableConfig = {
@@ -323,11 +318,6 @@ export interface Stream<T> extends AsyncIterable<T> {
  * Suite identifier
  */
 export type SuiteId = Brand<string, 'SuiteId'>;
-
-/**
- * Task identifier
- */
-export type TaskId = Brand<string, 'TaskId'>;
 
 /**
  * Timing information

@@ -13,6 +13,9 @@ export {
   ModestBenchError,
 } from './base.js';
 
+// Budget errors
+export { BudgetExceededError } from './budget.js';
+
 // CLI errors
 export {
   InvalidArgumentError,

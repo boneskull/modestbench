@@ -34,6 +34,46 @@ export abstract class BaseReporter implements Reporter {
   }
 
   /**
+   * Utility method to format duration in human-readable format
+   */
+  protected static formatDuration(this: void, nanoseconds: number): string {
+    if (nanoseconds < 1000) {
+      return `${nanoseconds.toFixed(2)}ns`;
+    } else if (nanoseconds < 1000000) {
+      return `${(nanoseconds / 1000).toFixed(2)}μs`;
+    } else if (nanoseconds < 1000000000) {
+      return `${(nanoseconds / 1000000).toFixed(2)}ms`;
+    } else {
+      return `${(nanoseconds / 1000000000).toFixed(2)}s`;
+    }
+  }
+
+  /**
+   * Utility method to format operations per second
+   */
+  protected static formatOpsPerSecond(
+    this: void,
+    opsPerSecond: number,
+  ): string {
+    if (opsPerSecond < 1000) {
+      return `${opsPerSecond.toFixed(2)} ops/sec`;
+    } else if (opsPerSecond < 1000000) {
+      return `${(opsPerSecond / 1000).toFixed(2)}K ops/sec`;
+    } else if (opsPerSecond < 1000000000) {
+      return `${(opsPerSecond / 1000000).toFixed(2)}M ops/sec`;
+    } else {
+      return `${(opsPerSecond / 1000000000).toFixed(2)}B ops/sec`;
+    }
+  }
+
+  /**
+   * Utility method to format percentage
+   */
+  protected static formatPercentage(this: void, value: number): string {
+    return `${value.toFixed(2)}%`;
+  }
+
+  /**
    * Get reporter name
    */
   getName(): string {
@@ -58,95 +98,14 @@ export abstract class BaseReporter implements Reporter {
   abstract onError(error: Error): Promise<void> | void;
 
   /**
-   * Called when a file completes
-   */
-  abstract onFileEnd(result: FileResult): Promise<void> | void;
-
-  /**
-   * Called when a file starts execution
-   */
-  abstract onFileStart(file: string): Promise<void> | void;
-
-  /**
-   * Called for progress updates
-   */
-  abstract onProgress(state: ProgressState): Promise<void> | void;
-
-  /**
    * Called when benchmark run starts
    */
   abstract onStart(run: BenchmarkRun): Promise<void> | void;
 
   /**
-   * Called when a suite completes
-   */
-  abstract onSuiteEnd(result: SuiteResult): Promise<void> | void;
-
-  /**
-   * Called when a suite starts execution
-   */
-  abstract onSuiteStart(suite: string): Promise<void> | void;
-
-  /**
    * Called when a task completes
    */
   abstract onTaskResult(result: TaskResult): Promise<void> | void;
-
-  /**
-   * Called when a task starts execution
-   */
-  abstract onTaskStart(task: string): Promise<void> | void;
-
-  /**
-   * Utility method to format duration in human-readable format
-   */
-  protected formatDuration(nanoseconds: number): string {
-    if (nanoseconds < 1000) {
-      return `${nanoseconds.toFixed(2)}ns`;
-    } else if (nanoseconds < 1000000) {
-      return `${(nanoseconds / 1000).toFixed(2)}μs`;
-    } else if (nanoseconds < 1000000000) {
-      return `${(nanoseconds / 1000000).toFixed(2)}ms`;
-    } else {
-      return `${(nanoseconds / 1000000000).toFixed(2)}s`;
-    }
-  }
-
-  /**
-   * Utility method to format operations per second
-   */
-  protected formatOpsPerSecond(opsPerSecond: number): string {
-    if (opsPerSecond < 1000) {
-      return `${opsPerSecond.toFixed(2)} ops/sec`;
-    } else if (opsPerSecond < 1000000) {
-      return `${(opsPerSecond / 1000).toFixed(2)}K ops/sec`;
-    } else if (opsPerSecond < 1000000000) {
-      return `${(opsPerSecond / 1000000).toFixed(2)}M ops/sec`;
-    } else {
-      return `${(opsPerSecond / 1000000000).toFixed(2)}B ops/sec`;
-    }
-  }
-
-  /**
-   * Utility method to format percentage
-   */
-  protected formatPercentage(value: number): string {
-    return `${value.toFixed(2)}%`;
-  }
-
-  /**
-   * Utility method to safely handle async operations
-   */
-  protected async safeAsync<T>(operation: () => Promise<T>): Promise<null | T> {
-    try {
-      return await operation();
-    } catch (error) {
-      await this.onError(
-        error instanceof Error ? error : new Error(String(error)),
-      );
-      return null;
-    }
-  }
 }
 
 /**
@@ -162,6 +121,8 @@ export class CompositeReporter extends BaseReporter {
 
   /**
    * Add a reporter to the composite
+   *
+   * Intended for programmatic usage.
    */
   addReporter(reporter: Reporter): void {
     this.reporters.push(reporter);
@@ -169,16 +130,18 @@ export class CompositeReporter extends BaseReporter {
 
   /**
    * Get all reporters in the composite
+   *
+   * Intended for programmatic usage.
    */
   getReporters(): Reporter[] {
     return [...this.reporters];
   }
 
-  async onEnd(run: BenchmarkRun): Promise<void> {
+  override async onEnd(run: BenchmarkRun): Promise<void> {
     await this.broadcastAsync('onEnd', run);
   }
 
-  async onError(error: Error): Promise<void> {
+  override async onError(error: Error): Promise<void> {
     await this.broadcastAsync('onError', error);
   }
 
@@ -194,7 +157,7 @@ export class CompositeReporter extends BaseReporter {
     await this.broadcastAsync('onProgress', state);
   }
 
-  async onStart(run: BenchmarkRun): Promise<void> {
+  override async onStart(run: BenchmarkRun): Promise<void> {
     await this.broadcastAsync('onStart', run);
   }
 
@@ -206,7 +169,7 @@ export class CompositeReporter extends BaseReporter {
     await this.broadcastAsync('onSuiteStart', suite);
   }
 
-  async onTaskResult(result: TaskResult): Promise<void> {
+  override async onTaskResult(result: TaskResult): Promise<void> {
     await this.broadcastAsync('onTaskResult', result);
   }
 
@@ -216,6 +179,8 @@ export class CompositeReporter extends BaseReporter {
 
   /**
    * Remove a reporter from the composite
+   *
+   * Intended for programmatic usage.
    */
   removeReporter(reporter: Reporter): boolean {
     const index = this.reporters.indexOf(reporter);

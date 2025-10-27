@@ -27,7 +27,7 @@ import { TrendAnalysisService } from '../../services/history/trend-analysis.js';
  * Base options shared by all history subcommands
  */
 interface BaseHistoryOptions {
-  cwd: string;
+  cwd?: string;
   quiet?: boolean | undefined;
   verbose?: boolean | undefined;
 }

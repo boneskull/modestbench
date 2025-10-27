@@ -121,10 +121,16 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
 
   /**
    * Load configuration from various sources with precedence
+   *
+   * @param configPath - Optional path to configuration file
+   * @param cliArgs - Optional CLI arguments to merge
+   * @param commandDefaults - Command-specific defaults (fallback to
+   *   DEFAULT_CONFIG)
    */
   async load(
     configPath?: string,
     cliArgs?: Record<string, unknown>,
+    commandDefaults?: Partial<ModestBenchConfig>,
   ): Promise<ModestBenchConfig> {
     try {
       // Create a fresh explorer for each load to avoid module caching issues
@@ -164,9 +170,13 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
 
       const fileConfig = (result?.config || {}) as Partial<ModestBenchConfig>;
 
-      // 2. Merge: defaults <- file <- CLI args
+      // 2. Merge: command defaults <- file <- CLI args
+      // Use command-specific defaults if provided, otherwise use DEFAULT_CONFIG
+      const baseDefaults = commandDefaults
+        ? this.merge(DEFAULT_CONFIG, commandDefaults)
+        : DEFAULT_CONFIG;
       const normalizedCliArgs = cliArgs ? this.normalizeCliArgs(cliArgs) : {};
-      const merged = this.merge(DEFAULT_CONFIG, fileConfig, normalizedCliArgs);
+      const merged = this.merge(baseDefaults, fileConfig, normalizedCliArgs);
 
       // 2.5. Apply smart defaults for limitBy if not explicitly provided
       const finalConfig = ModestBenchConfigurationManager.applySmartDefaults(
@@ -175,15 +185,20 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         fileConfig,
       );
 
-      // 3. Validate final configuration
-      const validation = this.validate(finalConfig);
-      if (!validation.valid) {
+      // 3. Validate final configuration and get transformed config
+      // The validation also transforms budgets from nested to flat format
+      const validation = safeParseConfig(finalConfig);
+      if (!validation.success) {
+        const errors = validation.error.issues.map((issue) => {
+          const path = issue.path.join('.');
+          return `${path ? `${path}: ` : ''}${issue.message}`;
+        });
         throw new ConfigValidationError(
-          `Configuration validation failed: ${validation.errors.map((e) => e.message).join(', ')}`,
+          `Configuration validation failed: ${errors.join(', ')}`,
         );
       }
 
-      return finalConfig;
+      return validation.data;
     } catch (error) {
       // Re-throw our custom errors
       if (

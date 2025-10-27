@@ -25,6 +25,8 @@ import type {
   TaskResult,
 } from '../../src/types/index.js';
 
+import { createRunId } from '../../src/utils/identifiers.js';
+
 /**
  * Build a mock benchmark run object
  */
@@ -40,7 +42,7 @@ export const buildMockBenchmarkRun = (
     endTime,
     environment: buildMockEnvironment(),
     files: [buildMockFileResult()],
-    id: 'test-run-123',
+    id: createRunId('test-run-123'),
     startTime,
     summary: buildMockSummary(),
     ...overrides,

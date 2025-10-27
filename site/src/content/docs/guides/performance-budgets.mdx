@@ -1,0 +1,521 @@
+---
+title: Performance Budgets
+description: Prevent performance regressions with automated budgets and baselines
+---
+
+# Performance Budgets
+
+Performance budgets help you catch performance regressions early by setting acceptable thresholds for benchmark results. **modestbench** makes it easy to enforce performance standards in your development workflow and CI/CD pipelines.
+
+## Overview
+
+**modestbench** supports two types of budgets:
+
+1. **Absolute budgets** - Fixed thresholds (e.g., "must complete in under 10ms")
+2. **Relative budgets** - Comparison against baseline (e.g., "no more than 10% slower than production")
+
+Budgets can be configured to:
+- **Fail** builds when exceeded (default)
+- **Warn** without failing
+- **Report** results without warnings
+
+## Quick Start
+
+### 1. Run Benchmarks & Create Baseline
+
+```bash
+# Run your benchmarks
+modestbench run
+
+# Save results as a baseline
+modestbench baseline set production-v1.0
+
+# Set as default (optional)
+modestbench baseline set production-v1.0 --default
+```
+
+:::tip[What does "default" mean?]
+Setting a baseline as default means it will be automatically used for relative budget comparisons when no `baseline` is specified in your config. This is convenient when you have a stable baseline that you want to compare against most of the time.
+
+If you specify `"baseline": "other-baseline"` in your config, it will override the default.
+:::
+
+### 2. Configure Budgets
+
+Add budgets to `modestbench.config.json`:
+
+```json
+{
+  "baseline": "production-v1.0",
+  "budgets": {
+    "benchmarks/api.bench.js": {
+      "default": {
+        "parseRequest": {
+          "absolute": {
+            "maxTime": "5ms"
+          },
+          "relative": {
+            "maxRegression": "10%"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+:::tip[Budget Structure]
+Budgets are organized hierarchically: `file → suite → task`. If your benchmarks don't explicitly define suites, they go into a suite named `"default"`.
+:::
+
+### 3. Run with Budget Checks
+
+```bash
+modestbench run
+```
+
+If budgets are exceeded, **modestbench** exits with code 1 (fails CI).
+
+## Budget Configuration
+
+### Absolute Budgets
+
+Set fixed performance thresholds:
+
+```json
+{
+  "budgets": {
+    "your-file.bench.js": {
+      "suite-name": {
+        "task-name": {
+          "absolute": {
+            "maxTime": "10ms",      // Max mean execution time
+            "minOpsPerSec": 100000,  // Min throughput
+            "maxP99": "50ms"         // Max 99th percentile
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Time format**: `"10ms"`, `"500us"`, `"5s"`, `"100ns"`
+
+### Relative Budgets
+
+Compare against a baseline:
+
+```json
+{
+  "baseline": "production-v1.0",
+  "budgets": {
+    "your-file.bench.js": {
+      "suite-name": {
+        "task-name": {
+          "relative": {
+            "maxRegression": "10%",           // or 0.10
+            "baseline": "custom-baseline"     // override default
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+**Percentage format**: `"10%"` or `0.10` (decimal)
+
+### Combined Budgets
+
+Use both absolute and relative:
+
+```json
+{
+  "budgets": {
+    "your-file.bench.js": {
+      "suite-name": {
+        "critical-path": {
+          "absolute": {
+            "maxTime": "15ms"        // Hard limit
+          },
+          "relative": {
+            "maxRegression": "5%"    // Can't regress more than 5%
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## Baseline Management
+
+### Creating Baselines
+
+```bash
+# From most recent run
+modestbench baseline set my-baseline
+
+# With git metadata
+modestbench baseline set v2.0 --commit abc123 --branch main
+
+# Set as default
+modestbench baseline set v2.0 --default
+
+# From specific run
+modestbench baseline set my-baseline --run-id run-2025-10-26-abc123
+```
+
+### Listing Baselines
+
+```bash
+modestbench baseline list
+```
+
+Output:
+```
+Found 2 baseline(s):
+
+  production-v2.0 (default)
+    Run: run-2025-10-26-abc123
+    Date: 2025-10-26T12:00:00.000Z
+    Commit: abc123def
+    Branch: main
+
+  production-v1.0
+    Run: run-2025-10-25-xyz789
+    Date: 2025-10-25T10:00:00.000Z
+```
+
+### Viewing Baseline Details
+
+```bash
+modestbench baseline show production-v2.0
+```
+
+### Deleting Baselines
+
+```bash
+modestbench baseline delete old-baseline
+```
+
+## Analyzing History for Budget Suggestions
+
+**modestbench** can analyze your benchmark history and suggest appropriate budgets:
+
+```bash
+# Analyze last 10 runs
+modestbench baseline analyze
+
+# Analyze last 20 runs with 99% confidence
+modestbench baseline analyze --runs 20 --confidence 0.99
+```
+
+Output:
+```
+Analyzing 10 recent run(s)...
+
+Suggested budgets:
+
+  "benchmarks/api.bench.js": {
+    "default": {
+      "parseRequest": {
+        "absolute": {
+          "maxTime": "8ms"
+        }
+      }
+    }
+  },
+  "benchmarks/db.bench.js": {
+    "default": {
+      "queryUsers": {
+        "absolute": {
+          "maxTime": "25ms"
+        }
+      }
+    }
+  }
+
+Copy these budgets to your modestbench.config.json under "budgets" field
+```
+
+The suggested budgets are calculated as `mean + 2 * stdDev`, covering ~95% of normal variation.
+
+## Budget Modes
+
+Control how **modestbench** handles budget failures:
+
+```json
+{
+  "budgetMode": "fail"  // "fail", "warn", or "report"
+}
+```
+
+- **`fail`** (default): Exit with code 1 when budgets exceeded
+- **`warn`**: Display warnings but exit with code 0
+- **`report`**: Include budget status in output without warnings
+
+### CLI Override
+
+```bash
+modestbench run --budget-mode warn
+```
+
+## CI/CD Integration
+
+### GitHub Actions
+
+#### PR Comparison
+
+Compare PR performance against base branch:
+
+```yaml
+name: Performance Tests
+
+on: pull_request
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Need full history
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: npm ci
+
+      # Create baseline from base branch
+      - name: Benchmark base branch
+        run: |
+          git checkout ${{ github.base_ref }}
+          npm run build
+          modestbench run --quiet
+          modestbench baseline set base
+          git checkout -
+
+      # Run PR benchmarks with budget check
+      - name: Benchmark PR
+        run: |
+          npm run build
+          modestbench run --baseline base
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: .modestbench/
+```
+
+#### Persistent Baselines
+
+Use committed baseline file:
+
+```yaml
+- name: Run benchmarks
+  run: modestbench run --baseline production-v1.0
+
+- name: Update baseline (main branch only)
+  if: github.ref == 'refs/heads/main'
+  run: |
+    modestbench baseline set production-v1.0 --default
+    git add .modestbench.baselines.json
+    git commit -m "chore: update performance baseline"
+    git push
+```
+
+### GitLab CI
+
+```yaml
+benchmark:
+  script:
+    - npm ci
+    - npm run build
+    - modestbench run
+  artifacts:
+    paths:
+      - .modestbench/
+```
+
+### CircleCI
+
+```yaml
+jobs:
+  benchmark:
+    steps:
+      - checkout
+      - run: npm ci
+      - run: npm run build
+      - run: modestbench run
+      - store_artifacts:
+          path: .modestbench/
+```
+
+## Best Practices
+
+### 1. Start with Generous Budgets
+
+Don't set budgets too tight initially. Use `baseline analyze` to get data-driven suggestions.
+
+### 2. Use Relative Budgets in CI
+
+CI environments are noisy. Relative budgets (e.g., `maxRegression: "10%"`) are more reliable than absolute thresholds.
+
+### 3. Separate Critical from Non-Critical
+
+Use stricter budgets for critical paths:
+
+```json
+{
+  "budgets": {
+    "auth.bench.js": {
+      "default": {
+        "login": {
+          "relative": { "maxRegression": "5%" }  // Strict
+        }
+      }
+    },
+    "utils.bench.js": {
+      "default": {
+        "formatDate": {
+          "relative": { "maxRegression": "20%" }  // Relaxed
+        }
+      }
+    }
+  }
+}
+```
+
+### 4. Update Baselines Regularly
+
+When you make legitimate performance improvements, update your baselines:
+
+```bash
+modestbench run
+modestbench baseline set production-v2.0
+```
+
+### 5. Use Multiple Baselines
+
+Track different versions or configurations:
+
+```bash
+modestbench baseline set production-v1.0
+modestbench baseline set production-v2.0
+modestbench baseline set before-optimization
+```
+
+### 6. Commit Baseline Files
+
+Include `.modestbench.baselines.json` in version control so your team shares baselines.
+
+## Troubleshooting
+
+### "Baseline not found"
+
+If you see this error:
+```
+Error: Baseline "production-v1.0" not found
+```
+
+Create the baseline first:
+```bash
+modestbench run
+modestbench baseline set production-v1.0
+```
+
+### Flaky Budget Failures in CI
+
+CI environments have performance variability. Try:
+
+1. **Increase regression threshold**: `"15%"` instead of `"10%"`
+2. **Use `budgetMode: "warn"`** to monitor without failing
+3. **Run more iterations**: `--iterations 1000` for stable results
+4. **Use dedicated CI runners**: Self-hosted runners have less noise
+
+### Budget Always Fails
+
+Check if your budget is reasonable:
+
+```bash
+# See actual performance
+modestbench run --verbose
+
+# Compare to budget
+modestbench baseline show your-baseline
+```
+
+Adjust budget if current performance is legitimately slower.
+
+## Examples
+
+### Example 1: Simple Absolute Budget
+
+```json
+{
+  "budgets": {
+    "utils.bench.js": {
+      "default": {
+        "hashPassword": {
+          "absolute": {
+            "maxTime": "100ms"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Example 2: Regression Guard
+
+:::note
+To apply budgets to all tasks, you'll need to specify each file/suite/task. Wildcard patterns are not currently supported, but are being considered for a future release. See [issue #72](https://github.com/boneskull/modestbench/issues/72) for details.
+:::
+
+```json
+{
+  "baseline": "production",
+  "budgets": {
+    "api.bench.js": {
+      "default": {
+        "parseRequest": {
+          "relative": { "maxRegression": "15%" }
+        }
+      }
+    }
+    // Repeat for other files/suites/tasks...
+  }
+}
+```
+
+### Example 3: Per-Task Budgets
+
+```json
+{
+  "budgets": {
+    "api.bench.js": {
+      "default": {
+        "parseSmallRequest": {
+          "absolute": { "maxTime": "1ms" }
+        },
+        "parseLargeRequest": {
+          "absolute": { "maxTime": "10ms" }
+        }
+      }
+    }
+  }
+}
+```
+
+## See Also
+
+- [Configuration Reference](/guides/configuration)
+- [CLI Reference](/guides/cli)
+- [Historical Tracking](/guides/advanced#historical-tracking)
+

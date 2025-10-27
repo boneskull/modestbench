@@ -33,6 +33,13 @@ import {
 } from '../reporters/index.js';
 // Import commands
 import {
+  handleAnalyzeCommand as handleBaselineAnalyzeCommand,
+  handleDeleteCommand as handleBaselineDeleteCommand,
+  handleListCommand as handleBaselineListCommand,
+  handleSetCommand as handleBaselineSetCommand,
+  handleShowCommand as handleBaselineShowCommand,
+} from './commands/baseline.js';
+import {
   handleCleanCommand,
   handleCompareCommand,
   handleExportCommand,
@@ -41,7 +48,10 @@ import {
   handleTrendsCommand,
 } from './commands/history.js';
 import { handleInitCommand as initCommand } from './commands/init.js';
-import { handleRunCommand as runCommand } from './commands/run.js';
+import {
+  RUN_COMMAND_DEFAULTS,
+  handleRunCommand as runCommand,
+} from './commands/run.js';
 
 /**
  * CLI context with initialized services
@@ -63,13 +73,13 @@ interface GlobalOptions {
   /** Configuration file path */
   config?: string | undefined;
   /** Working directory */
-  cwd: string;
+  cwd?: string;
   /** JSON output for machine parsing */
-  json: boolean;
+  json?: boolean;
   /** Disable colored output */
-  noColor: boolean;
+  noColor?: boolean;
   /** Enable verbose output */
-  verbose: boolean;
+  verbose?: boolean;
 }
 
 /**
@@ -120,31 +130,30 @@ export const main = async (
       })
       .option('verbose', {
         alias: 'v',
-        default: false,
+        defaultDescription: String(RUN_COMMAND_DEFAULTS.verbose),
         description: 'Enable verbose output',
         global: true,
         type: 'boolean',
       })
       .option('no-color', {
-        default: false,
+        defaultDescription: 'false',
         description: 'Disable colored output',
         global: true,
         type: 'boolean',
       })
       .option('progress', {
-        default: true,
+        defaultDescription: 'true',
         description: 'Show animated progress bar',
         global: true,
         type: 'boolean',
       })
       .option('json', {
-        default: false,
+        defaultDescription: 'false',
         description: 'Output results in JSON format',
         global: true,
         type: 'boolean',
       })
       .option('cwd', {
-        default: process.cwd(),
         defaultDescription: '.',
         description: 'Working directory',
         global: true,
@@ -166,7 +175,7 @@ export const main = async (
           return yargs
             .positional('pattern', {
               array: true,
-              default: ['./bench/**/*.bench.{js,mjs,cjs,ts}'],
+              defaultDescription: '(auto-discovered from bench/ directory)',
               describe:
                 'File paths, directory paths, or glob patterns for benchmark files',
               type: 'string',
@@ -187,7 +196,8 @@ export const main = async (
                 }
                 return value.split(',').map((s) => s.trim());
               },
-              default: ['human'],
+              defaultDescription:
+                RUN_COMMAND_DEFAULTS.reporters.join(', ') || 'human',
               description: 'Output reporters to use (human,json,csv)',
               type: 'array',
             })
@@ -226,7 +236,7 @@ export const main = async (
             })
             .option('bail', {
               alias: 'b',
-              default: false,
+              defaultDescription: String(RUN_COMMAND_DEFAULTS.bail),
               description: 'Stop on first failure',
               type: 'boolean',
             })
@@ -249,7 +259,7 @@ export const main = async (
             })
             .option('quiet', {
               alias: 'q',
-              default: false,
+              defaultDescription: String(RUN_COMMAND_DEFAULTS.quiet),
               description: 'Minimal output',
               type: 'boolean',
             })
@@ -282,7 +292,7 @@ export const main = async (
             .option('engine', {
               alias: 'e',
               choices: ['tinybench', 'accurate'] as const,
-              default: 'tinybench' as const,
+              defaultDescription: 'tinybench',
               description:
                 'Benchmark engine: tinybench (default) or accurate (requires --allow-natives-syntax)',
               type: 'string',
@@ -357,13 +367,13 @@ export const main = async (
                   type: 'array',
                 })
                 .option('limit', {
-                  default: 10,
+                  defaultDescription: '10',
                   description: 'Maximum number of results',
                   type: 'number',
                 })
                 .option('format', {
                   choices: ['human', 'json', 'csv'] as const,
-                  default: 'human' as const,
+                  defaultDescription: 'human' as const,
                   description: 'Output format',
                   type: 'string',
                 })
@@ -404,7 +414,7 @@ export const main = async (
                 })
                 .option('format', {
                   choices: ['human', 'json', 'csv'] as const,
-                  default: 'human' as const,
+                  defaultDescription: 'human' as const,
                   description: 'Output format',
                   type: 'string',
                 })
@@ -446,7 +456,7 @@ export const main = async (
                 })
                 .option('format', {
                   choices: ['human', 'json'] as const,
-                  default: 'human' as const,
+                  defaultDescription: 'human' as const,
                   description: 'Output format',
                   type: 'string',
                 })
@@ -500,13 +510,13 @@ export const main = async (
                 })
                 .option('all', {
                   alias: 'a',
-                  default: false,
+                  defaultDescription: 'false',
                   description: 'Analyze all runs (ignore limit)',
                   type: 'boolean',
                 })
                 .option('format', {
                   choices: ['human', 'json'] as const,
-                  default: 'human' as const,
+                  defaultDescription: 'human' as const,
                   description: 'Output format',
                   type: 'string',
                 })
@@ -564,7 +574,7 @@ export const main = async (
                   type: 'number',
                 })
                 .option('confirm', {
-                  default: false,
+                  defaultDescription: 'false',
                   description: 'Confirm cleanup without prompting',
                   type: 'boolean',
                 })
@@ -616,7 +626,7 @@ export const main = async (
               return yargs
                 .option('format', {
                   choices: ['json', 'csv'] as const,
-                  default: 'json' as const,
+                  defaultDescription: 'json' as const,
                   description: 'Export format',
                   type: 'string',
                 })
@@ -674,6 +684,196 @@ export const main = async (
             ['$0 history export -o data.json', 'Export history'],
           ]);
       })
+      .command('baseline', 'Manage performance baselines', (yargs) => {
+        return yargs
+          .command(
+            'set <name>',
+            'Save a benchmark run as a baseline',
+            (yargs) => {
+              return yargs
+                .positional('name', {
+                  describe: 'Name for the baseline',
+                  type: 'string',
+                })
+                .option('run-id', {
+                  description: 'Specific run ID to save (default: most recent)',
+                  type: 'string',
+                })
+                .option('commit', {
+                  description: 'Git commit SHA (40 characters)',
+                  type: 'string',
+                })
+                .option('branch', {
+                  description: 'Git branch name',
+                  type: 'string',
+                })
+                .option('default', {
+                  defaultDescription: 'false',
+                  description: 'Set as default baseline',
+                  type: 'boolean',
+                })
+                .example([
+                  [
+                    '$0 baseline set production-v1.0',
+                    'Save most recent run as baseline',
+                  ],
+                  ['$0 baseline set v1.0 --default', 'Save and set as default'],
+                  [
+                    '$0 baseline set v1.0 --commit abc123...',
+                    'Save with commit info',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleBaselineSetCommand(context, {
+                branch: argv.branch,
+                commit: argv.commit,
+                cwd: argv.cwd,
+                default: argv.default,
+                name: String(argv.name),
+                quiet: Boolean(argv.quiet),
+                runId: argv['run-id'],
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'list',
+            'List all saved baselines',
+            (yargs) => {
+              return yargs
+                .option('format', {
+                  choices: ['human', 'json'] as const,
+                  defaultDescription: 'human' as const,
+                  description: 'Output format',
+                  type: 'string',
+                })
+                .example([
+                  ['$0 baseline list', 'List all baselines'],
+                  ['$0 baseline list --format json', 'List in JSON format'],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleBaselineListCommand(context, {
+                cwd: argv.cwd,
+                format: argv.format,
+                quiet: Boolean(argv.quiet),
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'show <name>',
+            'Show baseline details',
+            (yargs) => {
+              return yargs
+                .positional('name', {
+                  describe: 'Baseline name to show',
+                  type: 'string',
+                })
+                .option('format', {
+                  choices: ['human', 'json'] as const,
+                  defaultDescription: 'human' as const,
+                  description: 'Output format',
+                  type: 'string',
+                })
+                .example([
+                  ['$0 baseline show production-v1.0', 'Show baseline details'],
+                  [
+                    '$0 baseline show v1.0 --format json',
+                    'Show in JSON format',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleBaselineShowCommand(context, {
+                cwd: argv.cwd,
+                format: argv.format,
+                name: String(argv.name),
+                quiet: Boolean(argv.quiet),
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'delete <name>',
+            'Delete a baseline',
+            (yargs) => {
+              return yargs
+                .positional('name', {
+                  describe: 'Baseline name to delete',
+                  type: 'string',
+                })
+                .example([
+                  ['$0 baseline delete old-baseline', 'Delete a baseline'],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleBaselineDeleteCommand(context, {
+                cwd: argv.cwd,
+                name: String(argv.name),
+                quiet: Boolean(argv.quiet),
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .command(
+            'analyze',
+            'Analyze history and suggest performance budgets',
+            (yargs) => {
+              return yargs
+                .option('runs', {
+                  defaultDescription: '10',
+                  description: 'Number of recent runs to analyze',
+                  type: 'number',
+                })
+                .option('confidence', {
+                  defaultDescription: '0.95',
+                  description: 'Confidence level (0.5-0.999, default 0.95)',
+                  type: 'number',
+                })
+                .example([
+                  [
+                    '$0 baseline analyze',
+                    'Analyze last 10 runs with 95% confidence',
+                  ],
+                  ['$0 baseline analyze --runs 20', 'Analyze last 20 runs'],
+                  [
+                    '$0 baseline analyze --confidence 0.90',
+                    'Use 90% confidence level',
+                  ],
+                ]);
+            },
+            async (argv) => {
+              const context = await createCliContext(argv, abortController!);
+              const exitCode = await handleBaselineAnalyzeCommand(context, {
+                confidence: argv.confidence,
+                cwd: argv.cwd,
+                quiet: Boolean(argv.quiet),
+                runs: argv.runs,
+                verbose: argv.verbose,
+              });
+              process.exit(exitCode);
+            },
+          )
+          .demandCommand(1, 'You must specify a baseline subcommand')
+          .strict()
+          .example([
+            ['$0 baseline set production-v1.0', 'Save current run as baseline'],
+            ['$0 baseline list', 'List all baselines'],
+            ['$0 baseline show production-v1.0', 'Show baseline details'],
+            ['$0 baseline delete old-baseline', 'Delete a baseline'],
+            ['$0 baseline analyze', 'Suggest budgets from history'],
+          ]);
+      })
       .command(
         'init [type]',
         'Initialize a new benchmark project',
@@ -681,35 +881,35 @@ export const main = async (
           return yargs
             .positional('type', {
               choices: ['basic', 'advanced', 'library'] as const,
-              default: 'basic' as const,
+              defaultDescription: 'basic' as const,
               describe: 'Type of project to initialize',
               type: 'string',
             })
             .option('examples', {
-              default: true,
+              defaultDescription: 'true',
               description: 'Include example benchmark files',
               type: 'boolean',
             })
             .option('config-type', {
               choices: ['json', 'yaml', 'js', 'ts'] as const,
-              default: 'json' as const,
+              defaultDescription: 'json' as const,
               description: 'Configuration file format',
               type: 'string',
             })
             .option('force', {
-              default: false,
+              defaultDescription: 'false',
               description: 'Overwrite existing files',
               type: 'boolean',
             })
             .option('yes', {
               alias: 'y',
-              default: false,
+              defaultDescription: 'false',
               description: 'Accept all prompts automatically',
               type: 'boolean',
             })
             .option('quiet', {
               alias: 'q',
-              default: false,
+              defaultDescription: 'false',
               description: 'Minimal output',
               type: 'boolean',
             })

@@ -4,6 +4,7 @@ import { after, before, describe, it } from 'node:test';
 import type { BenchmarkRun, ProgressState } from '../../../src/types/index.js';
 
 import { ModestBenchProgressManager } from '../../../src/services/progress-manager.js';
+import { createRunId } from '../../../src/utils/identifiers.js';
 
 // Time mocking utilities for throttle bypass
 let mockTime = Date.now();
@@ -43,7 +44,7 @@ const createMockRun = (
     platform: 'linux',
   },
   files: [],
-  id: 'test-run',
+  id: createRunId('test-run'),
   startTime: new Date(),
   summary: {
     failedTasks: 0,

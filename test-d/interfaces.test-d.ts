@@ -35,22 +35,31 @@ describe('Interface Types', () => {
         onTaskStart: () => {},
       };
 
+      // Required methods
       expectType<(run: BenchmarkRun) => MaybePromise<void>>(reporter.onStart);
       expectType<(run: BenchmarkRun) => MaybePromise<void>>(reporter.onEnd);
-      expectType<(file: string) => MaybePromise<void>>(reporter.onFileStart);
-      expectType<(result: FileResult) => MaybePromise<void>>(
-        reporter.onFileEnd,
-      );
-      expectType<(suite: string) => MaybePromise<void>>(reporter.onSuiteStart);
-      expectType<(result: SuiteResult) => MaybePromise<void>>(
-        reporter.onSuiteEnd,
-      );
-      expectType<(task: string) => MaybePromise<void>>(reporter.onTaskStart);
       expectType<(result: TaskResult) => MaybePromise<void>>(
         reporter.onTaskResult,
       );
       expectType<(error: Error) => MaybePromise<void>>(reporter.onError);
-      expectType<(state: ProgressState) => MaybePromise<void>>(
+
+      // Optional methods
+      expectType<((file: string) => MaybePromise<void>) | undefined>(
+        reporter.onFileStart,
+      );
+      expectType<((result: FileResult) => MaybePromise<void>) | undefined>(
+        reporter.onFileEnd,
+      );
+      expectType<((suite: string) => MaybePromise<void>) | undefined>(
+        reporter.onSuiteStart,
+      );
+      expectType<((result: SuiteResult) => MaybePromise<void>) | undefined>(
+        reporter.onSuiteEnd,
+      );
+      expectType<((task: string) => MaybePromise<void>) | undefined>(
+        reporter.onTaskStart,
+      );
+      expectType<((state: ProgressState) => MaybePromise<void>) | undefined>(
         reporter.onProgress,
       );
     });

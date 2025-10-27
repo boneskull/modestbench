@@ -41,17 +41,17 @@ class TestReporter extends BaseReporter {
 
   async onTaskStart(_task: string): Promise<void> {}
 
-  // Expose protected methods for testing
+  // Expose protected static methods for testing
   public testFormatDuration(ns: number): string {
-    return this.formatDuration(ns);
+    return BaseReporter.formatDuration(ns);
   }
 
   public testFormatOpsPerSecond(ops: number): string {
-    return this.formatOpsPerSecond(ops);
+    return BaseReporter.formatOpsPerSecond(ops);
   }
 
   public testFormatPercentage(value: number): string {
-    return this.formatPercentage(value);
+    return BaseReporter.formatPercentage(value);
   }
 }
 

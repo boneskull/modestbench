@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import type { BenchmarkRun } from '../../../../src/types/index.js';
 
 import { ComparisonService } from '../../../../src/services/history/comparison.js';
+import { createRunId } from '../../../../src/utils/identifiers.js';
 
 /**
  * Unit tests for ComparisonService
@@ -45,7 +46,7 @@ const createMockRun = (
     platform: 'linux',
   },
   files: files as any,
-  id,
+  id: createRunId(id),
   startTime: new Date('2024-01-01T12:00:00Z'),
   summary: {
     failedTasks: 0,

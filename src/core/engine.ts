@@ -7,13 +7,17 @@
  */
 
 import { randomBytes } from 'node:crypto';
+import { relative as pathRelative } from 'node:path';
 
 import type {
+  BaselineSummaryData,
   BenchmarkDefinition,
   BenchmarkEngine,
   BenchmarkRun,
   BenchmarkSuite,
   BenchmarkTask,
+  Budget,
+  BudgetSummary,
   CiInfo,
   ConfigurationManager,
   EnvironmentInfo,
@@ -26,7 +30,9 @@ import type {
   Reporter,
   ReporterRegistry,
   RunConfiguration,
+  RunId,
   SuiteResult,
+  TaskId,
   TaskResult,
   ValidationError,
   ValidationResult,
@@ -35,11 +41,15 @@ import type {
 
 import {
   BenchmarkExecutionError,
+  BudgetExceededError,
   FileDiscoveryError,
   SchemaValidationError,
   SetupError,
   StructureValidationError,
 } from '../errors/index.js';
+import { BaselineStorageService } from '../services/baseline-storage.js';
+import { BudgetEvaluator } from '../services/budget-evaluator.js';
+import { createRunId, createTaskId } from '../types/index.js';
 
 /**
  * Dependencies required by the BenchmarkEngine
@@ -76,6 +86,20 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
     this.reporterRegistry = dependencies.reporterRegistry;
     this.historyStorage = dependencies.historyStorage;
     this.progressManager = dependencies.progressManager;
+  }
+
+  /**
+   * Generate a unique run ID
+   *
+   * Uses crypto.randomBytes for cryptographically random 7-character IDs.
+   * Format: 7 lowercase alphanumeric characters (e.g., "k3m9x2p")
+   */
+  private static generateRunId(this: void): RunId {
+    // Generate random bytes, convert to hex, then to base36, take first 7 chars
+    const hex = randomBytes(4).toString('hex');
+    const num = parseInt(hex, 16);
+    const id = num.toString(36).padStart(7, '0').substring(0, 7);
+    return createRunId(id);
   }
 
   /**
@@ -136,7 +160,7 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
       }
 
       // 4. Initialize progress tracking
-      const runId = this.generateRunId();
+      const runId = ModestBenchEngine.generateRunId();
 
       // Pre-calculate total tasks for progress tracking
       let totalTasks = 0;
@@ -212,9 +236,9 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
 
       // Register progress callbacks with reporters that support them
       for (const reporter of reporters) {
-        if (typeof reporter.onProgress === 'function') {
+        if (reporter.onProgress) {
           this.progressManager.onProgress((state) => {
-            void reporter.onProgress(state);
+            void reporter.onProgress?.(state);
           });
         }
       }
@@ -227,12 +251,17 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
 
       for (const filePath of files) {
         try {
-          // Call reporter onFileStart
-          await this.callReporters(reporters, 'onFileStart', filePath);
+          // Normalize file path to be relative to cwd
+          const cwd = config.cwd || process.cwd();
+          const relativePath = pathRelative(cwd, filePath);
+
+          // Call reporter onFileStart with relative path
+          await this.callReporters(reporters, 'onFileStart', relativePath);
 
           const fileResult = await this.executeBenchmarkFile(
             filePath,
             mergedConfig,
+            cwd,
             reporters,
             signal,
           );
@@ -317,10 +346,103 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
       }
 
       const overallMean = totalOperations > 0 ? totalTime / totalOperations : 0;
+      // Evaluate budgets if configured
+      let budgetSummary: BudgetSummary | undefined;
+
+      if (config.budgets && Object.keys(config.budgets).length > 0) {
+        const evaluator = new BudgetEvaluator();
+        const baselineStorage = new BaselineStorageService(process.cwd());
+
+        // Collect task results
+        const taskResults = new Map<TaskId, TaskResult>();
+
+        for (const file of fileResults) {
+          for (const suite of file.suites) {
+            for (const task of suite.tasks) {
+              if (!task.error) {
+                // file.filePath is already relative to cwd
+                const taskId = createTaskId(
+                  file.filePath,
+                  suite.name,
+                  task.name,
+                );
+                taskResults.set(taskId, task);
+              }
+            }
+          }
+        }
+
+        // Load baseline data if needed for relative budgets
+        let baselineData: Map<TaskId, BaselineSummaryData> | undefined;
+
+        // Check if any budgets use relative thresholds
+        const hasRelativeBudgets = Object.values(config.budgets).some(
+          (budget) => (budget as Budget).relative,
+        );
+
+        if (hasRelativeBudgets) {
+          const baselineName =
+            config.baseline || (await baselineStorage.getDefault());
+
+          if (baselineName) {
+            const baseline = await baselineStorage.getBaseline(baselineName);
+
+            if (baseline) {
+              // Cast keys to TaskId since they come from validated baseline storage
+              baselineData = new Map(
+                Object.entries(baseline.summary) as [
+                  TaskId,
+                  BaselineSummaryData,
+                ][],
+              );
+            } else {
+              console.warn(
+                `Warning: Baseline "${baselineName}" not found. Relative budgets will be skipped.`,
+              );
+            }
+          } else {
+            console.warn(
+              'Warning: Relative budgets configured but no baseline specified. Relative budgets will be skipped.',
+            );
+          }
+        }
+
+        // Evaluate budgets
+        budgetSummary = evaluator.evaluateRun(
+          config.budgets as Record<string, Budget>,
+          taskResults,
+          baselineData,
+        );
+
+        // Notify reporters of budget results
+        for (const reporter of reporters) {
+          if (reporter.onBudgetResult) {
+            await reporter.onBudgetResult(budgetSummary);
+          }
+        }
+
+        // Handle budget failures based on budgetMode
+        if (budgetSummary.failed > 0) {
+          const mode = config.budgetMode || 'fail';
+
+          if (mode === 'fail') {
+            throw new BudgetExceededError(
+              `${budgetSummary.failed} of ${budgetSummary.total} budget(s) exceeded`,
+              budgetSummary,
+            );
+          } else if (mode === 'warn') {
+            console.warn(
+              `Warning: ${budgetSummary.failed} of ${budgetSummary.total} budget(s) exceeded`,
+            );
+          }
+          // mode === 'report': just include in output, don't fail
+        }
+      }
 
       const endTime = new Date();
       const finalRun: BenchmarkRun = {
         ...initialRun,
+        budgetSummary,
         duration: endTime.getTime() - startTime.getTime(),
         endTime,
         files: fileResults,
@@ -504,6 +626,7 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
   private async executeBenchmarkFile(
     filePath: string,
     config: ModestBenchConfig,
+    cwd: string,
     reporters: Reporter[] = [],
     signal?: AbortSignal,
   ): Promise<FileResult> {
@@ -558,11 +681,14 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
 
       const endTime = new Date();
 
+      // Normalize file path to be relative to cwd
+      const relativePath = pathRelative(cwd, filePath);
+
       return {
         config: benchmarkDef.config,
         duration: endTime.getTime() - startTime.getTime(),
         endTime,
-        filePath,
+        filePath: relativePath,
         startTime,
         suites: suiteResults,
       };
@@ -571,11 +697,14 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
       const executionError =
         error instanceof Error ? error : new Error(String(error));
 
+      // Normalize file path to be relative to cwd
+      const relativePath = pathRelative(cwd, filePath);
+
       return {
         duration: endTime.getTime() - startTime.getTime(),
         endTime,
         error: executionError,
-        filePath,
+        filePath: relativePath,
         startTime,
         suites: [],
       };
@@ -710,19 +839,6 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
         tasks: [],
       };
     }
-  }
-
-  /**
-   * Generate a unique run ID
-   *
-   * Uses crypto.randomBytes for cryptographically random 7-character IDs.
-   * Format: 7 lowercase alphanumeric characters (e.g., "k3m9x2p")
-   */
-  private generateRunId(): string {
-    // Generate random bytes, convert to hex, then to base36, take first 7 chars
-    const hex = randomBytes(4).toString('hex');
-    const num = parseInt(hex, 16);
-    return num.toString(36).padStart(7, '0').substring(0, 7);
   }
 
   /**

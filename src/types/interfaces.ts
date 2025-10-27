@@ -9,6 +9,7 @@
 import type {
   BenchmarkFile,
   BenchmarkRun,
+  BudgetSummary,
   FileResult,
   ModestBenchConfig,
   SuiteResult,
@@ -76,6 +77,7 @@ export interface ConfigurationManager {
   load(
     configPath?: string,
     cliArgs?: Record<string, unknown>,
+    commandDefaults?: Partial<ModestBenchConfig>,
   ): Promise<ModestBenchConfig>;
 
   /**
@@ -266,8 +268,16 @@ export interface ProgressState {
 
 /**
  * Base reporter interface for benchmark output
+ *
+ * Required methods: onStart, onEnd, onError, onTaskResult Optional methods: All
+ * others (implement only what you need)
  */
 export interface Reporter {
+  /**
+   * Called when budget evaluation completes
+   */
+  onBudgetResult?(summary: BudgetSummary): Promise<void> | void;
+
   /**
    * Called when benchmark run completes
    */
@@ -281,17 +291,17 @@ export interface Reporter {
   /**
    * Called when a file completes
    */
-  onFileEnd(result: FileResult): Promise<void> | void;
+  onFileEnd?(result: FileResult): Promise<void> | void;
 
   /**
    * Called when a file starts execution
    */
-  onFileStart(file: string): Promise<void> | void;
+  onFileStart?(file: string): Promise<void> | void;
 
   /**
    * Called for progress updates
    */
-  onProgress(state: ProgressState): Promise<void> | void;
+  onProgress?(state: ProgressState): Promise<void> | void;
 
   /**
    * Called when benchmark run starts
@@ -301,12 +311,12 @@ export interface Reporter {
   /**
    * Called when a suite completes
    */
-  onSuiteEnd(result: SuiteResult): Promise<void> | void;
+  onSuiteEnd?(result: SuiteResult): Promise<void> | void;
 
   /**
    * Called when a suite starts execution
    */
-  onSuiteStart(suite: string): Promise<void> | void;
+  onSuiteStart?(suite: string): Promise<void> | void;
 
   /**
    * Called when a task completes
@@ -316,7 +326,7 @@ export interface Reporter {
   /**
    * Called when a task starts execution
    */
-  onTaskStart(task: string): Promise<void> | void;
+  onTaskStart?(task: string): Promise<void> | void;
 }
 
 /**

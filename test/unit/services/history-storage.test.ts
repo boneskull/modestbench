@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import type { BenchmarkRun } from '../../../src/types/index.js';
 
 import { FileHistoryStorage } from '../../../src/services/history-storage.js';
+import { createRunId } from '../../../src/utils/identifiers.js';
 
 // Helper to create a minimal benchmark run for testing
 const createMockRun = (overrides: Partial<BenchmarkRun> = {}): BenchmarkRun => {
@@ -22,7 +23,7 @@ const createMockRun = (overrides: Partial<BenchmarkRun> = {}): BenchmarkRun => {
       platform: 'linux',
     },
     files: [],
-    id: 'test-run-123',
+    id: createRunId('test-run-123'),
     startTime: new Date('2024-01-01T12:00:00Z'),
     summary: {
       failedTasks: 0,

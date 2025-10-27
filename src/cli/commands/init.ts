@@ -5,13 +5,7 @@
  * structure, and optional example benchmark files.
  */
 
-import {
-  access,
-  appendFile,
-  mkdir,
-  readFile,
-  writeFile,
-} from 'node:fs/promises';
+import { access, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 
@@ -26,12 +20,12 @@ import {
  * Init command options interface
  */
 interface InitOptions {
-  configType: 'js' | 'json' | 'ts' | 'yaml';
-  cwd: string;
-  examples: boolean;
+  configType?: 'js' | 'json' | 'ts' | 'yaml';
+  cwd?: string;
+  examples?: boolean;
   force?: boolean | undefined;
   quiet?: boolean | undefined;
-  type: 'advanced' | 'basic' | 'library';
+  type?: 'advanced' | 'basic' | 'library';
   verbose?: boolean | undefined;
   yes?: boolean | undefined;
 }
@@ -244,7 +238,7 @@ export default {
 /**
  * Prompt user for confirmation with Y/n default to Yes
  */
-const promptUser = async (question: string): Promise<boolean> => {
+const _promptUser = async (question: string): Promise<boolean> => {
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -268,7 +262,13 @@ export const handleInitCommand = async (
   options: InitOptions,
 ): Promise<number> => {
   try {
-    const template = PROJECT_TEMPLATES[options.type];
+    // Apply defaults for required options
+    const type = options.type ?? 'basic';
+    const cwd = options.cwd ?? process.cwd();
+    const configType = options.configType ?? 'json';
+    const examples = options.examples ?? false;
+
+    const template = PROJECT_TEMPLATES[type];
 
     if (!options.quiet) {
       console.log(`Initializing ${template.name}...`);
@@ -278,7 +278,7 @@ export const handleInitCommand = async (
 
     // Check if project already exists
     if (!options.force) {
-      const hasConflicts = await checkForConflicts(options);
+      const hasConflicts = await checkForConflicts(cwd, configType);
       if (hasConflicts) {
         console.error('Project files already exist. Use --force to overwrite.');
         return 1; // Already initialized
@@ -286,24 +286,24 @@ export const handleInitCommand = async (
     }
 
     // Create directory structure
-    await createDirectories(template.directories, options);
+    await createDirectories(template.directories, cwd);
 
     // Create configuration file
-    await createConfigFile(template.configOptions, options);
+    await createConfigFile(template.configOptions, cwd, configType);
 
     // Create example benchmarks if requested
-    if (options.examples) {
-      await createExampleBenchmarks(options);
+    if (examples) {
+      await createExampleBenchmarks(cwd);
     }
 
     // Create additional files
-    await createAdditionalFiles(options);
+    await createAdditionalFiles(cwd);
 
     if (!options.quiet) {
       console.log('✅ Project initialized successfully!');
       console.log();
       console.log('Next steps:');
-      if (options.examples) {
+      if (examples) {
         console.log('  1. Run example benchmarks: modestbench run');
       } else {
         console.log(
@@ -337,15 +337,15 @@ export const handleInitCommand = async (
 /**
  * Check for existing files that would conflict
  */
-const checkForConflicts = async (options: InitOptions): Promise<boolean> => {
-  const filesToCheck = [
-    'modestbench.config.' + options.configType,
-    'benchmarks',
-  ];
+const checkForConflicts = async (
+  cwd: string,
+  configType: string,
+): Promise<boolean> => {
+  const filesToCheck = ['modestbench.config.' + configType, 'benchmarks'];
 
   for (const file of filesToCheck) {
     try {
-      await access(resolve(options.cwd, file));
+      await access(resolve(cwd, file));
       return true; // File exists, conflict detected
     } catch {
       // File doesn't exist, no conflict
@@ -356,138 +356,9 @@ const checkForConflicts = async (options: InitOptions): Promise<boolean> => {
 };
 
 /**
- * Handle .gitignore file creation or modification
- */
-const handleGitignore = async (options: InitOptions): Promise<void> => {
-  const gitignorePath = resolve(options.cwd, '.gitignore');
-  const modestbenchEntry = '.modestbench/';
-
-  // Default .gitignore content for new files
-  const defaultGitignoreContent = `# ModestBench
-benchmark-results/
-.modestbench/
-
-# Dependencies
-node_modules/
-
-# Environment
-.env
-.env.local
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS
-.DS_Store
-Thumbs.db
-`;
-
-  try {
-    // Check if .gitignore exists
-    let gitignoreExists = false;
-    try {
-      await access(gitignorePath);
-      gitignoreExists = true;
-    } catch {
-      // File doesn't exist
-    }
-
-    if (!gitignoreExists) {
-      // Create new .gitignore with full content
-      await writeFile(gitignorePath, defaultGitignoreContent, 'utf8');
-      if (options.verbose) {
-        console.log('  ✓ .gitignore');
-      }
-      return;
-    }
-
-    // File exists, check if .modestbench/ is already present
-    const existingContent = await readFile(gitignorePath, 'utf8');
-
-    // Check if .modestbench/ is already in the file
-    const hasModestbenchEntry = existingContent
-      .split('\n')
-      .some((line) => line.trim() === modestbenchEntry);
-
-    if (hasModestbenchEntry) {
-      // Already has the entry, nothing to do
-      if (options.verbose) {
-        console.log('  ✓ .gitignore (already contains .modestbench/)');
-      }
-      return;
-    }
-
-    // Determine if we should prompt or auto-add
-    let shouldAdd = false;
-
-    if (options.yes || options.quiet) {
-      // Auto-accept in non-interactive mode
-      shouldAdd = true;
-    } else {
-      // Prompt the user
-      console.log();
-      console.log(
-        'The .modestbench/ directory stores benchmark history and should typically',
-      );
-      console.log('not be committed to version control.');
-      console.log();
-
-      shouldAdd = await promptUser(
-        'Would you like to add .modestbench/ to .gitignore? (Y/n) ',
-      );
-    }
-
-    if (shouldAdd) {
-      // Append .modestbench/ to existing .gitignore
-      let contentToAppend = '';
-
-      // Ensure file ends with newline
-      if (!existingContent.endsWith('\n')) {
-        contentToAppend += '\n';
-      }
-
-      // Add a blank line if the file doesn't end with one
-      if (!existingContent.endsWith('\n\n') && existingContent.trim() !== '') {
-        contentToAppend += '\n';
-      }
-
-      // Add comment and entry
-      contentToAppend += '# ModestBench history\n';
-      contentToAppend += modestbenchEntry + '\n';
-
-      await appendFile(gitignorePath, contentToAppend, 'utf8');
-
-      if (options.verbose || !options.quiet) {
-        console.log('  ✓ Added .modestbench/ to .gitignore');
-      }
-    } else {
-      if (options.verbose) {
-        console.log('  ⊘ Skipped adding .modestbench/ to .gitignore');
-      }
-    }
-  } catch (error) {
-    // Non-critical, just warn
-    console.warn(
-      'Warning: Could not create/modify .gitignore file:',
-      error instanceof Error ? error.message : String(error),
-    );
-  }
-};
-
-/**
  * Create additional project files
  */
-const createAdditionalFiles = async (options: InitOptions): Promise<void> => {
-  if (!options.quiet) {
-    console.log('Creating additional files...');
-  }
-
-  // Handle .gitignore
-  await handleGitignore(options);
-
+const createAdditionalFiles = async (cwd: string): Promise<void> => {
   // Create README.md
   const readmeContent = `# Benchmark Project
 
@@ -520,11 +391,8 @@ Create new benchmark files in the \`benchmarks/\` directory. See the examples fo
 `;
 
   try {
-    const readmePath = resolve(options.cwd, 'README.md');
+    const readmePath = resolve(cwd, 'README.md');
     await writeFile(readmePath, readmeContent, 'utf8');
-    if (options.verbose) {
-      console.log('  ✓ README.md');
-    }
   } catch {
     // Non-critical, just warn
     console.warn('Warning: Could not create README.md file');
@@ -536,18 +404,15 @@ Create new benchmark files in the \`benchmarks/\` directory. See the examples fo
  */
 const createConfigFile = async (
   configOptions: any,
-  options: InitOptions,
+  cwd: string,
+  configType: string,
 ): Promise<void> => {
-  const filename = `modestbench.config.${options.configType}`;
-  const filePath = resolve(options.cwd, filename);
-
-  if (!options.quiet) {
-    console.log(`Creating configuration file: ${filename}`);
-  }
+  const filename = `modestbench.config.${configType}`;
+  const filePath = resolve(cwd, filename);
 
   let content: string;
 
-  switch (options.configType) {
+  switch (configType) {
     case 'js':
       content = `export default ${JSON.stringify(configOptions, null, 2)};\n`;
       break;
@@ -572,15 +437,12 @@ export default config;
 
     default:
       throw new UnsupportedConfigFormatError(
-        `Unsupported config format: ${options.configType}`,
+        `Unsupported config format: ${configType}`,
       );
   }
 
   try {
     await writeFile(filePath, content, 'utf8');
-    if (options.verbose) {
-      console.log(`  ✓ ${filename}`);
-    }
   } catch (error) {
     throw new InvalidArgumentError(
       `Failed to create config file: ${error instanceof Error ? error.message : String(error)}`,
@@ -594,19 +456,12 @@ export default config;
  */
 const createDirectories = async (
   directories: readonly string[],
-  options: InitOptions,
+  cwd: string,
 ): Promise<void> => {
-  if (!options.quiet) {
-    console.log('Creating directories...');
-  }
-
   for (const dir of directories) {
-    const dirPath = resolve(options.cwd, dir);
+    const dirPath = resolve(cwd, dir);
     try {
       await mkdir(dirPath, { recursive: true });
-      if (options.verbose) {
-        console.log(`  ✓ ${dir}/`);
-      }
     } catch (error) {
       throw new InvalidArgumentError(
         `Failed to create directory ${dir}: ${error instanceof Error ? error.message : String(error)}`,
@@ -619,21 +474,14 @@ const createDirectories = async (
 /**
  * Create example benchmark files
  */
-const createExampleBenchmarks = async (options: InitOptions): Promise<void> => {
-  if (!options.quiet) {
-    console.log('Creating example benchmarks...');
-  }
-
-  const benchmarksDir = resolve(options.cwd, 'benchmarks');
+const createExampleBenchmarks = async (cwd: string): Promise<void> => {
+  const benchmarksDir = resolve(cwd, 'benchmarks');
 
   for (const [name, example] of Object.entries(EXAMPLE_BENCHMARKS)) {
     const filePath = join(benchmarksDir, example.filename);
 
     try {
       await writeFile(filePath, example.content, 'utf8');
-      if (options.verbose) {
-        console.log(`  ✓ ${example.filename}`);
-      }
     } catch (error) {
       throw new InvalidArgumentError(
         `Failed to create example ${name}: ${error instanceof Error ? error.message : String(error)}`,
