@@ -26,15 +26,19 @@ export const BENCHMARK_FILE_PATTERN = `.bench.{${Array.from(
  * Use these constants to check error types instead of instanceof checks.
  */
 export const ErrorCodes = {
+  //#region budget-errors
+  BUDGET_EXCEEDED: 'ERR_MB_BUDGET_EXCEEDED',
   //#region cli-errors
   CLI_INVALID_ARGUMENT: 'ERR_MB_CLI_INVALID_ARGUMENT',
-  CLI_INVALID_DATE_FORMAT: 'ERR_MB_CLI_INVALID_DATE_FORMAT',
   //#endregion
 
+  CLI_INVALID_DATE_FORMAT: 'ERR_MB_CLI_INVALID_DATE_FORMAT',
   //#region config-errors
   CONFIG_LOAD_FAILED: 'ERR_MB_CONFIG_LOAD_FAILED',
   CONFIG_NOT_FOUND: 'ERR_MB_CONFIG_NOT_FOUND',
   CONFIG_UNSUPPORTED_FORMAT: 'ERR_MB_CONFIG_UNSUPPORTED_FORMAT',
+  //#endregion
+
   CONFIG_VALIDATION_FAILED: 'ERR_MB_CONFIG_VALIDATION_FAILED',
   //#endregion
 

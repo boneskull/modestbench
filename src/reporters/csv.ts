@@ -11,20 +11,24 @@ import { dirname } from 'node:path';
 
 import type {
   BenchmarkRun,
-  FileResult,
-  ProgressState,
-  SuiteResult,
+  BudgetResult,
+  BudgetSummary,
+  TaskId,
   TaskResult,
 } from '../types/index.js';
 
 import { ReporterOutputError } from '../errors/index.js';
 import { BaseReporter } from '../services/reporter-registry.js';
+import { createTaskId } from '../types/index.js';
 
 /**
  * CSV column definitions for task results
  */
 interface CsvRow {
   readonly arch: string;
+  /** Budget passed: 1 (pass), 0 (fail), undefined (no budget) */
+  readonly budgetPassed?: number | undefined;
+  readonly budgetViolations?: string | undefined;
   readonly ciProvider?: string | undefined;
   readonly cpuCores: number;
   readonly cpuModel: string;
@@ -54,6 +58,8 @@ interface CsvRow {
  * CSV reporter for structured tabular output
  */
 export class CsvReporter extends BaseReporter {
+  private budgetResults: Map<TaskId, BudgetResult> = new Map();
+
   private currentFile = '';
 
   private currentRun?: BenchmarkRun;
@@ -67,8 +73,6 @@ export class CsvReporter extends BaseReporter {
   private readonly includeMetadata: boolean;
 
   private readonly outputPath?: string | undefined;
-
-  private readonly quiet: boolean;
 
   private readonly quote: string;
 
@@ -92,7 +96,6 @@ export class CsvReporter extends BaseReporter {
     this.includeMetadata = options.includeMetadata ?? true;
     this.delimiter = options.delimiter ?? ',';
     this.quote = options.quote ?? '"';
-    this.quiet = options.quiet ?? false;
   }
 
   /**
@@ -137,6 +140,31 @@ export class CsvReporter extends BaseReporter {
     return this.includeMetadata;
   }
 
+  onBudgetResult(summary: BudgetSummary): void {
+    // Store budget results indexed by taskId
+    for (const result of summary.results) {
+      this.budgetResults.set(result.taskId, result);
+    }
+
+    // Update existing rows with budget data (since onTaskResult is called before onBudgetResult)
+    for (const row of this.rows) {
+      // row.file is already relative to cwd
+      const taskId = createTaskId(row.file, row.suite, row.task);
+      const budgetResult = this.budgetResults.get(taskId);
+      if (budgetResult) {
+        // Need to cast to mutable to update readonly properties
+        const mutableRow = row as {
+          budgetPassed?: number;
+          budgetViolations?: string;
+        };
+        mutableRow.budgetPassed = budgetResult.passed ? 1 : 0;
+        mutableRow.budgetViolations = budgetResult.violations
+          .map((v) => v.type)
+          .join('; ');
+      }
+    }
+  }
+
   async onEnd(_run: BenchmarkRun): Promise<void> {
     const csvContent = this.generateCsv();
 
@@ -151,25 +179,13 @@ export class CsvReporter extends BaseReporter {
     console.error('CSV Reporter Error:', error.message);
   }
 
-  onFileEnd(_result: FileResult): void {
-    // No-op for CSV reporter
-  }
-
   onFileStart(file: string): void {
     this.currentFile = file;
-  }
-
-  onProgress(_state: ProgressState): void {
-    // No-op for CSV reporter
   }
 
   onStart(run: BenchmarkRun): void {
     this.currentRun = run;
     this.rows = [];
-  }
-
-  onSuiteEnd(_result: SuiteResult): void {
-    // No-op for CSV reporter
   }
 
   onSuiteStart(suite: string): void {
@@ -181,8 +197,21 @@ export class CsvReporter extends BaseReporter {
       return;
     }
 
+    // Look up budget result for this task
+    // this.currentFile is already relative to cwd (comes from engine)
+    const taskId = createTaskId(
+      this.currentFile,
+      this.currentSuite,
+      result.name,
+    );
+    const budgetResult = this.budgetResults.get(taskId);
+
     const row: CsvRow = {
       arch: this.currentRun.environment.arch,
+      budgetPassed: budgetResult ? (budgetResult.passed ? 1 : 0) : undefined,
+      budgetViolations: budgetResult
+        ? budgetResult.violations.map((v) => v.type).join('; ')
+        : undefined,
       ciProvider: this.currentRun.ci?.provider,
       cpuCores: this.currentRun.environment.cpu.cores,
       cpuModel: this.currentRun.environment.cpu.model,
@@ -209,10 +238,6 @@ export class CsvReporter extends BaseReporter {
     };
 
     this.rows.push(row);
-  }
-
-  onTaskStart(_task: string): void {
-    // No-op for CSV reporter
   }
 
   /**
@@ -277,6 +302,8 @@ export class CsvReporter extends BaseReporter {
       'p95',
       'p99',
       'error',
+      'budgetPassed',
+      'budgetViolations',
       'timestamp',
     ];
 
@@ -302,9 +329,9 @@ export class CsvReporter extends BaseReporter {
    */
   private generateRow(row: CsvRow): string {
     const values = [
-      row.file || '',
-      row.suite || '',
-      row.task || '',
+      row.file,
+      row.suite,
+      row.task,
       (row.mean ?? 0).toString(),
       (row.stdDev ?? 0).toString(),
       (row.min ?? 0).toString(),
@@ -316,6 +343,8 @@ export class CsvReporter extends BaseReporter {
       (row.p95 ?? 0).toString(),
       (row.p99 ?? 0).toString(),
       row.error || '',
+      row.budgetPassed !== undefined ? row.budgetPassed.toString() : '',
+      row.budgetViolations || '',
       row.timestamp || '',
     ];
 

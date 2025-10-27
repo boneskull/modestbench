@@ -14,6 +14,7 @@
 - **Multiple Output Formats**: Human-readable, JSON, and CSV reports (at the same time!!)
 - **Historical Tracking**: Store and compare benchmark results over time
 - **Tagging System**: Organize and filter benchmarks by categories
+- **Performance Budgets**: Enforce performance standards and prevent regressions
 - **CLI & API**: Command-line interface and programmatic API
 - **TypeScript Support**: Full type safety
 
@@ -305,6 +306,60 @@ modestbench history export --format csv --output results.csv
 
 # Clean old data
 modestbench history clean --older-than 30d
+```
+
+### Performance Budgets
+
+**modestbench** supports performance budgets to prevent regressions and enforce performance standards in CI/CD.
+
+#### Configuring Budgets
+
+Define budgets in your `modestbench.config.json`:
+
+```json
+{
+  "budgetMode": "fail",
+  "budgets": {
+    "benchmarks/critical.bench.js/default/parseConfig": {
+      "absolute": {
+        "maxTime": "10ms",
+        "minOpsPerSec": 100000
+      }
+    }
+  }
+}
+```
+
+**Budget Types:**
+
+- **Absolute Budgets**: Fixed thresholds
+  - `maxTime` - Maximum mean execution time (e.g., `"10ms"`, `"500us"`)
+  - `minOpsPerSec` - Minimum operations per second
+  - `maxP99` - Maximum 99th percentile latency
+
+- **Relative Budgets**: Comparison against baseline
+  - `maxRegression` - Maximum performance degradation (e.g., `"10%"`, `0.1`)
+
+**Budget Modes:**
+
+- `fail` (default) - Exit with error code if budgets fail
+- `warn` - Show warnings but don't fail
+- `report` - Include in output without failing
+
+#### Managing Baselines
+
+```bash
+# Save current run as a baseline
+modestbench baseline set production-v1.0
+
+# List all baselines
+modestbench baseline list
+
+# Compare against a baseline
+modestbench run --baseline production-v1.0
+
+# Analyze history and suggest budgets
+modestbench baseline analyze
 ```
 
 ## Configuration

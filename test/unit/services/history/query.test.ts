@@ -10,6 +10,7 @@ import type {
 } from '../../../../src/types/index.js';
 
 import { HistoryQueryService } from '../../../../src/services/history/query.js';
+import { createRunId } from '../../../../src/utils/identifiers.js';
 
 /**
  * Unit tests for HistoryQueryService
@@ -86,7 +87,7 @@ const createMockRun = (id: string): BenchmarkRun => ({
     platform: 'linux',
   },
   files: [],
-  id,
+  id: createRunId(id),
   startTime: new Date('2024-01-01T12:00:00Z'),
   summary: {
     failedTasks: 0,

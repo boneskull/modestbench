@@ -1,4 +1,4 @@
-import { isAbsolute, join, resolve } from 'node:path';
+import { extname, isAbsolute, join, resolve } from 'node:path';
 
 /**
  * Resolves the final output path for a reporter
@@ -29,7 +29,15 @@ export const resolveOutputPath = (
     return resolve(process.cwd(), outputFile);
   }
 
-  // Fall back to default behavior
+  // If outputDir looks like a file (has extension), treat it as a file path
+  // This handles cases like: --output results.csv
+  if (outputDir && extname(outputDir)) {
+    return isAbsolute(outputDir)
+      ? outputDir
+      : resolve(process.cwd(), outputDir);
+  }
+
+  // Fall back to default behavior (outputDir is a directory)
   if (outputDir && defaultFilename) {
     return join(outputDir, defaultFilename);
   }

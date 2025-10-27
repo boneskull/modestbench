@@ -5,16 +5,11 @@
  * processing, CI/CD integration, and data analysis.
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import type {
-  BenchmarkRun,
-  FileResult,
-  ProgressState,
-  SuiteResult,
-  TaskResult,
-} from '../types/index.js';
+import type { BenchmarkRun, TaskResult } from '../types/index.js';
 
 import { ReporterOutputError } from '../errors/index.js';
 import { BaseReporter } from '../services/reporter-registry.js';
@@ -41,11 +36,29 @@ interface JsonOutput {
 }
 
 /**
+ * Cache the package version at module load time
+ *
+ * NOTE: This relies on package.json being at the same relative path from both
+ * src/ and dist/ directories (../../package.json). If the build output
+ * structure changes, this will break.
+ */
+const cachedPackageVersion = (() => {
+  try {
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const pkgPath = join(__dirname, '..', '..', 'package.json');
+    const pkgContent = readFileSync(pkgPath, 'utf8');
+    const pkg = JSON.parse(pkgContent) as { version: string };
+    return pkg.version;
+  } catch {
+    // Fallback if package.json cannot be read (shouldn't happen in normal use)
+    return 'unknown';
+  }
+})();
+
+/**
  * JSON reporter for structured output
  */
 export class JsonReporter extends BaseReporter {
-  private currentRun?: BenchmarkRun;
-
   private readonly includeMetadata: boolean;
 
   private readonly includeStatistics: boolean;
@@ -53,8 +66,6 @@ export class JsonReporter extends BaseReporter {
   private readonly outputPath?: string | undefined;
 
   private readonly prettyPrint: boolean;
-
-  private readonly quiet: boolean;
 
   private statistics: {
     fastestTask?: TaskResult;
@@ -74,8 +85,6 @@ export class JsonReporter extends BaseReporter {
       includeStatistics?: boolean;
       outputPath?: string;
       prettyPrint?: boolean;
-      quiet?: boolean;
-      verbose?: boolean;
     } = {},
   ) {
     super('json', options);
@@ -84,35 +93,6 @@ export class JsonReporter extends BaseReporter {
     this.prettyPrint = options.prettyPrint ?? true;
     this.includeStatistics = options.includeStatistics ?? true;
     this.includeMetadata = options.includeMetadata ?? true;
-    this.quiet = options.quiet ?? false;
-  }
-
-  /**
-   * Check if statistics are included
-   */
-  areStatisticsIncluded(): boolean {
-    return this.includeStatistics;
-  }
-
-  /**
-   * Get the output path (if configured)
-   */
-  getOutputPath(): string | undefined {
-    return this.outputPath;
-  }
-
-  /**
-   * Check if metadata is included
-   */
-  isMetadataIncluded(): boolean {
-    return this.includeMetadata;
-  }
-
-  /**
-   * Check if pretty printing is enabled
-   */
-  isPrettyPrintEnabled(): boolean {
-    return this.prettyPrint;
   }
 
   async onEnd(run: BenchmarkRun): Promise<void> {
@@ -131,39 +111,14 @@ export class JsonReporter extends BaseReporter {
     console.error('JSON Reporter Error:', error.message);
   }
 
-  onFileEnd(_result: FileResult): void {
-    // No-op for JSON reporter
-  }
-
-  onFileStart(_file: string): void {
-    // No-op for JSON reporter
-  }
-
-  onProgress(_state: ProgressState): void {
-    // No-op for JSON reporter - we don't output progress in JSON format
-  }
-
-  onStart(run: BenchmarkRun): void {
-    this.currentRun = run;
+  onStart(_run: BenchmarkRun): void {
     this.resetStatistics();
-  }
-
-  onSuiteEnd(_result: SuiteResult): void {
-    // No-op for JSON reporter
-  }
-
-  onSuiteStart(_suite: string): void {
-    // No-op for JSON reporter
   }
 
   onTaskResult(result: TaskResult): void {
     if (!result.error) {
       this.updateStatistics(result);
     }
-  }
-
-  onTaskStart(_task: string): void {
-    // No-op for JSON reporter
   }
 
   /**
@@ -174,7 +129,7 @@ export class JsonReporter extends BaseReporter {
       meta: {
         format: 'modestbench-json',
         timestamp: new Date().toISOString(),
-        version: '0.1.0', // TODO: Get from package.json
+        version: cachedPackageVersion,
       },
       run: this.includeMetadata ? run : this.sanitizeRun(run),
     };

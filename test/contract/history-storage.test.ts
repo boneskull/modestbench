@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import type { HistoryStorage } from '../../src/types/interfaces.js';
 
+import { createRunId } from '../../src/index.js';
 import { FileHistoryStorage } from '../../src/services/history-storage.js';
 import {
   buildMockBenchmarkRun,
@@ -81,7 +82,9 @@ describe('HistoryStorage interface contract', () => {
     });
 
     it('should persist run data', async () => {
-      const mockRun = buildMockBenchmarkRun({ id: 'test-save-123' });
+      const mockRun = buildMockBenchmarkRun({
+        id: createRunId('test-save-123'),
+      });
       await historyStorage.saveRun(mockRun);
 
       // Should be able to load it back
@@ -115,7 +118,9 @@ describe('HistoryStorage interface contract', () => {
     });
 
     it('should return saved run data', async () => {
-      const mockRun = buildMockBenchmarkRun({ id: 'test-load-456' });
+      const mockRun = buildMockBenchmarkRun({
+        id: createRunId('test-load-456'),
+      });
       await historyStorage.saveRun(mockRun);
 
       const loaded = await historyStorage.loadRun('test-load-456');
@@ -142,7 +147,7 @@ describe('HistoryStorage interface contract', () => {
 
       // Save a run
       const mockRun = buildMockBenchmarkRun({
-        id: 'date-filter-test',
+        id: createRunId('date-filter-test'),
         startTime: now,
       });
       await historyStorage.saveRun(mockRun);
@@ -177,7 +182,9 @@ describe('HistoryStorage interface contract', () => {
     it('should support limit parameter', async () => {
       // Save multiple runs
       for (let i = 0; i < 5; i++) {
-        const mockRun = buildMockBenchmarkRun({ id: `limit-test-${i}` });
+        const mockRun = buildMockBenchmarkRun({
+          id: createRunId(`limit-test-${i}`),
+        });
         await historyStorage.saveRun(mockRun);
       }
 
@@ -232,7 +239,7 @@ describe('HistoryStorage interface contract', () => {
       // Save runs with different dates
       const oldDate = new Date('2020-01-01');
       const oldRun = buildMockBenchmarkRun({
-        id: 'old-run',
+        id: createRunId('old-run'),
         startTime: oldDate,
       });
       await historyStorage.saveRun(oldRun);
@@ -250,7 +257,9 @@ describe('HistoryStorage interface contract', () => {
   describe('export method contract', () => {
     it('should support json format', async () => {
       // Save a run first
-      const mockRun = buildMockBenchmarkRun({ id: 'export-json-test' });
+      const mockRun = buildMockBenchmarkRun({
+        id: createRunId('export-json-test'),
+      });
       await historyStorage.saveRun(mockRun);
 
       const result = await historyStorage.export('json');
@@ -271,7 +280,7 @@ describe('HistoryStorage interface contract', () => {
             startTime: now,
           }),
         ],
-        id: 'export-csv-test',
+        id: createRunId('export-csv-test'),
         startTime: now,
       });
       await historyStorage.saveRun(mockRun);
@@ -335,7 +344,9 @@ describe('HistoryStorage interface contract', () => {
 
   describe('index management', () => {
     it('should maintain index of stored runs', async () => {
-      const mockRun = buildMockBenchmarkRun({ id: 'index-test-1' });
+      const mockRun = buildMockBenchmarkRun({
+        id: createRunId('index-test-1'),
+      });
       await historyStorage.saveRun(mockRun);
 
       const index = await historyStorage.getIndex();
@@ -347,7 +358,9 @@ describe('HistoryStorage interface contract', () => {
       const index1 = await historyStorage.getIndex();
       const initialCount = index1.entries.length;
 
-      const mockRun = buildMockBenchmarkRun({ id: 'index-test-2' });
+      const mockRun = buildMockBenchmarkRun({
+        id: createRunId('index-test-2'),
+      });
       await historyStorage.saveRun(mockRun);
 
       const index2 = await historyStorage.getIndex();

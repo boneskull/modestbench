@@ -8,12 +8,14 @@ import {
   type GitInfo,
   type MemoryInfo,
   type ModestBenchConfig,
+  type RunId,
   type RunSummary,
   type SuiteResult,
   type TaskResult,
   type ThresholdConfig,
 } from 'modestbench';
 import { describe, it } from 'node:test';
+import { createRunId } from '../src/utils/identifiers.js';
 import { expectType } from 'tsd';
 
 describe('Core Data Types', () => {
@@ -52,7 +54,7 @@ describe('Core Data Types', () => {
           platform: 'darwin',
         },
         files: [],
-        id: 'run-123',
+        id: createRunId('run-123'),
         startTime: new Date(),
         summary: {
           failedTasks: 0,
@@ -67,7 +69,7 @@ describe('Core Data Types', () => {
         },
       };
 
-      expectType<string>(run.id);
+      expectType<RunId>(run.id);
       expectType<Date>(run.startTime);
       expectType<Date>(run.endTime);
       expectType<number>(run.duration);

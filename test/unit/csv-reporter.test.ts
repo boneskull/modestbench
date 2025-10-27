@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import type { BenchmarkRun, TaskResult } from '../../src/types/index.js';
 
 import { CsvReporter } from '../../src/reporters/csv.js';
+import { createRunId } from '../../src/utils/identifiers.js';
 import { nullStream } from '../util.js';
 
 // Squelch stdout during tests
@@ -66,7 +67,7 @@ const createMockRun = (): BenchmarkRun => {
       modifiedFiles: [],
       timestamp: new Date(),
     },
-    id: 'test-run',
+    id: createRunId('test-run'),
     startTime: new Date(),
     summary: {
       failedTasks: 0,

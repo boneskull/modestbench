@@ -7,17 +7,36 @@
 
 import { resolve } from 'node:path';
 
-import type { BenchmarkRun } from '../../types/index.js';
+import type { BenchmarkRun, ModestBenchConfig } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
 import { ErrorCodes } from '../../constants.js';
 import { resolveOutputPath } from '../../core/output-path-resolver.js';
 import {
+  type BudgetExceededError,
   InvalidArgumentError,
-  type ModestBenchError,
   UnknownReporterError,
 } from '../../errors/index.js';
+import { CsvReporter } from '../../reporters/csv.js';
+import { HumanReporter } from '../../reporters/human.js';
+import { JsonReporter } from '../../reporters/json.js';
+import { SimpleReporter } from '../../reporters/simple.js';
 import { ExitCodes } from '../../types/cli.js';
+import { hasErrorCode, isError } from '../../utils/type-guards.js';
+
+/**
+ * Default values for the run command
+ *
+ * These are the command-level defaults used when neither config file nor CLI
+ * arguments provide values. They represent sensible defaults for running
+ * benchmarks.
+ */
+export const RUN_COMMAND_DEFAULTS = {
+  bail: false,
+  quiet: false,
+  reporters: ['human'],
+  verbose: false,
+} as const satisfies Partial<ModestBenchConfig>;
 
 /**
  * Run command options interface
@@ -25,7 +44,7 @@ import { ExitCodes } from '../../types/cli.js';
 interface RunOptions {
   bail?: boolean | undefined;
   config?: string | undefined;
-  cwd: string;
+  cwd?: string;
   engine?: 'accurate' | 'tinybench' | undefined;
   exclude?: string[] | undefined;
   excludeTags?: string[] | undefined;
@@ -34,10 +53,10 @@ interface RunOptions {
   noColor?: boolean | undefined;
   outputDir?: string | undefined;
   outputFile?: string | undefined;
-  pattern: string[];
+  pattern?: string[] | undefined;
   progress?: boolean | undefined;
   quiet?: boolean | undefined;
-  reporters: string[];
+  reporters?: string[] | undefined;
   tags?: string[] | undefined;
   time?: number | undefined;
   timeout?: number | undefined;
@@ -85,10 +104,9 @@ export const handleRunCommand = async (
     if (showCliMessages) {
       console.error('Setting up reporters...');
     }
-    const reporters = await setupReporters(
+    const reporters = setupReporters(
       context,
       config,
-      shouldBeQuiet,
       verbose,
       showCliMessages,
       options.quiet ?? false,
@@ -176,34 +194,61 @@ export const handleRunCommand = async (
 
     return handleResults(executionResult, options, shouldBeQuiet);
   } catch (error) {
+    // Check if error has a code property before accessing it
+    const errorCode = hasErrorCode(error) ? error.code : undefined;
+
+    // Handle budget exceeded error
+    if (errorCode === ErrorCodes.BUDGET_EXCEEDED) {
+      if (!shouldBeQuiet) {
+        const budgetError = error as BudgetExceededError;
+        console.error(`\n❌ ${budgetError.message}`);
+        if (
+          budgetError.budgetSummary &&
+          budgetError.budgetSummary.results.length > 0
+        ) {
+          console.error('\nFailed budgets:');
+          for (const result of budgetError.budgetSummary.results) {
+            if (!result.passed) {
+              console.error(`  • ${result.taskId}`);
+              for (const violation of result.violations) {
+                console.error(`    ${violation.message}`);
+              }
+            }
+          }
+        }
+      }
+      return ExitCodes.GeneralError;
+    }
+
     // Re-throw CLI errors so yargs fail handler can show help
-    if ((error as ModestBenchError).code === ErrorCodes.FILE_DISCOVERY_FAILED) {
+    if (errorCode === ErrorCodes.FILE_DISCOVERY_FAILED) {
       throw error;
     }
-    if ((error as ModestBenchError).code === ErrorCodes.CLI_INVALID_ARGUMENT) {
+    if (errorCode === ErrorCodes.CLI_INVALID_ARGUMENT) {
       throw error;
     }
 
     if (!shouldBeQuiet) {
-      console.error(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`Error: ${isError(error) ? error.message : String(error)}`);
     }
 
-    // Return appropriate exit code based on error type
-    if (error instanceof Error) {
-      if (
-        error.message.includes('Configuration error') ||
-        error.message.includes('Config file not found') ||
-        error.message.includes('Failed to load config')
-      ) {
-        return ExitCodes.ConfigurationError;
-      }
-      if (
-        error.message.includes('No files found') ||
-        error.message.includes('No benchmark files found') ||
-        error.message.includes('File discovery')
-      ) {
+    // Return appropriate exit code based on error code
+    if (
+      errorCode === ErrorCodes.CONFIG_LOAD_FAILED ||
+      errorCode === ErrorCodes.CONFIG_NOT_FOUND ||
+      errorCode === ErrorCodes.CONFIG_VALIDATION_FAILED ||
+      errorCode === ErrorCodes.CONFIG_UNSUPPORTED_FORMAT
+    ) {
+      return ExitCodes.ConfigurationError;
+    }
+
+    if (errorCode === ErrorCodes.FILE_DISCOVERY_FAILED) {
+      return ExitCodes.FileDiscoveryError;
+    }
+
+    // Fallback: check error message for cases where proper error types aren't thrown yet
+    if (isError(error)) {
+      if (error.message.includes('No benchmark files found')) {
         return ExitCodes.FileDiscoveryError;
       }
     }
@@ -246,17 +291,20 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
     const cliArgs: Record<string, unknown> = {};
 
     // Map CLI arguments to config properties
-    // Pass pattern as-is, even if empty (loader will provide defaults)
-    if (options.pattern !== undefined) {
-      // If pattern is provided, use it; if empty array, pass it (for defaults)
+    // Only pass pattern if explicitly provided (non-empty)
+    // Empty array means no CLI pattern, so config file or defaults should be used
+    if (options.pattern !== undefined && options.pattern.length > 0) {
       cliArgs.pattern =
         options.pattern.length === 1 ? options.pattern[0] : options.pattern;
     }
-    if (options.reporters) {
+    if (options.reporters && options.reporters.length > 0) {
       cliArgs.reporters = options.reporters;
     }
     if (options.outputDir) {
-      cliArgs.outputDir = resolve(options.cwd, options.outputDir);
+      cliArgs.outputDir = resolve(
+        options.cwd ?? process.cwd(),
+        options.outputDir,
+      );
     }
     if (options.iterations) {
       cliArgs.iterations = options.iterations;
@@ -270,7 +318,7 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
     if (options.bail !== undefined) {
       cliArgs.bail = options.bail;
     }
-    if (options.exclude) {
+    if (options.exclude && options.exclude.length > 0) {
       cliArgs.exclude = options.exclude;
     }
     if (options.timeout) {
@@ -282,24 +330,30 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
     if (options.verbose !== undefined) {
       cliArgs.verbose = options.verbose;
     }
-    if (options.tags) {
+    if (options.tags && options.tags.length > 0) {
       cliArgs.tags = options.tags;
     }
-    if (options.excludeTags) {
+    if (options.excludeTags && options.excludeTags.length > 0) {
       cliArgs.excludeTags = options.excludeTags;
     }
 
     // Load configuration with CLI argument precedence
-    const config = await context.configManager.load(options.config, cliArgs);
+    // Pass command defaults as the base layer
+    const config = await context.configManager.load(
+      options.config,
+      cliArgs,
+      RUN_COMMAND_DEFAULTS,
+    );
 
     return config;
   } catch (error) {
     // Re-throw our custom errors
-    if ((error as ModestBenchError).code === ErrorCodes.CONFIG_LOAD_FAILED) {
+    const errorCode = hasErrorCode(error) ? error.code : undefined;
+    if (errorCode === ErrorCodes.CONFIG_LOAD_FAILED) {
       throw error;
     }
     throw new InvalidArgumentError(
-      `Configuration error: ${error instanceof Error ? error.message : String(error)}`,
+      `Configuration error: ${isError(error) ? error.message : String(error)}`,
       { cause: error },
     );
   }
@@ -308,10 +362,9 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
 /**
  * Setup and configure reporters based on configuration
  */
-const setupReporters = async (
+const setupReporters = (
   context: CliContext,
   config: { outputDir?: string; reporters?: string[] },
-  shouldBeQuiet: boolean,
   isVerbose: boolean,
   showCliMessages: boolean,
   explicitQuiet: boolean,
@@ -321,13 +374,8 @@ const setupReporters = async (
 ) => {
   try {
     const reporters = [];
-    const requestedReporters = config.reporters || ['human'];
-
-    // Dynamically import reporters for proper configuration
-    const { HumanReporter } = await import('../../reporters/human.js');
-    const { JsonReporter } = await import('../../reporters/json.js');
-    const { CsvReporter } = await import('../../reporters/csv.js');
-    const { SimpleReporter } = await import('../../reporters/simple.js');
+    // Dedupe requested reporters
+    const requestedReporters = [...new Set(config.reporters || ['human'])];
 
     // Only use file output if --output was explicitly provided
     // Use the explicit output dir if provided, otherwise check config
@@ -335,56 +383,76 @@ const setupReporters = async (
       ? resolve(explicitOutputDir)
       : undefined;
 
+    // Built-in reporter names for error messages
+    const builtInReporters = ['human', 'json', 'csv', 'simple'];
+
     for (const reporterName of requestedReporters) {
       let reporter;
 
       // Create reporter instances with output path configuration
-      if (reporterName === 'human') {
-        reporter = new HumanReporter({
-          color: true,
-          progress: progressOption ?? true,
-          quiet: explicitQuiet, // Only applies explicit --quiet flag; JSON reporter forcing quiet mode does not affect HumanReporter progress output
-          verbose: isVerbose,
-        });
-      } else if (reporterName === 'json') {
-        const outputPath = resolveOutputPath(
-          outputDir,
-          explicitOutputFile,
-          'results.json',
-        );
-        reporter = new JsonReporter({
-          ...(outputPath ? { outputPath } : {}),
-          prettyPrint: true,
-          quiet: shouldBeQuiet, // JSON uses shouldBeQuiet to avoid polluting stdout
-          verbose: isVerbose,
-        });
-      } else if (reporterName === 'csv') {
-        const outputPath = resolveOutputPath(
-          outputDir,
-          explicitOutputFile,
-          'results.csv',
-        );
-        reporter = new CsvReporter({
-          includeHeaders: true,
-          includeMetadata: true,
-          ...(outputPath ? { outputPath } : {}),
-          quiet: explicitQuiet, // Only applies explicit --quiet flag; CSV output can coexist with progress messages on different streams
-          verbose: isVerbose,
-        });
-      } else if (reporterName === 'simple') {
-        reporter = new SimpleReporter({
-          quiet: explicitQuiet,
-          verbose: isVerbose,
-        });
-      } else {
-        // Fall back to registry for custom reporters
-        reporter = context.reporterRegistry.get(reporterName);
-        if (!reporter) {
-          const availableReporters = ['human', 'json', 'csv', 'simple'];
-          throw new UnknownReporterError(
-            `Unknown reporter: ${reporterName}. Available: ${availableReporters.join(', ')}`,
+      switch (reporterName) {
+        case 'csv': {
+          const outputPath = resolveOutputPath(
+            outputDir,
+            explicitOutputFile,
+            'results.csv',
           );
+          reporter = new CsvReporter({
+            includeHeaders: true,
+            includeMetadata: true,
+            ...(outputPath ? { outputPath } : {}),
+            quiet: explicitQuiet, // Only applies explicit --quiet flag; CSV output can coexist with progress messages on different streams
+            verbose: isVerbose,
+          });
+          break;
         }
+
+        case 'human':
+          reporter = new HumanReporter({
+            color: true,
+            progress: progressOption ?? true,
+            quiet: explicitQuiet, // Only applies explicit --quiet flag; JSON reporter forcing quiet mode does not affect HumanReporter progress output
+            verbose: isVerbose,
+          });
+          break;
+
+        case 'json': {
+          const outputPath = resolveOutputPath(
+            outputDir,
+            explicitOutputFile,
+            'results.json',
+          );
+          reporter = new JsonReporter({
+            ...(outputPath ? { outputPath } : {}),
+            prettyPrint: true,
+          });
+          break;
+        }
+
+        case 'simple':
+          reporter = new SimpleReporter({
+            quiet: explicitQuiet,
+            verbose: isVerbose,
+          });
+          break;
+
+        default:
+          // Fall back to registry for custom reporters
+          reporter = context.reporterRegistry.get(reporterName);
+          if (!reporter) {
+            // Combine built-in reporters with registered custom reporters
+            const registeredReporters = Object.keys(
+              context.reporterRegistry.getAll(),
+            );
+            const availableReporters = [
+              ...builtInReporters,
+              ...registeredReporters,
+            ];
+            throw new UnknownReporterError(
+              `Unknown reporter: ${reporterName}. Available: ${availableReporters.join(', ')}`,
+            );
+          }
+          break;
       }
 
       reporters.push(reporter);
@@ -397,11 +465,12 @@ const setupReporters = async (
     return reporters;
   } catch (error) {
     // Re-throw our custom errors
-    if ((error as ModestBenchError).code === ErrorCodes.REPORTER_UNKNOWN) {
+    const errorCode = hasErrorCode(error) ? error.code : undefined;
+    if (errorCode === ErrorCodes.REPORTER_UNKNOWN) {
       throw error;
     }
     throw new InvalidArgumentError(
-      `Reporter setup error: ${error instanceof Error ? error.message : String(error)}`,
+      `Reporter setup error: ${isError(error) ? error.message : String(error)}`,
       { cause: error },
     );
   }

@@ -9,6 +9,7 @@ import path from 'node:path';
 
 import type {
   BenchmarkRun,
+  BudgetSummary,
   FileResult,
   ProgressState,
   SuiteResult,
@@ -71,6 +72,84 @@ export class HumanReporter extends BaseReporter {
     this.showProgress = options.progress ?? true;
   }
 
+  /**
+   * Format bytes in human-readable format
+   */
+  private static formatBytes(this: void, bytes: number): string {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = bytes;
+    let unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
+  }
+
+  /**
+   * Format file path - show relative path if within CWD, otherwise absolute
+   */
+  private static formatPath(this: void, filePath: string): string {
+    const cwd = process.cwd();
+    const absolutePath = path.resolve(filePath);
+
+    // Check if the file is within the current working directory
+    if (absolutePath.startsWith(cwd + path.sep) || absolutePath === cwd) {
+      return path.relative(cwd, absolutePath);
+    }
+
+    return absolutePath;
+  }
+
+  /**
+   * Simple pluralization helper
+   */
+  private static pluralize(this: void, str: string, count: number): string {
+    return count === 1 ? str : `${str}s`;
+  }
+
+  onBudgetResult(summary: BudgetSummary): void {
+    if (summary.total === 0 || this.quiet) {
+      return;
+    }
+
+    this.clearProgress();
+
+    this.printLine();
+    const budgetHeader = `${this.colorize('magenta', ansiChars.block.full.repeat(2))} ${this.colorize('brightWhite', this.colorize('bold', 'Performance Budgets'))}`;
+    this.printLine(budgetHeader);
+    this.printLine();
+
+    for (const result of summary.results) {
+      const icon = result.passed ? ansiChars.checkmark : ansiChars.cross;
+      const iconColor = result.passed ? 'brightCyan' : 'brightRed';
+
+      this.printLine(
+        `  ${this.colorize(iconColor, icon)} ${this.colorize('white', result.taskId)}`,
+      );
+
+      if (!result.passed && result.violations.length > 0) {
+        for (const violation of result.violations) {
+          this.printLine(
+            `      ${this.colorize('brightRed', violation.message)}`,
+          );
+        }
+      }
+    }
+
+    this.printLine();
+
+    const statusText =
+      summary.failed === 0
+        ? `${this.colorize('brightCyan', ansiChars.checkmark)} All ${summary.total} budget(s) passed`
+        : `${this.colorize('brightRed', ansiChars.cross)} ${summary.failed} of ${summary.total} budget(s) failed`;
+
+    this.printLine(`  ${statusText}`);
+    this.printLine();
+  }
+
   onEnd(run: BenchmarkRun): void {
     if (this.quiet) {
       return;
@@ -121,7 +200,7 @@ export class HumanReporter extends BaseReporter {
       );
     }
     this.printLine(
-      `${this.colorize('cyan', ansiChars.approx + ' Duration:')} ${this.colorize('brightWhite', this.formatDuration(duration * 1000000))}`,
+      `${this.colorize('cyan', ansiChars.approx + ' Duration:')} ${this.colorize('brightWhite', BaseReporter.formatDuration(duration * 1000000))}`,
     );
     this.printLine();
 
@@ -135,7 +214,7 @@ export class HumanReporter extends BaseReporter {
         this.printLine();
 
         for (const failure of this.failures) {
-          const displayPath = this.formatPath(failure.file);
+          const displayPath = HumanReporter.formatPath(failure.file);
           this.printLine(
             `  ${this.colorize('dim', displayPath)} ${this.colorize('dim', '›')} ${this.colorize('white', failure.suite)} ${this.colorize('dim', '›')} ${this.colorize('brightWhite', failure.task)}`,
           );
@@ -189,7 +268,7 @@ export class HumanReporter extends BaseReporter {
       );
     } else {
       this.printLine(
-        ` ${this.colorize('magenta', ansiChars.checkmark)} ${totalPassed > 1 ? this.colorize('brightMagenta', 'All ') : ''}${this.colorize('bold', this.colorize('brightMagenta', `${totalPassed}`))} ${this.colorize('brightMagenta', `${this.pluralize('task', totalPassed)} passed`)}`,
+        ` ${this.colorize('magenta', ansiChars.checkmark)} ${totalPassed > 1 ? this.colorize('brightMagenta', 'All ') : ''}${this.colorize('bold', this.colorize('brightMagenta', `${totalPassed}`))} ${this.colorize('brightMagenta', `${HumanReporter.pluralize('task', totalPassed)} passed`)}`,
       );
     }
 
@@ -203,7 +282,7 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    const displayPath = this.formatPath(file);
+    const displayPath = HumanReporter.formatPath(file);
     const fileMarker = `${colors.magenta}${ansiChars.block.dark}${ansiChars.block.dark}${colors.reset}`;
     this.printLine(
       `${fileMarker} ${colors.underline}${this.colorize('brightMagenta', this.colorize('bold', displayPath))}${colors.reset}`,
@@ -278,7 +357,7 @@ export class HumanReporter extends BaseReporter {
     \x1b[48;5;0m \x1b[48;5;14m \x1b[38;5;30;48;5;38m▄\x1b[38;5;14;48;5;14m▄\x1b[48;5;14m      \x1b[38;5;45;48;5;14m▄\x1b[38;5;89;48;5;14m▄\x1b[38;5;89;48;5;89m▄\x1b[38;5;14;48;5;31m▄\x1b[48;5;14m \x1b[38;5;37;48;5;89m▄\x1b[48;5;198m \x1b[38;5;198;48;5;198m▄\x1b[38;5;31;48;5;14m▄\x1b[48;5;14m \x1b[48;5;0m \x1b[m \x1b[2mnode.js:\x1b[m \x1b[36m${run.environment.nodeVersion} \x1b[m
     \x1b[48;5;0m \x1b[48;5;14m \x1b[38;5;44;48;5;31m▄\x1b[48;5;14m      \x1b[38;5;126;48;5;38m▄\x1b[38;5;198;48;5;237m▄\x1b[38;5;237;48;5;37m▄\x1b[48;5;14m   \x1b[38;5;14;48;5;14m▄\x1b[38;5;162;48;5;198m▄▄\x1b[38;5;53;48;5;240m▄\x1b[48;5;14m \x1b[48;5;0m \x1b[m \x1b[2mplatform:\x1b[m \x1b[36m${run.environment.platform} ${run.environment.arch} \x1b[m
     \x1b[48;5;0m \x1b[38;5;45;48;5;14m▄\x1b[48;5;14m       \x1b[38;5;14;48;5;37m▄\x1b[38;5;14;48;5;5m▄\x1b[38;5;14;48;5;44m▄\x1b[48;5;14m       \x1b[38;5;45;48;5;14m▄\x1b[48;5;0m \x1b[m \x1b[2mcpu:\x1b[m \x1b[36m${run.environment.cpu.model} \x1b[2m(\x1b[m\x1b[36m${run.environment.cpu.cores} cores\x1b[2m) \x1b[m
-    \x1b[49;38;5;0m▀▀\x1b[38;5;0;48;5;6m▄\x1b[38;5;232;48;5;14m▄\x1b[38;5;38;48;5;14m▄\x1b[48;5;14m           \x1b[38;5;30;48;5;14m▄\x1b[38;5;0;48;5;14m▄\x1b[38;5;0;48;5;23m▄\x1b[49;38;5;0m▀▀\x1b[m \x1b[2mmem:\x1b[m \x1b[36m${this.formatBytes(run.environment.memory.total)} \x1b[m
+    \x1b[49;38;5;0m▀▀\x1b[38;5;0;48;5;6m▄\x1b[38;5;232;48;5;14m▄\x1b[38;5;38;48;5;14m▄\x1b[48;5;14m           \x1b[38;5;30;48;5;14m▄\x1b[38;5;0;48;5;14m▄\x1b[38;5;0;48;5;23m▄\x1b[49;38;5;0m▀▀\x1b[m \x1b[2mmem:\x1b[m \x1b[36m${HumanReporter.formatBytes(run.environment.memory.total)} \x1b[m
     \x1b[49m    \x1b[49;38;5;0m▀\x1b[38;5;0;48;5;236m▄\x1b[38;5;0;48;5;45m▄\x1b[38;5;23;48;5;14m▄\x1b[48;5;14m     \x1b[38;5;236;48;5;14m▄\x1b[38;5;0;48;5;44m▄\x1b[38;5;0;48;5;232m▄\x1b[49;38;5;0m▀\x1b[49m    \x1b[m
     \x1b[49m       \x1b[49;38;5;0m▀▀\x1b[38;5;0;48;5;37m▄\x1b[38;5;0;48;5;14m▄\x1b[38;5;0;48;5;30m▄\x1b[49;38;5;0m▀▀\x1b[49m       \x1b[m
     `;
@@ -333,7 +412,7 @@ export class HumanReporter extends BaseReporter {
       );
     } else {
       this.printLine(
-        `  ${this.colorize('magenta', ansiChars.checkmark)} ${this.colorize('bold', this.colorize('brightWhite', `${passed}`))} ${this.colorize('brightWhite', `${this.pluralize('task', passed)} passed`)}`,
+        `  ${this.colorize('magenta', ansiChars.checkmark)} ${this.colorize('bold', this.colorize('brightWhite', `${passed}`))} ${this.colorize('brightWhite', `${HumanReporter.pluralize('task', passed)} passed`)}`,
       );
     }
     this.printLine();
@@ -415,37 +494,6 @@ export class HumanReporter extends BaseReporter {
   }
 
   /**
-   * Format bytes in human-readable format
-   */
-  private formatBytes(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = bytes;
-    let unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return `${size.toFixed(1)} ${units[unitIndex]}`;
-  }
-
-  /**
-   * Format file path - show relative path if within CWD, otherwise absolute
-   */
-  private formatPath(filePath: string): string {
-    const cwd = process.cwd();
-    const absolutePath = path.resolve(filePath);
-
-    // Check if the file is within the current working directory
-    if (absolutePath.startsWith(cwd + path.sep) || absolutePath === cwd) {
-      return path.relative(cwd, absolutePath);
-    }
-
-    return absolutePath;
-  }
-
-  /**
    * Format duration in human-readable format for progress display
    */
   private formatTimeRemaining(seconds: number): string {
@@ -469,13 +517,6 @@ export class HumanReporter extends BaseReporter {
     // Remove ANSI escape codes to get actual visible length
     // eslint-disable-next-line no-control-regex
     return str.replace(/\x1b\[[0-9;]*m/g, '').length;
-  }
-
-  /**
-   * Simple pluralization helper
-   */
-  private pluralize(str: string, count: number): string {
-    return count === 1 ? str : `${str}s`;
   }
 
   /**
@@ -534,9 +575,9 @@ export class HumanReporter extends BaseReporter {
         };
       }
 
-      const duration = this.formatDuration(result.mean); // already in nanoseconds
-      const opsPerSec = this.formatOpsPerSecond(result.opsPerSecond);
-      const rme = this.formatPercentage(result.marginOfError * 100);
+      const duration = BaseReporter.formatDuration(result.mean); // already in nanoseconds
+      const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
+      const rme = BaseReporter.formatPercentage(result.marginOfError * 100);
 
       return {
         durationLen: this.getVisibleLength(duration),

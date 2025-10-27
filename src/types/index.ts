@@ -10,6 +10,8 @@ export * from './cli.js';
 
 // Core data types
 export type * from './core.js';
+// Helper functions from core (value exports)
+export { createRunId, createTaskId } from './core.js';
 
 // Interface contracts
 export type * from './interfaces.js';

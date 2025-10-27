@@ -152,10 +152,8 @@ export class BenchmarkFileLoader implements FileLoader {
           default?: unknown;
         };
       } else {
-        // Use native dynamic import for JavaScript files with cache busting
-        // Add timestamp to prevent module caching issues across multiple loads
-        const timestamp = Date.now();
-        module = (await import(`${filePath}?t=${timestamp}`)) as {
+        // Use native dynamic import for JavaScript files
+        module = (await import(filePath)) as {
           [key: string]: unknown;
           default?: unknown;
         };

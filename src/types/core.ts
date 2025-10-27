@@ -1,3 +1,42 @@
+// Budget-related types
+import type {
+  AbsoluteBudget,
+  BaselineReference,
+  BaselineStorage,
+  BaselineSummaryData,
+  Budget,
+  BudgetResult,
+  BudgetSummary,
+  BudgetViolation,
+  RelativeBudget,
+  RunId,
+  TaskId,
+} from './budgets.js';
+
+export type {
+  AbsoluteBudget,
+  BaselineReference,
+  BaselineStorage,
+  BaselineSummaryData,
+  Budget,
+  BudgetResult,
+  BudgetSummary,
+  BudgetViolation,
+  RelativeBudget,
+  RunId,
+  TaskId,
+};
+
+// Re-export schema-derived types
+export type {
+  BenchmarkDefinition,
+  BenchmarkDefinitionInput,
+  BenchmarkSuite,
+  BenchmarkSuiteInput,
+  BenchmarkTask,
+  BenchmarkTaskInput,
+} from '../core/benchmark-schema.js';
+
 /**
  * ModestBench Core Types
  *
@@ -10,15 +49,8 @@
  * safety and consistency.
  */
 
-// Re-export schema-derived types
-export type {
-  BenchmarkDefinition,
-  BenchmarkDefinitionInput,
-  BenchmarkSuite,
-  BenchmarkSuiteInput,
-  BenchmarkTask,
-  BenchmarkTaskInput,
-} from '../core/benchmark-schema.js';
+// Re-export identifier helper functions
+export { createRunId, createTaskId } from '../utils/identifiers.js';
 
 /**
  * Benchmark file structure after parsing
@@ -38,6 +70,8 @@ export interface BenchmarkFile {
  * Represents a complete benchmark run across multiple files
  */
 export interface BenchmarkRun {
+  /** Budget evaluation summary (if budgets configured) */
+  readonly budgetSummary?: BudgetSummary;
   /** CI/CD information if available */
   readonly ci?: CiInfo;
   /** Configuration used for this run */
@@ -53,7 +87,7 @@ export interface BenchmarkRun {
   /** Git information if available */
   readonly git?: GitInfo;
   /** Unique identifier for this run */
-  readonly id: string;
+  readonly id: RunId;
   /** Custom run-level metadata */
   readonly metadata?: Record<string, unknown>;
   /** Timestamp when run started */
@@ -277,6 +311,12 @@ export interface ModestBenchConfig {
   readonly $schema?: string | undefined;
   /** Whether to stop on first failure */
   readonly bail: boolean;
+  /** Name of baseline to use for relative budget comparisons */
+  readonly baseline?: string | undefined;
+  /** How to handle budget violations: 'fail', 'warn', or 'report' */
+  readonly budgetMode?: 'fail' | 'report' | 'warn' | undefined;
+  /** Performance budgets mapped by task identifier */
+  readonly budgets?: Record<string, unknown> | undefined;
   /** Patterns to exclude from discovery */
   readonly exclude: string[];
   /** Tags to exclude from execution */

@@ -7,6 +7,7 @@ import { CsvReporter } from '../../src/reporters/csv.js';
 import { HumanReporter } from '../../src/reporters/human.js';
 import { JsonReporter } from '../../src/reporters/json.js';
 import { ModestBenchReporterRegistry } from '../../src/services/reporter-registry.js';
+import { createRunId } from '../../src/utils/identifiers.js';
 import {
   buildMockBenchmarkRun,
   buildMockFileResult,
@@ -146,7 +147,7 @@ describe('Reporter interfaces contract', () => {
       });
 
       // Should render progress bar
-      reporters.human.onProgress(mockProgress);
+      reporters.human.onProgress?.(mockProgress);
       expect(true, 'to be truthy');
     });
   });
@@ -297,12 +298,12 @@ describe('Reporter interfaces contract', () => {
       const mockResult = buildMockTaskResult();
 
       await mockReporter.onStart(mockRun);
-      mockReporter.onFileStart(mockFile.filePath);
-      mockReporter.onSuiteStart(mockSuite.name);
-      mockReporter.onTaskStart(mockResult.name);
+      mockReporter.onFileStart?.(mockFile.filePath);
+      mockReporter.onSuiteStart?.(mockSuite.name);
+      mockReporter.onTaskStart?.(mockResult.name);
       mockReporter.onTaskResult(mockResult);
-      mockReporter.onSuiteEnd(mockSuite);
-      mockReporter.onFileEnd(mockFile);
+      mockReporter.onSuiteEnd?.(mockSuite);
+      mockReporter.onFileEnd?.(mockFile);
       await mockReporter.onEnd(mockRun);
 
       // Verify correct order
@@ -396,13 +397,13 @@ describe('Reporter interfaces contract', () => {
       await reporters.human.onStart(mockRun);
 
       // Multiple suites
-      reporters.human.onSuiteStart('Suite 1');
+      reporters.human.onSuiteStart?.('Suite 1');
       reporters.human.onTaskResult(buildMockTaskResult({ name: 'Task 1' }));
-      reporters.human.onSuiteEnd(buildMockSuiteResult({ name: 'Suite 1' }));
+      reporters.human.onSuiteEnd?.(buildMockSuiteResult({ name: 'Suite 1' }));
 
-      reporters.human.onSuiteStart('Suite 2');
+      reporters.human.onSuiteStart?.('Suite 2');
       reporters.human.onTaskResult(buildMockTaskResult({ name: 'Task 2' }));
-      reporters.human.onSuiteEnd(buildMockSuiteResult({ name: 'Suite 2' }));
+      reporters.human.onSuiteEnd?.(buildMockSuiteResult({ name: 'Suite 2' }));
 
       await reporters.human.onEnd(mockRun);
 
@@ -437,8 +438,8 @@ describe('Reporter interfaces contract', () => {
     });
 
     it('should reset state for new runs', async () => {
-      const mockRun1 = buildMockBenchmarkRun({ id: 'run-1' });
-      const mockRun2 = buildMockBenchmarkRun({ id: 'run-2' });
+      const mockRun1 = buildMockBenchmarkRun({ id: createRunId('run-1') });
+      const mockRun2 = buildMockBenchmarkRun({ id: createRunId('run-2') });
 
       // First run
       await reporters.json.onStart(mockRun1);
