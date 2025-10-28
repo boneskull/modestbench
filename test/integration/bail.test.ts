@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { runCommand } from '../util.js';
 
 /**
- * Integration tests for --bail flag functionality The bail flag should stop
+ * Integration tests for --bail flag functionality. The bail flag should stop
  * execution on the first benchmark failure
  */
 
