@@ -334,7 +334,7 @@ Example:
 
 ```bash
 # CLI flags override config file
-modestbench --iterations 5000 --reporters csv
+modestbench --iterations 5000 --reporter csv
 # Result: iterations=5000, reporters=["csv"]
 ```
 

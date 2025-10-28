@@ -58,7 +58,7 @@ export default {
   describe('default mode (no --verbose)', () => {
     it('should not show CLI setup messages', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--reporters', 'human'],
+        ['run', benchmarkFile, '--iterations', '5', '--reporter', 'human'],
         testDir,
       );
 
@@ -78,7 +78,7 @@ export default {
 
     it('should still show reporter output', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--reporters', 'human'],
+        ['run', benchmarkFile, '--iterations', '5', '--reporter', 'human'],
         testDir,
       );
 
@@ -89,7 +89,7 @@ export default {
 
     it('should not show redundant completion messages', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--reporters', 'human'],
+        ['run', benchmarkFile, '--iterations', '5', '--reporter', 'human'],
         testDir,
       );
 
@@ -109,7 +109,7 @@ export default {
           '--verbose',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -133,7 +133,7 @@ export default {
           '--verbose',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -152,7 +152,7 @@ export default {
           '-v',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -172,7 +172,7 @@ export default {
           '--verbose',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -191,7 +191,7 @@ export default {
           '--verbose',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -234,7 +234,7 @@ export default {
           '--verbose',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -256,7 +256,7 @@ export default {
           '--verbose',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -278,7 +278,7 @@ export default {
           '--verbose',
           '--iterations',
           '5',
-          '--reporters',
+          '--reporter',
           'human',
         ],
         testDir,
@@ -298,7 +298,7 @@ export default {
           'run',
           benchmarkFile,
           '--verbose',
-          '--reporters',
+          '--reporter',
           'json',
           '--iterations',
           '5',
@@ -316,7 +316,7 @@ export default {
 
     it('should not show setup messages without verbose', async () => {
       const result = await runCommand(
-        ['run', benchmarkFile, '--reporters', 'json', '--iterations', '5'],
+        ['run', benchmarkFile, '--reporter', 'json', '--iterations', '5'],
         testDir,
       );
 
@@ -335,7 +335,7 @@ export default {
           'run',
           benchmarkFile,
           '--verbose',
-          '--reporters',
+          '--reporter',
           'csv',
           '--iterations',
           '5',
@@ -359,7 +359,7 @@ export default {
           'run',
           benchmarkFile,
           '--verbose',
-          '--reporters',
+          '--reporter',
           'human,json,csv',
           '--iterations',
           '5',

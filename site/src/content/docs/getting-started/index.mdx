@@ -121,7 +121,7 @@ modestbench
 Run benchmarks with options:
 
 ```bash
-modestbench --iterations 5000 --reporters human,json
+modestbench --iterations 5000 --reporter human --reporter json
 ```
 
 ### Choosing an Engine
@@ -215,23 +215,23 @@ modestbench --iterations 1000 --time 10000
 
 ```bash
 # Run only fast benchmarks
-modestbench --tags fast
+modestbench --tag fast
 
 # Run benchmarks with multiple tags (OR logic)
-modestbench --tags string,array,algorithm
+modestbench --tag string --tag array --tag algorithm
 
 # Exclude specific benchmarks
-modestbench --exclude-tags slow,experimental
+modestbench --exclude-tag slow --exclude-tag experimental
 ```
 
 ### Multiple Output Formats
 
 ```bash
 # Generate multiple reports at once
-modestbench --reporters human,json,csv
+modestbench --reporter human --reporter json --reporter csv
 
 # Save reports to a specific directory
-modestbench --reporters json,csv --output ./results
+modestbench --reporter json --reporter csv --output ./results
 ```
 
 ## Next Steps

@@ -13,7 +13,7 @@ modestbench automatically selects the appropriate reporter based on your environ
 - **Non-TTY environments** (CI/CD, piped output): `simple` reporter with plain text output
 - **Forced color mode** (`FORCE_COLOR=1`): `human` reporter even in non-TTY environments
 
-You can always override the default by explicitly specifying `--reporters`.
+You can always override the default by explicitly specifying `--reporter`.
 
 ## Human Reporter
 
@@ -68,10 +68,10 @@ Found 1 benchmark file(s)
 modestbench
 
 # Explicitly specify
-modestbench --reporters human
+modestbench --reporter human
 
 # Quiet mode (suppresses progress, keeps results)
-modestbench --reporters human --quiet
+modestbench --reporter human --quiet
 ```
 
 ### Output Streams
@@ -135,10 +135,10 @@ All benchmarks completed successfully!
 modestbench | tee results.log
 
 # Explicitly specify simple reporter
-modestbench --reporters simple
+modestbench --reporter simple
 
 # Force human reporter in non-TTY (requires FORCE_COLOR=1)
-FORCE_COLOR=1 modestbench --reporters human
+FORCE_COLOR=1 modestbench --reporter human
 ```
 
 ### When to Use
@@ -285,14 +285,14 @@ The JSON reporter outputs structured data perfect for programmatic analysis, CI/
 
 ```bash
 # JSON output to stdout
-modestbench --reporters json
+modestbench --reporter json
 
 # JSON output to file
-modestbench --reporters json --output ./results
+modestbench --reporter json --output ./results
 # Creates: ./results/results.json
 
 # Multiple reporters
-modestbench --reporters human,json --output ./results
+modestbench --reporter human --reporter json --output ./results
 ```
 
 ### Integration Examples
@@ -301,13 +301,13 @@ modestbench --reporters human,json --output ./results
 
 ```bash
 # Extract task names with ops/sec
-modestbench --reporters json | jq '.results[] | {task: .task, opsPerSecond}'
+modestbench --reporter json | jq '.results[] | {task: .task, opsPerSecond}'
 
 # Find slowest tasks
-modestbench --reporters json | jq '.results | sort_by(.opsPerSecond) | .[0:5]'
+modestbench --reporter json | jq '.results | sort_by(.opsPerSecond) | .[0:5]'
 
 # Calculate average ops/sec
-modestbench --reporters json | jq '[.results[].opsPerSecond] | add / length'
+modestbench --reporter json | jq '[.results[].opsPerSecond] | add / length'
 ```
 
 #### Node.js Script
@@ -376,21 +376,21 @@ benchmarks/example.bench.js,Array Operations,Array spread,passed,12345.67,0.0810
 
 ```bash
 # CSV output to stdout
-modestbench --reporters csv
+modestbench --reporter csv
 
 # CSV output to file
-modestbench --reporters csv --output ./results
+modestbench --reporter csv --output ./results
 # Creates: ./results/results.csv
 
 # Multiple reporters
-modestbench --reporters human,csv --output ./results
+modestbench --reporter human --reporter csv --output ./results
 ```
 
 ### Analysis Examples
 
 #### Excel/Google Sheets
 
-1. Run benchmarks: `modestbench --reporters csv --output ./results`
+1. Run benchmarks: `modestbench --reporter csv --output ./results`
 2. Import `results.csv` into Excel or Google Sheets
 3. Create pivot tables, charts, and statistical analysis
 
@@ -426,7 +426,7 @@ print(f"Tasks with high variance: {outliers['task'].tolist()}")
 # Track performance over time
 
 DATE=$(date +%Y-%m-%d)
-modestbench --reporters csv --output "./history/${DATE}"
+modestbench --reporter csv --output "./history/${DATE}"
 
 # Append to master CSV
 tail -n +2 "./history/${DATE}/results.csv" >> ./history/all-results.csv
@@ -437,7 +437,7 @@ tail -n +2 "./history/${DATE}/results.csv" >> ./history/all-results.csv
 Run multiple reporters simultaneously to get output in different formats:
 
 ```bash
-modestbench --reporters human,json,csv --output ./results
+modestbench --reporter human --reporter json --reporter csv --output ./results
 ```
 
 This creates:
@@ -459,7 +459,7 @@ modestbench
 
 ```bash
 # JSON + CSV for analysis (simple reporter used automatically)
-modestbench --reporters json,csv --output ./results --quiet
+modestbench --reporter json --reporter csv --output ./results --quiet
 
 # Or let auto-detection handle it
 modestbench --output ./results
@@ -469,7 +469,7 @@ modestbench --output ./results
 
 ```bash
 # All formats for comprehensive reporting
-modestbench --reporters human,json,csv --output ./benchmark-results
+modestbench --reporter human --reporter json --reporter csv --output ./benchmark-results
 ```
 
 ## Reporter Behavior

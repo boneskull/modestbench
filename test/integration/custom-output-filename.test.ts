@@ -35,7 +35,7 @@ describe('Custom output filename', () => {
     const result = await runCommand([
       'run',
       benchFile,
-      '--reporters',
+      '--reporter',
       'json,csv',
       '--output-file',
       'custom.json',
@@ -68,7 +68,7 @@ describe('Custom output filename', () => {
     const result = await runCommand([
       'run',
       benchFile,
-      '--reporters',
+      '--reporter',
       'json',
       '--output-file',
       'custom.json',
@@ -102,7 +102,7 @@ describe('Custom output filename', () => {
     const result = await runCommand([
       'run',
       benchFile,
-      '--reporters',
+      '--reporter',
       'json',
       '--output',
       tempDir,
@@ -147,7 +147,7 @@ describe('Custom output filename', () => {
     const result = await runCommand([
       'run',
       benchFile,
-      '--reporters',
+      '--reporter',
       'json',
       '--output-file',
       customFile,
@@ -188,7 +188,7 @@ describe('Custom output filename', () => {
     const result = await runCommand([
       'run',
       benchFile,
-      '--reporters',
+      '--reporter',
       'csv',
       '--output',
       tempDir,
@@ -225,7 +225,7 @@ describe('Custom output filename', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output-file',
         absolutePath,
@@ -258,7 +258,7 @@ describe('Custom output filename', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output',
         tempDir,
@@ -294,7 +294,7 @@ describe('Custom output filename', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output',
         tempDir,

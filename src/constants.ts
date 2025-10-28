@@ -1,3 +1,5 @@
+import { type Engine } from './types/cli.js';
+
 /**
  * Supported benchmark file extensions
  */
@@ -19,6 +21,52 @@ export const BENCHMARK_FILE_PATTERN = `.bench.{${Array.from(
 )
   .map((ext) => ext.slice(1))
   .join(',')}}`;
+
+/**
+ * Timeout before we force-quit when aborting benchmarks (ms)
+ */
+export const ABORT_TIMEOUT = 500;
+
+/**
+ * Exit codes for the CLI
+ */
+export const ExitCodes = {
+  BENCHMARK_FAILURES: 1,
+  CONFIG_ERROR: 2,
+  DISCOVERY_ERROR: 3,
+  RUNTIME_ERROR: 5,
+  SUCCESS: 0,
+  UNKNOWN_ERROR: 99,
+  VALIDATION_ERROR: 4,
+} as const;
+
+/**
+ * Supported benchmark engines
+ */
+export const Engines = {
+  ACCURATE: 'accurate',
+  TINYBENCH: 'tinybench',
+} as const satisfies Record<string, Engine>;
+
+/**
+ * Default benchmark engine
+ */
+export const DEFAULT_ENGINE = Engines.TINYBENCH;
+
+/**
+ * Supported reporters
+ */
+export const Reporters = {
+  CSV: 'csv',
+  HUMAN: 'human',
+  JSON: 'json',
+  SIMPLE: 'simple',
+} as const;
+
+/**
+ * Default reporter
+ */
+export const DEFAULT_REPORTER = Reporters.HUMAN;
 
 /**
  * Error codes for all ModestBench errors

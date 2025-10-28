@@ -158,16 +158,19 @@ modestbench --bail
 
 Useful in CI/CD to fail fast when performance regressions are detected.
 
-##### `--reporters <reporters>`
+##### `--reporter <name>`, `-r <name>`
 
-Comma-separated list of reporters to use.
+Reporter to use for output. Can be specified multiple times.
 
 ```bash
 # Single reporter
-modestbench --reporters json
+modestbench --reporter json
 
 # Multiple reporters simultaneously
-modestbench --reporters human,json,csv
+modestbench --reporter human --reporter json --reporter csv
+
+# Using short alias
+modestbench -r human -r json -r csv
 ```
 
 Available reporters:
@@ -178,7 +181,7 @@ Available reporters:
 - `csv` - Tabular CSV format
 
 :::note[Auto-Selection]
-modestbench automatically selects `human` (TTY with color) or `simple` (non-TTY) as the default. Override with `--reporters` if needed.
+modestbench automatically selects `human` (TTY with color) or `simple` (non-TTY) as the default. Override with `--reporter` if needed.
 :::
 
 ##### `--output <directory>`
@@ -186,7 +189,7 @@ modestbench automatically selects `human` (TTY with color) or `simple` (non-TTY)
 Directory path for saving benchmark results and reports.
 
 ```bash
-modestbench --reporters json,csv --output ./results
+modestbench --reporter json --reporter csv --output ./results
 ```
 
 When specified:
@@ -215,34 +218,40 @@ Detailed output mode with additional debugging information.
 modestbench --verbose
 ```
 
-##### `--tags <tags>`
+##### `--tag <name>`, `-t <name>`
 
-Run only benchmarks with specific tags (OR logic - matches ANY).
+Run only benchmarks with specific tags (OR logic - matches ANY). Can be specified multiple times.
 
 ```bash
 # Single tag
-modestbench --tags fast
+modestbench --tag fast
 
 # Multiple tags (matches ANY)
-modestbench --tags string,array,algorithm
+modestbench --tag string --tag array --tag algorithm
+
+# Using short alias
+modestbench -t string -t array
 ```
 
 Tags cascade from file → suite → task levels. If a benchmark has ANY of the specified tags, it will run.
 
-##### `--exclude-tags <tags>`
+##### `--exclude-tag <name>`, `-e <name>`
 
-Exclude benchmarks with specific tags.
+Exclude benchmarks with specific tags. Can be specified multiple times.
 
 ```bash
 # Exclude one type
-modestbench --exclude-tags slow
+modestbench --exclude-tag slow
 
 # Exclude multiple types
-modestbench --exclude-tags experimental,unstable
+modestbench --exclude-tag experimental --exclude-tag unstable
+
+# Using short alias
+modestbench -e experimental -e unstable
 ```
 
 :::tip[Tag Precedence]
-`--exclude-tags` takes precedence over `--tags`. If a benchmark has both an included and excluded tag, it will be skipped.
+`--exclude-tag` takes precedence over `--tag`. If a benchmark has both an included and excluded tag, it will be skipped.
 :::
 
 ##### `--concurrent`
@@ -264,10 +273,13 @@ modestbench \
   --config ./config.json \
   --iterations 2000 \
   --warmup 50 \
-  --reporters human,json,csv \
+  -r human \
+  -r json \
+  -r csv \
   --output ./results \
-  --tags performance,algorithm \
-  --exclude-tags experimental \
+  -t performance \
+  -t algorithm \
+  -e experimental \
   --quiet \
   benchmarks/
 ```
@@ -318,6 +330,123 @@ modestbench init --config-type js
 1. Generates a configuration file in your chosen format
 2. Creates an example benchmark file
 3. Appends `.modestbench/` to `.gitignore` to exclude historical data
+
+### `modestbench analyze` (alias: `profile`)
+
+Analyze code execution to identify hot paths and benchmark candidates. Uses Node.js V8 profiler to capture real execution data and focuses on your code (excluding `node_modules` and Node.js internals).
+
+#### Analysis Basics
+
+```bash
+# Analyze a command
+modestbench analyze "npm test"
+
+# Analyze a script
+modestbench analyze "node ./src/server.js"
+
+# Analyze existing profile
+modestbench analyze --input isolate-0x123-v8.log
+```
+
+#### Profiling Options
+
+##### `[command]`
+
+The command to analyze (e.g., `"npm test"`, `"node script.js"`).
+
+```bash
+modestbench analyze "npm test"
+```
+
+##### `--input, -i <path>`
+
+Path to an existing V8 CPU profile file (\*.cpuprofile).
+
+```bash
+modestbench analyze --input CPU.20231027.161625.89167.0.001.cpuprofile
+```
+
+##### `--filter-file <pattern>`
+
+Filter functions by file glob pattern. Useful for focusing on specific modules.
+
+```bash
+# Only show functions in utils
+modestbench analyze "npm test" --filter-file "**/utils/**"
+
+# Focus on specific files
+modestbench analyze "npm test" --filter-file "**/src/core/**"
+```
+
+##### `--min-percent <number>`
+
+Minimum execution percentage to display (default: 0.5).
+
+```bash
+# Only show functions using ≥5% execution time
+modestbench analyze "npm test" --min-percent 5.0
+```
+
+##### `--top, -n <number>`
+
+Number of top functions to show (default: 25).
+
+```bash
+# Show top 50 functions
+modestbench analyze "npm test" --top 50
+
+# Show top 10 only
+modestbench analyze "npm test" -n 10
+```
+
+##### `--group-by-file`
+
+Group results by source file for a file-centric view.
+
+```bash
+modestbench analyze "npm test" --group-by-file
+```
+
+This groups functions by their source file and shows:
+
+- Total percentage for each file
+- Individual functions within each file
+- Line numbers for each function
+
+##### `--color`
+
+Enable or disable colored output (auto-detected by default).
+
+```bash
+# Force colors
+modestbench analyze "npm test" --color
+
+# Disable colors
+modestbench analyze "npm test" --no-color
+```
+
+#### Analysis Example
+
+```bash
+modestbench analyze "npm test" \
+  --filter-file "**/src/**" \
+  --min-percent 2.0 \
+  --top 50 \
+  --group-by-file
+```
+
+#### Output Format
+
+The profiler displays results with color-coded percentages:
+
+- **Red (≥10%)**: Critical hot paths - highest priority
+- **Yellow (≥5%)**: Significant execution time
+- **Cyan (≥2%)**: Moderate impact
+- **White (<2%)**: Minor impact
+
+:::tip[Learn More]
+See the [Profiling Guide](/modestbench/guides/profiling/) for detailed workflows, best practices, and programmatic usage.
+:::
 
 ### `modestbench history`
 
@@ -458,7 +587,7 @@ Command-line flags override configuration file settings:
 
 ```bash
 # CLI flags take precedence
-modestbench --iterations 5000 --reporters json
+modestbench --iterations 5000 --reporter json
 # Result: iterations=5000, reporters=["json"]
 ```
 
@@ -482,7 +611,9 @@ modestbench --iterations 10 --quiet
 modestbench \
   --iterations 5000 \
   --warmup 100 \
-  --reporters human,json,csv \
+  -r human \
+  -r json \
+  -r csv \
   --output ./results
 ```
 
@@ -490,18 +621,19 @@ modestbench \
 
 ```bash
 modestbench \
-  --reporters json,csv \
+  -r json \
+  -r csv \
   --output ./benchmark-results \
   --quiet \
   --bail \
-  --tags critical
+  -t critical
 ```
 
 ### Regression Testing
 
 ```bash
 # Run current benchmarks
-modestbench --reporters json --output ./current
+modestbench --reporter json --output ./current
 
 # Compare with baseline
 modestbench history compare baseline-run-id $(modestbench history list --format json | jq -r '.[0].id')

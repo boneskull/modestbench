@@ -171,6 +171,55 @@ const modestBenchConfigSchema = z
       .describe(
         `Glob pattern(s) for discovering benchmark files. Can be a single pattern string or array of patterns (e.g., "**/*${BENCHMARK_FILE_PATTERN}")`,
       ),
+    profile: z
+      .object({
+        exclude: z
+          .array(z.string())
+          .optional()
+          .describe('Glob patterns to exclude from profiling results'),
+        focus: z
+          .array(z.string())
+          .optional()
+          .describe(
+            'Glob patterns to focus on in profiling results. If specified, only matching files will be shown',
+          ),
+        minCallCount: z
+          .number()
+          .int()
+          .nonnegative()
+          .optional()
+          .describe(
+            'Minimum number of times a function must be called to be included in results',
+          ),
+        minExecutionPercent: z
+          .number()
+          .nonnegative()
+          .max(100)
+          .default(1.0)
+          .describe(
+            'Minimum execution percentage threshold for including functions in results',
+          ),
+        outputFile: z
+          .string()
+          .optional()
+          .describe('Path to write profile report to file'),
+        smartDetection: z
+          .boolean()
+          .default(true)
+          .describe(
+            'Automatically detect and focus on user code, excluding node_modules and Node.js internals',
+          ),
+        topN: z
+          .number()
+          .int()
+          .positive()
+          .default(25)
+          .describe('Maximum number of top functions to show in results'),
+      })
+      .optional()
+      .describe(
+        'Configuration for profile command to identify benchmark candidates',
+      ),
     quiet: z
       .boolean()
       .describe(
@@ -273,39 +322,38 @@ const transformBudgetValues = (budget: BudgetInput): BudgetOutput => {
   const transformed: BudgetOutput = {};
 
   if (budget.absolute) {
-    const absolute: BudgetOutput['absolute'] = {
-      minOpsPerSec: budget.absolute.minOpsPerSec,
-    };
+    transformed.absolute = {};
+
+    // Copy minOpsPerSec as-is (already a number)
+    if (budget.absolute.minOpsPerSec !== undefined) {
+      transformed.absolute.minOpsPerSec = budget.absolute.minOpsPerSec;
+    }
 
     // Parse time strings
-    if (typeof budget.absolute.maxTime === 'string') {
-      absolute.maxTime = parseTimeString(budget.absolute.maxTime);
-    } else if (typeof budget.absolute.maxTime === 'number') {
-      absolute.maxTime = budget.absolute.maxTime;
+    if (budget.absolute.maxTime !== undefined) {
+      transformed.absolute.maxTime =
+        typeof budget.absolute.maxTime === 'string'
+          ? parseTimeString(budget.absolute.maxTime)
+          : budget.absolute.maxTime;
     }
-
-    if (typeof budget.absolute.maxP99 === 'string') {
-      absolute.maxP99 = parseTimeString(budget.absolute.maxP99);
-    } else if (typeof budget.absolute.maxP99 === 'number') {
-      absolute.maxP99 = budget.absolute.maxP99;
+    if (budget.absolute.maxP99 !== undefined) {
+      transformed.absolute.maxP99 =
+        typeof budget.absolute.maxP99 === 'string'
+          ? parseTimeString(budget.absolute.maxP99)
+          : budget.absolute.maxP99;
     }
-
-    transformed.absolute = absolute;
   }
 
   if (budget.relative) {
-    const relative: BudgetOutput['relative'] = {};
+    transformed.relative = {};
 
     // Parse percentage strings
-    if (typeof budget.relative.maxRegression === 'string') {
-      relative.maxRegression = parsePercentageString(
-        budget.relative.maxRegression,
-      );
-    } else if (typeof budget.relative.maxRegression === 'number') {
-      relative.maxRegression = budget.relative.maxRegression;
+    if (budget.relative.maxRegression !== undefined) {
+      transformed.relative.maxRegression =
+        typeof budget.relative.maxRegression === 'string'
+          ? parsePercentageString(budget.relative.maxRegression)
+          : budget.relative.maxRegression;
     }
-
-    transformed.relative = relative;
   }
 
   return transformed;

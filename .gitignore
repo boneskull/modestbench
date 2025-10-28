@@ -145,9 +145,6 @@ vite.config.ts.timestamp-*
 .claude-skills
 .modestbench
 
-worktrees/*
-!worktrees/README.md
-
 # Documentation site build output
 /docs/
 
@@ -161,6 +158,5 @@ site/favicon.svg
 public/logo-512.png
 public/fonts/
 .astro/
-worktrees
 worktrees/
 *.cpuprofile

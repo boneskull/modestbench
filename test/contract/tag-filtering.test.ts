@@ -81,7 +81,7 @@ describe('Tag Filtering', () => {
   describe('Combined Include and Exclude Filtering', () => {
     it('should apply both include and exclude filters', async () => {
       // TODO: Implement test
-      // Use both --tags and --exclude-tags
+      // Use both --tag and --exclude-tag
       // Verify exclusion takes precedence
       assert.ok(true, 'Not implemented yet');
     });

@@ -55,7 +55,7 @@ describe('Benchmark execution with progress tracking', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'human',
       ]);
 
@@ -94,7 +94,7 @@ describe('Benchmark execution with progress tracking', () => {
         join(tempDir, 'benchmarks', '*.bench.js'),
         '--iterations',
         '1',
-        '--reporters',
+        '--reporter',
         'human',
       ]);
 
@@ -131,7 +131,7 @@ describe('Benchmark execution with progress tracking', () => {
       );
 
       const result = await runCommand(
-        ['run', benchFile, '--verbose', '--reporters', 'human'],
+        ['run', benchFile, '--verbose', '--reporter', 'human'],
         tempDir,
       );
 
@@ -166,7 +166,7 @@ describe('Benchmark execution with progress tracking', () => {
       );
 
       const result = await runCommand(
-        ['run', benchFile, '--iterations', '1', '--reporters', 'human'],
+        ['run', benchFile, '--iterations', '1', '--reporter', 'human'],
         tempDir,
       );
 
@@ -206,7 +206,7 @@ describe('Benchmark execution with progress tracking', () => {
       );
 
       const result = await runCommand(
-        ['run', benchFile, '--verbose', '--reporters', 'human'],
+        ['run', benchFile, '--verbose', '--reporter', 'human'],
         tempDir,
       );
 
@@ -250,7 +250,7 @@ describe('Benchmark execution with progress tracking', () => {
       );
 
       const result = await runCommand(
-        ['run', benchFile, '--reporters', 'human'],
+        ['run', benchFile, '--reporter', 'human'],
         tempDir,
       );
 

@@ -44,7 +44,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'human',
       ]);
 
@@ -78,7 +78,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'human',
       ]);
 
@@ -107,7 +107,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'human',
         '--verbose',
         '--iterations',
@@ -142,7 +142,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output',
         join(tempDir, 'results'),
@@ -193,7 +193,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output',
         outputDir,
@@ -249,7 +249,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'csv',
         '--output',
         join(tempDir, 'results'),
@@ -294,7 +294,7 @@ describe('Multiple reporter output formats', () => {
       );
 
       const result = await runCommand(
-        ['run', benchFile, '--reporters', 'csv'],
+        ['run', benchFile, '--reporter', 'csv'],
         tempDir,
       );
 
@@ -335,7 +335,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'csv',
         '--csv-delimiter',
         ';',
@@ -369,8 +369,12 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
-        'human,json,csv',
+        '--reporter',
+        'human',
+        '--reporter',
+        'json',
+        '--reporter',
+        'csv',
         '--output',
         join(tempDir, 'results'),
       ]);
@@ -412,8 +416,12 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
-        'human,json,csv',
+        '--reporter',
+        'human',
+        '--reporter',
+        'json',
+        '--reporter',
+        'csv',
         '--human-colors',
         'false',
         '--json-pretty',
@@ -449,8 +457,10 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
-        'json,csv',
+        '--reporter',
+        'json',
+        '--reporter',
+        'csv',
         '--output',
         outputDir,
       ]);
@@ -490,7 +500,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output',
         join(tempDir, 'results'),
@@ -521,7 +531,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output-file',
         customFile,
@@ -562,7 +572,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'json',
         '--output',
         '/dev/null/readonly',
@@ -592,8 +602,14 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
-        'human,json,csv,invalid-reporter',
+        '--reporter',
+        'human',
+        '--reporter',
+        'json',
+        '--reporter',
+        'csv',
+        '--reporter',
+        'invalid-reporter',
       ]);
 
       // Invalid reporter causes failure - this is expected behavior
@@ -623,7 +639,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'simple',
       ]);
 
@@ -657,7 +673,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'simple',
       ]);
 
@@ -687,7 +703,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'simple',
       ]);
 
@@ -719,7 +735,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'simple',
       ]);
 
@@ -750,7 +766,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'simple',
       ]);
 
@@ -782,7 +798,7 @@ describe('Multiple reporter output formats', () => {
       const result = await runCommand([
         'run',
         benchFile,
-        '--reporters',
+        '--reporter',
         'simple',
         '--verbose',
         '--iterations',
