@@ -35,7 +35,7 @@ asciinema rec "$OUTPUT_FILE" \
   --cols 100 \
   --rows 60 \
   --title "modestbench Getting Started Demo" \
-  --command "modestbench run examples/benchmarks/advanced-operations.bench.js --iterations 1000 --warmup 100"
+  --command "modestbench run examples/bench/advanced-operations.bench.js --iterations 1000 --warmup 100"
 
 echo ""
 echo "Recording saved to: $OUTPUT_FILE"

@@ -42,7 +42,7 @@ const main = async () => {
       warmup: 20, // 20 warmup iterations
     },
     // Point to example benchmark files
-    pattern: 'examples/benchmarks/*.bench.js',
+    pattern: 'examples/bench/*.bench.js',
     reporters: ['human'],
   };
 
