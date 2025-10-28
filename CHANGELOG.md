@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.3.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.2.0...modestbench-v0.3.0) (2025-10-28)
+
+
+### Features
+
+* add analyze command for code profiling and benchmark discovery ([330b345](https://github.com/boneskull/modestbench/commit/330b345493fc43ba6e00d64c245e2a84fd734e6d))
+* add performance budgets ([367c554](https://github.com/boneskull/modestbench/commit/367c5542efea8bab7a64d22728b2ea793de91f99))
+* implement --bail ([#82](https://github.com/boneskull/modestbench/issues/82)) ([69d4327](https://github.com/boneskull/modestbench/commit/69d4327ee9327ab5e6076654e79dd4a21f15770a))
+
+
+### Bug Fixes
+
+* **deps:** pin dependency tinybench to 5.1.0 ([#81](https://github.com/boneskull/modestbench/issues/81)) ([1be5bbe](https://github.com/boneskull/modestbench/commit/1be5bbe332545eea8d25143f61492f87cbb2089d))
+* **deps:** update dependency tinybench to v5.1.0 ([#76](https://github.com/boneskull/modestbench/issues/76)) ([cbd763c](https://github.com/boneskull/modestbench/commit/cbd763ca7d7335f9b3e7e4cda2217160b76e366c))
+* **deps:** upgrade to tinybench@5.1.0 ([6668a38](https://github.com/boneskull/modestbench/commit/6668a38c1ea737320a132efd884a57a4c5f91a25))
+* fix bin script ([68155e9](https://github.com/boneskull/modestbench/commit/68155e93a19cd88fa8add5fad4e2baae356eaba0))
+* resolve merge conflict issues and test failures ([ab1e288](https://github.com/boneskull/modestbench/commit/ab1e288cbe11d729266fd74dc14dedc58a01bf27))
+* resolve test failures and improve default behavior ([a61d798](https://github.com/boneskull/modestbench/commit/a61d798127ca58eac4ef2f3e03944703459dda31))
+* resolve TypeScript type errors in budget transformation ([b8f2155](https://github.com/boneskull/modestbench/commit/b8f215533829e533515c7af1f8396aea71517c10))
+
 ## [0.2.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.1.0...modestbench-v0.2.0) (2025-10-26)
 
 
