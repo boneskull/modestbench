@@ -488,7 +488,7 @@ describe('Historical results viewing and trends', () => {
         'clean',
         '--max-age',
         '30',
-        '--confirm',
+        '--yes',
       ]);
 
       // CLI should work and clean old data or show no data message

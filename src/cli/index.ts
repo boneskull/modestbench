@@ -252,7 +252,6 @@ export const main = async (
               type: 'boolean',
             })
             .option('tag', {
-              alias: 't',
               array: true,
               description: 'Include only benchmarks with any of these tags',
               type: 'string',
@@ -581,7 +580,7 @@ export const main = async (
                 })
                 .example([
                   [
-                    '$0 history clean --max-runs 50 --confirm',
+                    '$0 history clean --max-runs 50 --yes',
                     'Keep only latest 50 runs',
                   ],
                   [

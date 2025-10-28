@@ -612,8 +612,8 @@ describe('Multiple reporter output formats', () => {
         'invalid-reporter',
       ]);
 
-      // Invalid reporter causes failure - this is expected behavior
-      expect(result.exitCode, 'to equal', 1);
+      // Invalid reporter causes failure with CONFIG_ERROR - this is expected behavior
+      expect(result.exitCode, 'to equal', 2);
     });
   });
 

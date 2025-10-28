@@ -217,7 +217,7 @@ export const handleRunCommand = async (
           }
         }
       }
-      return ExitCodes.UNKNOWN_ERROR;
+      return ExitCodes.BENCHMARK_FAILURES;
     }
 
     // Re-throw CLI errors so yargs fail handler can show help
