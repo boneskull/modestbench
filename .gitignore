@@ -160,3 +160,4 @@ public/fonts/
 .astro/
 worktrees/
 *.cpuprofile
+worktrees/
