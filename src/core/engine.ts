@@ -278,7 +278,7 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
           // Call reporter onFileEnd for error case
           await this.callReporters(reporters, 'onFileEnd', errorResult);
 
-          // Bail on file-level errors too
+          // Check bail flag for file-level errors
           if (mergedConfig.bail) {
             break;
           }
