@@ -64,8 +64,7 @@ export class BenchmarkFileLoader implements FileLoader {
       // Handle empty patterns - use sensible defaults
       if (patterns.length === 0) {
         patterns = [
-          `*${BENCHMARK_FILE_PATTERN}`, // top-level current directory
-          `bench/*${BENCHMARK_FILE_PATTERN}`, // top-level bench/ directory
+          `bench/**/*${BENCHMARK_FILE_PATTERN}`, // bench/ directory (recursive)
         ];
       }
 

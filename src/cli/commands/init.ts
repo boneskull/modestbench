@@ -5,7 +5,13 @@
  * structure, and optional example benchmark files.
  */
 
-import { access, mkdir, writeFile } from 'node:fs/promises';
+import {
+  access,
+  appendFile,
+  mkdir,
+  readFile,
+  writeFile,
+} from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 
@@ -297,7 +303,10 @@ export const handleInitCommand = async (
     }
 
     // Create additional files
-    await createAdditionalFiles(cwd);
+    await createAdditionalFiles(cwd, {
+      quiet: options.quiet,
+      yes: options.yes,
+    });
 
     if (!options.quiet) {
       console.log('✅ Project initialized successfully!');
@@ -358,7 +367,10 @@ const checkForConflicts = async (
 /**
  * Create additional project files
  */
-const createAdditionalFiles = async (cwd: string): Promise<void> => {
+const createAdditionalFiles = async (
+  cwd: string,
+  options?: { quiet?: boolean; yes?: boolean },
+): Promise<void> => {
   // Create README.md
   const readmeContent = `# Benchmark Project
 
@@ -396,6 +408,68 @@ Create new benchmark files in the \`benchmarks/\` directory. See the examples fo
   } catch {
     // Non-critical, just warn
     console.warn('Warning: Could not create README.md file');
+  }
+
+  // Create or update .gitignore
+  await createOrUpdateGitignore(cwd, options);
+};
+
+/**
+ * Create or update .gitignore file to include ModestBench directories
+ */
+const createOrUpdateGitignore = async (
+  cwd: string,
+  options?: { quiet?: boolean; yes?: boolean },
+): Promise<void> => {
+  const gitignorePath = resolve(cwd, '.gitignore');
+  const modestbenchEntry = '.modestbench/';
+  const modestbenchSection = `\n# ModestBench history\n${modestbenchEntry}\n`;
+
+  try {
+    // Check if .gitignore exists
+    let existingContent = '';
+    try {
+      existingContent = await readFile(gitignorePath, 'utf8');
+    } catch {
+      // File doesn't exist, will create new one
+    }
+
+    if (existingContent) {
+      // File exists, check if .modestbench/ is already present
+      if (existingContent.includes(modestbenchEntry)) {
+        // Already present, nothing to do
+        return;
+      }
+
+      // Append .modestbench/ entry (--yes or --quiet means auto-accept)
+      if (options?.yes || options?.quiet) {
+        // Ensure content ends with newline
+        const contentToAppend = existingContent.endsWith('\n')
+          ? modestbenchSection
+          : `\n${modestbenchSection}`;
+        await appendFile(gitignorePath, contentToAppend, 'utf8');
+      }
+    } else {
+      // Create new .gitignore with common entries
+      const newContent = `# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.log
+
+# Test coverage
+coverage/
+
+# Benchmark output
+benchmark-results/
+${modestbenchSection}`;
+      await writeFile(gitignorePath, newContent, 'utf8');
+    }
+  } catch {
+    // Non-critical, just warn
+    console.warn('Warning: Could not create/update .gitignore file');
   }
 };
 

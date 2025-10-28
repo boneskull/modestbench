@@ -56,7 +56,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   limitBy: 'iterations', // Default to limiting by iteration count
   metadata: {},
   outputDir: './benchmark-results',
-  pattern: '**/*.bench.{js,ts,mjs,cjs,mts,cts}',
+  pattern: 'bench/**/*.bench.{js,ts,mjs,cjs,mts,cts}', // Search bench/ directory recursively
   quiet: false,
   reporterConfig: {},
   reporters: [getDefaultReporter()],
