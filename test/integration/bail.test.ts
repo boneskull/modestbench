@@ -70,7 +70,7 @@ describe('Bail flag (--bail)', () => {
         'run',
         join(tempDir, 'benchmarks', '*.bench.js'),
         '--bail',
-        '--reporters',
+        '--reporter',
         'human',
       ],
       tempDir,
@@ -135,12 +135,7 @@ describe('Bail flag (--bail)', () => {
 
     // Run WITHOUT --bail flag - both benchmarks should run
     const result = await runCommand(
-      [
-        'run',
-        join(tempDir, 'benchmarks', '*.bench.js'),
-        '--reporters',
-        'human',
-      ],
+      ['run', join(tempDir, 'benchmarks', '*.bench.js'), '--reporter', 'human'],
       tempDir,
     );
 
