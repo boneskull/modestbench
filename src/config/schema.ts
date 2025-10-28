@@ -270,29 +270,42 @@ interface BudgetOutput {
  * Transform budget values (parse time/percentage strings)
  */
 const transformBudgetValues = (budget: BudgetInput): BudgetOutput => {
-  const transformed: BudgetOutput = { ...budget };
+  const transformed: BudgetOutput = {};
 
   if (budget.absolute) {
-    transformed.absolute = { ...budget.absolute };
+    const absolute: BudgetOutput['absolute'] = {
+      minOpsPerSec: budget.absolute.minOpsPerSec,
+    };
 
     // Parse time strings
     if (typeof budget.absolute.maxTime === 'string') {
-      transformed.absolute.maxTime = parseTimeString(budget.absolute.maxTime);
+      absolute.maxTime = parseTimeString(budget.absolute.maxTime);
+    } else if (typeof budget.absolute.maxTime === 'number') {
+      absolute.maxTime = budget.absolute.maxTime;
     }
+
     if (typeof budget.absolute.maxP99 === 'string') {
-      transformed.absolute.maxP99 = parseTimeString(budget.absolute.maxP99);
+      absolute.maxP99 = parseTimeString(budget.absolute.maxP99);
+    } else if (typeof budget.absolute.maxP99 === 'number') {
+      absolute.maxP99 = budget.absolute.maxP99;
     }
+
+    transformed.absolute = absolute;
   }
 
   if (budget.relative) {
-    transformed.relative = { ...budget.relative };
+    const relative: BudgetOutput['relative'] = {};
 
     // Parse percentage strings
     if (typeof budget.relative.maxRegression === 'string') {
-      transformed.relative.maxRegression = parsePercentageString(
+      relative.maxRegression = parsePercentageString(
         budget.relative.maxRegression,
       );
+    } else if (typeof budget.relative.maxRegression === 'number') {
+      relative.maxRegression = budget.relative.maxRegression;
     }
+
+    transformed.relative = relative;
   }
 
   return transformed;
@@ -318,7 +331,7 @@ const transformBudgets = (
       for (const [task, budget] of Object.entries(tasks)) {
         const taskId = `${file}/${suite}/${task}`;
         // Transform budget values (parse strings)
-        flat[taskId] = transformBudgetValues(budget);
+        flat[taskId] = transformBudgetValues(budget as BudgetInput);
       }
     }
   }
