@@ -126,7 +126,7 @@ export default {
 modestbench
 
 # Run with specific options
-modestbench --iterations 5000 --reporters human,json
+modestbench --iterations 5000 --reporter human --reporter json
 ```
 
 ### View Results
@@ -171,9 +171,12 @@ modestbench file.bench.js benchmarks/ "tests/**/*.bench.ts"
 modestbench \
   --config ./config.json \
   --iterations 2000 \
-  --reporters human,json,csv \
+  --reporter human \
+  --reporter json \
+  --reporter csv \
   --output ./results \
-  --tags performance,algorithm \
+  --tag performance \
+  --tag algorithm \
   --concurrent
 ```
 
@@ -223,23 +226,23 @@ Run specific subsets of benchmarks using tags:
 
 ```bash
 # Run only benchmarks tagged with 'fast'
-modestbench --tags fast
+modestbench --tag fast
 
 # Run benchmarks with multiple tags (OR logic - matches ANY)
-modestbench --tags string,array,algorithm
+modestbench --tag string --tag array --tag algorithm
 
 # Exclude specific benchmarks
-modestbench --exclude-tags slow,experimental
+modestbench --exclude-tag slow --exclude-tag experimental
 
 # Combine: run fast benchmarks except experimental ones
-modestbench --tags fast --exclude-tags experimental
+modestbench --tag fast --exclude-tag experimental
 ```
 
 **Key Features:**
 
 - Tags cascade from file → suite → task levels
-- `--tags` uses OR logic (matches ANY specified tag)
-- `--exclude-tags` takes precedence over `--tags`
+- `--tag` uses OR logic when specified multiple times (matches ANY specified tag)
+- `--exclude-tag` takes precedence over `--tag`
 - Suite setup/teardown only runs if at least one task matches
 
 See [Tagging and Filtering](#tagging-and-filtering) for detailed examples.
@@ -250,22 +253,22 @@ Control where and how benchmark results are saved:
 
 ```bash
 # Write to a directory (creates results.json, results.csv, etc.)
-modestbench --reporters json,csv --output ./results
+modestbench --reporter json --reporter csv --output ./results
 
 # Custom filename for single reporter
-modestbench --reporters json --output-file my-benchmarks.json
+modestbench --reporter json --output-file my-benchmarks.json
 
 # Custom filename in specific directory
-modestbench --reporters json --output ./results --output-file benchmarks-2024.json
+modestbench --reporter json --output ./results --output-file benchmarks-2024.json
 
 # Custom filename with absolute path
-modestbench --reporters json --output-file /tmp/my-benchmarks.json
+modestbench --reporter json --output-file /tmp/my-benchmarks.json
 
 # With subdirectories
-modestbench --reporters csv --output ./results --output-file reports/performance.csv
+modestbench --reporter csv --output ./results --output-file reports/performance.csv
 
-# Short flag alias
-modestbench --reporters json --of custom.json
+# Short flag alias (using -r for --reporter)
+modestbench -r json --of custom.json
 ```
 
 **Key Options:**
@@ -273,7 +276,7 @@ modestbench --reporters json --of custom.json
 - `--output <dir>`, `-o <dir>` - Directory to write output files (default: stdout)
 - `--output-file <filename>`, `--of <filename>` - Custom filename for output
   - Works with absolute or relative paths
-  - Requires exactly one reporter (e.g., `--reporters json`)
+  - Requires exactly one reporter (e.g., `--reporter json`)
   - When used with `--output`, the filename is relative to that directory
   - When used alone, the path is relative to current working directory
 
@@ -361,6 +364,44 @@ modestbench run --baseline production-v1.0
 # Analyze history and suggest budgets
 modestbench baseline analyze
 ```
+
+### Profile Code Execution
+
+Identify hot code paths that are good candidates for benchmarking:
+
+```bash
+# Profile a command
+modestbench analyze "npm test"
+
+# Profile a specific script
+modestbench analyze "node ./src/server.js"
+
+# Analyze existing profile
+modestbench analyze --input isolate-0x123-v8.log
+
+# Filter and customize output
+modestbench analyze "npm test" \
+  --filter-file "src/**" \
+  --min-percent 2.0 \
+  --top 50 \
+  --group-by-file
+```
+
+**Profile Options:**
+
+- `[command]` - Command to profile (e.g., `npm test`, `node script.js`)
+- `--input`, `-i` - Path to existing V8 profile log file
+- `--filter-file` - Filter functions by file glob pattern
+- `--min-percent` - Minimum execution percentage to show (default: 1.0)
+- `--top`, `-n` - Number of top functions to show (default: 25)
+- `--group-by-file` - Group results by source file
+- `--color` - Enable/disable color output
+
+**How It Works:**
+
+The profile command uses Node.js's built-in V8 profiler to identify functions that consume the most execution time. It automatically filters out Node.js internals and `node_modules` to focus on your code.
+
+Functions that appear at the top of the profile report are good candidates for benchmarking, as optimizing them will have the most impact on overall performance.
 
 ## Configuration
 
@@ -564,37 +605,37 @@ export default {
 
 #### Filtering Benchmarks
 
-Use `--tags` to include only benchmarks with specific tags (OR logic - matches ANY tag):
+Use `--tag` (or `-t`) to include only benchmarks with specific tags (OR logic - matches ANY tag):
 
 ```bash
-# Run only fast algorithms
-modestbench run --tags fast
+# Run fast algorithms
+modestbench run --tag fast
 
 # Run benchmarks tagged with 'string' OR 'array'
-modestbench run --tags string,array
+modestbench run --tag string --tag array
 
-# Multiple tags can be space-separated too
-modestbench run --tags fast optimized
+# Using short aliases
+modestbench run -t fast -t optimized
 ```
 
-Use `--exclude-tags` to skip benchmarks with specific tags:
+Use `--exclude-tag` (or `-e`) to skip benchmarks with specific tags:
 
 ```bash
 # Exclude slow benchmarks
-modestbench run --exclude-tags slow
+modestbench run --exclude-tag slow
 
 # Exclude experimental and unstable benchmarks
-modestbench run --exclude-tags experimental,unstable
+modestbench run --exclude-tag experimental --exclude-tag unstable
 ```
 
 Combine both to fine-tune your benchmark runs (exclusion takes precedence):
 
 ```bash
 # Run fast benchmarks, but exclude experimental ones
-modestbench run --tags fast --exclude-tags experimental
+modestbench run --tag fast --exclude-tag experimental
 
 # Run algorithm benchmarks but skip slow reference implementations
-modestbench run --tags algorithm --exclude-tags slow,reference
+modestbench run --tag algorithm --exclude-tag slow --exclude-tag reference
 ```
 
 #### Tag Cascading Example
@@ -620,10 +661,10 @@ export default {
 
 **Filtering Behavior:**
 
-- `--tags math` → Runs only Task A (matches 'math')
-- `--tags fast` → Runs both Task A and Task B (both have 'fast')
-- `--tags file-level` → Runs both tasks (both inherit 'file-level')
-- `--exclude-tags math` → Runs only Task B (Task A excluded)
+- `--tag math` → Runs only Task A (matches 'math')
+- `--tag fast` → Runs both Task A and Task B (both have 'fast')
+- `--tag file-level` → Runs both tasks (both inherit 'file-level')
+- `--exclude-tag math` → Runs only Task B (Task A excluded)
 
 #### Suite Lifecycle with Filtering
 
@@ -652,7 +693,8 @@ jobs:
       - name: Run Benchmarks
         run: |
           modestbench \
-            --reporters json,csv \
+            --reporter json \
+            --reporter csv \
             --output ./results
 
       - name: Upload Results
@@ -670,7 +712,7 @@ import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 
 // Run current benchmarks
-execSync('modestbench --reporters json --output ./current');
+execSync('modestbench --reporter json --output ./current');
 const current = JSON.parse(readFileSync('./current/results.json'));
 
 // Load baseline results

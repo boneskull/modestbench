@@ -22,12 +22,12 @@ import { expectAssignable, expectType } from 'tsd';
 describe('Utility Types and Functions', () => {
   describe('CLI Types', () => {
     it('should export ExitCodes with correct values', () => {
-      expectType<0>(ExitCodes.Success);
-      expectType<1>(ExitCodes.GeneralError);
-      expectType<2>(ExitCodes.ConfigurationError);
-      expectType<3>(ExitCodes.FileDiscoveryError);
-      expectType<4>(ExitCodes.ValidationError);
-      expectType<5>(ExitCodes.ExecutionError);
+      expectType<0>(ExitCodes.SUCCESS);
+      expectType<1>(ExitCodes.BENCHMARK_FAILURES);
+      expectType<2>(ExitCodes.CONFIG_ERROR);
+      expectType<3>(ExitCodes.DISCOVERY_ERROR);
+      expectType<4>(ExitCodes.VALIDATION_ERROR);
+      expectType<5>(ExitCodes.RUNTIME_ERROR);
     });
   });
 

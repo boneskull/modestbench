@@ -4,7 +4,7 @@ import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 
 // Run benchmarks and get JSON output
-execSync('modestbench run --reporters json --output ./tmp');
+execSync('modestbench run --reporter json --output ./tmp');
 const results = JSON.parse(readFileSync('./tmp/results.json', 'utf8'));
 
 // Compare with baseline

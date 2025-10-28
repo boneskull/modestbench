@@ -30,22 +30,19 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 </Card>
 
 <Card title="Historical Tracking" icon="seti:clock">
-  Store and compare benchmark results over time. Track performance trends and
-  catch regressions early.
+  Store and compare benchmark results over time. Track performance trends and catch regressions early.
 </Card>
 
-<Card title="Tagging System" icon="pencil">
-  Organize and filter benchmarks by categories. Run specific subsets with
-  flexible tag-based filtering.
+<Card title="Profile & Discover" icon="magnifier">
+  Identify hot code paths with built-in profiling. Run any command with V8's profiler to find benchmark candidates automatically.
 </Card>
 
 <Card title="CLI & API" icon="setting">
-  Powerful command-line interface with sensible defaults, plus a programmatic
-  API for advanced usage.
+  Powerful command-line interface with sensible defaults, plus a programmatic API for advanced usage.
 </Card>
 
   <Card title="TypeScript Support" icon="approve-check">
-    Full type safety with comprehensive TypeScript definitions. Write benchmarks in JS or TS.
+    Write benchmarks in JS or TS.
   </Card>
 </CardGrid>
 
@@ -79,7 +76,7 @@ export default {
 modestbench
 
 # Run with specific options
-modestbench --iterations 5000 --reporters human,json
+modestbench --iterations 5000 --reporter human --reporter json
 ```
 
 ## Why modestbench?

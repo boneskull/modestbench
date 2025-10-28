@@ -34,7 +34,8 @@
     "worktrees",
     "assets/*.ans",
     "assets/*.txt",
-    ".tmp"
+    ".tmp",
+    "*.cpuprofile"
   ],
   "ignoreRandomStrings": true,
   "ignoreWords": [

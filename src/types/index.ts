@@ -16,5 +16,8 @@ export { createRunId, createTaskId } from './core.js';
 // Interface contracts
 export type * from './interfaces.js';
 
+// Profiler types
+export type * from './profiler.js';
+
 // Utility types and helpers
 export * from './utility.js';

@@ -1,9 +1,3 @@
----
-title: Advanced Usage
-description: Advanced features and patterns for modestbench
----
-
-import AsciinemaPlayer from '../../../components/AsciinemaPlayer.astro';
 
 ## Benchmark Engines
 
@@ -59,7 +53,7 @@ CV > 20%   → Poor (investigate noise sources)
 Example output showing CV:
 
 ```bash
-$ modestbench --engine accurate --allow-natives-syntax --reporters json
+$ modestbench --engine accurate --allow-natives-syntax --reporter json
 {
   "name": "Array.push()",
   "mean": 810050,  // nanoseconds
@@ -77,11 +71,11 @@ Real-world comparison using `examples/bench`:
 
 ```bash
 # Tinybench (fast iteration)
-$ modestbench --engine tinybench --reporters json
+$ modestbench --engine tinybench --reporter json
 # Typical run time: 3-5 seconds for 5 benchmark files
 
 # Accurate (high precision)
-$ node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate --reporters json
+$ node --allow-natives-syntax ./node_modules/.bin/modestbench --engine accurate --reporter json
 # Typical run time: 8-12 seconds for 5 benchmark files
 ```
 
@@ -274,19 +268,19 @@ export default {
 
 ```bash
 # Run only fast benchmarks
-modestbench --tags fast
+modestbench --tag fast
 # Runs: 'RegExp Test', 'String Includes'
 
 # Run string OR array benchmarks
-modestbench --tags string,array
+modestbench --tag string --tag array
 # Runs: All tasks in 'String Operations' and 'Array Operations'
 
 # Exclude slow benchmarks
-modestbench --exclude-tags slow
+modestbench --exclude-tag slow
 # Runs: Only 'String Operations' tasks
 
 # Combine: run fast benchmarks except experimental
-modestbench --tags fast --exclude-tags experimental
+modestbench --tag fast --exclude-tag experimental
 ```
 
 ### Suite Lifecycle with Filtering
@@ -324,10 +318,10 @@ export default {
 
 ```bash
 # Setup and teardown run (Fast Task matches)
-modestbench --tags fast
+modestbench --tag fast
 
 # Setup and teardown DON'T run (Slow Task excluded)
-modestbench --exclude-tags slow
+modestbench --exclude-tag slow
 ```
 
 ## Custom Task Configuration
@@ -420,10 +414,11 @@ jobs:
       - name: Run benchmarks
         run: |
           modestbench \
-            --reporters json,csv \
+            --reporter json \
+            --reporter csv \
             --output ./results \
             --quiet \
-            --tags critical
+            --tag critical
 
       - name: Upload results
         uses: actions/upload-artifact@v3
@@ -443,7 +438,7 @@ import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 
 // Run current benchmarks
-execSync('modestbench --reporters json --output ./current', {
+execSync('modestbench --reporter json --output ./current', {
   stdio: 'inherit',
 });
 
@@ -524,7 +519,7 @@ modestbench history list --since 2025-01-01 --until 2025-12-31
 modestbench history list --pattern "**/*string*"
 
 # Filter by tags
-modestbench history list --tags performance,critical
+modestbench history list --tag performance --tag critical
 ```
 
 <AsciinemaPlayer
@@ -561,7 +556,7 @@ View detailed information about a specific benchmark run:
 
 {/* spell-checker: disable */}
 ```bash
-# Human-readable format (synthwave colors with detailed metrics)
+# Human-readable format
 modestbench history show run-2025-10-07-001
 
 # JSON format for parsing
@@ -578,7 +573,7 @@ The show command displays:
 - CPU and Node.js version information
 - Git branch and commit (if in a repository)
 - Task-by-task results with mean, margin of error, ops/sec, and coefficient of variation (CV)
-- File organization with synthwave color scheme
+- File organization
 
 <AsciinemaPlayer
   src="/modestbench/demos/history-show.cast"
@@ -622,7 +617,6 @@ modestbench history compare 5a63ucbo9w 7f2k9x1m3p
 - **Min/Max**: Arrows are dimmed; higher values highlighted
 - **Iterations**: "vs" is dimmed; higher iteration count is bolded
 - **CV**: Coefficient of Variation helps assess measurement consistency (higher = more variable)
-- All metrics use synthwave color scheme for clarity
 
 **JSON Output Structure:**
 
@@ -705,7 +699,7 @@ modestbench history trends --pattern "**/*array*"
   - **High-confidence** (5+ runs, 5%+ slower): Shown with red ▼
   - **Low-confidence** (2-4 runs, 5%+ slower): Shown with yellow ! for user awareness
 - **Most Variable Task**: Distribution histogram shows the task with highest measurement variability (most important to investigate)
-- **Bar Chart**: Uses synthwave colors; empty buckets are omitted for clarity
+- **Bar Chart**: Empty buckets are omitted for clarity
 
 **Regression Detection Logic:**
 
@@ -836,7 +830,7 @@ jobs:
         run: npm ci
 
       - name: Run benchmarks
-        run: modestbench --reporters json
+        run: modestbench --reporter json
 
       - name: Check for regressions
         run: |

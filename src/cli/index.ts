@@ -7,8 +7,6 @@
  * global options, help generation, and dependency injection setup.
  */
 
-import type { Argv } from 'yargs';
-
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import yargs from 'yargs';
@@ -17,13 +15,24 @@ import { hideBin } from 'yargs/helpers';
 import type {
   BenchmarkEngine,
   ConfigurationManager,
+  Engine,
   HistoryStorage,
   ProgressManager,
   ReporterRegistry,
 } from '../types/index.js';
 
 import { bootstrap } from '../bootstrap.js';
+import {
+  ABORT_TIMEOUT,
+  DEFAULT_ENGINE,
+  DEFAULT_REPORTER,
+  Engines,
+  ErrorCodes,
+  ExitCodes,
+  Reporters,
+} from '../constants.js';
 import { AccurateEngine, TinybenchEngine } from '../core/engines/index.js';
+import { isError } from '../errors/base.js';
 import { isModestBenchError, UnknownError } from '../errors/index.js';
 import {
   CsvReporter,
@@ -31,8 +40,11 @@ import {
   JsonReporter,
   SimpleReporter,
 } from '../reporters/index.js';
-import { ExitCodes } from '../types/cli.js';
 // Import commands
+import {
+  handleAnalyzeCommand as analyzeCommand,
+  type AnalyzeOptions,
+} from './commands/analyze.js';
 import {
   handleAnalyzeCommand as handleBaselineAnalyzeCommand,
   handleDeleteCommand as handleBaselineDeleteCommand,
@@ -91,7 +103,7 @@ export const cli = (argv?: string[]): void => {
   setupSignalHandlers(abortController);
   main(argv, abortController).catch((error) => {
     console.error('CLI error:', error);
-    process.exit(ExitCodes.GeneralError);
+    process.exit(ExitCodes.UNKNOWN_ERROR);
   });
 };
 
@@ -108,6 +120,7 @@ export const main = async (
     const cli = yargs(args);
 
     // Configure global options and commands
+
     await cli
       .scriptName('modestbench')
       .option('config', {
@@ -145,6 +158,7 @@ export const main = async (
         defaultDescription: '.',
         description: 'Working directory',
         global: true,
+        normalize: true,
         type: 'string',
       })
       .help()
@@ -152,15 +166,15 @@ export const main = async (
       .version()
       .alias('version', 'V')
       .strict()
-      .demandCommand(1, 'You must specify a command')
+      .demandCommand(1)
       .recommendCommands()
       .completion()
       .wrap(Math.min(120, cli.terminalWidth()))
       .command(
         ['$0 [pattern..]', 'run [pattern..]'],
         'Run benchmark files',
-        (yargs) => {
-          return yargs
+        (yargs) =>
+          yargs
             .positional('pattern', {
               array: true,
               defaultDescription: '(auto-discovered from bench/ directory)',
@@ -173,21 +187,13 @@ export const main = async (
               description: 'Path to configuration file',
               type: 'string',
             })
-            .option('reporters', {
+            .option('reporter', {
               alias: 'r',
-              coerce: (value: string | string[]) => {
-                // Handle comma-separated values
-                if (Array.isArray(value)) {
-                  return value.flatMap((v) =>
-                    v.split(',').map((s) => s.trim()),
-                  );
-                }
-                return value.split(',').map((s) => s.trim());
-              },
-              defaultDescription:
-                RUN_COMMAND_DEFAULTS.reporters.join(', ') || 'human',
+              array: true,
+              choices: Object.values(Reporters).sort(),
+              defaultDescription: DEFAULT_REPORTER,
               description: 'Output reporters to use (human,json,csv)',
-              type: 'array',
+              type: 'string',
             })
             .option('output', {
               alias: 'o',
@@ -195,7 +201,7 @@ export const main = async (
               type: 'string',
             })
             .option('output-file', {
-              alias: 'of',
+              alias: ['of', 'file'],
               description:
                 'Custom filename for reporter output (use with single reporter only)',
               requiresArg: true,
@@ -212,11 +218,12 @@ export const main = async (
               type: 'number',
             })
             .option('warmup', {
-              alias: 'w',
+              alias: ['w', 'warm'],
               description: 'Number of warmup iterations',
               type: 'number',
             })
             .option('limit-by', {
+              alias: ['l', 'limit'],
               choices: ['time', 'iterations', 'any', 'all'],
               description:
                 'How to limit benchmarks: time (time budget), iterations (sample count), any (either threshold), all (both thresholds)',
@@ -229,17 +236,10 @@ export const main = async (
               type: 'boolean',
             })
             .option('exclude', {
-              coerce: (value: string | string[]) => {
-                // Handle comma-separated values
-                if (Array.isArray(value)) {
-                  return value.flatMap((v) =>
-                    v.split(',').map((s) => s.trim()),
-                  );
-                }
-                return value.split(',').map((s) => s.trim());
-              },
+              alias: 'X',
+              array: true,
               description: 'Exclude patterns (comma-separated)',
-              type: 'array',
+              type: 'string',
             })
             .option('timeout', {
               description: 'Timeout per benchmark in milliseconds',
@@ -251,36 +251,22 @@ export const main = async (
               description: 'Minimal output',
               type: 'boolean',
             })
-            .option('tags', {
-              coerce: (value: string | string[]) => {
-                // Handle comma-separated values
-                if (Array.isArray(value)) {
-                  return value.flatMap((v) =>
-                    v.split(',').map((s) => s.trim()),
-                  );
-                }
-                return value.split(',').map((s) => s.trim());
-              },
+            .option('tag', {
+              alias: 't',
+              array: true,
               description: 'Include only benchmarks with any of these tags',
-              type: 'array',
+              type: 'string',
             })
-            .option('exclude-tags', {
-              coerce: (value: string | string[]) => {
-                // Handle comma-separated values
-                if (Array.isArray(value)) {
-                  return value.flatMap((v) =>
-                    v.split(',').map((s) => s.trim()),
-                  );
-                }
-                return value.split(',').map((s) => s.trim());
-              },
+            .option('exclude-tag', {
+              alias: 'T',
+              array: true,
               description: 'Exclude benchmarks with any of these tags',
-              type: 'array',
+              type: 'string',
             })
             .option('engine', {
               alias: 'e',
-              choices: ['tinybench', 'accurate'] as const,
-              defaultDescription: 'tinybench',
+              choices: Object.values(Engines),
+              defaultDescription: DEFAULT_ENGINE,
               description:
                 'Benchmark engine: tinybench (default) or accurate (requires --allow-natives-syntax)',
               type: 'string',
@@ -292,12 +278,23 @@ export const main = async (
               ['$0 run "src/**/*.bench.js"', 'Run specific glob pattern'],
               ['$0 run file1.bench.js file2.bench.js', 'Run specific files'],
               ['$0 run benchmarks/ tests/perf/', 'Run multiple directories'],
-              ['$0 run --reporters json,csv', 'Use multiple reporters'],
+              ['$0 run -r json -r csv', 'Use multiple reporters'],
               ['$0 run --iterations 1000', 'Set iteration count'],
               ['$0 run --engine accurate', 'Use high-accuracy engine'],
               ['$0 run --bail', 'Stop on first failure'],
-            ]);
-        },
+            ])
+            .check((argv) => {
+              if (
+                argv.reporter &&
+                argv.reporter.length > 1 &&
+                argv['output-file']
+              ) {
+                throw new Error(
+                  '--output-file can only be used with a single reporter. Use --output <dir> for multiple reporters.',
+                );
+              }
+              return true;
+            }),
         async (argv) => {
           const context = await createCliContext(
             argv,
@@ -310,7 +307,7 @@ export const main = async (
             cwd: argv.cwd,
             engine: argv.engine,
             exclude: argv.exclude,
-            excludeTags: argv['exclude-tags'],
+            excludeTags: argv['exclude-tag'],
             iterations: argv.iterations,
             json: argv.json,
             noColor: argv.noColor,
@@ -319,8 +316,8 @@ export const main = async (
             pattern: argv.pattern,
             progress: argv.progress,
             quiet: argv.quiet,
-            reporters: argv.reporters,
-            tags: argv.tags,
+            reporters: argv.reporter,
+            tags: argv.tag,
             time: argv.time,
             timeout: argv.timeout,
             verbose: argv.verbose,
@@ -329,13 +326,13 @@ export const main = async (
           process.exit(exitCode);
         },
       )
-      .command('history', 'View and manage benchmark history', (yargs) => {
-        return yargs
+      .command('history', 'View and manage benchmark history', (yargs) =>
+        yargs
           .command(
             'list',
             'List recent benchmark runs',
-            (yargs) => {
-              return yargs
+            (yargs) =>
+              yargs
                 .option('since', {
                   description:
                     'Show runs since date (ISO 8601 or relative like "1 week ago")',
@@ -350,9 +347,11 @@ export const main = async (
                   description: 'Filter by benchmark name pattern',
                   type: 'string',
                 })
-                .option('tags', {
+                .option('tag', {
+                  alias: 't',
+                  array: true,
                   description: 'Filter by tags (comma-separated)',
-                  type: 'array',
+                  type: 'string',
                 })
                 .option('limit', {
                   defaultDescription: '10',
@@ -373,8 +372,7 @@ export const main = async (
                   ],
                   ['$0 history list --limit 20', 'List 20 most recent runs'],
                   ['$0 history list --format json', 'List runs in JSON format'],
-                ]);
-            },
+                ]),
             async (argv) => {
               const context = await createCliContext(argv, abortController!);
               const exitCode = await handleListCommand(context, {
@@ -382,9 +380,8 @@ export const main = async (
                 format: argv.format,
                 limit: argv.limit,
                 pattern: argv.pattern,
-                quiet: Boolean(argv.quiet),
                 since: argv.since,
-                tags: argv.tags as string[] | undefined,
+                tags: argv.tag,
                 until: argv.until,
                 verbose: argv.verbose,
               });
@@ -394,9 +391,10 @@ export const main = async (
           .command(
             'show <run-id>',
             'Show detailed results for a specific run',
-            (yargs) => {
-              return yargs
+            (yargs) =>
+              yargs
                 .positional('run-id', {
+                  demandOption: true,
                   describe: 'ID of the benchmark run to show',
                   type: 'string',
                 })
@@ -415,15 +413,13 @@ export const main = async (
                     '$0 history show abc123 --format json',
                     'Show run in JSON format',
                   ],
-                ]);
-            },
+                ]),
             async (argv) => {
               const context = await createCliContext(argv, abortController!);
               const exitCode = await handleShowCommand(context, {
                 cwd: argv.cwd,
                 format: argv.format,
-                quiet: Boolean(argv.quiet),
-                runId: String(argv['run-id']),
+                runId: argv['run-id'],
                 verbose: argv.verbose,
               });
               process.exit(exitCode);
@@ -432,13 +428,15 @@ export const main = async (
           .command(
             'compare <run-id1> <run-id2>',
             'Compare two benchmark runs',
-            (yargs) => {
-              return yargs
+            (yargs) =>
+              yargs
                 .positional('run-id1', {
+                  demandOption: true,
                   describe: 'ID of the first benchmark run',
                   type: 'string',
                 })
                 .positional('run-id2', {
+                  demandOption: true,
                   describe: 'ID of the second benchmark run',
                   type: 'string',
                 })
@@ -454,16 +452,14 @@ export const main = async (
                     '$0 history compare abc123 def456 --format json',
                     'Compare in JSON format',
                   ],
-                ]);
-            },
+                ]),
             async (argv) => {
               const context = await createCliContext(argv, abortController!);
               const exitCode = await handleCompareCommand(context, {
                 cwd: argv.cwd,
                 format: argv.format,
-                quiet: Boolean(argv.quiet),
-                runId1: String(argv['run-id1']),
-                runId2: String(argv['run-id2']),
+                runId1: argv['run-id1'],
+                runId2: argv['run-id2'],
                 verbose: argv.verbose,
               });
               process.exit(exitCode);
@@ -472,8 +468,8 @@ export const main = async (
           .command(
             'trends [pattern]',
             'Show performance trends over time',
-            (yargs) => {
-              return yargs
+            (yargs) =>
+              yargs
                 .positional('pattern', {
                   describe: 'Filter by benchmark name pattern',
                   type: 'string',
@@ -488,9 +484,11 @@ export const main = async (
                     'Show trends until date (ISO 8601 or relative like "1 day ago")',
                   type: 'string',
                 })
-                .option('tags', {
+                .option('tag', {
+                  alias: 't',
+                  array: true,
                   description: 'Filter by tags (comma-separated)',
-                  type: 'array',
+                  type: 'string',
                 })
                 .option('limit', {
                   description: 'Maximum number of runs to analyze',
@@ -525,19 +523,17 @@ export const main = async (
                     '$0 history trends --format json',
                     'Output trends in JSON format',
                   ],
-                ]);
-            },
+                ]),
             async (argv) => {
               const context = await createCliContext(argv, abortController!);
               const exitCode = await handleTrendsCommand(context, {
-                all: Boolean(argv.all),
+                all: argv.all,
                 cwd: argv.cwd,
                 format: argv.format,
                 limit: argv.limit,
                 pattern: argv.pattern,
-                quiet: Boolean(argv.quiet),
                 since: argv.since,
-                tags: argv.tags as string[] | undefined,
+                tags: argv.tag,
                 until: argv.until,
                 verbose: argv.verbose,
               });
@@ -547,8 +543,8 @@ export const main = async (
           .command(
             'clean',
             'Clean up old benchmark history',
-            (yargs) => {
-              return yargs
+            (yargs) =>
+              yargs
                 .option('max-age', {
                   description: 'Remove runs older than this many days',
                   type: 'number',
@@ -561,9 +557,14 @@ export const main = async (
                   description: 'Keep history under this size in bytes',
                   type: 'number',
                 })
-                .option('confirm', {
-                  defaultDescription: 'false',
+                .option('yes', {
+                  alias: 'y',
                   description: 'Confirm cleanup without prompting',
+                  type: 'boolean',
+                })
+                .option('quiet', {
+                  default: false,
+                  description: 'Minimal output',
                   type: 'boolean',
                 })
                 .check((argv) => {
@@ -591,17 +592,16 @@ export const main = async (
                     '$0 history clean --max-size 10485760',
                     'Keep history under 10MB',
                   ],
-                ]);
-            },
+                ]),
             async (argv) => {
               const context = await createCliContext(argv, abortController!);
               const exitCode = await handleCleanCommand(context, {
-                confirm: argv.confirm,
+                confirm: argv.yes,
                 cwd: argv.cwd,
                 maxAge: argv['max-age'],
                 maxRuns: argv['max-runs'],
                 maxSize: argv['max-size'],
-                quiet: Boolean(argv.quiet),
+                quiet: argv.quiet,
                 verbose: argv.verbose,
               });
               process.exit(exitCode);
@@ -610,8 +610,8 @@ export const main = async (
           .command(
             'export',
             'Export benchmark history to a file',
-            (yargs) => {
-              return yargs
+            (yargs) =>
+              yargs
                 .option('format', {
                   choices: ['json', 'csv'] as const,
                   defaultDescription: 'json' as const,
@@ -645,8 +645,7 @@ export const main = async (
                     '$0 history export -o recent.json --since "1 week ago"',
                     'Export recent runs',
                   ],
-                ]);
-            },
+                ]),
             async (argv) => {
               const context = await createCliContext(argv, abortController!);
               const exitCode = await handleExportCommand(context, {
@@ -658,7 +657,7 @@ export const main = async (
                 until: argv.until,
                 verbose: argv.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
           )
           .demandCommand(1, 'You must specify a history subcommand')
@@ -670,8 +669,8 @@ export const main = async (
             ['$0 history trends', 'Show performance trends'],
             ['$0 history clean --max-runs 50', 'Keep only latest 50 runs'],
             ['$0 history export -o data.json', 'Export history'],
-          ]);
-      })
+          ]),
+      )
       .command('baseline', 'Manage performance baselines', (yargs) => {
         return yargs
           .command(
@@ -920,33 +919,96 @@ export const main = async (
             cwd: argv.cwd,
             examples: argv.examples,
             force: argv.force,
-            quiet: Boolean(argv.quiet),
+            quiet: argv.quiet,
             type: argv.type,
             verbose: argv.verbose,
             yes: argv.yes,
           });
-          process.exit(exitCode);
+          process.exitCode = exitCode;
         },
       )
-      .fail((msg: string, err: Error, yargsInstance: Argv) => {
+      .command(
+        ['analyze [command]', 'profile [command]'],
+        'Analyze code execution and identify benchmark candidates',
+        (yargs) => {
+          return yargs
+            .positional('command', {
+              description: 'Command to analyze (e.g., "npm test")',
+              type: 'string',
+            })
+            .option('input', {
+              alias: 'i',
+              description: 'Path to existing *.cpuprofile file',
+              type: 'string',
+            })
+            .option('filter-file', {
+              description: 'Filter functions by file glob pattern',
+              type: 'string',
+            })
+            .option('min-percent', {
+              alias: ['m', 'min'],
+              default: 0.5,
+              description: 'Minimum execution percentage to show',
+              type: 'number',
+            })
+            .option('top', {
+              alias: 'n',
+              default: 25,
+              description: 'Number of top functions to show',
+              type: 'number',
+            })
+            .option('group-by-file', {
+              default: false,
+              description: 'Group results by file',
+              type: 'boolean',
+            })
+            .check((argv) => {
+              if (!argv.command && !argv.input) {
+                throw new Error('Either [command] or --input must be provided');
+              }
+              return true;
+            });
+        },
+        async (argv) => {
+          // Context not needed for analyze command currently
+          const context = {} as CliContext;
+
+          const options: AnalyzeOptions = {
+            color: !argv.noColor,
+            command: argv.command,
+            cwd: argv.cwd || process.cwd(),
+            filterFile: argv.filterFile,
+            groupByFile: argv.groupByFile,
+            input: argv.input,
+            minPercent: argv.minPercent,
+            top: argv.top,
+          };
+
+          process.exitCode = await analyzeCommand(context, options);
+        },
+      )
+      .fail((msg, err, yargs) => {
         if (err) {
           console.error('Error:', err.message);
           if (process.env.DEBUG) {
             console.error(err.stack);
           }
           // Show help for file discovery errors (similar to usage errors)
-          if (err.name === 'FileDiscoveryError') {
+          if (
+            isModestBenchError(err) &&
+            err.code === ErrorCodes.FILE_DISCOVERY_FAILED
+          ) {
             console.error();
-            yargsInstance.showHelp();
-            process.exit(ExitCodes.FileDiscoveryError);
+            yargs.showHelp();
+            process.exit(ExitCodes.DISCOVERY_ERROR);
           }
-          process.exit(ExitCodes.ExecutionError);
+          process.exit(ExitCodes.RUNTIME_ERROR);
         } else {
           // Show help for usage errors (unknown arguments, etc.)
           console.error(msg);
           console.error();
-          yargsInstance.showHelp();
-          process.exit(ExitCodes.ConfigurationError);
+          yargs.showHelp();
+          process.exit(ExitCodes.CONFIG_ERROR);
         }
       })
       .parse();
@@ -958,7 +1020,7 @@ export const main = async (
     if (process.env.DEBUG) {
       console.error(error);
     }
-    process.exit(ExitCodes.GeneralError);
+    process.exit(ExitCodes.UNKNOWN_ERROR);
   }
 };
 
@@ -968,20 +1030,20 @@ export const main = async (
 const createCliContext = async (
   options: GlobalOptions,
   abortController: AbortController,
-  engineType: 'accurate' | 'tinybench' = 'tinybench',
+  engineType: Engine = DEFAULT_ENGINE,
 ): Promise<CliContext> => {
   try {
     const dependencies = bootstrap();
 
     // Select engine based on type
     const engine =
-      engineType === 'accurate'
+      engineType === Engines.ACCURATE
         ? new AccurateEngine(dependencies)
         : new TinybenchEngine(dependencies);
 
     // Register built-in reporters
     engine.registerReporter(
-      'human',
+      Reporters.HUMAN,
       new HumanReporter({
         color: !options.noColor,
         verbose: options.verbose,
@@ -1024,7 +1086,7 @@ const createCliContext = async (
       'Failed to initialize ModestBench:',
       error instanceof Error ? error.message : String(error),
     );
-    process.exit(ExitCodes.ConfigurationError);
+    process.exit(ExitCodes.CONFIG_ERROR);
   }
 };
 
@@ -1034,7 +1096,7 @@ const createCliContext = async (
 const setupSignalHandlers = (abortController: AbortController): void => {
   let abortRequested = false;
 
-  const handleSignal = (signal: string) => {
+  const handleSignal = (signal: NodeJS.Signals) => {
     if (abortRequested) {
       // Second signal, force exit
       console.log(`\nReceived ${signal} again, forcing exit...`);
@@ -1049,36 +1111,29 @@ const setupSignalHandlers = (abortController: AbortController): void => {
     setTimeout(() => {
       console.log('\nBenchmark aborted.');
       process.exit(computeExitCode(signal));
-    }, 100);
+    }, ABORT_TIMEOUT);
   };
 
-  process.on('SIGINT', () => handleSignal('SIGINT'));
-  process.on('SIGQUIT', () => handleSignal('SIGQUIT'));
-  process.on('SIGTERM', () => handleSignal('SIGTERM'));
-
-  process.once('uncaughtException', (error) => {
-    // Wrap non-ModestBench errors with UnknownError
-    const wrappedError: Error = isModestBenchError(error)
-      ? error
-      : new UnknownError(
-          error instanceof Error ? error.message : String(error),
-          { cause: error },
-        );
-    console.error(wrappedError.toString());
-    process.exit(ExitCodes.ExecutionError);
-  });
-
-  process.once('unhandledRejection', (reason) => {
-    // Wrap non-ModestBench errors with UnknownError
-    const wrappedError: Error = isModestBenchError(reason)
-      ? (reason as Error)
-      : new UnknownError(
-          reason instanceof Error ? reason.message : String(reason),
-          { cause: reason },
-        );
-    console.error(wrappedError.toString());
-    process.exit(ExitCodes.ExecutionError);
-  });
+  process
+    .once('SIGINT', handleSignal)
+    .once('SIGQUIT', handleSignal)
+    .once('SIGTERM', handleSignal)
+    .once('uncaughtException', (error) => {
+      // Wrap non-ModestBench errors with UnknownError
+      const wrappedError: Error = isModestBenchError(error)
+        ? error
+        : new UnknownError(error.message, { cause: error });
+      console.error(`${wrappedError}`);
+      process.exit(ExitCodes.RUNTIME_ERROR);
+    })
+    .once('unhandledRejection', (reason) => {
+      const wrappedError = new UnknownError(
+        isError(reason) ? reason.message : String(reason),
+        { cause: reason },
+      );
+      console.error(`${wrappedError}`);
+      process.exit(ExitCodes.RUNTIME_ERROR);
+    });
 };
 
 // Run CLI if this file is executed directly
@@ -1106,6 +1161,6 @@ try {
  * @param signal - The signal that caused the exit
  * @returns The exit code
  */
-const computeExitCode = (signal: string): number => {
+const computeExitCode = (signal: NodeJS.Signals): number => {
   return 128 + (signal === 'SIGINT' ? 2 : signal === 'SIGQUIT' ? 3 : 15);
 };

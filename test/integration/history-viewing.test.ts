@@ -104,8 +104,10 @@ describe('Historical results viewing and trends', () => {
       const result = await runCommand([
         'history',
         'list',
-        '--tags',
-        'performance,regression',
+        '--tag',
+        'performance',
+        '--tag',
+        'regression',
       ]);
 
       // Should filter by tags

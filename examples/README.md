@@ -15,6 +15,8 @@ examples/
 │   └── check-performance.js       # Performance regression detection
 ├── .github/workflows/            # CI/CD integration
 │   └── benchmarks.yml             # GitHub Actions workflow
+├── profiling-demo.js             # Profile command demo with hot code paths
+├── profiling-example.md          # Profiling command usage guide
 ├── modestbench.config.json       # Example JSON configuration
 ├── modestbench.config.ts          # Example TypeScript configuration
 └── README.md                     # This file
@@ -48,20 +50,32 @@ modestbench run benchmarks/async-operations.bench.js
 modestbench run benchmarks/performance-tips.bench.js
 ```
 
-### 3. Try Different Output Formats
+### 3. Analyze Code to Find Benchmark Candidates
+
+```bash
+# Run the profiling demo to see hot code paths
+modestbench analyze "node examples/profiling-demo.js"
+
+# Analyze your test suite
+modestbench analyze "npm test"
+
+# See profiling-example.md for detailed usage
+```
+
+### 4. Try Different Output Formats
 
 ```bash
 # Human-readable output (default)
-modestbench run --reporters human
+modestbench run --reporter human
 
 # JSON output
-modestbench run --reporters json
+modestbench run --reporter json
 
 # CSV output
-modestbench run --reporters csv
+modestbench run --reporter csv
 
 # Multiple reporters
-modestbench run --reporters human,json,csv --output ./results
+modestbench run --reporter human --reporter json --reporter csv --output ./results
 ```
 
 ## Example Benchmark Files

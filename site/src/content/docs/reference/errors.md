@@ -805,10 +805,10 @@ engine.registerReporter('custom-2', new MyReporter());
 
 ```bash
 # ❌ Unknown reporter
-$ modestbench run --reporters unknownreporter
+$ modestbench run --reporter unknownreporter
 
 # ✅ Valid reporter
-$ modestbench run --reporters json,csv
+$ modestbench run --reporter json --reporter csv
 ```
 
 ---

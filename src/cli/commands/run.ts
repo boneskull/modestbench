@@ -162,7 +162,7 @@ export const handleRunCommand = async (
           console.error(`  ${error.code}: ${error.message}`);
         }
       }
-      return ExitCodes.ValidationError;
+      return ExitCodes.VALIDATION_ERROR;
     }
 
     // Step 5: Execution phase
@@ -217,7 +217,7 @@ export const handleRunCommand = async (
           }
         }
       }
-      return ExitCodes.GeneralError;
+      return ExitCodes.UNKNOWN_ERROR;
     }
 
     // Re-throw CLI errors so yargs fail handler can show help
@@ -239,21 +239,21 @@ export const handleRunCommand = async (
       errorCode === ErrorCodes.CONFIG_VALIDATION_FAILED ||
       errorCode === ErrorCodes.CONFIG_UNSUPPORTED_FORMAT
     ) {
-      return ExitCodes.ConfigurationError;
+      return ExitCodes.CONFIG_ERROR;
     }
 
     if (errorCode === ErrorCodes.FILE_DISCOVERY_FAILED) {
-      return ExitCodes.FileDiscoveryError;
+      return ExitCodes.DISCOVERY_ERROR;
     }
 
     // Fallback: check error message for cases where proper error types aren't thrown yet
     if (isError(error)) {
       if (error.message.includes('No benchmark files found')) {
-        return ExitCodes.FileDiscoveryError;
+        return ExitCodes.DISCOVERY_ERROR;
       }
     }
 
-    return ExitCodes.GeneralError;
+    return ExitCodes.BENCHMARK_FAILURES;
   }
 };
 
@@ -275,11 +275,11 @@ const handleResults = (
   if (executionResult && executionResult.summary) {
     // Return error if there are failed tasks OR file-level errors
     return executionResult.summary.failedTasks > 0 || hasFileErrors
-      ? ExitCodes.GeneralError
-      : ExitCodes.Success;
+      ? ExitCodes.BENCHMARK_FAILURES
+      : ExitCodes.SUCCESS;
   }
 
-  return ExitCodes.Success;
+  return ExitCodes.SUCCESS;
 };
 
 /**
