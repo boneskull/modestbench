@@ -246,6 +246,16 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
             currentFile: filePath,
             filesCompleted: fileResults.length,
           });
+
+          // Check for bail: stop execution if any task failed
+          if (mergedConfig.bail) {
+            const hasFailedTask = fileResult.suites.some((suite) =>
+              suite.tasks.some((task) => task.error),
+            );
+            if (hasFailedTask) {
+              break;
+            }
+          }
         } catch (error) {
           const fileError =
             error instanceof Error ? error : new Error(String(error));
@@ -267,6 +277,11 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
 
           // Call reporter onFileEnd for error case
           await this.callReporters(reporters, 'onFileEnd', errorResult);
+
+          // Check bail flag for file-level errors
+          if (mergedConfig.bail) {
+            break;
+          }
         }
       }
 
