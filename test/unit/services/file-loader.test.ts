@@ -132,12 +132,12 @@ describe('BenchmarkFileLoader - path resolution', () => {
       try {
         const files = await loader.discover([]);
 
-        // Should find: top.bench.js and bench/inside.bench.js
-        // Should NOT find: bench/nested/deep.bench.js or other/other.bench.js
+        // Should find: bench/inside.bench.js and bench/nested/deep.bench.js (recursive bench/**)
+        // Should NOT find: top.bench.js (top-level) or other/other.bench.js (different directory)
         expect(files.length, 'to equal', 2);
         expect(
           files.some((f) => f.includes('top.bench.js')),
-          'to be truthy',
+          'to be falsy',
         );
         expect(
           files.some((f) => f.includes('inside.bench.js')),
@@ -145,7 +145,7 @@ describe('BenchmarkFileLoader - path resolution', () => {
         );
         expect(
           files.some((f) => f.includes('deep.bench.js')),
-          'to be falsy',
+          'to be truthy',
         );
       } finally {
         process.chdir(originalCwd);

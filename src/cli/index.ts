@@ -31,6 +31,7 @@ import {
   JsonReporter,
   SimpleReporter,
 } from '../reporters/index.js';
+import { ExitCodes } from '../types/cli.js';
 // Import commands
 import {
   handleAnalyzeCommand as handleBaselineAnalyzeCommand,
@@ -83,19 +84,6 @@ interface GlobalOptions {
 }
 
 /**
- * Exit codes for the CLI
- */
-export const ExitCodes = {
-  BENCHMARK_FAILURES: 1,
-  CONFIG_ERROR: 2,
-  DISCOVERY_ERROR: 3,
-  RUNTIME_ERROR: 5,
-  SUCCESS: 0,
-  UNKNOWN_ERROR: 99,
-  VALIDATION_ERROR: 4,
-} as const;
-
-/**
  * Initialize and run the CLI
  */
 export const cli = (argv?: string[]): void => {
@@ -103,7 +91,7 @@ export const cli = (argv?: string[]): void => {
   setupSignalHandlers(abortController);
   main(argv, abortController).catch((error) => {
     console.error('CLI error:', error);
-    process.exit(ExitCodes.UNKNOWN_ERROR);
+    process.exit(ExitCodes.GeneralError);
   });
 };
 
@@ -950,15 +938,15 @@ export const main = async (
           if (err.name === 'FileDiscoveryError') {
             console.error();
             yargsInstance.showHelp();
-            process.exit(ExitCodes.DISCOVERY_ERROR);
+            process.exit(ExitCodes.FileDiscoveryError);
           }
-          process.exit(ExitCodes.RUNTIME_ERROR);
+          process.exit(ExitCodes.ExecutionError);
         } else {
           // Show help for usage errors (unknown arguments, etc.)
           console.error(msg);
           console.error();
           yargsInstance.showHelp();
-          process.exit(ExitCodes.CONFIG_ERROR);
+          process.exit(ExitCodes.ConfigurationError);
         }
       })
       .parse();
@@ -970,7 +958,7 @@ export const main = async (
     if (process.env.DEBUG) {
       console.error(error);
     }
-    process.exit(ExitCodes.UNKNOWN_ERROR);
+    process.exit(ExitCodes.GeneralError);
   }
 };
 
@@ -1036,7 +1024,7 @@ const createCliContext = async (
       'Failed to initialize ModestBench:',
       error instanceof Error ? error.message : String(error),
     );
-    process.exit(ExitCodes.CONFIG_ERROR);
+    process.exit(ExitCodes.ConfigurationError);
   }
 };
 
@@ -1077,7 +1065,7 @@ const setupSignalHandlers = (abortController: AbortController): void => {
           { cause: error },
         );
     console.error(wrappedError.toString());
-    process.exit(ExitCodes.RUNTIME_ERROR);
+    process.exit(ExitCodes.ExecutionError);
   });
 
   process.once('unhandledRejection', (reason) => {
@@ -1089,7 +1077,7 @@ const setupSignalHandlers = (abortController: AbortController): void => {
           { cause: reason },
         );
     console.error(wrappedError.toString());
-    process.exit(ExitCodes.RUNTIME_ERROR);
+    process.exit(ExitCodes.ExecutionError);
   });
 };
 
