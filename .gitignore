@@ -158,6 +158,5 @@ site/favicon.svg
 public/logo-512.png
 public/fonts/
 .astro/
-worktrees/
+worktrees
 *.cpuprofile
-worktrees/
