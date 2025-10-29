@@ -181,21 +181,21 @@
     "*.{ts,cts,js,cjs,yml,json5}": [
       "eslint --fix",
       "prettier --write",
-      "cspell"
+      "cspell lint --no-must-find-files"
     ],
     "**/!(package-lock).json": [
       "eslint --fix",
       "prettier --write",
-      "cspell"
+      "cspell lint --no-must-find-files"
     ],
     "*.md": [
       "markdownlint-cli2 --fix",
       "prettier --write",
-      "cspell"
+      "cspell lint --no-must-find-files"
     ],
     "*.mdx": [
       "prettier --write",
-      "cspell"
+      "cspell lint --no-must-find-files"
     ]
   },
   "prettier": {
