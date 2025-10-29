@@ -147,7 +147,8 @@
     "ignoreDependencies": [
       "@types/wallabyjs",
       "markdownlint-cli2-formatter-pretty",
-      "asciinema-player"
+      "asciinema-player",
+      "@astrojs/mdx"
     ],
     "ignore": [
       ".wallaby.js",
