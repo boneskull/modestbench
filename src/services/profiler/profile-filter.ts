@@ -60,6 +60,9 @@ export const filterProfile = (
     return true;
   });
 
+  // Save count of user functions before percentage filtering
+  const totalUserFunctions = filtered.length;
+
   // Apply percentage threshold
   const minPercent = config.minExecutionPercent ?? 0.5;
   filtered = filtered.filter((fn) => fn.percentage >= minPercent);
@@ -80,8 +83,9 @@ export const filterProfile = (
   return {
     functions: filtered,
     groupedByFile,
+    minExecutionPercent: minPercent,
     summary: data.summary,
-    totalFiltered: data.functions.length,
+    totalFiltered: totalUserFunctions,
     totalShown: filtered.length,
     totalTicks: data.totalTicks,
   };

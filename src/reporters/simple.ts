@@ -329,8 +329,11 @@ export class SimpleReporter extends BaseReporter {
       return;
     }
 
-    // Buffer the result for later printing with proper alignment
+    // Always buffer the result for suite summary (including aborted tasks)
     this.suiteResults.push(result);
+
+    // Note: Aborted tasks are still printed in simple reporter for completeness
+    // but they'll have zero stats
   }
 
   onTaskStart(task: string): void {
@@ -397,7 +400,7 @@ export class SimpleReporter extends BaseReporter {
 
       const duration = BaseReporter.formatDuration(result.mean * 1e9);
       const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
-      const rme = BaseReporter.formatPercentage(result.marginOfError * 100);
+      const rme = BaseReporter.formatPercentage(result.marginOfError); // already a percentage
 
       return {
         durationLen: duration.length,

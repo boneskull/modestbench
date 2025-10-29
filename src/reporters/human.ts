@@ -27,6 +27,8 @@ export class HumanReporter extends BaseReporter {
 
   private currentSuite = '';
 
+  private currentSuiteMaxNameLen = 0; // Track max name length for current suite alignment
+
   private failures: Array<{
     error: string;
     file: string;
@@ -35,6 +37,8 @@ export class HumanReporter extends BaseReporter {
   }> = [];
 
   private lastProgressLine = '';
+
+  private maxTimePadWidth = 0; // Track maximum time padding width to prevent jitter
 
   private progressWindowActive = false; // Track if progress window is rendered
 
@@ -164,12 +168,16 @@ export class HumanReporter extends BaseReporter {
     let totalSuites = 0;
     let totalPassed = 0;
     let totalFailed = 0;
+    let totalAborted = 0;
 
     for (const file of run.files) {
       totalSuites += file.suites.length;
       for (const suite of file.suites) {
-        totalPassed += suite.tasks.filter((t: TaskResult) => !t.error).length;
+        totalPassed += suite.tasks.filter(
+          (t: TaskResult) => !t.error && !t.aborted,
+        ).length;
         totalFailed += suite.tasks.filter((t: TaskResult) => t.error).length;
+        totalAborted += suite.tasks.filter((t: TaskResult) => t.aborted).length;
       }
     }
 
@@ -185,15 +193,24 @@ export class HumanReporter extends BaseReporter {
       `${this.colorize('brightBlue', '  Suites:')} ${this.colorize('brightWhite', String(totalSuites))}`,
     );
     this.printLine(
-      `${this.colorize('brightBlue', '  Tasks:')} ${this.colorize('brightWhite', String(totalPassed + totalFailed))}`,
+      `${this.colorize('brightBlue', '  Tasks:')} ${this.colorize('brightWhite', String(totalPassed + totalFailed + totalAborted))}`,
     );
-    if (totalFailed > 0) {
-      this.printLine(
-        `${this.colorize('brightRed', ansiChars.cross + ' Failed:')} ${this.colorize('brightWhite', String(totalFailed))}`,
-      );
-      this.printLine(
-        `${this.colorize('brightCyan', ansiChars.checkmark + ' Passed:')} ${this.colorize('brightWhite', String(totalPassed))}`,
-      );
+    if (totalFailed > 0 || totalAborted > 0) {
+      if (totalFailed > 0) {
+        this.printLine(
+          `${this.colorize('brightRed', ansiChars.cross + ' Failed:')} ${this.colorize('brightWhite', String(totalFailed))}`,
+        );
+      }
+      if (totalPassed > 0) {
+        this.printLine(
+          `${this.colorize('brightCyan', ansiChars.checkmark + ' Passed:')} ${this.colorize('brightWhite', String(totalPassed))}`,
+        );
+      }
+      if (totalAborted > 0) {
+        this.printLine(
+          `${this.colorize('brightYellow', ansiChars.approx + ' Aborted:')} ${this.colorize('brightWhite', String(totalAborted))}`,
+        );
+      }
     } else {
       this.printLine(
         `${this.colorize('brightCyan', ansiChars.checkmark + ' All tasks passed:')} ${this.colorize('brightWhite', String(totalPassed))}`,
@@ -222,7 +239,8 @@ export class HumanReporter extends BaseReporter {
           this.printLine();
         }
       }
-    } else {
+    } else if (totalAborted === 0) {
+      // Only show "Rad" if no failures AND no aborts
       const successMessage = `${this.colorize('brightMagenta', 'Rad. ☮')}`;
       this.printLine(successMessage);
     }
@@ -300,7 +318,8 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    const { elapsed, percentage, tasksCompleted, totalTasks } = state;
+    const { currentTask, elapsed, percentage, tasksCompleted, totalTasks } =
+      state;
 
     // Pad task counts for alignment
     const totalTasksWidth = String(totalTasks).length;
@@ -315,7 +334,7 @@ export class HumanReporter extends BaseReporter {
 
     // Calculate ETA if we have completed tasks and determine padding width
     let etaStr = '';
-    let padWidth = elapsedStrRaw.length;
+    let padWidth = Math.max(this.maxTimePadWidth, elapsedStrRaw.length);
     if (tasksCompleted > 0) {
       const avgTimePerTask = elapsed / tasksCompleted;
       const remainingTasks = totalTasks - tasksCompleted;
@@ -323,14 +342,27 @@ export class HumanReporter extends BaseReporter {
       const etaSeconds = Math.round(etaMs / 1000);
       const etaTimeStr = this.formatTimeRemaining(etaSeconds);
       padWidth = Math.max(padWidth, etaTimeStr.length);
-      etaStr = ` ${this.colorize('dim', '|')} ${this.colorize('dim', 'ETA:')} ${this.colorize('brightBlue', etaTimeStr)}`;
+      etaStr = ` ${this.colorize('gray', '|')} ${this.colorize('gray', 'ETA:')} ${this.colorize('brightBlue', etaTimeStr)}`;
     }
 
+    // Remember the maximum width we've ever used to prevent jitter
+    this.maxTimePadWidth = Math.max(this.maxTimePadWidth, padWidth);
+
     // Pad elapsed time to match the longest time string
-    const elapsedStr = elapsedStrRaw.padStart(padWidth, ' ');
+    const elapsedStr = elapsedStrRaw.padStart(this.maxTimePadWidth, ' ');
 
     const roundedPercentage = percentage.toFixed(2);
-    const line = `${this.colorize('brightCyan', ansiChars.approx)} ${this.colorize('white', paddedTasksCompleted)}${this.colorize('dim', '/')}${this.colorize('white', String(totalTasks))} ${this.colorize('dim', 'tasks')} ${this.colorize('dim', '(')}${this.colorize('brightBlue', roundedPercentage + '%')}${this.colorize('dim', ')')} ${this.colorize('dim', '|')} ${this.colorize('dim', 'Elapsed:')} ${this.colorize('cyan', elapsedStr)}${etaStr}`;
+
+    // Build progress line with current task if available
+    let line = `${this.colorize('brightCyan', ansiChars.approx)} ${this.colorize('white', paddedTasksCompleted)}${this.colorize('gray', '/')}${this.colorize('white', String(totalTasks))} ${this.colorize('gray', 'tasks')} ${this.colorize('gray', '(')}${this.colorize('brightBlue', roundedPercentage + '%')}${this.colorize('gray', ')')} ${this.colorize('gray', '|')} ${this.colorize('gray', 'Elapsed:')} ${this.colorize('cyan', elapsedStr)}${etaStr}`;
+
+    if (currentTask) {
+      const truncatedTask =
+        currentTask.length > 60
+          ? currentTask.substring(0, 57) + '...'
+          : currentTask;
+      line += ` ${this.colorize('gray', '|')} ${this.colorize('white', truncatedTask)}`;
+    }
 
     this.lastProgressLine = line;
     this.renderProgressWindow();
@@ -340,6 +372,7 @@ export class HumanReporter extends BaseReporter {
     this.startTime = Date.now();
     this.failures = []; // Reset failures for new run
     this.lastProgressLine = ''; // Reset for new run
+    this.maxTimePadWidth = 0; // Reset time padding width for new run
 
     if (this.quiet) {
       return;
@@ -395,27 +428,68 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    // Print all buffered task results with aligned columns
-    this.printAlignedSuiteResults();
+    // Tasks are printed immediately in onTaskResult, so just print suite summary
 
     // Skip displaying summary for the implicit "default" suite
     if (result.name === 'default') {
       return;
     }
 
-    const passed = result.tasks.filter((t) => !t.error).length;
+    const passed = result.tasks.filter((t) => !t.error && !t.aborted).length;
     const failed = result.tasks.filter((t) => t.error).length;
+    const aborted = result.tasks.filter((t) => t.aborted).length;
+    const durationStr = BaseReporter.formatDuration(result.duration * 1000000); // ms to ns
+
+    // Build summary parts
+    const parts: string[] = [];
 
     if (failed > 0) {
-      this.printLine(
-        `  ${this.colorize('red', `${ansiChars.cross} ${failed} failed`)}, ${this.colorize('green', `${passed} passed`)}`,
-      );
+      parts.push(this.colorize('red', `${ansiChars.cross} ${failed} failed`));
+    }
+    if (passed > 0) {
+      parts.push(this.colorize('green', `${passed} passed`));
+    }
+    if (aborted > 0) {
+      parts.push(this.colorize('brightYellow', `${aborted} aborted`));
+    }
+
+    const summary = parts.join(', ');
+    const timeInfo = `${this.colorize('gray', 'in')} ${this.colorize('cyan', durationStr)}`;
+
+    if (failed > 0 || aborted > 0) {
+      this.printLine(`  ${summary} ${timeInfo}`);
     } else {
       this.printLine(
-        `  ${this.colorize('magenta', ansiChars.checkmark)} ${this.colorize('bold', this.colorize('brightWhite', `${passed}`))} ${this.colorize('brightWhite', `${HumanReporter.pluralize('task', passed)} passed`)}`,
+        `  ${this.colorize('magenta', ansiChars.checkmark)} ${this.colorize('bold', this.colorize('brightWhite', `${passed}`))} ${this.colorize('brightWhite', `${HumanReporter.pluralize('task', passed)} passed`)} ${timeInfo}`,
       );
     }
     this.printLine();
+  }
+
+  onSuiteInit(suite: string, taskNames: readonly string[]): void {
+    // Pre-calculate max name length for optimal alignment
+    const terminalWidth = process.stdout.columns || 80;
+    const STATS_RESERVED_WIDTH = 70;
+    const MAX_NAME_WIDTH = Math.max(
+      40,
+      Math.min(
+        60,
+        terminalWidth - 4 - 2 - 2 - STATS_RESERVED_WIDTH, // BASE_INDENT(4) + status(1) + space(1) + ": "(2)
+      ),
+    );
+
+    // Calculate the actual max name length from non-wrapped names
+    let maxLen = 0;
+    for (const name of taskNames) {
+      const nameLen = this.getVisibleLength(name.trim());
+      // Only count names that won't wrap
+      if (nameLen <= MAX_NAME_WIDTH) {
+        maxLen = Math.max(maxLen, nameLen);
+      }
+    }
+
+    // Use the max of actual names or MAX_NAME_WIDTH for consistency
+    this.currentSuiteMaxNameLen = Math.max(maxLen, MAX_NAME_WIDTH);
   }
 
   onSuiteStart(suite: string): void {
@@ -444,8 +518,16 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    // Buffer the result for later printing with proper alignment
+    // Always buffer the result for suite summary (including aborted tasks)
     this.suiteResults.push(result);
+
+    // Skip printing aborted tasks (they're counted in summary but not shown individually)
+    if (result.aborted) {
+      return;
+    }
+
+    // Print immediately with current alignment
+    this.printTaskResult(result);
   }
 
   onTaskStart(task: string): void {
@@ -527,11 +609,22 @@ export class HumanReporter extends BaseReporter {
       return;
     }
 
-    const MAX_NAME_WIDTH = 60;
     const BASE_INDENT = '    '; // 4 spaces
     const bullet = this.colorize(
       'dim',
       this.colorize('gray', ansiChars.bullet),
+    );
+
+    // Calculate maximum name width based on terminal width
+    // Reserve space for: indent (4) + status (1) + space (1) + name + ": " (2) + stats (~60 chars)
+    const terminalWidth = process.stdout.columns || 80;
+    const STATS_RESERVED_WIDTH = 70; // Approx space for duration + rme + ops/sec with padding
+    const MAX_NAME_WIDTH = Math.max(
+      40,
+      Math.min(
+        60,
+        terminalWidth - BASE_INDENT.length - 2 - 2 - STATS_RESERVED_WIDTH,
+      ),
     );
 
     // Prepare formatted data for each task
@@ -550,49 +643,52 @@ export class HumanReporter extends BaseReporter {
       status: string;
     }
 
-    const formatted: FormattedTask[] = this.suiteResults.map((result) => {
-      const status = result.error
-        ? this.colorize('red', ansiChars.cross)
-        : this.colorize('brightCyan', ansiChars.checkmark);
+    // Filter out aborted tasks (they're counted in suite summary but not printed)
+    const formatted: FormattedTask[] = this.suiteResults
+      .filter((result) => !result.aborted)
+      .map((result) => {
+        const status = result.error
+          ? this.colorize('red', ansiChars.cross)
+          : this.colorize('brightCyan', ansiChars.checkmark);
 
-      const name = result.name.trim();
-      const nameLength = this.getVisibleLength(name);
+        const name = result.name.trim();
+        const nameLength = this.getVisibleLength(name);
 
-      if (result.error) {
+        if (result.error) {
+          return {
+            durationLen: 0,
+            durationStr: '',
+            error: true,
+            errorMessage: result.error?.message || String(result.error),
+            iterations: 0,
+            name,
+            nameLength,
+            opsPerSecLen: 0,
+            opsPerSecStr: '',
+            rmeLen: 0,
+            rmeStr: '',
+            status,
+          };
+        }
+
+        const duration = BaseReporter.formatDuration(result.mean); // already in nanoseconds
+        const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
+        const rme = BaseReporter.formatPercentage(result.marginOfError); // already a percentage
+
         return {
-          durationLen: 0,
-          durationStr: '',
-          error: true,
-          errorMessage: result.error?.message || String(result.error),
-          iterations: 0,
+          durationLen: this.getVisibleLength(duration),
+          durationStr: duration,
+          error: false,
+          iterations: result.iterations,
           name,
           nameLength,
-          opsPerSecLen: 0,
-          opsPerSecStr: '',
-          rmeLen: 0,
-          rmeStr: '',
+          opsPerSecLen: this.getVisibleLength(opsPerSec),
+          opsPerSecStr: opsPerSec,
+          rmeLen: this.getVisibleLength(rme),
+          rmeStr: rme,
           status,
         };
-      }
-
-      const duration = BaseReporter.formatDuration(result.mean); // already in nanoseconds
-      const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
-      const rme = BaseReporter.formatPercentage(result.marginOfError * 100);
-
-      return {
-        durationLen: this.getVisibleLength(duration),
-        durationStr: duration,
-        error: false,
-        iterations: result.iterations,
-        name,
-        nameLength,
-        opsPerSecLen: this.getVisibleLength(opsPerSec),
-        opsPerSecStr: opsPerSec,
-        rmeLen: this.getVisibleLength(rme),
-        rmeStr: rme,
-        status,
-      };
-    });
+      });
 
     // Find max widths
     const nonWrappingTasks = formatted.filter(
@@ -616,10 +712,6 @@ export class HumanReporter extends BaseReporter {
       0,
     );
 
-    // Calculate the position where numbers start for unwrapped lines
-    // BASE_INDENT (4) + status (1 char) + space (1) + maxNameLen + ": " (2) = 8 + maxNameLen
-    const numbersStartPos = BASE_INDENT.length + 2 + maxNameLen + 2;
-
     // Print each task with aligned columns
     for (const task of formatted) {
       if (task.error) {
@@ -635,21 +727,44 @@ export class HumanReporter extends BaseReporter {
           `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)} ${this.colorize('red', 'FAILED')}`,
         );
       } else if (task.nameLength > MAX_NAME_WIDTH) {
-        // Long name - wrap to next line, but align numbers with unwrapped lines
-        this.printLine(
-          `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)}:`,
-        );
+        // Long name - wrap to multiple lines, align last line with short names
+        const wrappedLines = this.wrapText(task.name, MAX_NAME_WIDTH);
+        const continueIndent = BASE_INDENT + '  '; // 6 spaces for continuation lines
 
-        // Calculate padding to align with unwrapped lines
-        // We need to get to numbersStartPos from the beginning of the line
-        const leadingPad = ' '.repeat(numbersStartPos);
+        // Format stats string
         const durationPad = ' '.repeat(maxDurationLen - task.durationLen);
         const rmePad = ' '.repeat(maxRmeLen - task.rmeLen);
         const opsPad = ' '.repeat(maxOpsLen - task.opsPerSecLen);
+        const statsStr = `${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`;
 
+        // Print first line with status
         this.printLine(
-          `${leadingPad}${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`,
+          `${BASE_INDENT}${task.status} ${this.colorize('white', wrappedLines[0]!)}`,
         );
+
+        // Print middle continuation lines (all but first and last)
+        for (let i = 1; i < wrappedLines.length - 1; i++) {
+          this.printLine(
+            `${continueIndent}${this.colorize('white', wrappedLines[i]!)}`,
+          );
+        }
+
+        // Print last line with colon and stats aligned with short names
+        if (wrappedLines.length > 1) {
+          const lastLine = wrappedLines[wrappedLines.length - 1]!;
+          const lastLineLen = this.getVisibleLength(lastLine);
+          // Pad the last line to align the ':' with short names
+          const lastLinePad = ' '.repeat(Math.max(0, maxNameLen - lastLineLen));
+          this.printLine(
+            `${continueIndent}${this.colorize('white', lastLine)}${lastLinePad}: ${statsStr}`,
+          );
+        } else {
+          // Single wrapped line
+          const lastLinePad = ' '.repeat(maxNameLen - task.nameLength);
+          this.printLine(
+            `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)}${lastLinePad}: ${statsStr}`,
+          );
+        }
 
         if (this.verbose && task.iterations > 0) {
           this.printLine(
@@ -688,6 +803,128 @@ export class HumanReporter extends BaseReporter {
   }
 
   /**
+   * Print a single task result immediately with current alignment
+   */
+  private printTaskResult(result: TaskResult): void {
+    // Clear progress bar temporarily
+    this.clearProgress();
+
+    const BASE_INDENT = '    '; // 4 spaces
+    const bullet = this.colorize(
+      'dim',
+      this.colorize('gray', ansiChars.bullet),
+    );
+
+    // Calculate terminal width constraints
+    const terminalWidth = process.stdout.columns || 80;
+    const STATS_RESERVED_WIDTH = 70;
+    const MAX_NAME_WIDTH = Math.max(
+      40,
+      Math.min(
+        60,
+        terminalWidth - BASE_INDENT.length - 2 - 2 - STATS_RESERVED_WIDTH,
+      ),
+    );
+
+    // Status marker
+    const status = result.error
+      ? this.colorize('red', ansiChars.cross)
+      : this.colorize('brightCyan', ansiChars.checkmark);
+
+    const name = result.name.trim();
+    const nameLength = this.getVisibleLength(name);
+
+    // Handle errors
+    if (result.error) {
+      this.failures.push({
+        error: result.error?.message || String(result.error),
+        file: this.currentFile,
+        suite: this.currentSuite,
+        task: name,
+      });
+
+      this.printLine(
+        `${BASE_INDENT}${status} ${this.colorize('white', name)} ${this.colorize('red', 'FAILED')}`,
+      );
+      return;
+    }
+
+    // Format stats
+    const duration = BaseReporter.formatDuration(result.mean);
+    const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
+    const rme = BaseReporter.formatPercentage(result.marginOfError);
+
+    // Use fixed widths for stats columns (reasonable maximums)
+    const DURATION_WIDTH = 10; // "999.99ms" max
+    const RME_WIDTH = 8; // "±999.99%" max
+    const OPS_WIDTH = 15; // "999.99K ops/sec" max
+
+    const durationLen = this.getVisibleLength(duration);
+    const rmeLen = this.getVisibleLength(rme);
+    const opsLen = this.getVisibleLength(opsPerSec);
+
+    // Stats formatting with fixed widths
+    const durationPad = ' '.repeat(DURATION_WIDTH - durationLen);
+    const rmePad = ' '.repeat(RME_WIDTH - rmeLen);
+    const opsPad = ' '.repeat(OPS_WIDTH - opsLen);
+    const statsStr = `${durationPad}${this.colorize('cyan', duration)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', rme)} ${bullet} ${opsPad}${this.colorize('magenta', opsPerSec)}`;
+
+    // Handle long names (wrap)
+    if (nameLength > MAX_NAME_WIDTH) {
+      const wrappedLines = this.wrapText(name, MAX_NAME_WIDTH);
+      const continueIndent = BASE_INDENT + '  '; // 6 spaces for continuation lines
+
+      // Print first line with status
+      this.printLine(
+        `${BASE_INDENT}${status} ${this.colorize('white', wrappedLines[0]!)}`,
+      );
+
+      // Print middle lines (all but first and last)
+      for (let i = 1; i < wrappedLines.length - 1; i++) {
+        this.printLine(
+          `${continueIndent}${this.colorize('white', wrappedLines[i]!)}`,
+        );
+      }
+
+      // Print last line with colon and stats aligned
+      // Use pre-calculated currentSuiteMaxNameLen for perfect alignment
+      if (wrappedLines.length > 1) {
+        const lastLine = wrappedLines[wrappedLines.length - 1]!;
+        const lastLineLen = this.getVisibleLength(lastLine);
+        const lastLinePad = ' '.repeat(
+          Math.max(0, this.currentSuiteMaxNameLen - lastLineLen),
+        );
+        this.printLine(
+          `${continueIndent}${this.colorize('white', lastLine)}${lastLinePad}: ${statsStr}`,
+        );
+      } else {
+        // Single wrapped line (shouldn't happen if nameLength > MAX but handle it)
+        const lastLinePad = ' '.repeat(
+          Math.max(0, this.currentSuiteMaxNameLen - nameLength),
+        );
+        this.printLine(
+          `${BASE_INDENT}${status} ${this.colorize('white', name)}${lastLinePad}: ${statsStr}`,
+        );
+      }
+    } else {
+      // Normal length - print on same line with pre-calculated alignment
+      const namePad = ' '.repeat(
+        Math.max(0, this.currentSuiteMaxNameLen - nameLength),
+      );
+
+      this.printLine(
+        `${BASE_INDENT}${status} ${this.colorize('white', name)}${namePad}: ${statsStr}`,
+      );
+    }
+
+    if (this.verbose && result.iterations > 0) {
+      this.printLine(
+        `      ${this.colorize('dim', `${result.iterations} iterations`)}`,
+      );
+    }
+  }
+
+  /**
    * Render the progress window at the bottom
    */
   private renderProgressWindow(): void {
@@ -704,5 +941,46 @@ export class HumanReporter extends BaseReporter {
     console.log('');
     console.log(this.lastProgressLine);
     this.progressWindowActive = true;
+  }
+
+  /**
+   * Wrap text to a maximum width, breaking at word boundaries when possible
+   */
+  private wrapText(text: string, maxWidth: number): string[] {
+    if (this.getVisibleLength(text) <= maxWidth) {
+      return [text];
+    }
+
+    const lines: string[] = [];
+    let currentLine = '';
+
+    const words = text.split(/(\s+)/); // Keep whitespace in split
+
+    for (const word of words) {
+      const testLine = currentLine + word;
+      if (this.getVisibleLength(testLine) <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        // If current line has content, save it
+        if (currentLine.trim()) {
+          lines.push(currentLine.trimEnd());
+          currentLine = word.trim() + ' ';
+        } else {
+          // Single word is too long, force break it
+          if (this.getVisibleLength(word) > maxWidth) {
+            lines.push(word.substring(0, maxWidth));
+            currentLine = word.substring(maxWidth);
+          } else {
+            currentLine = word;
+          }
+        }
+      }
+    }
+
+    if (currentLine.trim()) {
+      lines.push(currentLine.trimEnd());
+    }
+
+    return lines;
   }
 }

@@ -403,6 +403,8 @@ export interface SuiteResult {
  * Represents a single benchmark task execution result
  */
 export interface TaskResult {
+  /** Whether the task was aborted (via Ctrl+C or signal) */
+  readonly aborted?: boolean;
   /** Coefficient of variation (stdDev/mean × 100) */
   readonly cv: number;
   /** Any error that occurred during execution */

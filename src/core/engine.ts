@@ -652,7 +652,7 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
           benchmarkDef.suites,
         )) {
           // Use shared filtering logic
-          const { anyTaskMatches, suiteMatches } =
+          const { anyTaskMatches, suiteMatches, tasksToRun } =
             this.getFilteredTasksForSuite(
               suiteData,
               fileTags,
@@ -664,6 +664,15 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
           if (!suiteMatches && !anyTaskMatches) {
             continue;
           }
+
+          // Emit suite init with task names for pre-calculation
+          const taskNames = tasksToRun.map(([name]) => name);
+          await this.callReporters(
+            reporters,
+            'onSuiteInit',
+            suiteName,
+            taskNames,
+          );
 
           await this.callReporters(reporters, 'onSuiteStart', suiteName);
           const suiteResult = await this.executeBenchmarkSuite(
@@ -768,6 +777,12 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
         }
       }
 
+      // Merge suite-level config with global config
+      // Suite-level config takes precedence over global config
+      const mergedConfig = suiteData.config
+        ? { ...config, ...suiteData.config }
+        : config;
+
       try {
         // Process each task that passed filtering
         for (const [taskName, taskData] of tasksToRun) {
@@ -776,13 +791,14 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
           // Mark task as in-progress (shows as 0.5 progress for current task)
           const currentState = this.progressManager.getState();
           this.progressManager.update({
+            currentTask: taskName,
             tasksCompleted: currentState.tasksCompleted + 0.5,
           });
 
           const taskResult = await this.executeBenchmarkTask(
             taskName,
             taskData,
-            config,
+            mergedConfig,
             reporters,
             signal,
           );

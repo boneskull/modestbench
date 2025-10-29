@@ -23,6 +23,9 @@ export interface FilteredProfileData {
   /** Grouped by file (if requested) */
   groupedByFile?: Map<string, ProfiledFunction[]>;
 
+  /** Minimum execution percentage threshold used */
+  minExecutionPercent: number;
+
   /** Profile summary */
   summary: ProfileSummary;
 

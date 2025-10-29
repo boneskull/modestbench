@@ -43,39 +43,39 @@ const PROJECT_TEMPLATES = {
   advanced: {
     configOptions: {
       iterations: 1000,
-      outputDir: './benchmark-results',
-      pattern: 'benchmarks/**/*.bench.{js,ts}',
+      outputDir: '.modestbench',
+      pattern: 'bench/**/*.bench.{js,ts}',
       reporters: ['human', 'json'],
       time: 10000,
       warmup: 50,
     },
     description: 'Feature-rich setup with multiple reporters and configuration',
-    directories: ['benchmarks', 'benchmark-results'],
+    directories: ['bench', '.modestbench'],
     name: 'Advanced Project',
   },
   basic: {
     configOptions: {
       iterations: 100,
-      pattern: 'benchmarks/**/*.bench.{js,ts}',
+      pattern: 'bench/**/*.bench.{js,ts}',
       reporters: ['human'],
       time: 5000,
     },
     description: 'Simple benchmark setup for small projects',
-    directories: ['benchmarks'],
+    directories: ['bench'],
     name: 'Basic Project',
   },
   library: {
     configOptions: {
       bail: false,
       iterations: 5000,
-      outputDir: './benchmark-results',
-      pattern: 'benchmarks/**/*.bench.{js,ts}',
+      outputDir: '.modestbench',
+      pattern: 'bench/**/*.bench.{js,ts}',
       reporters: ['human', 'json'],
       time: 15000,
       warmup: 100,
     },
     description: 'Optimized for library performance testing',
-    directories: ['benchmarks', 'benchmarks/suites', 'benchmark-results'],
+    directories: ['bench', 'bench/suites', '.modestbench'],
     name: 'Library Project',
   },
 } as const;
@@ -316,7 +316,7 @@ export const handleInitCommand = async (
         console.log('  1. Run example benchmarks: modestbench run');
       } else {
         console.log(
-          '  1. Create your first benchmark file in the benchmarks/ directory',
+          '  1. Create your first benchmark file in the bench/ directory',
         );
       }
       console.log('  2. Customize configuration in your config file');
@@ -385,7 +385,7 @@ modestbench run
 
 Run specific benchmarks:
 \`\`\`bash
-modestbench run "benchmarks/array-*.bench.js"
+modestbench run "bench/array-*.bench.js"
 \`\`\`
 
 View benchmark history:
@@ -399,7 +399,7 @@ See \`modestbench.config.*\` for benchmark configuration options.
 
 ## Writing Benchmarks
 
-Create new benchmark files in the \`benchmarks/\` directory. See the examples for the expected format.
+Create new benchmark files in the \`bench/\` directory. See the examples for the expected format.
 `;
 
   try {
@@ -549,7 +549,7 @@ const createDirectories = async (
  * Create example benchmark files
  */
 const createExampleBenchmarks = async (cwd: string): Promise<void> => {
-  const benchmarksDir = resolve(cwd, 'benchmarks');
+  const benchmarksDir = resolve(cwd, 'bench');
 
   for (const [name, example] of Object.entries(EXAMPLE_BENCHMARKS)) {
     const filePath = join(benchmarksDir, example.filename);

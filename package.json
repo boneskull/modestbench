@@ -175,9 +175,6 @@
     }
   },
   "lint-staged": {
-    "package.json": [
-      "npm pkg fix"
-    ],
     "*.{ts,cts,js,cjs,yml,json5}": [
       "eslint --fix",
       "prettier --write",

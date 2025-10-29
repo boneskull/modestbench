@@ -32,11 +32,15 @@ interface ProgressMetrics {
 export class ModestBenchProgressManager implements ProgressManager {
   private callbacks: ProgressCallback[] = [];
 
+  private lastMetricsUpdate = 0;
+
   private lastUpdate = 0;
 
   private readonly maxRecentTimings = 10;
 
   private metrics: null | ProgressMetrics = null;
+
+  private readonly metricsUpdateThrottleMs = 1000; // Throttle ETA calculations (1 second)
 
   private state: ProgressState;
 
@@ -53,6 +57,8 @@ export class ModestBenchProgressManager implements ProgressManager {
     this.callbacks = [];
     this.metrics = null;
     this.state = this.createInitialState();
+    this.lastUpdate = 0;
+    this.lastMetricsUpdate = 0;
   }
 
   /**
@@ -240,6 +246,7 @@ export class ModestBenchProgressManager implements ProgressManager {
     };
 
     this.lastUpdate = Date.now();
+    this.lastMetricsUpdate = Date.now();
     this.notifyCallbacks();
   }
 
@@ -314,8 +321,11 @@ export class ModestBenchProgressManager implements ProgressManager {
       percentage: this.calculatePercentage(updates),
     };
 
-    // Update metrics for completion estimation
-    this.updateMetrics(now);
+    // Update metrics for completion estimation (throttled separately for ETA)
+    if (now - this.lastMetricsUpdate >= this.metricsUpdateThrottleMs) {
+      this.updateMetrics(now);
+      this.lastMetricsUpdate = now;
+    }
 
     this.lastUpdate = now;
     this.notifyCallbacks();

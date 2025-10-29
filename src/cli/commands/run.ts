@@ -71,15 +71,8 @@ export const handleRunCommand = async (
   context: CliContext,
   options: RunOptions,
 ): Promise<number> => {
-  // Check if JSON reporter is being used (need quiet output for clean JSON)
-  // Only force quiet mode if json is used AND no output directory is specified
-  // (i.e., outputting to stdout where we need clean JSON)
-  const isUsingJsonReporter = options.reporters?.includes('json') ?? false;
-  const shouldBeQuiet =
-    options.quiet || (isUsingJsonReporter && !options.outputDir);
   const verbose = options.verbose ?? false;
-  // CLI messages on stderr should only be suppressed by explicit --quiet, not JSON-forced quiet
-  const showCliMessages = verbose && !options.quiet;
+  let shouldBeQuiet = options.quiet ?? false; // Will be updated after config loads
 
   try {
     // Validate --output-file usage
@@ -95,10 +88,16 @@ export const handleRunCommand = async (
     }
 
     // Step 1: Load and merge configuration
-    if (showCliMessages) {
-      console.error('Loading configuration...');
-    }
     const config = await loadConfiguration(context, options);
+
+    // Check if JSON reporter is being used (need quiet output for clean JSON)
+    // Only force quiet mode if json is used AND no output directory is specified
+    // (i.e., outputting to stdout where we need clean JSON)
+    const isUsingJsonReporter = config.reporters?.includes('json') ?? false;
+    const hasOutputDir = !!(options.outputDir || config.outputDir);
+    shouldBeQuiet = options.quiet || (isUsingJsonReporter && !hasOutputDir);
+    // CLI messages on stderr should only be suppressed by explicit --quiet, not JSON-forced quiet
+    const showCliMessages = verbose && !options.quiet;
 
     // Step 2: Configure reporters
     if (showCliMessages) {
@@ -109,7 +108,7 @@ export const handleRunCommand = async (
       config,
       verbose,
       showCliMessages,
-      options.quiet ?? false,
+      shouldBeQuiet,
       options.outputDir,
       options.outputFile,
       options.progress,
@@ -377,11 +376,13 @@ const setupReporters = (
     // Dedupe requested reporters
     const requestedReporters = [...new Set(config.reporters || ['human'])];
 
-    // Only use file output if --output was explicitly provided
-    // Use the explicit output dir if provided, otherwise check config
+    // Use output directory from CLI flag, config file, or undefined
+    // CLI flag takes precedence over config file
     const outputDir = explicitOutputDir
       ? resolve(explicitOutputDir)
-      : undefined;
+      : config.outputDir
+        ? resolve(config.outputDir)
+        : undefined;
 
     // Built-in reporter names for error messages
     const builtInReporters = ['human', 'json', 'csv', 'simple'];

@@ -192,10 +192,11 @@ export class TinybenchEngine extends ModestBenchEngine {
 
       // Check if the task was aborted
       if (results.aborted) {
-        // Task was aborted via signal - return minimal valid result with error
+        // Task was aborted via signal - return minimal valid result marked as aborted
+        // (abort message is shown at run level, not per-task)
         const taskResult: TaskResult = {
+          aborted: true,
           cv: 0,
-          error: new Error('Benchmark aborted by user signal'),
           iterations: results.latency?.samples?.length || 0,
           marginOfError: 0,
           max: 0,

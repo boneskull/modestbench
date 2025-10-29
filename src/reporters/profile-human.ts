@@ -197,8 +197,14 @@ export class ProfileHumanReporter {
   }
 
   private printSummary(data: FilteredProfileData): void {
-    this.printLine(
-      `${this.colorize('dim', `... (showing top ${data.totalShown} of ${data.totalFiltered} user functions)`)}`,
-    );
+    if (data.totalShown === 0) {
+      this.printLine(
+        `${this.colorize('dim', `No functions used at least ${data.minExecutionPercent}% of the ticks`)}`,
+      );
+    } else {
+      this.printLine(
+        `${this.colorize('dim', `... (showing top ${data.totalShown} of ${data.totalFiltered} user functions)`)}`,
+      );
+    }
   }
 }

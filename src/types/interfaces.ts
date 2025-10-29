@@ -314,6 +314,14 @@ export interface Reporter {
   onSuiteEnd?(result: SuiteResult): Promise<void> | void;
 
   /**
+   * Called before a suite starts, providing task names for pre-calculation
+   */
+  onSuiteInit?(
+    suite: string,
+    taskNames: readonly string[],
+  ): Promise<void> | void;
+
+  /**
    * Called when a suite starts execution
    */
   onSuiteStart?(suite: string): Promise<void> | void;
