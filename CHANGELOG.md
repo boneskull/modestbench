@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.0...modestbench-v0.3.1) (2025-10-29)
+
+
+### Bug Fixes
+
+* fix engine and reporter problems ([b4a14f3](https://github.com/boneskull/modestbench/commit/b4a14f3eac2600752939c295935901091843bf00))
+
 ## [0.3.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.2.0...modestbench-v0.3.0) (2025-10-28)
 
 
