@@ -219,7 +219,7 @@ describe('Core Data Types', () => {
       expectType<string[]>(config.exclude);
       expectType<string[]>(config.tags);
       expectType<string[]>(config.excludeTags);
-      expectType<string>(config.outputDir);
+      expectType<string | undefined>(config.outputDir);
       expectType<'all' | 'any' | 'iterations' | 'time'>(config.limitBy);
       expectType<ThresholdConfig>(config.thresholds);
       expectType<Record<string, unknown>>(config.reporterConfig);
