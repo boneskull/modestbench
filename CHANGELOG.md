@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.1...modestbench-v0.3.2) (2025-10-30)
+
+
+### Bug Fixes
+
+* output dir and multiple reporter issues ([3f10a0d](https://github.com/boneskull/modestbench/commit/3f10a0dfff93ce8cb5c423a612a1b780bdaa7dad))
+
 ## [0.3.1](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.0...modestbench-v0.3.1) (2025-10-29)
 
 
