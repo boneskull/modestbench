@@ -13,7 +13,7 @@
 - **Fast & Accurate**: High-precision timing with statistical analysis
 - **Multiple Output Formats**: Human-readable, JSON, and CSV reports (at the same time!!)
 - **Historical Tracking**: Store and compare benchmark results over time
-- **Tagging System**: Organize and filter benchmarks by categories
+- **Code Profiling & Analysis**: Identify hot code paths that need benchmarking using V8's built-in profiler
 - **Performance Budgets**: Enforce performance standards and prevent regressions
 - **CLI & API**: Command-line interface and programmatic API
 - **TypeScript Support**: Full type safety
