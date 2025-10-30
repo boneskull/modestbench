@@ -56,12 +56,13 @@ const PROJECT_TEMPLATES = {
   basic: {
     configOptions: {
       iterations: 100,
+      outputDir: '.modestbench',
       pattern: 'bench/**/*.bench.{js,ts}',
       reporters: ['human'],
       time: 5000,
     },
     description: 'Simple benchmark setup for small projects',
-    directories: ['bench'],
+    directories: ['bench', '.modestbench'],
     name: 'Basic Project',
   },
   library: {

@@ -281,16 +281,16 @@ describe('modestbench init command - integration', () => {
       await runCommand(['init', '--examples'], tempDir);
 
       // Verify example files exist
-      await access(join(tempDir, 'benchmarks', 'example.bench.js'));
-      await access(join(tempDir, 'benchmarks', 'array-methods.bench.js'));
-      await access(join(tempDir, 'benchmarks', 'string-operations.bench.js'));
+      await access(join(tempDir, 'bench', 'example.bench.js'));
+      await access(join(tempDir, 'bench', 'array-methods.bench.js'));
+      await access(join(tempDir, 'bench', 'string-operations.bench.js'));
     });
 
     it('should not create examples when --no-examples is specified', async () => {
       await runCommand(['init', '--no-examples'], tempDir);
 
-      // Benchmarks directory should exist but be empty
-      const benchmarksDir = join(tempDir, 'benchmarks');
+      // Bench directory should exist but be empty
+      const benchmarksDir = join(tempDir, 'bench');
       await access(benchmarksDir); // Directory exists
 
       // Example files should not exist
@@ -304,7 +304,7 @@ describe('modestbench init command - integration', () => {
       await runCommand(['init', '--examples'], tempDir);
 
       const exampleContent = await readFile(
-        join(tempDir, 'benchmarks', 'example.bench.js'),
+        join(tempDir, 'bench', 'example.bench.js'),
         'utf8',
       );
 
@@ -465,24 +465,24 @@ describe('modestbench init command - integration', () => {
   });
 
   describe('Directory structure', () => {
-    it('should create benchmarks directory for all project types', async () => {
+    it('should create bench directory for all project types', async () => {
       await runCommand(['init', 'basic', '--no-examples'], tempDir);
-      await access(join(tempDir, 'benchmarks'));
+      await access(join(tempDir, 'bench'));
     });
 
     it('should create multiple directories for advanced projects', async () => {
       await runCommand(['init', 'advanced', '--no-examples'], tempDir);
 
-      await access(join(tempDir, 'benchmarks'));
-      await access(join(tempDir, 'benchmark-results'));
+      await access(join(tempDir, 'bench'));
+      await access(join(tempDir, '.modestbench'));
     });
 
     it('should create nested directories for library projects', async () => {
       await runCommand(['init', 'library', '--no-examples'], tempDir);
 
-      await access(join(tempDir, 'benchmarks'));
-      await access(join(tempDir, 'benchmarks', 'suites'));
-      await access(join(tempDir, 'benchmark-results'));
+      await access(join(tempDir, 'bench'));
+      await access(join(tempDir, 'bench', 'suites'));
+      await access(join(tempDir, '.modestbench'));
     });
   });
 });

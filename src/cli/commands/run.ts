@@ -88,6 +88,9 @@ export const handleRunCommand = async (
     }
 
     // Step 1: Load and merge configuration
+    if (verbose && !options.quiet) {
+      console.error('Loading configuration...');
+    }
     const config = await loadConfiguration(context, options);
 
     // Check if JSON reporter is being used (need quiet output for clean JSON)

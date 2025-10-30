@@ -327,8 +327,8 @@ export interface ModestBenchConfig {
   readonly limitBy: 'all' | 'any' | 'iterations' | 'time';
   /** Custom metadata to attach to runs */
   readonly metadata: Record<string, unknown>;
-  /** Output directory for reports */
-  readonly outputDir: string;
+  /** Output directory for reports (undefined means stdout for data reporters) */
+  readonly outputDir?: string;
   /** Pattern(s) for discovering benchmark files */
   readonly pattern: string | string[];
   /** Whether to run in quiet mode */

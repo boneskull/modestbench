@@ -163,8 +163,9 @@ const modestBenchConfigSchema = z
     outputDir: z
       .string()
       .min(1)
+      .optional()
       .describe(
-        'Directory path where benchmark results and reports will be written',
+        'Directory path where benchmark results and reports will be written. If not specified, data reporters will write to stdout.',
       ),
     pattern: z
       .union([z.string().min(1), z.array(z.string().min(1))])
