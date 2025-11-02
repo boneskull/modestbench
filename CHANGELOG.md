@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.2...modestbench-v0.3.3) (2025-11-02)
+
+
+### Bug Fixes
+
+* **deps:** update dependency minimatch to v10.1.1 ([#90](https://github.com/boneskull/modestbench/issues/90)) ([a3b77df](https://github.com/boneskull/modestbench/commit/a3b77df4f5b8464734a24df8eafae02365035ae1))
+
 ## [0.3.2](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.1...modestbench-v0.3.2) (2025-10-30)
 
 
