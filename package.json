@@ -104,7 +104,7 @@
   },
   "devDependencies": {
     "@astrojs/mdx": "4.3.9",
-    "@astrojs/starlight": "0.36.1",
+    "@astrojs/starlight": "0.36.2",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-conventional": "20.0.0",
     "@eslint/js": "9.38.0",
