@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.3.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.2...modestbench-v0.3.3) (2025-11-02)
+## [0.3.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.2...modestbench-v0.3.3) (2025-11-03)
 
 
 ### Bug Fixes
