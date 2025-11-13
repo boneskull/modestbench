@@ -417,7 +417,7 @@ Create `modestbench.config.json`:
   "iterations": 1000, // Number of samples per benchmark
   "limitBy": "iterations", // Limit mode: 'iterations', 'time', 'any', 'all'
   "outputDir": "./benchmark-results", // Directory for results and reports
-  "pattern": "benchmarks/**/*.bench.{js,ts}", // Glob pattern to discover benchmark files
+  "pattern": "bench/**/*.bench.{js,ts}", // Glob pattern to discover benchmark files
   "quiet": false, // Minimal output mode
   "reporters": ["human", "json"], // Output reporters to use
   "tags": ["fast", "critical"], // Tags to include (if empty, all benchmarks run)
@@ -618,7 +618,7 @@ modestbench run --tag string --tag array
 modestbench run -t fast -t optimized
 ```
 
-Use `--exclude-tag` (or `-e`) to skip benchmarks with specific tags:
+Use `--exclude-tag` (or `-T`) to skip benchmarks with specific tags:
 
 ```bash
 # Exclude slow benchmarks
