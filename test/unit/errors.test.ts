@@ -62,7 +62,7 @@ describe('ModestBenchError base class', () => {
     expect(
       url,
       'to equal',
-      'https://boneskull.github.io/modestbench/reference/errors#testerror',
+      'https://modestbench.dev/reference/errors#testerror',
     );
   });
 
@@ -75,7 +75,7 @@ describe('ModestBenchError base class', () => {
     expect(
       str,
       'to contain',
-      'https://boneskull.github.io/modestbench/reference/errors#testerror',
+      'https://modestbench.dev/reference/errors#testerror',
     );
   });
 
@@ -131,7 +131,7 @@ describe('ModestBenchAggregateError base class', () => {
     expect(
       url,
       'to equal',
-      'https://boneskull.github.io/modestbench/reference/errors#testaggregateerror',
+      'https://modestbench.dev/reference/errors#testaggregateerror',
     );
   });
 

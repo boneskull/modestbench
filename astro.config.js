@@ -4,7 +4,7 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-  base: '/modestbench',
+  base: '/',
 
   integrations: [
     starlight({
@@ -48,7 +48,7 @@ export default defineConfig({
   ],
   outDir: './docs',
   publicDir: './public',
-  site: 'https://boneskull.github.io/modestbench',
+  site: 'https://modestbench.dev',
   srcDir: './site/src',
   // see https://github.com/withastro/astro/issues/14117#issuecomment-3117797751
   vite: {
