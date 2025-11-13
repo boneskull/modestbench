@@ -10,7 +10,6 @@ import tseslint from 'typescript-eslint';
 export default defineConfig(
   jsPlugin.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  // @ts-expect-error - Type mismatch due to duplicate @eslint/core versions in node_modules (lockfile maintenance)
   perfectionist.configs['recommended-natural'],
   {
     languageOptions: {
