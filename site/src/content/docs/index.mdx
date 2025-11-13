@@ -18,35 +18,43 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Features
+## What the Hell?
+
+Look, we like `tinybench` too. It's great! But we got ~~tired~~ ~~annoyed~~ _inspired_ after writing the same wrapper code around it for the quinqua­gintacent­illionth time. _We have more homegrown wrappers than B-Real._
+
+We wanted a benchmarking framework that didn't make us think (because we are stupid). One that just _worked_—with sensible defaults, multiple output formats, historical tracking, and a built-in profiler to tell us what's even worth benchmarking. Plug-and-f'ing-play, fam.
+
+**modestbench** is what happens when you swaddle a minimal benchmarking library in scads of overengineered-but-useful features _so you can focus on making your code fast_. That's we're selling, anyway.
+
+## Look at These Boxes
 
 <CardGrid stagger>
   <Card title="Fast & Accurate" icon="rocket">
-    High-precision timing with advanced statistical analysis. Choose between the fast `tinybench` engine or the `accurate` engine with V8 optimization guards and IQR outlier removal.
+    Choose your poison: the peppy `tinybench` engine for quick iterations, or the `accurate` engine with V8 optimization guards when you _really_ need statistical rigor. Who knows? You could!
   </Card>
 
   <Card title="Multiple Output Formats" icon="document">
-  Generate human-readable, simple text, JSON, and CSV reports simultaneously. Auto-detects environment for optimal output.
+  Human-readable terminal output. JSON for your CI pipeline. CSV for your spreadsheets so you can make those sweet, sweet line graphs. _Simultaneous._
 </Card>
 
 <Card title="Historical Tracking" icon="seti:clock">
-  Store and compare benchmark results over time. Track performance trends and catch regressions early.
+  Tracks every run automatically. Compare historical results. Detect performance regressions before they ship. Set a budget, even! You are now a Real Developer.
 </Card>
 
 <Card title="Profile & Discover" icon="magnifier">
-  Identify hot code paths with built-in profiling. Run any command with V8's profiler to find benchmark candidates automatically.
+  Don't know what to benchmark? Run **just whatever** with V8's built-in profiler and it'll tell you exactly where the code's hot. Do you _really_ want to open a profile visualizer?
 </Card>
 
 <Card title="CLI & API" icon="setting">
-  Powerful command-line interface with sensible defaults, plus a programmatic API for advanced usage.
+  Powerful CLI with "sensible" defaults. Programmatic API for when you … have a use-case for this, I guess?
 </Card>
 
   <Card title="TypeScript Support" icon="approve-check">
-    Write benchmarks in JS or TS.
+    Fully type-safe. Write your benchmarks in JS or TS. CJS or ESM. No loader.
   </Card>
 </CardGrid>
 
-## Quick Example
+## Obligatory Example
 
 ```javascript
 // benchmarks/example.bench.js
@@ -69,27 +77,37 @@ export default {
 };
 ```
 
-## Running Your First Benchmarks
+Just export an object with functions and **modestbench** figures out the rest.
+
+## How Do I Run the Damn Thing?
 
 ```bash
-# Run all benchmarks
+# Run all benchmarks (finds .bench.js files automatically)
 modestbench
 
-# Run with specific options
+# We have lots of options; here are some
 modestbench --iterations 5000 --reporter human --reporter json
 ```
 
-## Why modestbench?
+Boom. Done. Results printed to your terminal, saved to JSON, and tracked in history. You're welcome.
 
-modestbench provides a powerful benchmarking framework with dual engines and rich features:
+## Why You Might Actually Want This
 
-- **Dual engines** - Fast `tinybench` for development, `accurate` for precision measurements
-- **Advanced statistics** - IQR outlier removal, coefficient of variation, percentiles
-- **Project structure** - Organized benchmark files and suites
-- **Configuration management** - Multiple formats (JSON, YAML, JS, TS)
-- **Rich CLI** - Discover and run benchmarks with powerful options
-- **Multiple reporters** - Get output in the format you need
-- **Historical data** - Track performance over time automatically
-- **Tagging and filtering** - Run exactly what you need
+We built **modestbench** because we got tired of:
 
-Whether you're optimizing a hot code path, comparing algorithm implementations, or setting up performance regression testing in CI, modestbench has you covered.
+- **Writing the same wrapper code** - `tinybench` is great but doesn't handle discovery, configuration, or reporting
+- **Guessing what to benchmark** - We automated that shit
+- **Tracking results manually** - Automatic history with comparison tools so you can prove your optimizations worked
+- **Writing our own reporters** - Multiple options—optionally running simultaneously—because we can
+
+### What You Get
+
+- ~~One~~ **Two engines** - Fast `tinybench` for development, `accurate` for when you need the receipts
+- **Advanced statistics** - IQR outlier removal, coefficient of variation, percentiles (statistics nerd stuff)
+- **Organized benchmarks** - Suite-based structure with setup/teardown hooks
+- **Tag-based filtering** - Run only the benchmarks you wanna run
+- **Historical data** - Automatic tracking with comparison tools
+- **Built-in profiler** - Find hot code paths with just a command
+
+Whether you're optimizing a hot loop, comparing algorithm implementations, or setting up performance regression testing in CI, **modestbench** _might even work for you_.
+
