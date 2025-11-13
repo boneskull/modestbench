@@ -1,5 +1,5 @@
 /**
- * @import {BenchmarkDefinitionInput} from '../../src/index.js';
+ * @import {BenchmarkDefinitionInput} from "../../src/index.js"
  */
 
 /** @type {BenchmarkDefinitionInput} */
