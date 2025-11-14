@@ -160,3 +160,4 @@ public/fonts/
 .astro/
 worktrees
 *.cpuprofile
+.claude/settings.local.json
