@@ -3,7 +3,7 @@
 /* Custom font from logo */
 @font-face {
   font-family: 'Handel Gothic';
-  src: url('/modestbench/fonts/HandelGothic Regular.woff2') format('woff2');
+  src: url('/fonts/HandelGothic Regular.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
