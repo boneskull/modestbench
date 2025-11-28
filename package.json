@@ -134,7 +134,7 @@
     "tsd": "0.33.0",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.47.0",
+    "typescript-eslint": "8.48.0",
     "zshy": "0.6.0"
   },
   "publishConfig": {
