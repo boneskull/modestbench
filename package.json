@@ -114,7 +114,7 @@
     "@types/wallabyjs": "0.0.15",
     "@types/yargs": "17.0.35",
     "asciinema-player": "3.12.1",
-    "astro": "5.16.1",
+    "astro": "5.16.2",
     "bupkis": "0.13.0",
     "cspell": "9.3.2",
     "eslint": "9.39.1",
