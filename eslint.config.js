@@ -172,7 +172,7 @@ export default defineConfig(
       '.tshy/**/*',
       '.tmp/**/*',
       '.wallaby.js',
-      'worktrees',
+      '.worktrees',
       'site',
       'astro.config.js',
       '.astro/**/*',
