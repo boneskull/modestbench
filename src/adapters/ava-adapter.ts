@@ -40,13 +40,17 @@ const CAPTURE_STATE_KEY = '__MODESTBENCH_AVA_CAPTURE__';
  */
 interface AvaExecutionContext {
   assert: (value: unknown, message?: string) => void;
+  context: Record<string, unknown>;
   deepEqual: (actual: unknown, expected: unknown, message?: string) => void;
   fail: (message?: string) => void;
   false: (value: unknown, message?: string) => void;
   falsy: (value: unknown, message?: string) => void;
   is: (actual: unknown, expected: unknown, message?: string) => void;
+  like: (actual: unknown, selector: unknown, message?: string) => void;
+  log: (...values: unknown[]) => void;
   not: (actual: unknown, expected: unknown, message?: string) => void;
   notDeepEqual: (actual: unknown, expected: unknown, message?: string) => void;
+  notRegex: (contents: string, regex: RegExp, message?: string) => void;
   notThrows: (fn: () => unknown, message?: string) => void;
   notThrowsAsync: (
     fn: () => Promise<unknown>,
@@ -56,6 +60,7 @@ interface AvaExecutionContext {
   plan: (count: number) => void;
   regex: (contents: string, regex: RegExp, message?: string) => void;
   snapshot: (expected: unknown, message?: string) => void;
+  teardown: (fn: () => Promise<void> | void) => void;
   throws: (
     fn: () => unknown,
     expectations?: unknown,
@@ -66,14 +71,48 @@ interface AvaExecutionContext {
     expectations?: unknown,
     message?: string,
   ) => Promise<unknown>;
+  timeout: (ms: number, message?: string) => void;
   true: (value: unknown, message?: string) => void;
   truthy: (value: unknown, message?: string) => void;
+  try: (
+    ...args: unknown[]
+  ) => Promise<{ commit: () => void; discard: () => void; passed: boolean }>;
+}
+
+/**
+ * AVA macro type - can be a function or object with exec/title
+ */
+interface AvaMacro {
+  exec: AvaTestFn;
+  title?: (providedTitle: string | undefined, ...args: unknown[]) => string;
 }
 
 /**
  * AVA test function type
  */
-type AvaTestFn = (t: AvaExecutionContext) => Promise<void> | void;
+type AvaTestFn = (
+  t: AvaExecutionContext,
+  ...args: unknown[]
+) => Promise<void> | void;
+
+/**
+ * Check if a value is an AVA macro object (has exec property)
+ */
+const isMacroObject = (value: unknown): value is AvaMacro => {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'exec' in value &&
+    typeof (value as AvaMacro).exec === 'function'
+  );
+};
+
+/**
+ * Check if a value is a function (macro or test function)
+ */
+const isFunction = (value: unknown): value is AvaTestFn => {
+  return typeof value === 'function';
+};
 
 /**
  * Internal capture state structure
@@ -167,23 +206,30 @@ const createMockContext = (): AvaExecutionContext => {
 
   return {
     assert: noop,
+    context: {},
     deepEqual: noop,
     fail: noop,
     false: noop,
     falsy: noop,
     is: noop,
+    like: noop,
+    log: noop,
     not: noop,
     notDeepEqual: noop,
+    notRegex: noop,
     notThrows: noop,
     notThrowsAsync: noopAsync,
     pass: noop,
     plan: noop,
     regex: noop,
     snapshot: noop,
+    teardown: noop,
     throws: () => undefined,
     throwsAsync: noopAsync as () => Promise<unknown>,
+    timeout: noop,
     true: noop,
     truthy: noop,
+    try: async () => ({ commit: noop, discard: noop, passed: true }),
   };
 };
 
@@ -213,210 +259,224 @@ const initCaptureState = (): CaptureState => {
  * Install AVA mocks on globalThis for module interception
  */
 const installAvaMocks = (state: CaptureState): void => {
-  // Create mock test function
-  const mockTest = Object.assign(
-    (titleOrMacro: AvaTestFn | string, implementation?: AvaTestFn): void => {
-      let name: string;
-      let fn: AvaTestFn;
+  /**
+   * Parse test arguments and return name + wrapped function Used by
+   * registerTest and test variants (only, serial, skip)
+   */
+  const parseTestArgs = (
+    titleOrMacroOrFn: AvaMacro | AvaTestFn | string,
+    rest: unknown[],
+  ): { name: string; wrappedFn: () => Promise<void> } => {
+    let name: string;
+    let fn: AvaTestFn;
+    let args: unknown[] = [];
 
-      if (typeof titleOrMacro === 'string') {
-        name = titleOrMacro;
-        fn = implementation ?? (() => {});
+    if (typeof titleOrMacroOrFn === 'string') {
+      name = titleOrMacroOrFn;
+      const [macroOrFn, ...restArgs] = rest;
+
+      if (isMacroObject(macroOrFn)) {
+        fn = macroOrFn.exec;
+        args = restArgs;
+        if (macroOrFn.title) {
+          name = macroOrFn.title(titleOrMacroOrFn, ...restArgs);
+        }
+      } else if (isFunction(macroOrFn)) {
+        fn = macroOrFn;
+        args = restArgs;
       } else {
-        // Macro without title - use function name or 'unnamed'
-        name = titleOrMacro.name || 'unnamed test';
-        fn = titleOrMacro;
+        fn = () => {};
       }
+    } else if (isMacroObject(titleOrMacroOrFn)) {
+      fn = titleOrMacroOrFn.exec;
+      args = rest;
+      name = titleOrMacroOrFn.title
+        ? titleOrMacroOrFn.title(undefined, ...rest)
+        : fn.name || 'unnamed test';
+    } else if (isFunction(titleOrMacroOrFn)) {
+      fn = titleOrMacroOrFn;
+      args = rest;
+      name = fn.name || 'unnamed test';
+    } else {
+      name = 'unnamed test';
+      fn = () => {};
+    }
 
-      // Wrap the AVA test function to inject mock context
+    const wrappedFn = async () => {
+      const ctx = createMockContext();
+      await fn(ctx, ...args);
+    };
+
+    return { name, wrappedFn };
+  };
+
+  /**
+   * Process a test registration, handling all AVA calling conventions:
+   *
+   * - Test('title', fn)
+   * - Test('title', macro, ...args)
+   * - Test(macro, ...args)
+   * - Test(fn)
+   */
+  const registerTest = (
+    titleOrMacroOrFn: AvaMacro | AvaTestFn | string,
+    ...rest: unknown[]
+  ): void => {
+    const { name, wrappedFn } = parseTestArgs(titleOrMacroOrFn, rest);
+    state.tests.push({
+      fn: wrappedFn as unknown as (
+        t: AvaExecutionContext,
+      ) => Promise<void> | void,
+      name,
+    });
+  };
+
+  // Create mock test function
+  const mockTest = Object.assign(registerTest, {
+    // test.after() - runs once after all tests
+    after: Object.assign(
+      (fn: AvaTestFn): void => {
+        const wrappedFn = async () => {
+          const ctx = createMockContext();
+          await fn(ctx);
+        };
+        state.hooks.after.push(wrappedFn);
+      },
+      {
+        // test.after.always() - runs even if tests fail
+        always: function always(fn: AvaTestFn): void {
+          const wrappedFn = async () => {
+            const ctx = createMockContext();
+            await fn(ctx);
+          };
+          state.hooks.afterAlways.push(wrappedFn);
+        },
+      },
+    ),
+
+    // test.afterEach() - runs after each test
+    afterEach: Object.assign(
+      (fn: AvaTestFn): void => {
+        const wrappedFn = async () => {
+          const ctx = createMockContext();
+          await fn(ctx);
+        };
+        state.hooks.afterEach.push(wrappedFn);
+      },
+      {
+        // test.afterEach.always() - runs even if test fails
+        always: function always(fn: AvaTestFn): void {
+          const wrappedFn = async () => {
+            const ctx = createMockContext();
+            await fn(ctx);
+          };
+          state.hooks.afterEachAlways.push(wrappedFn);
+        },
+      },
+    ),
+
+    // test.before() - runs once before all tests
+    before: function before(fn: AvaTestFn): void {
       const wrappedFn = async () => {
         const ctx = createMockContext();
         await fn(ctx);
       };
+      state.hooks.before.push(wrappedFn);
+    },
 
+    // test.beforeEach() - runs before each test
+    beforeEach: function beforeEach(fn: AvaTestFn): void {
+      const wrappedFn = async () => {
+        const ctx = createMockContext();
+        await fn(ctx);
+      };
+      state.hooks.beforeEach.push(wrappedFn);
+    },
+
+    // test.failing() - expected to fail (treat as regular for benchmarks)
+    failing: function failing(
+      titleOrMacro: AvaTestFn | string,
+      implementation?: AvaTestFn,
+    ): void {
+      mockTest(titleOrMacro, implementation);
+    },
+
+    // test.macro() - create reusable test macro
+    // Accepts either a function or an object with exec/title
+    macro: function macro<Args extends unknown[]>(
+      fnOrObject:
+        | ((t: AvaExecutionContext, ...args: Args) => Promise<void> | void)
+        | {
+            exec: (
+              t: AvaExecutionContext,
+              ...args: Args
+            ) => Promise<void> | void;
+            title?: (
+              providedTitle: string | undefined,
+              ...args: Args
+            ) => string;
+          },
+    ): AvaMacro | AvaTestFn {
+      if (typeof fnOrObject === 'function') {
+        // Simple function macro - return as-is
+        return fnOrObject as AvaTestFn;
+      }
+      // Object macro with exec/title - return as AvaMacro
+      return {
+        exec: fnOrObject.exec as AvaTestFn,
+        title: fnOrObject.title as AvaMacro['title'],
+      };
+    },
+
+    // test.only() - marks test as exclusive
+    only: function only(
+      titleOrMacroOrFn: AvaMacro | AvaTestFn | string,
+      ...rest: unknown[]
+    ): void {
+      // Reuse registerTest logic but add only flag
+      const { name, wrappedFn } = parseTestArgs(titleOrMacroOrFn, rest);
       state.tests.push({
-        fn: wrappedFn as unknown as (
-          t: AvaExecutionContext,
-        ) => Promise<void> | void,
+        fn: wrappedFn,
         name,
+        only: true,
       });
     },
-    {
-      // test.after() - runs once after all tests
-      after: Object.assign(
-        (fn: AvaTestFn): void => {
-          const wrappedFn = async () => {
-            const ctx = createMockContext();
-            await fn(ctx);
-          };
-          state.hooks.after.push(wrappedFn);
-        },
-        {
-          // test.after.always() - runs even if tests fail
-          always: function always(fn: AvaTestFn): void {
-            const wrappedFn = async () => {
-              const ctx = createMockContext();
-              await fn(ctx);
-            };
-            state.hooks.afterAlways.push(wrappedFn);
-          },
-        },
-      ),
 
-      // test.afterEach() - runs after each test
-      afterEach: Object.assign(
-        (fn: AvaTestFn): void => {
-          const wrappedFn = async () => {
-            const ctx = createMockContext();
-            await fn(ctx);
-          };
-          state.hooks.afterEach.push(wrappedFn);
-        },
-        {
-          // test.afterEach.always() - runs even if test fails
-          always: function always(fn: AvaTestFn): void {
-            const wrappedFn = async () => {
-              const ctx = createMockContext();
-              await fn(ctx);
-            };
-            state.hooks.afterEachAlways.push(wrappedFn);
-          },
-        },
-      ),
-
-      // test.before() - runs once before all tests
-      before: function before(fn: AvaTestFn): void {
-        const wrappedFn = async () => {
-          const ctx = createMockContext();
-          await fn(ctx);
-        };
-        state.hooks.before.push(wrappedFn);
-      },
-
-      // test.beforeEach() - runs before each test
-      beforeEach: function beforeEach(fn: AvaTestFn): void {
-        const wrappedFn = async () => {
-          const ctx = createMockContext();
-          await fn(ctx);
-        };
-        state.hooks.beforeEach.push(wrappedFn);
-      },
-
-      // test.failing() - expected to fail (treat as regular for benchmarks)
-      failing: function failing(
-        titleOrMacro: AvaTestFn | string,
-        implementation?: AvaTestFn,
-      ): void {
-        mockTest(titleOrMacro, implementation);
-      },
-
-      // test.macro() - create reusable test macro (stub)
-      macro: function macro<Args extends unknown[]>(
-        fn: (t: AvaExecutionContext, ...args: Args) => Promise<void> | void,
-      ) {
-        return fn;
-      },
-
-      // test.only() - marks test as exclusive
-      only: function only(
-        titleOrMacro: AvaTestFn | string,
-        implementation?: AvaTestFn,
-      ): void {
-        let name: string;
-        let fn: AvaTestFn;
-
-        if (typeof titleOrMacro === 'string') {
-          name = titleOrMacro;
-          fn = implementation ?? (() => {});
-        } else {
-          name = titleOrMacro.name || 'unnamed test';
-          fn = titleOrMacro;
-        }
-
-        const wrappedFn = async () => {
-          const ctx = createMockContext();
-          await fn(ctx);
-        };
-
-        state.tests.push({
-          fn: wrappedFn as unknown as (
-            t: AvaExecutionContext,
-          ) => Promise<void> | void,
-          name,
-          only: true,
-        });
-      },
-
-      // test.serial() - run serially (we capture but ignore serial flag for benchmarks)
-      serial: function serial(
-        titleOrMacro: AvaTestFn | string,
-        implementation?: AvaTestFn,
-      ): void {
-        let name: string;
-        let fn: AvaTestFn;
-
-        if (typeof titleOrMacro === 'string') {
-          name = titleOrMacro;
-          fn = implementation ?? (() => {});
-        } else {
-          name = titleOrMacro.name || 'unnamed test';
-          fn = titleOrMacro;
-        }
-
-        const wrappedFn = async () => {
-          const ctx = createMockContext();
-          await fn(ctx);
-        };
-
-        state.tests.push({
-          fn: wrappedFn as unknown as (
-            t: AvaExecutionContext,
-          ) => Promise<void> | void,
-          name,
-          serial: true,
-        });
-      },
-
-      // test.skip() - marks test as skipped
-      skip: function skip(
-        titleOrMacro: AvaTestFn | string,
-        implementation?: AvaTestFn,
-      ): void {
-        let name: string;
-        let fn: AvaTestFn;
-
-        if (typeof titleOrMacro === 'string') {
-          name = titleOrMacro;
-          fn = implementation ?? (() => {});
-        } else {
-          name = titleOrMacro.name || 'unnamed test';
-          fn = titleOrMacro;
-        }
-
-        const wrappedFn = async () => {
-          const ctx = createMockContext();
-          await fn(ctx);
-        };
-
-        state.tests.push({
-          fn: wrappedFn as unknown as (
-            t: AvaExecutionContext,
-          ) => Promise<void> | void,
-          name,
-          skip: true,
-        });
-      },
-
-      // test.todo() - placeholder test
-      todo: function todo(title: string): void {
-        state.tests.push({
-          fn: () => {},
-          name: title,
-          skip: true,
-        });
-      },
+    // test.serial() - run serially (we capture but ignore serial flag for benchmarks)
+    serial: function serial(
+      titleOrMacroOrFn: AvaMacro | AvaTestFn | string,
+      ...rest: unknown[]
+    ): void {
+      const { name, wrappedFn } = parseTestArgs(titleOrMacroOrFn, rest);
+      state.tests.push({
+        fn: wrappedFn,
+        name,
+        serial: true,
+      });
     },
-  );
+
+    // test.skip() - marks test as skipped
+    skip: function skip(
+      titleOrMacroOrFn: AvaMacro | AvaTestFn | string,
+      ...rest: unknown[]
+    ): void {
+      const { name, wrappedFn } = parseTestArgs(titleOrMacroOrFn, rest);
+      state.tests.push({
+        fn: wrappedFn,
+        name,
+        skip: true,
+      });
+    },
+
+    // test.todo() - placeholder test
+    todo: function todo(title: string): void {
+      state.tests.push({
+        fn: () => {},
+        name: title,
+        skip: true,
+      });
+    },
+  });
 
   // Install on globalThis for the loader to access
   // @ts-expect-error - intentionally using globalThis
