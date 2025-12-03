@@ -66,6 +66,10 @@ import {
   RUN_COMMAND_DEFAULTS,
   handleRunCommand as runCommand,
 } from './commands/run.js';
+import {
+  handleTestCommand as testCommand,
+  type TestOptions,
+} from './commands/test.js';
 
 /**
  * CLI context with initialized services
@@ -985,6 +989,81 @@ export const main = async (
           };
 
           process.exitCode = await analyzeCommand(context, options);
+        },
+      )
+      .command(
+        'test <framework> [files..]',
+        'Run test files as benchmarks (captures tests from Mocha, node:test, or AVA)',
+        (yargs) => {
+          return yargs
+            .positional('framework', {
+              choices: ['mocha', 'node-test', 'ava'] as const,
+              demandOption: true,
+              describe: 'Test framework to use',
+              nargs: 1,
+              type: 'string',
+            })
+            .positional('files', {
+              array: true,
+              describe: 'Test file paths or glob patterns',
+              type: 'string',
+            })
+            .option('iterations', {
+              alias: 'i',
+              default: 100,
+              description: 'Number of iterations per test',
+              type: 'number',
+            })
+            .option('warmup', {
+              alias: 'w',
+              default: 5,
+              description: 'Number of warmup iterations',
+              type: 'number',
+            })
+            .option('bail', {
+              alias: 'b',
+              default: false,
+              description: 'Stop on first failure',
+              type: 'boolean',
+            })
+            .option('quiet', {
+              alias: 'q',
+              default: false,
+              description: 'Minimal output',
+              type: 'boolean',
+            })
+            .example([
+              ['$0 test mocha test/*.spec.js', 'Run Mocha tests as benchmarks'],
+              [
+                '$0 test node-test test/*.test.js',
+                'Run node:test tests as benchmarks',
+              ],
+              [
+                '$0 test ava test/*.js --iterations 500',
+                'Run AVA tests with 500 iterations',
+              ],
+              [
+                '$0 test mocha test/unit.spec.js --json',
+                'Output results as JSON',
+              ],
+            ]);
+        },
+        async (argv) => {
+          const context = await createCliContext(argv, abortController!);
+          const options: TestOptions = {
+            bail: argv.bail,
+            cwd: argv.cwd,
+            framework: argv.framework as TestOptions['framework'],
+            iterations: argv.iterations,
+            json: argv.json,
+            noColor: argv.noColor,
+            pattern: argv.files,
+            quiet: argv.quiet,
+            verbose: argv.verbose,
+            warmup: argv.warmup,
+          };
+          const exitCode = await testCommand(context, options);
+          process.exit(exitCode);
         },
       )
       .fail((msg, err, yargs) => {

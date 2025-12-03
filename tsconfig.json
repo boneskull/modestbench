@@ -27,8 +27,8 @@
     "test/fixtures/config/test-config.js"
   ],
   "include": [
-    "src/**/*.ts",
-    "test/**/*.ts",
+    "src/",
+    "test/",
     "test-d/**/*.ts",
     "examples/**/*.ts",
     "examples/**/*.js",
