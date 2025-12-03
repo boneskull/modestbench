@@ -27,9 +27,14 @@
       "require": "./dist/index.cjs"
     },
     "./ava": {
-      "types": "./dist/adapters/ava-loader.d.cts",
-      "import": "./dist/adapters/ava-loader.js",
-      "require": "./dist/adapters/ava-loader.cjs"
+      "types": "./dist/adapters/ava-register.d.cts",
+      "import": "./dist/adapters/ava-register.js",
+      "require": "./dist/adapters/ava-register.cjs"
+    },
+    "./ava-hooks": {
+      "types": "./dist/adapters/ava-hooks.d.cts",
+      "import": "./dist/adapters/ava-hooks.js",
+      "require": "./dist/adapters/ava-hooks.cjs"
     },
     "./cli": {
       "types": "./dist/cli/index.d.cts",
@@ -226,7 +231,8 @@
     "bin": "./src/cli/index.ts",
     "exports": {
       ".": "./src/index.ts",
-      "./ava": "./src/adapters/ava-loader.ts",
+      "./ava": "./src/adapters/ava-register.ts",
+      "./ava-hooks": "./src/adapters/ava-hooks.ts",
       "./cli": "./src/cli/index.ts",
       "./node-test": "./src/adapters/node-test-register.ts",
       "./node-test-hooks": "./src/adapters/node-test-hooks.ts",
