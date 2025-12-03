@@ -132,7 +132,7 @@
     "prettier-plugin-pkg": "0.21.2",
     "prettier-plugin-sort-json": "4.1.1",
     "tsd": "0.33.0",
-    "tsx": "4.20.6",
+    "tsx": "4.21.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.48.0",
     "zshy": "0.6.0"
