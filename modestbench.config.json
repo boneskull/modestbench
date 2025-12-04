@@ -7,7 +7,7 @@
     "version": "1.0.0",
     "description": "Demonstration benchmarks for ModestBench framework"
   },
-  "outputDir": "./benchmark-results",
+  "outputDir": "./.modestbench",
   "pattern": "examples/**/*.bench.{js,ts}",
   "quiet": false,
   "reporterConfig": {

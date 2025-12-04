@@ -131,3 +131,18 @@ export const ErrorCodes = {
   VALIDATION_TYPE_FAILED: 'ERR_MB_VALIDATION_TYPE_FAILED',
   //#endregion
 } as const;
+
+/**
+ * Default output directory for reporters, history, cache, etc.
+ */
+export const DEFAULT_OUTPUT_DIR = './.modestbench';
+
+/**
+ * Default directory containing `*.bench.*` files
+ */
+export const DEFAULT_BENCHMARK_DIR = 'bench';
+
+/**
+ * URL of the site
+ */
+export const SITE_URL = 'https://modestbench.dev';

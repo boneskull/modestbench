@@ -19,7 +19,7 @@ import type {
 } from '../types/index.js';
 
 import { safeParseConfig } from '../config/schema.js';
-import { ErrorCodes } from '../constants.js';
+import { DEFAULT_BENCHMARK_DIR, ErrorCodes } from '../constants.js';
 import { ConfigLoadError, ConfigValidationError } from '../errors/index.js';
 
 /**
@@ -56,7 +56,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   limitBy: 'iterations', // Default to limiting by iteration count
   metadata: {},
   outputDir: undefined, // No default output directory - reporters will use stdout unless explicitly configured
-  pattern: 'bench/**/*.bench.{js,ts,mjs,cjs,mts,cts}', // Search bench/ directory recursively
+  pattern: `${DEFAULT_BENCHMARK_DIR}/**/*.bench.{js,ts,mjs,cjs,mts,cts}`, // Search bench/ directory recursively
   quiet: false,
   reporterConfig: {},
   reporters: [getDefaultReporter()],

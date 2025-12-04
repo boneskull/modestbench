@@ -18,6 +18,11 @@ import { createInterface } from 'node:readline';
 import type { CliContext } from '../index.js';
 
 import {
+  DEFAULT_BENCHMARK_DIR,
+  DEFAULT_OUTPUT_DIR,
+  SITE_URL,
+} from '../../constants.js';
+import {
   InvalidArgumentError,
   UnsupportedConfigFormatError,
 } from '../../errors/index.js';
@@ -43,40 +48,44 @@ const PROJECT_TEMPLATES = {
   advanced: {
     configOptions: {
       iterations: 1000,
-      outputDir: '.modestbench',
-      pattern: 'bench/**/*.bench.{js,ts}',
+      outputDir: DEFAULT_OUTPUT_DIR,
+      pattern: `${DEFAULT_BENCHMARK_DIR}/**/*.bench.{js,ts}`,
       reporters: ['human', 'json'],
       time: 10000,
       warmup: 50,
     },
     description: 'Feature-rich setup with multiple reporters and configuration',
-    directories: ['bench', '.modestbench'],
+    directories: [DEFAULT_BENCHMARK_DIR, DEFAULT_OUTPUT_DIR],
     name: 'Advanced Project',
   },
   basic: {
     configOptions: {
       iterations: 100,
-      outputDir: '.modestbench',
-      pattern: 'bench/**/*.bench.{js,ts}',
+      outputDir: DEFAULT_OUTPUT_DIR,
+      pattern: `${DEFAULT_BENCHMARK_DIR}/**/*.bench.{js,ts}`,
       reporters: ['human'],
       time: 5000,
     },
     description: 'Simple benchmark setup for small projects',
-    directories: ['bench', '.modestbench'],
+    directories: [DEFAULT_BENCHMARK_DIR, DEFAULT_OUTPUT_DIR],
     name: 'Basic Project',
   },
   library: {
     configOptions: {
       bail: false,
       iterations: 5000,
-      outputDir: '.modestbench',
-      pattern: 'bench/**/*.bench.{js,ts}',
+      outputDir: DEFAULT_OUTPUT_DIR,
+      pattern: `${DEFAULT_BENCHMARK_DIR}/**/*.bench.{js,ts}`,
       reporters: ['human', 'json'],
       time: 15000,
       warmup: 100,
     },
     description: 'Optimized for library performance testing',
-    directories: ['bench', 'bench/suites', '.modestbench'],
+    directories: [
+      DEFAULT_BENCHMARK_DIR,
+      `${DEFAULT_BENCHMARK_DIR}/suites`,
+      DEFAULT_OUTPUT_DIR,
+    ],
     name: 'Library Project',
   },
 } as const;
@@ -375,7 +384,7 @@ const createAdditionalFiles = async (
   // Create README.md
   const readmeContent = `# Benchmark Project
 
-This project uses [ModestBench](https://github.com/your-org/modestbench) for performance testing.
+This project uses [ModestBench](${SITE_URL}) for performance testing.
 
 ## Getting Started
 
@@ -386,7 +395,7 @@ modestbench run
 
 Run specific benchmarks:
 \`\`\`bash
-modestbench run "bench/array-*.bench.js"
+modestbench run "${DEFAULT_BENCHMARK_DIR}/array-*.bench.js"
 \`\`\`
 
 View benchmark history:
@@ -400,7 +409,7 @@ See \`modestbench.config.*\` for benchmark configuration options.
 
 ## Writing Benchmarks
 
-Create new benchmark files in the \`bench/\` directory. See the examples for the expected format.
+Create new benchmark files in the \`${DEFAULT_BENCHMARK_DIR}/\` directory. See the examples for the expected format.
 `;
 
   try {
@@ -423,7 +432,7 @@ const createOrUpdateGitignore = async (
   options?: { quiet?: boolean; yes?: boolean },
 ): Promise<void> => {
   const gitignorePath = resolve(cwd, '.gitignore');
-  const modestbenchEntry = '.modestbench/';
+  const modestbenchEntry = `${DEFAULT_OUTPUT_DIR}/`;
   const modestbenchSection = `\n# ModestBench history\n${modestbenchEntry}\n`;
 
   try {
@@ -436,13 +445,13 @@ const createOrUpdateGitignore = async (
     }
 
     if (existingContent) {
-      // File exists, check if .modestbench/ is already present
+      // File exists, check if ${DEFAULT_OUTPUT_DIR}/ is already present
       if (existingContent.includes(modestbenchEntry)) {
         // Already present, nothing to do
         return;
       }
 
-      // Append .modestbench/ entry (--yes or --quiet means auto-accept)
+      // Append default output dir entry (--yes or --quiet means auto-accept)
       if (options?.yes || options?.quiet) {
         // Ensure content ends with newline
         const contentToAppend = existingContent.endsWith('\n')
@@ -464,7 +473,6 @@ build/
 coverage/
 
 # Benchmark output
-benchmark-results/
 ${modestbenchSection}`;
       await writeFile(gitignorePath, newContent, 'utf8');
     }
@@ -550,7 +558,7 @@ const createDirectories = async (
  * Create example benchmark files
  */
 const createExampleBenchmarks = async (cwd: string): Promise<void> => {
-  const benchmarksDir = resolve(cwd, 'bench');
+  const benchmarksDir = resolve(cwd, DEFAULT_BENCHMARK_DIR);
 
   for (const [name, example] of Object.entries(EXAMPLE_BENCHMARKS)) {
     const filePath = join(benchmarksDir, example.filename);

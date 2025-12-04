@@ -25,6 +25,7 @@ import type {
   TaskResult,
 } from '../../src/types/index.js';
 
+import { DEFAULT_OUTPUT_DIR } from '../../src/constants.js';
 import { createRunId } from '../../src/utils/identifiers.js';
 
 /**
@@ -62,7 +63,7 @@ export const buildMockConfig = (
     iterations: 100,
     limitBy: 'iterations',
     metadata: {},
-    outputDir: './benchmark-results',
+    outputDir: DEFAULT_OUTPUT_DIR,
     pattern: '**/*.bench.{js,ts}',
     quiet: false,
     reporterConfig: {},

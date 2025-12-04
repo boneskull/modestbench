@@ -24,6 +24,7 @@ import type {
 import { bootstrap } from '../bootstrap.js';
 import {
   ABORT_TIMEOUT,
+  DEFAULT_BENCHMARK_DIR,
   DEFAULT_ENGINE,
   DEFAULT_REPORTER,
   Engines,
@@ -177,7 +178,7 @@ export const main = async (
           yargs
             .positional('pattern', {
               array: true,
-              defaultDescription: '(auto-discovered from bench/ directory)',
+              defaultDescription: `(auto-discovered from ${DEFAULT_BENCHMARK_DIR} directory)`,
               describe:
                 'File paths, directory paths, or glob patterns for benchmark files',
               type: 'string',

@@ -5,10 +5,12 @@
  * documentation URLs, and consistent error display.
  */
 
+import { SITE_URL } from '../constants.js';
+
 /**
  * Base URL for error documentation
  */
-const ERROR_DOC_BASE_URL = 'https://modestbench.dev/reference/errors';
+const ERROR_DOC_BASE_URL = `${SITE_URL}/reference/errors`;
 
 /**
  * Abstract base class for ModestBench aggregate errors

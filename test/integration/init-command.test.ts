@@ -15,6 +15,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
+import {
+  DEFAULT_BENCHMARK_DIR,
+  DEFAULT_OUTPUT_DIR,
+} from '../../src/constants.js';
 import { ModestBenchConfigurationManager } from '../../src/services/config-manager.js';
 import { runCommand } from '../util.js';
 
@@ -290,7 +294,7 @@ describe('modestbench init command - integration', () => {
       await runCommand(['init', '--no-examples'], tempDir);
 
       // Bench directory should exist but be empty
-      const benchmarksDir = join(tempDir, 'bench');
+      const benchmarksDir = join(tempDir, DEFAULT_BENCHMARK_DIR);
       await access(benchmarksDir); // Directory exists
 
       // Example files should not exist
@@ -304,7 +308,7 @@ describe('modestbench init command - integration', () => {
       await runCommand(['init', '--examples'], tempDir);
 
       const exampleContent = await readFile(
-        join(tempDir, 'bench', 'example.bench.js'),
+        join(tempDir, DEFAULT_BENCHMARK_DIR, 'example.bench.js'),
         'utf8',
       );
 
@@ -330,7 +334,7 @@ describe('modestbench init command - integration', () => {
       expect(
         content,
         'to contain',
-        'benchmark-results/',
+        `${DEFAULT_OUTPUT_DIR}/`,
         'and',
         'to contain',
         'node_modules/',
@@ -343,7 +347,7 @@ describe('modestbench init command - integration', () => {
       const gitignorePath = join(tempDir, '.gitignore');
       const content = await readFile(gitignorePath, 'utf8');
 
-      expect(content, 'to contain', '.modestbench/');
+      expect(content, 'to contain', `${DEFAULT_OUTPUT_DIR}/`);
     });
 
     it('should append .modestbench/ to existing .gitignore with --yes flag', async () => {
@@ -362,7 +366,7 @@ describe('modestbench init command - integration', () => {
       expect(content, 'to contain', '*.log');
 
       // Should contain newly added .modestbench/
-      expect(content, 'to contain', '.modestbench/');
+      expect(content, 'to contain', `${DEFAULT_OUTPUT_DIR}/`);
       expect(content, 'to contain', '# ModestBench history');
     });
 
@@ -378,16 +382,16 @@ describe('modestbench init command - integration', () => {
       const content = await readFile(gitignorePath, 'utf8');
 
       // Should contain newly added .modestbench/
-      expect(content, 'to contain', '.modestbench/');
+      expect(content, 'to contain', `${DEFAULT_OUTPUT_DIR}/`);
     });
 
-    it('should not duplicate .modestbench/ if already present', async () => {
+    it(`should not duplicate ${DEFAULT_OUTPUT_DIR}/ if already present`, async () => {
       const gitignorePath = join(tempDir, '.gitignore');
 
       // Create existing .gitignore with .modestbench/ already in it
       await writeFile(
         gitignorePath,
-        'node_modules/\n.modestbench/\n*.log\n',
+        'node_modules/\n${DEFAULT_OUTPUT_DIR}/\n*.log\n',
         'utf8',
       );
 
@@ -397,11 +401,11 @@ describe('modestbench init command - integration', () => {
       const content = await readFile(gitignorePath, 'utf8');
 
       // Count occurrences of .modestbench/
-      const matches = content.match(/\.modestbench\//g);
+      const matches = content.match(new RegExp(`${DEFAULT_OUTPUT_DIR}/`, 'g'));
       expect(matches?.length, 'to equal', 1);
     });
 
-    it('should format appended .modestbench/ with proper newlines', async () => {
+    it(`should format appended ${DEFAULT_OUTPUT_DIR}/ with proper newlines`, async () => {
       const gitignorePath = join(tempDir, '.gitignore');
 
       // Create existing .gitignore without trailing newline
@@ -416,7 +420,7 @@ describe('modestbench init command - integration', () => {
       expect(
         content,
         'to contain',
-        'node_modules/\n\n# ModestBench history\n.modestbench/\n',
+        `node_modules/\n\n# ModestBench history\n${DEFAULT_OUTPUT_DIR}/\n`,
       );
     });
 
