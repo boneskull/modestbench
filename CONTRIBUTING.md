@@ -1,10 +1,10 @@
 # Contributing to Modestbench
 
-Thank you for your interest in contributing to Bupkis! We welcome contributions from everyone and are grateful for every contribution made.
+Thank you for your interest in contributing to **modestbench**! We welcome contributions from everyone and are grateful for every contribution made.
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+This project and everyone participating in it is governed by our [Code of Conduct](https://github.com/boneskull/modestbench/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
 
 ## How Can I Contribute?
 
@@ -17,7 +17,7 @@ Before creating bug reports, please check the existing issues as you might find 
 - **Provide specific examples to demonstrate the steps**
 - **Describe the behavior you observed** and **explain which behavior you expected to see**
 - **Include code samples** that demonstrate the issue
-- **Specify the version of Bupkis you're using**
+- **Specify the version of **modestbench** you're using**
 - **Specify your Node.js version and operating system**
 
 ### Suggesting Enhancements
@@ -189,4 +189,4 @@ All contributors will be recognized in the project. We appreciate all forms of c
 - Feature suggestions
 - Testing and feedback
 
-Thank you for contributing to Bupkis! 🎉
+Thank you for contributing to **modestbench**! 🎉

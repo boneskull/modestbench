@@ -39,6 +39,7 @@
   ],
   "ignoreRandomStrings": true,
   "ignoreWords": [
+    "imazen",
     "modestbenchrc",
     "nodir",
     "unbrand",

@@ -408,9 +408,9 @@ modestbench analyze "npm test"
 
 ## Next Steps
 
-- Read the [Advanced Usage](/modestbench/guides/advanced/) guide for benchmark patterns
-- Learn about [Historical Tracking](/modestbench/guides/advanced/#historical-tracking) to monitor improvements
-- Explore the [CLI Reference](/modestbench/guides/cli/) for all available options
+- Read the [Advanced Usage](/guides/advanced/) guide for benchmark patterns
+- Learn about [Historical Tracking](/guides/advanced/#historical-tracking) to monitor improvements
+- Explore the [CLI Reference](/guides/cli/) for all available options
 
 :::tip[Profile Early, Profile Often]
 Make profiling part of your regular workflow. Profile before optimization work to identify targets, and profile after to verify improvements.

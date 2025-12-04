@@ -445,7 +445,7 @@ The profiler displays results with color-coded percentages:
 - **White (<2%)**: Minor impact
 
 :::tip[Learn More]
-See the [Profiling Guide](/modestbench/guides/profiling/) for detailed workflows, best practices, and programmatic usage.
+See the [Profiling Guide](/guides/profiling/) for detailed workflows, best practices, and programmatic usage.
 :::
 
 ### `modestbench history`

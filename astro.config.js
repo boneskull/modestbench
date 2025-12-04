@@ -1,5 +1,6 @@
 import starlight from '@astrojs/starlight';
 import starlightClientMermaid from '@pasqal-io/starlight-client-mermaid';
+import astroBrokenLinksChecker from 'astro-broken-link-checker';
 import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
@@ -7,6 +8,11 @@ export default defineConfig({
   base: '/',
 
   integrations: [
+    astroBrokenLinksChecker({
+      checkExternalLinks: false, // External link checking is slow without disk caching
+      logFilePath: 'broken-links.log',
+      throwError: true, // Fail the build if broken links are found
+    }),
     starlight({
       customCss: ['./site/src/styles/custom.css'],
       description: 'A full-ass benchmarking framework for Node.js',
