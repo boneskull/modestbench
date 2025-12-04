@@ -806,8 +806,8 @@ describe('Multiple reporter output formats', () => {
       ]);
 
       expect(result.exitCode, 'to equal', 0);
-      // Should show iteration counts in verbose mode
-      expect(result.stdout, 'to contain', 'iterations');
+      // Should show iteration counts inline (now shown for all reporters)
+      expect(result.stdout, 'to contain', 'iter)');
     });
   });
 });

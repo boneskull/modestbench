@@ -25,7 +25,13 @@ const symbols = {
   checkmark: '√',
   cross: '×',
   plusMinus: '±',
+  warning: '⚠',
 } as const;
+
+/**
+ * Minimum iterations required for reliable CV calculation
+ */
+const MIN_RELIABLE_ITERATIONS = 30;
 
 /**
  * Simple console reporter with plain text output (no colors or progress bars)
@@ -41,6 +47,8 @@ export class SimpleReporter extends BaseReporter {
     suite: string;
     task: string;
   }> = [];
+
+  private lowIterationCount = 0;
 
   private readonly quiet: boolean;
 
@@ -192,6 +200,14 @@ export class SimpleReporter extends BaseReporter {
     } else {
       console.log('All benchmarks completed successfully!');
     }
+
+    // Show warning for low iteration counts
+    if (this.lowIterationCount > 0) {
+      console.log();
+      console.log(
+        `${symbols.warning} Warning: ${this.lowIterationCount} ${SimpleReporter.pluralize('task', this.lowIterationCount)} had low iteration counts (<${MIN_RELIABLE_ITERATIONS}) which may affect statistical reliability`,
+      );
+    }
   }
 
   onError(error: Error): void {
@@ -248,6 +264,7 @@ export class SimpleReporter extends BaseReporter {
   onStart(run: BenchmarkRun): void {
     this.startTime = Date.now();
     this.failures = []; // Reset failures for new run
+    this.lowIterationCount = 0; // Reset low iteration count for new run
 
     if (this.quiet) {
       return;
@@ -366,6 +383,9 @@ export class SimpleReporter extends BaseReporter {
       error: boolean;
       errorMessage?: string;
       iterations: number;
+      iterationsLen: number;
+      iterationsStr: string;
+      lowIterations: boolean;
       name: string;
       nameLength: number;
       opsPerSecLen: number;
@@ -388,6 +408,9 @@ export class SimpleReporter extends BaseReporter {
           error: true,
           errorMessage: result.error?.message || String(result.error),
           iterations: 0,
+          iterationsLen: 0,
+          iterationsStr: '',
+          lowIterations: false,
           name,
           nameLength,
           opsPerSecLen: 0,
@@ -398,15 +421,20 @@ export class SimpleReporter extends BaseReporter {
         };
       }
 
-      const duration = BaseReporter.formatDuration(result.mean * 1e9);
+      const duration = BaseReporter.formatDuration(result.mean);
       const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
       const rme = BaseReporter.formatPercentage(result.marginOfError); // already a percentage
+      const iterationsStr = `(${result.iterations} iter)`;
+      const lowIterations = result.iterations < MIN_RELIABLE_ITERATIONS;
 
       return {
         durationLen: duration.length,
         durationStr: duration,
         error: false,
         iterations: result.iterations,
+        iterationsLen: iterationsStr.length,
+        iterationsStr,
+        lowIterations,
         name,
         nameLength,
         opsPerSecLen: opsPerSec.length,
@@ -432,6 +460,10 @@ export class SimpleReporter extends BaseReporter {
     );
     const maxRmeLen = Math.max(
       ...formatted.filter((t) => !t.error).map((t) => t.rmeLen),
+      0,
+    );
+    const maxIterLen = Math.max(
+      ...formatted.filter((t) => !t.error).map((t) => t.iterationsLen),
       0,
     );
     const maxOpsLen = Math.max(
@@ -464,28 +496,32 @@ export class SimpleReporter extends BaseReporter {
         const leadingPad = ' '.repeat(numbersStartPos);
         const durationPad = ' '.repeat(maxDurationLen - task.durationLen);
         const rmePad = ' '.repeat(maxRmeLen - task.rmeLen);
+        const iterPad = ' '.repeat(maxIterLen - task.iterationsLen);
         const opsPad = ' '.repeat(maxOpsLen - task.opsPerSecLen);
 
         console.log(
-          `${leadingPad}${durationPad}${task.durationStr} ${separator} ${symbols.plusMinus}${rmePad}${task.rmeStr} ${separator} ${opsPad}${task.opsPerSecStr}`,
+          `${leadingPad}${durationPad}${task.durationStr} ${separator} ${symbols.plusMinus}${rmePad}${task.rmeStr} ${iterPad}${task.iterationsStr} ${separator} ${opsPad}${task.opsPerSecStr}`,
         );
 
-        if (this.verbose && task.iterations > 0) {
-          console.log(`      ${task.iterations} iterations`);
+        // Track low iteration count
+        if (task.lowIterations) {
+          this.lowIterationCount++;
         }
       } else {
         // Normal length - align on same line
         const namePad = ' '.repeat(maxNameLen - task.nameLength);
         const durationPad = ' '.repeat(maxDurationLen - task.durationLen);
         const rmePad = ' '.repeat(maxRmeLen - task.rmeLen);
+        const iterPad = ' '.repeat(maxIterLen - task.iterationsLen);
         const opsPad = ' '.repeat(maxOpsLen - task.opsPerSecLen);
 
         console.log(
-          `${BASE_INDENT}${task.status} ${task.name}${namePad}: ${durationPad}${task.durationStr} ${separator} ${symbols.plusMinus}${rmePad}${task.rmeStr} ${separator} ${opsPad}${task.opsPerSecStr}`,
+          `${BASE_INDENT}${task.status} ${task.name}${namePad}: ${durationPad}${task.durationStr} ${separator} ${symbols.plusMinus}${rmePad}${task.rmeStr} ${iterPad}${task.iterationsStr} ${separator} ${opsPad}${task.opsPerSecStr}`,
         );
 
-        if (this.verbose && task.iterations > 0) {
-          console.log(`      ${task.iterations} iterations`);
+        // Track low iteration count
+        if (task.lowIterations) {
+          this.lowIterationCount++;
         }
       }
     }

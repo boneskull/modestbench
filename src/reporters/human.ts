@@ -20,6 +20,11 @@ import { BaseReporter } from '../services/reporter-registry.js';
 import { ansiChars, colors } from '../utils/ansi.js';
 
 /**
+ * Minimum iterations required for reliable CV calculation
+ */
+const MIN_RELIABLE_ITERATIONS = 30;
+
+/**
  * Human-readable console reporter with colorized output
  */
 export class HumanReporter extends BaseReporter {
@@ -37,6 +42,8 @@ export class HumanReporter extends BaseReporter {
   }> = [];
 
   private lastProgressLine = '';
+
+  private lowIterationCount = 0;
 
   private maxTimePadWidth = 0; // Track maximum time padding width to prevent jitter
 
@@ -244,6 +251,14 @@ export class HumanReporter extends BaseReporter {
       const successMessage = `${this.colorize('brightMagenta', 'Rad. ☮')}`;
       this.printLine(successMessage);
     }
+
+    // Show warning for low iteration counts
+    if (this.lowIterationCount > 0) {
+      this.printLine();
+      this.printLine(
+        `${this.colorize('brightYellow', ansiChars.approx)} ${this.colorize('brightYellow', 'Warning:')} ${this.lowIterationCount} ${HumanReporter.pluralize('task', this.lowIterationCount)} had low iteration counts (<${MIN_RELIABLE_ITERATIONS}) which may affect statistical reliability`,
+      );
+    }
   }
 
   onError(error: Error): void {
@@ -373,6 +388,7 @@ export class HumanReporter extends BaseReporter {
     this.failures = []; // Reset failures for new run
     this.lastProgressLine = ''; // Reset for new run
     this.maxTimePadWidth = 0; // Reset time padding width for new run
+    this.lowIterationCount = 0; // Reset low iteration count for new run
 
     if (this.quiet) {
       return;
@@ -634,6 +650,9 @@ export class HumanReporter extends BaseReporter {
       error: boolean;
       errorMessage?: string;
       iterations: number;
+      iterationsLen: number;
+      iterationsStr: string;
+      lowIterations: boolean;
       name: string;
       nameLength: number;
       opsPerSecLen: number;
@@ -661,6 +680,9 @@ export class HumanReporter extends BaseReporter {
             error: true,
             errorMessage: result.error?.message || String(result.error),
             iterations: 0,
+            iterationsLen: 0,
+            iterationsStr: '',
+            lowIterations: false,
             name,
             nameLength,
             opsPerSecLen: 0,
@@ -674,12 +696,17 @@ export class HumanReporter extends BaseReporter {
         const duration = BaseReporter.formatDuration(result.mean); // already in nanoseconds
         const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
         const rme = BaseReporter.formatPercentage(result.marginOfError); // already a percentage
+        const iterationsStr = `(${result.iterations} iter)`;
+        const lowIterations = result.iterations < MIN_RELIABLE_ITERATIONS;
 
         return {
           durationLen: this.getVisibleLength(duration),
           durationStr: duration,
           error: false,
           iterations: result.iterations,
+          iterationsLen: iterationsStr.length,
+          iterationsStr,
+          lowIterations,
           name,
           nameLength,
           opsPerSecLen: this.getVisibleLength(opsPerSec),
@@ -707,6 +734,10 @@ export class HumanReporter extends BaseReporter {
       ...formatted.filter((t) => !t.error).map((t) => t.rmeLen),
       0,
     );
+    const maxIterLen = Math.max(
+      ...formatted.filter((t) => !t.error).map((t) => t.iterationsLen),
+      0,
+    );
     const maxOpsLen = Math.max(
       ...formatted.filter((t) => !t.error).map((t) => t.opsPerSecLen),
       0,
@@ -731,11 +762,13 @@ export class HumanReporter extends BaseReporter {
         const wrappedLines = this.wrapText(task.name, MAX_NAME_WIDTH);
         const continueIndent = BASE_INDENT + '  '; // 6 spaces for continuation lines
 
-        // Format stats string
+        // Format stats string with iterations
         const durationPad = ' '.repeat(maxDurationLen - task.durationLen);
         const rmePad = ' '.repeat(maxRmeLen - task.rmeLen);
+        const iterPad = ' '.repeat(maxIterLen - task.iterationsLen);
         const opsPad = ' '.repeat(maxOpsLen - task.opsPerSecLen);
-        const statsStr = `${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`;
+        const iterColor = task.lowIterations ? 'brightRed' : 'cyan';
+        const statsStr = `${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${iterPad}${this.colorize(iterColor, task.iterationsStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`;
 
         // Print first line with status
         this.printLine(
@@ -766,26 +799,26 @@ export class HumanReporter extends BaseReporter {
           );
         }
 
-        if (this.verbose && task.iterations > 0) {
-          this.printLine(
-            `      ${this.colorize('dim', `${task.iterations} iterations`)}`,
-          );
+        // Track low iteration count
+        if (task.lowIterations) {
+          this.lowIterationCount++;
         }
       } else {
         // Normal length - align on same line
         const namePad = ' '.repeat(maxNameLen - task.nameLength);
         const durationPad = ' '.repeat(maxDurationLen - task.durationLen);
         const rmePad = ' '.repeat(maxRmeLen - task.rmeLen);
+        const iterPad = ' '.repeat(maxIterLen - task.iterationsLen);
         const opsPad = ' '.repeat(maxOpsLen - task.opsPerSecLen);
+        const iterColor = task.lowIterations ? 'brightRed' : 'cyan';
 
         this.printLine(
-          `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)}${namePad}: ${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`,
+          `${BASE_INDENT}${task.status} ${this.colorize('white', task.name)}${namePad}: ${durationPad}${this.colorize('cyan', task.durationStr)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', task.rmeStr)} ${iterPad}${this.colorize(iterColor, task.iterationsStr)} ${bullet} ${opsPad}${this.colorize('magenta', task.opsPerSecStr)}`,
         );
 
-        if (this.verbose && task.iterations > 0) {
-          this.printLine(
-            `      ${this.colorize('dim', `${task.iterations} iterations`)}`,
-          );
+        // Track low iteration count
+        if (task.lowIterations) {
+          this.lowIterationCount++;
         }
       }
     }
@@ -853,21 +886,27 @@ export class HumanReporter extends BaseReporter {
     const duration = BaseReporter.formatDuration(result.mean);
     const opsPerSec = BaseReporter.formatOpsPerSecond(result.opsPerSecond);
     const rme = BaseReporter.formatPercentage(result.marginOfError);
+    const iterationsStr = `(${result.iterations} iter)`;
+    const lowIterations = result.iterations < MIN_RELIABLE_ITERATIONS;
 
     // Use fixed widths for stats columns (reasonable maximums)
     const DURATION_WIDTH = 10; // "999.99ms" max
     const RME_WIDTH = 8; // "±999.99%" max
+    const ITER_WIDTH = 12; // "(99999 iter)" max
     const OPS_WIDTH = 15; // "999.99K ops/sec" max
 
     const durationLen = this.getVisibleLength(duration);
     const rmeLen = this.getVisibleLength(rme);
+    const iterLen = iterationsStr.length;
     const opsLen = this.getVisibleLength(opsPerSec);
 
     // Stats formatting with fixed widths
-    const durationPad = ' '.repeat(DURATION_WIDTH - durationLen);
-    const rmePad = ' '.repeat(RME_WIDTH - rmeLen);
-    const opsPad = ' '.repeat(OPS_WIDTH - opsLen);
-    const statsStr = `${durationPad}${this.colorize('cyan', duration)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', rme)} ${bullet} ${opsPad}${this.colorize('magenta', opsPerSec)}`;
+    const durationPad = ' '.repeat(Math.max(0, DURATION_WIDTH - durationLen));
+    const rmePad = ' '.repeat(Math.max(0, RME_WIDTH - rmeLen));
+    const iterPad = ' '.repeat(Math.max(0, ITER_WIDTH - iterLen));
+    const opsPad = ' '.repeat(Math.max(0, OPS_WIDTH - opsLen));
+    const iterColor = lowIterations ? 'brightRed' : 'cyan';
+    const statsStr = `${durationPad}${this.colorize('cyan', duration)} ${bullet} ${ansiChars.plusMinus}${rmePad}${this.colorize('brightBlue', rme)} ${iterPad}${this.colorize(iterColor, iterationsStr)} ${bullet} ${opsPad}${this.colorize('magenta', opsPerSec)}`;
 
     // Handle long names (wrap)
     if (nameLength > MAX_NAME_WIDTH) {
@@ -917,10 +956,9 @@ export class HumanReporter extends BaseReporter {
       );
     }
 
-    if (this.verbose && result.iterations > 0) {
-      this.printLine(
-        `      ${this.colorize('dim', `${result.iterations} iterations`)}`,
-      );
+    // Track low iteration count
+    if (lowIterations) {
+      this.lowIterationCount++;
     }
   }
 

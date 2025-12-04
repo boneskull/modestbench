@@ -178,8 +178,8 @@ export default {
         testDir,
       );
 
-      // The human reporter should show verbose output (e.g., iteration counts)
-      expect(result.stdout, 'to contain', 'iterations');
+      // The human reporter should show iteration counts inline
+      expect(result.stdout, 'to contain', 'iter)');
       expect(result.exitCode, 'to equal', 0);
     });
 
@@ -373,8 +373,9 @@ export default {
 
       // CLI setup messages should appear
       expect(result.stderr, 'to contain', 'Loading configuration...');
-      // Human reporter verbose features should be active (e.g., iteration counts)
-      expect(result.stdout, 'to contain', 'iterations');
+      // Human reporter should show iteration counts inline (or JSON has iterations field)
+      // The combined output should contain iteration data in some form
+      expect(result.stdout, 'to match', /iter\)|"iterations":/);
       // JSON and CSV data should be in stdout
       expect(result.stdout, 'to contain', '"meta":');
       expect(result.exitCode, 'to equal', 0);
