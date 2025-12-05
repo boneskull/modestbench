@@ -191,7 +191,9 @@
         "src/index.ts",
         "src/cli/index.ts",
         "examples/**/*.ts",
-        "examples/**/*.js"
+        "examples/**/*.js",
+        "src/adapters/*-hooks.ts",
+        "src/adapters/*-register.ts"
       ]
     }
   },

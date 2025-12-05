@@ -5,7 +5,10 @@
  * (Mocha, node:test, AVA) and converting them to modestbench benchmark format.
  */
 
-import type { BenchmarkDefinition } from '../core/benchmark-schema.js';
+import type {
+  BenchmarkDefinition,
+  BenchmarkSuite,
+} from '../core/benchmark-schema.js';
 
 /**
  * A captured test suite (describe block) from a test framework
@@ -50,25 +53,14 @@ export interface CapturedTestFile {
 }
 
 /**
- * Options for converting captured tests to benchmarks
- */
-export interface ConversionOptions {
-  /** Number of benchmark iterations (default: from modestbench config) */
-  readonly iterations?: number;
-  /** Number of warmup iterations (default: from modestbench config) */
-  readonly warmup?: number;
-}
-
-/**
  * Converted benchmark suite structure
  *
  * This is what capturedToBenchmark produces for each suite.
  */
-export interface ConvertedBenchmarkSuite {
-  benchmarks: Record<string, { fn: () => Promise<void> | void }>;
-  setup?: () => Promise<void>;
-  teardown?: () => Promise<void>;
-}
+export type ConvertedBenchmarkSuite = Pick<
+  BenchmarkSuite,
+  'benchmarks' | 'setup' | 'teardown'
+>;
 
 /**
  * Lifecycle hooks captured from a test suite

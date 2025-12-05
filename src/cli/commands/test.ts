@@ -9,12 +9,6 @@ import { resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 
 import type {
-  CapturedSuite,
-  CapturedTestFile,
-  ConvertedBenchmarkSuite,
-  TestFramework,
-} from '../../adapters/types.js';
-import type {
   BenchmarkRun,
   FileResult,
   ModestBenchConfig,
@@ -24,12 +18,16 @@ import type {
 } from '../../types/core.js';
 import type { CliContext } from '../index.js';
 
+import { AvaAdapter } from '../../adapters/ava-adapter.js';
+import { MochaAdapter } from '../../adapters/mocha-adapter.js';
+import { NodeTestAdapter } from '../../adapters/node-test-adapter.js';
 import {
-  AvaAdapter,
+  type CapturedSuite,
+  type CapturedTestFile,
   capturedToBenchmark,
-  MochaAdapter,
-  NodeTestAdapter,
-} from '../../adapters/index.js';
+  type ConvertedBenchmarkSuite,
+  type TestFramework,
+} from '../../adapters/types.js';
 import { ExitCodes } from '../../types/cli.js';
 import { createRunId } from '../../types/core.js';
 import { isError } from '../../utils/type-guards.js';
