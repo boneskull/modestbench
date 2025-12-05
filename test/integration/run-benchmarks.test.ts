@@ -177,7 +177,7 @@ describe('Benchmark execution with progress tracking', () => {
   });
 
   describe('progress with setup and teardown', () => {
-    it('should track progress including setup/teardown phases', async () => {
+    it('should run setup before and teardown after benchmarks', async () => {
       const benchFile = join(tempDir, 'benchmarks', 'setup-teardown.bench.js');
       await writeFile(
         benchFile,
@@ -186,7 +186,7 @@ describe('Benchmark execution with progress tracking', () => {
           suites: {
             'Setup/Teardown Suite': {
               setup: () => {
-                // Suite setup
+                // Suite setup - make test data available
                 global.testData = Array.from({length: 1000}, (_, i) => i);
               },
 
@@ -196,7 +196,7 @@ describe('Benchmark execution with progress tracking', () => {
 
               benchmarks: {
                 'process data': {
-                  fn: () => global.testData
+                  fn: () => global.testData.reduce((a, b) => a + b, 0)
                 }
               }
             }
@@ -210,22 +210,45 @@ describe('Benchmark execution with progress tracking', () => {
         tempDir,
       );
 
-      // Setup/teardown is not implemented yet
-      // The benchmark may succeed (accessing undefined) or fail
-      // Accept either outcome for now until setup/teardown is implemented
-      expect(result.exitCode, 'to be greater than or equal to', 0);
+      // Setup runs before benchmarks, so testData is available
+      expect(result.exitCode, 'to equal', 0);
+      expect(result.stdout, 'to match', /Setup\/Teardown Suite/);
+      expect(result.stdout, 'to match', /process data/);
+      expect(result.stdout, 'to match', /passed/);
+    });
 
-      if (result.exitCode === 0) {
-        // Succeeded - setup/teardown silently ignored
-        expect(result.stdout, 'to match', /Setup\/Teardown Suite|process data/);
-      } else {
-        // Failed - some error occurred
-        expect(
-          result.stderr + result.stdout,
-          'to match',
-          /not found|FAILED|Some benchmarks failed/,
-        );
-      }
+    it('should report setup failure when setup throws', async () => {
+      const benchFile = join(tempDir, 'benchmarks', 'setup-failure.bench.js');
+      await writeFile(
+        benchFile,
+        `
+        export default {
+          suites: {
+            'Failing Setup Suite': {
+              setup: () => {
+                throw new Error('Setup exploded');
+              },
+
+              benchmarks: {
+                'should not run': {
+                  fn: () => 1 + 1
+                }
+              }
+            }
+          }
+        };
+      `,
+      );
+
+      const result = await runCommand(
+        ['run', benchFile, '--reporter', 'human'],
+        tempDir,
+      );
+
+      // Setup failure should be reported
+      expect(result.exitCode, 'to be greater than', 0);
+      expect(result.stdout, 'to match', /setup.*FAILED|Suite setup failed/i);
+      expect(result.stdout, 'to match', /Setup exploded/);
     });
   });
 

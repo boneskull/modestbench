@@ -323,6 +323,11 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
         file.suites.flatMap((suite: SuiteResult) => suite.tasks),
       );
       const finalTotalTasks = allTasks.length;
+
+      // Count task failures and passed tasks
+      // Note: Suite-level failures (setup errors) are NOT counted here to keep
+      // passedTasks + failedTasks == finalTotalTasks. Suite failures are detected
+      // separately in the CLI for exit code purposes.
       const failedTasks = allTasks.filter((task) => task.error).length;
       const passedTasks = finalTotalTasks - failedTasks;
 

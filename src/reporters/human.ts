@@ -172,14 +172,21 @@ export class HumanReporter extends BaseReporter {
     const totalFiles = run.files.length;
 
     // Calculate totals across all files
+    // Note: Suite-level failures (setup errors) are tracked in this.failures
+    // but not counted as task failures to keep statistics consistent
     let totalSuites = 0;
     let totalPassed = 0;
     let totalFailed = 0;
     let totalAborted = 0;
+    let suiteFailures = 0;
 
     for (const file of run.files) {
       totalSuites += file.suites.length;
       for (const suite of file.suites) {
+        // Track suite-level errors separately (not as task failures)
+        if (suite.error) {
+          suiteFailures++;
+        }
         totalPassed += suite.tasks.filter(
           (t: TaskResult) => !t.error && !t.aborted,
         ).length;
@@ -202,10 +209,13 @@ export class HumanReporter extends BaseReporter {
     this.printLine(
       `${this.colorize('brightBlue', '  Tasks:')} ${this.colorize('brightWhite', String(totalPassed + totalFailed + totalAborted))}`,
     );
-    if (totalFailed > 0 || totalAborted > 0) {
-      if (totalFailed > 0) {
+    // Check for any failures: task failures, suite failures (setup errors), or aborts
+    const hasFailures =
+      totalFailed > 0 || suiteFailures > 0 || totalAborted > 0;
+    if (hasFailures) {
+      if (totalFailed > 0 || suiteFailures > 0) {
         this.printLine(
-          `${this.colorize('brightRed', ansiChars.cross + ' Failed:')} ${this.colorize('brightWhite', String(totalFailed))}`,
+          `${this.colorize('brightRed', ansiChars.cross + ' Failed:')} ${this.colorize('brightWhite', String(totalFailed + suiteFailures))}`,
         );
       }
       if (totalPassed > 0) {
@@ -228,23 +238,21 @@ export class HumanReporter extends BaseReporter {
     );
     this.printLine();
 
-    if (totalFailed > 0) {
-      // Display failed tasks with details
-      if (this.failures.length > 0) {
-        this.printLine();
-        this.printLine(
-          this.colorize('brightRed', this.colorize('bold', 'Failed Tasks:')),
-        );
-        this.printLine();
+    // Display failed tasks/suites with details
+    if (this.failures.length > 0) {
+      this.printLine();
+      this.printLine(
+        this.colorize('brightRed', this.colorize('bold', 'Failed Tasks:')),
+      );
+      this.printLine();
 
-        for (const failure of this.failures) {
-          const displayPath = HumanReporter.formatPath(failure.file);
-          this.printLine(
-            `  ${this.colorize('dim', displayPath)} ${this.colorize('dim', '›')} ${this.colorize('white', failure.suite)} ${this.colorize('dim', '›')} ${this.colorize('brightWhite', failure.task)}`,
-          );
-          this.printLine(`    ${this.colorize('brightRed', failure.error)}`);
-          this.printLine();
-        }
+      for (const failure of this.failures) {
+        const displayPath = HumanReporter.formatPath(failure.file);
+        this.printLine(
+          `  ${this.colorize('dim', displayPath)} ${this.colorize('dim', '›')} ${this.colorize('white', failure.suite)} ${this.colorize('dim', '›')} ${this.colorize('brightWhite', failure.task)}`,
+        );
+        this.printLine(`    ${this.colorize('brightRed', failure.error)}`);
+        this.printLine();
       }
     } else if (totalAborted === 0) {
       // Only show "Rad" if no failures AND no aborts
@@ -441,6 +449,31 @@ export class HumanReporter extends BaseReporter {
 
   onSuiteEnd(result: SuiteResult): void {
     if (this.quiet) {
+      return;
+    }
+
+    // Handle suite-level errors (e.g., setup failure)
+    if (result.error) {
+      // Track suite-level failure for end-of-run summary
+      this.failures.push({
+        error: result.error.message || String(result.error),
+        file: this.currentFile,
+        suite: result.name,
+        task: '(setup)',
+      });
+
+      const durationStr = BaseReporter.formatDuration(
+        result.duration * 1000000,
+      );
+
+      // Display suite setup failure
+      this.printLine(
+        `    ${this.colorize('red', ansiChars.cross)} ${this.colorize('white', '(setup)')} ${this.colorize('red', 'FAILED')}`,
+      );
+      this.printLine(
+        `  ${this.colorize('red', `${ansiChars.cross} Suite setup failed`)} ${this.colorize('gray', 'in')} ${this.colorize('cyan', durationStr)}`,
+      );
+      this.printLine();
       return;
     }
 

@@ -151,13 +151,20 @@ export class SimpleReporter extends BaseReporter {
     const totalFiles = run.files.length;
 
     // Calculate totals across all files
+    // Note: Suite-level failures (setup errors) are tracked in this.failures
+    // but not counted as task failures to keep statistics consistent
     let totalSuites = 0;
     let totalPassed = 0;
     let totalFailed = 0;
+    let suiteFailures = 0;
 
     for (const file of run.files) {
       totalSuites += file.suites.length;
       for (const suite of file.suites) {
+        // Track suite-level errors separately (not as task failures)
+        if (suite.error) {
+          suiteFailures++;
+        }
         totalPassed += suite.tasks.filter((t: TaskResult) => !t.error).length;
         totalFailed += suite.tasks.filter((t: TaskResult) => t.error).length;
       }
@@ -167,8 +174,10 @@ export class SimpleReporter extends BaseReporter {
     console.log('== Results');
     console.log();
 
-    if (totalFailed > 0) {
-      console.log(`${symbols.cross} Failed: ${totalFailed}`);
+    // Check for any failures: task failures or suite failures (setup errors)
+    const hasFailures = totalFailed > 0 || suiteFailures > 0;
+    if (hasFailures) {
+      console.log(`${symbols.cross} Failed: ${totalFailed + suiteFailures}`);
       console.log(`${symbols.checkmark} Passed: ${totalPassed}`);
     } else {
       console.log(`${symbols.checkmark} All tasks passed: ${totalPassed}`);
@@ -181,23 +190,20 @@ export class SimpleReporter extends BaseReporter {
     );
     console.log();
 
-    if (totalFailed > 0) {
+    // Display failed tasks/suites with details
+    if (this.failures.length > 0) {
       console.log(`${symbols.cross.repeat(3)} Some benchmarks failed`);
+      console.log();
+      console.log('Failed Tasks:');
+      console.log();
 
-      // Display failed tasks with details
-      if (this.failures.length > 0) {
+      for (const failure of this.failures) {
+        const displayPath = SimpleReporter.formatPath(failure.file);
+        console.log(`  ${displayPath} > ${failure.suite} > ${failure.task}`);
+        console.log(`    ${failure.error}`);
         console.log();
-        console.log('Failed Tasks:');
-        console.log();
-
-        for (const failure of this.failures) {
-          const displayPath = SimpleReporter.formatPath(failure.file);
-          console.log(`  ${displayPath} > ${failure.suite} > ${failure.task}`);
-          console.log(`    ${failure.error}`);
-          console.log();
-        }
       }
-    } else {
+    } else if (!hasFailures) {
       console.log('All benchmarks completed successfully!');
     }
 
@@ -299,6 +305,23 @@ export class SimpleReporter extends BaseReporter {
 
   onSuiteEnd(result: SuiteResult): void {
     if (this.quiet) {
+      return;
+    }
+
+    // Handle suite-level errors (e.g., setup failure)
+    if (result.error) {
+      // Track suite-level failure for end-of-run summary
+      this.failures.push({
+        error: result.error.message || String(result.error),
+        file: this.currentFile,
+        suite: result.name,
+        task: '(setup)',
+      });
+
+      // Display suite setup failure
+      console.log(`    ${symbols.cross} (setup) FAILED`);
+      console.log(`  ${symbols.cross} Suite setup failed`);
+      console.log();
       return;
     }
 

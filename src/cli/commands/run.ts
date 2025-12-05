@@ -273,10 +273,17 @@ const handleResults = (
   // Check if any files failed to load/execute
   const hasFileErrors = executionResult.files.some((file) => file.error);
 
+  // Check if any suites failed (e.g., setup errors)
+  const hasSuiteErrors = executionResult.files.some((file) =>
+    file.suites.some((suite) => suite.error),
+  );
+
   // Determine exit code based on results
   if (executionResult && executionResult.summary) {
-    // Return error if there are failed tasks OR file-level errors
-    return executionResult.summary.failedTasks > 0 || hasFileErrors
+    // Return error if there are failed tasks, file errors, OR suite errors
+    return executionResult.summary.failedTasks > 0 ||
+      hasFileErrors ||
+      hasSuiteErrors
       ? ExitCodes.BENCHMARK_FAILURES
       : ExitCodes.SUCCESS;
   }
