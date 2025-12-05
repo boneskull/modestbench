@@ -14,6 +14,7 @@ config:
   first-line-heading: false
   first-line-h1: false
   code-block-style: false
+  table-column-style: false
 ignores:
   - '**/node_modules/**'
   - '.github/prompts/*.prompt.md'
