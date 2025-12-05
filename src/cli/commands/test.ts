@@ -330,7 +330,7 @@ export const handleTestCommand = async (
  */
 const runBenchmark = async (
   name: string,
-  fn: () => Promise<void> | void,
+  fn: (...args: any[]) => unknown,
   iterations: number,
   warmup: number,
 ): Promise<TestBenchmarkResult> => {
