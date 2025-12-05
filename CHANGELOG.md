@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.3...modestbench-v0.4.0) (2025-12-05)
+
+
+### Features
+
+* **reporters:** display iteration counts inline with low-count warnings ([e1bf06a](https://github.com/boneskull/modestbench/commit/e1bf06a99f6d8e488fb1c69c6ae983e2bfa2a641))
+
+
+### Bug Fixes
+
+* **deps:** update dependency glob to v11.1.0 [security] ([#125](https://github.com/boneskull/modestbench/issues/125)) ([7e14a8b](https://github.com/boneskull/modestbench/commit/7e14a8bd27e72849766b9e84a9bf178764265b11))
+* **deps:** update dependency glob to v13 ([#138](https://github.com/boneskull/modestbench/issues/138)) ([b63ab6a](https://github.com/boneskull/modestbench/commit/b63ab6a9979296d9fa32ce5f8774fe53a3f777dc))
+* **deps:** update dependency zod to v4.1.13 ([#143](https://github.com/boneskull/modestbench/issues/143)) ([538ccf2](https://github.com/boneskull/modestbench/commit/538ccf241f870e78fe02bc89d791e558ba0b61e3))
+* **init:** init templates now use proper default .modestbench/ dir for output ([a393236](https://github.com/boneskull/modestbench/commit/a393236e71c87502275e3e68f74bb1fdae4f8fd2))
+* **README:** fix wrong options and path in README.md ([ea7caa4](https://github.com/boneskull/modestbench/commit/ea7caa46c53bd2bb70d67ecefec999ea0e14c425)), closes [#104](https://github.com/boneskull/modestbench/issues/104) [#109](https://github.com/boneskull/modestbench/issues/109)
+* **run:** suite-level errors now caught properly and return non-zero exit code ([fba7a8a](https://github.com/boneskull/modestbench/commit/fba7a8a568b3863b40b04ca05469935c5db32ec7))
+
 ## [0.3.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.2...modestbench-v0.3.3) (2025-11-03)
 
 
