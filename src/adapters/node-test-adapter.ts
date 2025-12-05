@@ -76,8 +76,7 @@ interface MutableSuiteHooks {
  * the test file.
  *
  * IMPORTANT: For this to work with actual node:test imports, you must run
- * Node.js with our loader: node --import
- * modestbench/adapters/node-test-loader.mjs your-test.js
+ * Node.js with our loader: node --import modestbench/node-test your-test.js
  *
  * Without the loader, this adapter only works with test files that use
  * globalThis.**MODESTBENCH_NODE_TEST_MOCK** directly (not useful for real test

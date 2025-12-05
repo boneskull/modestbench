@@ -5,6 +5,8 @@
  * executing them through a lightweight benchmark runner.
  */
 
+import { hostname } from 'node:os';
+import { cpus, freemem, totalmem } from 'node:os';
 import { resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 
@@ -406,7 +408,8 @@ const convertToTaskResult = (result: TestBenchmarkResult): TaskResult => {
   const marginOfError =
     result.mean > 0 ? ((1.96 * stdErr) / result.mean) * 100 : 0;
 
-  // Variance is stdDev squared
+  // Variance in ns² = (stdDev in ms)² × (MS_TO_NS)²
+  // This is equivalent to (stdDev × MS_TO_NS)² since variance = stdDev²
   const variance = result.stdDev * result.stdDev * MS_TO_NS * MS_TO_NS;
 
   return {
@@ -419,7 +422,8 @@ const convertToTaskResult = (result: TestBenchmarkResult): TaskResult => {
     min: result.min * MS_TO_NS,
     name: result.name,
     opsPerSecond: result.opsPerSecond,
-    // Estimate percentiles (we don't have full distribution, use max as approximation)
+    // Percentile approximations: without storing all timing samples, we estimate
+    // p95/p99 as fractions of max. These are NOT true percentiles from the distribution.
     p95: result.max * MS_TO_NS * 0.95,
     p99: result.max * MS_TO_NS * 0.99,
     stdDev: result.stdDev * MS_TO_NS,
@@ -478,18 +482,18 @@ const buildBenchmarkRun = (
     endTime,
     environment: {
       arch: process.arch,
-      availableMemory: 0,
+      availableMemory: freemem(),
       cpu: {
-        cores: 1,
-        model: 'unknown',
-        speed: 0,
+        cores: cpus().length,
+        model: cpus()[0]?.model ?? 'unknown',
+        speed: cpus()[0]?.speed ?? 0,
       },
       env: {},
-      hostname: 'localhost',
+      hostname: hostname(),
       memory: {
-        free: 0,
-        total: 0,
-        used: 0,
+        free: freemem(),
+        total: totalmem(),
+        used: totalmem() - freemem(),
       },
       nodeVersion: process.version,
       platform: process.platform,
@@ -514,7 +518,7 @@ const selectAdapter = (framework: TestFramework) => {
       return new NodeTestAdapter();
     default: {
       const _exhaustive: never = framework;
-      throw new Error(`Unknown framework: ${framework}`);
+      throw new Error(`Unknown framework: ${_exhaustive}`);
     }
   }
 };

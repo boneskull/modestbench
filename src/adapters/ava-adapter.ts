@@ -150,8 +150,7 @@ interface MutableCapturedTest {
  * the test file.
  *
  * IMPORTANT: For this to work with actual AVA imports, you must run Node.js
- * with our loader: node --import modestbench/adapters/ava-loader.mjs
- * your-test.js
+ * with our loader: node --import modestbench/ava your-test.js
  */
 export class AvaAdapter implements TestFrameworkAdapter {
   readonly framework = 'ava' as const;

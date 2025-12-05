@@ -13,8 +13,10 @@
 import type { LoadHook, ResolveHook } from 'node:module';
 
 // Generate the mock module source code
-// Uses top-level await to conditionally get mock or real module
+// The generated module source uses top-level await to conditionally get the mock or real module
 // Note: Uses 'node:test?passthrough' to bypass our hook when falling back
+// Security: The globalThis mock is only installed by our own adapter code, so the generated
+// source is safe. No user input is interpolated into this template.
 const generateMockSource = (): string => `
 const mock = globalThis.__MODESTBENCH_NODE_TEST_MOCK__;
 

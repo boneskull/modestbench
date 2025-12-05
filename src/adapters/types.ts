@@ -110,6 +110,19 @@ export interface TestFrameworkAdapter {
  *
  * Transforms the CapturedTestFile structure into the BenchmarkDefinition format
  * that modestbench's engine can execute.
+ *
+ * @example
+ *
+ * ```typescript
+ * const captured = await adapter.capture('/path/to/test.js');
+ * const benchmark = capturedToBenchmark(captured);
+ * // benchmark.suites contains test suites converted to benchmark suites
+ * ```
+ *
+ * @param captured - The captured test file structure from a test framework
+ *   adapter
+ * @returns A BenchmarkDefinition with suites containing benchmarks derived from
+ *   tests
  */
 export const capturedToBenchmark = (
   captured: CapturedTestFile,
@@ -158,6 +171,11 @@ const convertSuite = (
  *
  * The hooks run with each benchmark iteration, matching test framework
  * semantics where beforeEach runs before each test execution.
+ *
+ * Hook ordering follows standard test framework conventions:
+ *
+ * - BeforeEach: runs in declaration order (FIFO)
+ * - AfterEach: runs in reverse declaration order (LIFO)
  */
 const createWrappedTestFn = (
   testFn: () => Promise<void> | void,
@@ -170,7 +188,7 @@ const createWrappedTestFn = (
 
   // Wrap with hooks
   return async () => {
-    // Run beforeEach hooks
+    // Run beforeEach hooks in declaration order (FIFO)
     for (const hook of hooks.beforeEach) {
       await hook();
     }
@@ -178,7 +196,7 @@ const createWrappedTestFn = (
     // Run test
     await testFn();
 
-    // Run afterEach hooks (in reverse order, like most test frameworks)
+    // Run afterEach hooks in reverse order (LIFO), like most test frameworks
     for (const hook of [...hooks.afterEach].reverse()) {
       await hook();
     }
