@@ -8,6 +8,9 @@ docs/
 # Dependencies
 node_modules/
 
+# Vendored dependencies
+vendor/
+
 CHANGELOG.md
 
 .worktrees

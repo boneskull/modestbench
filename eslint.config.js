@@ -177,6 +177,7 @@ export default defineConfig(
       'astro.config.js',
       '.astro/**/*',
       'test-d/**/*',
+      'vendor/**/*',
     ],
   },
 );

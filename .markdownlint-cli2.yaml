@@ -26,6 +26,7 @@ ignores:
   - '.worktrees/**/*.md'
   - '.tmp/**/*.md'
   - 'CHANGELOG.md'
+  - 'vendor/**/*.md'
 outputFormatters:
   - - 'markdownlint-cli2-formatter-pretty'
     - appendLink: true

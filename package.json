@@ -115,7 +115,7 @@
     "@types/yargs": "17.0.35",
     "asciinema-player": "3.12.1",
     "astro": "5.16.3",
-    "astro-broken-link-checker": "imazen/astro-broken-link-checker",
+    "astro-broken-link-checker": "file:./vendor/astro-broken-link-checker",
     "bupkis": "0.13.0",
     "cspell": "9.4.0",
     "eslint": "9.39.1",
@@ -158,7 +158,8 @@
       ".worktrees/**/*",
       "site/src/content/**/*",
       "test-d/**/*",
-      "site/src/components/**/*.astro"
+      "site/src/components/**/*.astro",
+      "vendor/**/*"
     ],
     "tags": [
       "-knipignore"

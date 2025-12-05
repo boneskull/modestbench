@@ -35,7 +35,8 @@
     "assets/*.ans",
     "assets/*.txt",
     ".tmp",
-    "*.cpuprofile"
+    "*.cpuprofile",
+    "vendor"
   ],
   "ignoreRandomStrings": true,
   "ignoreWords": [

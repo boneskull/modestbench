@@ -1,0 +1,29 @@
+{
+  "name": "astro-broken-link-checker",
+  "version": "1.0.3",
+  "description": "An Astro integration to check for broken links in your website during development and build time. (Vendored from github:imazen/astro-broken-link-checker)",
+  "main": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "keywords": [
+    "astro",
+    "astro-integration",
+    "broken-links",
+    "link-checker"
+  ],
+  "author": "Lilith River",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imazen/astro-broken-link-checker"
+  },
+  "dependencies": {
+    "fast-glob": "^3.3.2",
+    "node-fetch": "^3.3.2",
+    "node-html-parser": "^6.1.13",
+    "p-limit": "^6.1.0"
+  }
+}
+
