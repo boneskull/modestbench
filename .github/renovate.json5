@@ -18,6 +18,7 @@
     '**/test/**',
     '**/demo/**',
     '**/example*/**',
+    'vendor/**/package.json',
   ],
   lockFileMaintenance: {
     enabled: true,
