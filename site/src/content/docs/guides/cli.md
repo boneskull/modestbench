@@ -448,6 +448,126 @@ The profiler displays results with color-coded percentages:
 See the [Profiling Guide](/guides/profiling/) for detailed workflows, best practices, and programmatic usage.
 :::
 
+### `modestbench test`
+
+Run existing test files as benchmarks. Captures test definitions from Mocha, node:test, or AVA test files and executes them as benchmark tasks.
+
+```bash
+# Run Mocha tests as benchmarks
+modestbench test mocha "test/*.spec.js"
+
+# Run node:test files as benchmarks
+modestbench test node-test "test/*.test.js"
+
+# Run AVA tests as benchmarks
+modestbench test ava "test/*.js"
+
+# Multiple patterns
+modestbench test mocha "test/unit/*.spec.js" "test/integration/*.spec.js"
+```
+
+#### Supported Frameworks
+
+- **`mocha`** - Mocha test files using `describe`/`it` syntax
+- **`node-test`** - Node.js built-in test runner (`node:test` module)
+- **`ava`** - AVA test files
+
+#### Test Command Options
+
+##### `<framework>` (required)
+
+The test framework to use. Must be one of: `mocha`, `node-test`, `ava`.
+
+##### `[files..]`
+
+Test file paths or glob patterns.
+
+```bash
+modestbench test mocha "test/**/*.spec.js"
+```
+
+##### `--iterations <number>`, `-i <number>`
+
+Number of iterations per test (default: 100).
+
+```bash
+modestbench test mocha test/*.spec.js --iterations 500
+```
+
+##### `--warmup <number>`, `-w <number>`
+
+Number of warmup iterations before measurement (default: 5).
+
+```bash
+modestbench test mocha test/*.spec.js --warmup 10
+```
+
+##### `--bail`, `-b`
+
+Stop on first failure.
+
+```bash
+modestbench test mocha test/*.spec.js --bail
+```
+
+##### `--json`
+
+Output results in JSON format.
+
+```bash
+modestbench test mocha test/*.spec.js --json
+```
+
+##### `--quiet`, `-q`
+
+Minimal output mode.
+
+```bash
+modestbench test mocha test/*.spec.js --quiet
+```
+
+#### How It Works
+
+The `test` command:
+
+1. **Captures** test definitions by intercepting the test framework's API
+2. **Converts** test suites to benchmark suites and tests to benchmark tasks
+3. **Preserves** setup/teardown hooks (`beforeEach`/`afterEach`)
+4. **Executes** each test multiple times to collect timing statistics
+
+Test hierarchy is preserved: `describe` blocks become benchmark suites, `it`/`test` blocks become benchmark tasks.
+
+#### Use Cases
+
+- **Quick performance checks** - See how fast your tests actually run
+- **Regression detection** - Identify tests that have become slower over time
+- **Optimization targets** - Find slow tests that might benefit from optimization
+- **CI integration** - Add performance metrics to your test pipeline
+
+#### Test Command Examples
+
+```bash
+# Basic Mocha benchmarking
+modestbench test mocha "test/*.spec.js"
+
+# node:test with more iterations
+modestbench test node-test "test/*.test.js" --iterations 500
+
+# AVA with JSON output for CI
+modestbench test ava "test/*.js" --json --quiet
+
+# Stop on first slow test
+modestbench test mocha "test/unit/*.spec.js" --bail
+```
+
+:::tip[Framework Loader]
+For the test command to intercept imports correctly, modestbench uses ES module loader hooks. This happens automatically when you use the `test` command.
+:::
+
+:::note[Learn More]
+See the [Running Tests as Benchmarks](/guides/test-adapters/) guide for detailed workflows, framework-specific examples, and best practices.
+:::
+
 ### `modestbench history`
 
 Manage benchmark history and compare results over time.
