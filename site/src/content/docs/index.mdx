@@ -45,8 +45,8 @@ We wanted a benchmarking framework that didn't make us think (because we are stu
   Don't know what to benchmark? Run **just whatever** with V8's built-in profiler and it'll tell you exactly where the code's hot. Do you _really_ want to open a profile visualizer?
 </Card>
 
-<Card title="CLI & API" icon="setting">
-  Powerful CLI with "sensible" defaults. Programmatic API for when you … have a use-case for this, I guess?
+<Card title="Tests → Benchmarks" icon="random">
+  Already have test files? Run your Mocha, AVA, or `node:test` tests as benchmarks. Zero config. Find those slow tests before your users do.
 </Card>
 
   <Card title="TypeScript Support" icon="approve-check">
@@ -108,6 +108,7 @@ We built **modestbench** because we got tired of:
 - **Tag-based filtering** - Run only the benchmarks you wanna run
 - **Historical data** - Automatic tracking with comparison tools
 - **Built-in profiler** - Find hot code paths with just a command
+- **Test adapter** - Run existing Mocha, AVA, or node:test files as benchmarks
 
 Whether you're optimizing a hot loop, comparing algorithm implementations, or setting up performance regression testing in CI, **modestbench** _might even work for you_.
 

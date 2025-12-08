@@ -8,12 +8,16 @@ In Markdown text, refer to the name of this project as `**modestbench**` (bold) 
 
 ### Git Workflow
 
-**Linear History Required:**
+**IF YOU ARE EXECUTING A PLAN, ALWAYS CREATE A NEW WORKTREE AND BRANCH**. Non-planned work can be done in the main branch / worktree. See [Feature Development with Worktrees](#feature-development-with-worktrees) for more details.
+
+#### Linear History Required
 
 - No merge commits - use `git rebase` or `git merge --ff-only`
 - If merge commits exist, use `git rebase -i` to eliminate them
 
-**Feature Development with Worktrees:**
+#### Feature Development with Worktrees
+
+**IF YOU ARE ALREADY IN A WORKTREE, YOU CAN SKIP THIS STEP**.
 
 ```bash
 # Create worktree INSIDE project directory
@@ -25,28 +29,28 @@ cd .worktrees/<feature-name>/
 # When done, see skills/collaboration/finishing-a-development-branch
 ```
 
-**Branch Naming:**
+#### Branch Naming
 
 - Use `feature/<descriptive-name>` (not `feat/`)
-- Worktrees go in `../modestbench.worktree/` directory
+- Worktrees go in `.worktrees/` directory
 
 ### Code Style
 
-**Testing:**
+#### Testing
 
 - Follow TDD principles (search your user rules for "test-driven development")
 - Contract tests in `test/contract/`
 - Integration tests in `test/integration/`
 - Use the wallaby MCP tools for runtime debugging
 
-**Architecture:**
+#### Architecture
 
 - Core engine: `src/core/engine.ts` - benchmark execution
 - CLI commands: `src/cli/commands/` - yargs-based CLI
 - Reporters: `src/reporters/` - output formats (human, json, csv)
 - Config: `src/config/` - configuration management with Zod
 
-**Key Principles:**
+#### Key Principles
 
 - Reporters: `--quiet` suppresses progress (stderr), not data output (stdout)
 - When no `--output` specified, data reporters write to stdout
@@ -59,19 +63,19 @@ cd .worktrees/<feature-name>/
    - Write tests first (TDD)
    - Keep functions focused (see `skills/coding/keeping-routines-focused`)
    - Name by domain (see `skills/coding/naming-by-domain`)
-3. **Testing:** Run `npm test` - aim for high coverage
-4. **Building:** `npm run build` before committing
-5. **Verification:** Check linter with `eslint` (see `skills/debugging/verification-before-completion`)
+3. **Linting:** Run `npm run fix` to fix linting errors (and report remaining errors)
+4. **Testing:** Run `npm test` - aim for high coverage (see `skills/debugging/verification-before-completion`)
+5. **Building:** `npm run build` before committing
 
 ### Common Patterns
 
-**CLI Options:**
+#### CLI Options
 
 - Use yargs for argument parsing
 - Options in `src/cli/commands/*.ts`
 - Types in `src/types/cli.ts`
 
-**Reporter Structure:**
+#### Reporter Structure
 
 ```typescript
 class MyReporter implements Reporter {
@@ -86,7 +90,7 @@ class MyReporter implements Reporter {
 }
 ```
 
-**Adding CLI Flags:**
+#### Adding CLI Flags
 
 1. Add to command definition in `src/cli/commands/run.ts`
 2. Add type to `src/types/cli.ts`
@@ -97,9 +101,15 @@ class MyReporter implements Reporter {
 
 - Source: `src/`
 - Tests: `test/` (contract and integration)
+- `tsd` (type) tests: `test-d/`
 - Built output: `dist/` (gitignored)
 - Examples: `examples/`
-- Docs: `README.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`
+- Documentation sources: `site/`, `public/`
+- Generated documentation: `docs/`
+- Important documentation files: `README.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`
+- Design reference: `assets/`
+- Reusable scripts: `scripts/`
+- Ad-hoc and temporary scripts: `.tmp/`
 
 ### External Dependencies
 
