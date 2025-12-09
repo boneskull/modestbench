@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.4.0...modestbench-v0.5.0) (2025-12-09)
+
+
+### Features
+
+* **adapters:** add test framework adapters for node:test, Mocha, and AVA ([#157](https://github.com/boneskull/modestbench/issues/157)) ([f4f00e7](https://github.com/boneskull/modestbench/commit/f4f00e7a0d356455eba08840ad8b01ec4e155822))
+
+
+### Bug Fixes
+
+* **deps:** update dependency tinybench to v6 ([0d40694](https://github.com/boneskull/modestbench/commit/0d406941a587f393de033e923fccca22a097eb40))
+* **deps:** update tinybench-engine for tinybench v6 ([d19fcd9](https://github.com/boneskull/modestbench/commit/d19fcd98fde626257707919817a6e1be3ec97e34))
+
 ## [0.4.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.3.3...modestbench-v0.4.0) (2025-12-05)
 
 
