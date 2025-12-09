@@ -5,7 +5,7 @@
  * benchmark execution and measurement.
  */
 
-import { Bench } from 'tinybench';
+import { Bench, type TaskResult as TinybenchTaskResult } from 'tinybench';
 
 import type {
   BenchmarkTask,
@@ -83,6 +83,7 @@ export class TinybenchEngine extends ModestBenchEngine {
 
       const bench = new Bench({
         iterations: effectiveIterations,
+        retainSamples: true, // Required in tinybench v6+ to access samples for custom stats
         time: effectiveTime,
         warmupIterations: config.warmup,
         warmupTime: config.warmup > 0 ? Math.min(config.warmup || 0, 500) : 0,
@@ -129,6 +130,7 @@ export class TinybenchEngine extends ModestBenchEngine {
 
           const minimalBench = new Bench({
             iterations: config.iterations,
+            retainSamples: true,
             time: retryTime,
             warmupIterations: config.warmup,
             warmupTime: 0,
@@ -136,8 +138,6 @@ export class TinybenchEngine extends ModestBenchEngine {
           minimalBench.add(
             taskName,
             taskData.fn,
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore - Pending https://github.com/tinylibs/tinybench/pull/364
             signal ? { signal } : undefined,
           );
           try {
@@ -149,34 +149,29 @@ export class TinybenchEngine extends ModestBenchEngine {
             );
           }
           const minimalResults = minimalBench.results[0];
-          if (!minimalResults || minimalResults.error) {
+          // Handle discriminated union: check state for error/completion
+          if (!minimalResults || minimalResults.state === 'errored') {
+            const errorMsg =
+              minimalResults?.state === 'errored'
+                ? minimalResults.error.message
+                : 'unknown error';
             throw new OperationTooFastError(
-              `Benchmark too fast to measure reliably: ${minimalResults?.error?.message || 'unknown error'}`,
+              `Benchmark too fast to measure reliably: ${errorMsg}`,
             );
           }
-          // Continue with minimal results - apply outlier removal
-          const minimalRawSamples = minimalResults.latency.samples || [];
-          const minimalSamplesInNs = minimalRawSamples.map((s) => s * 1e6);
-          const minimalCleanedSamples = removeOutliersIQR(minimalSamplesInNs);
-          const minimalStats = calculateStatistics(minimalCleanedSamples);
-
-          const taskResult: TaskResult = {
-            cv: minimalStats.cv,
-            iterations: minimalCleanedSamples.length,
-            marginOfError: minimalStats.marginOfError,
-            max: minimalStats.max,
-            mean: minimalStats.mean,
-            metadata: taskData.metadata ?? {},
-            min: minimalStats.min,
-            name: taskName,
-            opsPerSecond: minimalResults.throughput.mean || 0,
-            p95: minimalStats.p95,
-            p99: minimalStats.p99,
-            stdDev: minimalStats.stdDev,
-            ...(taskData.tags ? { tags: taskData.tags } : {}),
-            variance: minimalStats.variance,
-          };
-          return taskResult;
+          // Extract stats from completed result
+          const taskResultFromMinimal =
+            this.extractTaskResultFromTinybenchResult(
+              taskName,
+              taskData,
+              minimalResults,
+            );
+          if (taskResultFromMinimal) {
+            return taskResultFromMinimal;
+          }
+          throw new OperationTooFastError(
+            `Benchmark too fast to measure reliably: no statistics available`,
+          );
         }
         throw error;
       } finally {
@@ -190,132 +185,146 @@ export class TinybenchEngine extends ModestBenchEngine {
         throw new BenchmarkExecutionError('No benchmark results returned');
       }
 
-      // Check if the task was aborted
-      if (results.aborted) {
-        // Task was aborted via signal - return minimal valid result marked as aborted
-        // (abort message is shown at run level, not per-task)
-        const taskResult: TaskResult = {
-          aborted: true,
-          cv: 0,
-          iterations: results.latency?.samples?.length || 0,
-          marginOfError: 0,
-          max: 0,
-          mean: 0,
-          metadata: taskData.metadata ?? {},
-          min: 0,
-          name: taskName,
-          opsPerSecond: 0,
-          p95: 0,
-          p99: 0,
-          stdDev: 0,
-          ...(taskData.tags ? { tags: taskData.tags } : {}),
-          variance: 0,
-        };
-        return taskResult;
-      }
+      // Handle discriminated union based on state
+      switch (results.state) {
+        case 'aborted':
+          // Task was aborted via signal - return minimal valid result marked as aborted
+          return {
+            aborted: true,
+            cv: 0,
+            iterations: 0,
+            marginOfError: 0,
+            max: 0,
+            mean: 0,
+            metadata: taskData.metadata ?? {},
+            min: 0,
+            name: taskName,
+            opsPerSecond: 0,
+            p95: 0,
+            p99: 0,
+            stdDev: 0,
+            ...(taskData.tags ? { tags: taskData.tags } : {}),
+            variance: 0,
+          };
 
-      // Check if tinybench detected an error during execution
-      if (results.error) {
-        const errorMessage =
-          results.error instanceof Error
-            ? results.error.message
-            : String(results.error);
-
-        // Handle array length errors for extremely fast operations
-        if (errorMessage.includes('Invalid array length')) {
-          // Retry with minimal time for extremely fast operations
-          // Use same limiting logic but with minimal time for fast ops
-          let retryTime: number;
-          switch (config.limitBy) {
-            case 'all':
-            case 'any':
-              retryTime = 10;
-              break;
-            case 'iterations':
-              retryTime = 1;
-              break;
-            case 'time':
-              retryTime = 10;
-              break;
-            default:
-              retryTime = 1;
+        case 'aborted-with-statistics': {
+          // Aborted but has partial stats - use them
+          const taskResultFromAborted =
+            this.extractTaskResultFromTinybenchResult(
+              taskName,
+              taskData,
+              results,
+            );
+          if (taskResultFromAborted) {
+            return { ...taskResultFromAborted, aborted: true };
           }
+          // Fall through to return minimal aborted result
+          return {
+            aborted: true,
+            cv: 0,
+            iterations: 0,
+            marginOfError: 0,
+            max: 0,
+            mean: 0,
+            metadata: taskData.metadata ?? {},
+            min: 0,
+            name: taskName,
+            opsPerSecond: 0,
+            p95: 0,
+            p99: 0,
+            stdDev: 0,
+            ...(taskData.tags ? { tags: taskData.tags } : {}),
+            variance: 0,
+          };
+        }
 
-          const minimalBench = new Bench({
-            iterations: config.iterations,
-            time: retryTime,
-            warmupIterations: config.warmup,
-            warmupTime: 0,
-          });
-          minimalBench.add(
-            taskName,
-            taskData.fn,
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore - Pending https://github.com/tinylibs/tinybench/pull/364
-            signal ? { signal } : undefined,
-          );
-          await minimalBench.run();
-          const minimalResults = minimalBench.results[0];
+        case 'errored': {
+          const errorMessage = results.error.message;
 
-          if (!minimalResults || minimalResults.error) {
-            // If retry also fails, just accept it failed
+          // Handle array length errors for extremely fast operations
+          if (errorMessage.includes('Invalid array length')) {
+            // Retry with minimal time for extremely fast operations
+            let retryTime: number;
+            switch (config.limitBy) {
+              case 'all':
+              case 'any':
+                retryTime = 10;
+                break;
+              case 'iterations':
+                retryTime = 1;
+                break;
+              case 'time':
+                retryTime = 10;
+                break;
+              default:
+                retryTime = 1;
+            }
+
+            const minimalBench = new Bench({
+              iterations: config.iterations,
+              retainSamples: true,
+              time: retryTime,
+              warmupIterations: config.warmup,
+              warmupTime: 0,
+            });
+            minimalBench.add(
+              taskName,
+              taskData.fn,
+              signal ? { signal } : undefined,
+            );
+            await minimalBench.run();
+            const minimalResults = minimalBench.results[0];
+
+            if (!minimalResults || minimalResults.state === 'errored') {
+              throw new OperationTooFastError(
+                `Benchmark operation is too fast to measure reliably`,
+              );
+            }
+
+            const retryTaskResult = this.extractTaskResultFromTinybenchResult(
+              taskName,
+              taskData,
+              minimalResults,
+            );
+            if (retryTaskResult) {
+              return retryTaskResult;
+            }
             throw new OperationTooFastError(
               `Benchmark operation is too fast to measure reliably`,
             );
           }
 
-          // Return minimal results - apply outlier removal
-          const minimalRawSamples2 = minimalResults.latency.samples || [];
-          const minimalSamplesInNs2 = minimalRawSamples2.map((s) => s * 1e6);
-          const minimalCleanedSamples2 = removeOutliersIQR(minimalSamplesInNs2);
-          const minimalStats2 = calculateStatistics(minimalCleanedSamples2);
-
-          const taskResult: TaskResult = {
-            cv: minimalStats2.cv,
-            iterations: minimalCleanedSamples2.length,
-            marginOfError: minimalStats2.marginOfError,
-            max: minimalStats2.max,
-            mean: minimalStats2.mean,
-            metadata: taskData.metadata ?? {},
-            min: minimalStats2.min,
-            name: taskName,
-            opsPerSecond: minimalResults.throughput.mean || 0,
-            p95: minimalStats2.p95,
-            p99: minimalStats2.p99,
-            stdDev: minimalStats2.stdDev,
-            ...(taskData.tags ? { tags: taskData.tags } : {}),
-            variance: minimalStats2.variance,
-          };
-          return taskResult;
+          throw results.error;
         }
 
-        throw results.error;
+        case 'completed': {
+          // Normal completion - extract full stats
+          const taskResultFromCompleted =
+            this.extractTaskResultFromTinybenchResult(
+              taskName,
+              taskData,
+              results,
+            );
+          if (taskResultFromCompleted) {
+            return taskResultFromCompleted;
+          }
+          throw new BenchmarkExecutionError(
+            'Completed benchmark but no statistics available',
+          );
+        }
+
+        case 'not-started':
+        case 'started':
+          throw new BenchmarkExecutionError(
+            `Unexpected benchmark state: ${results.state}`,
+          );
+
+        default:
+          // Exhaustiveness check
+          throw new BenchmarkExecutionError(
+            `Unknown benchmark state: ${(results as TinybenchTaskResult).state}`,
+          );
       }
-
-      // Apply IQR outlier removal to raw samples
-      const rawSamples = results.latency.samples || [];
-      const samplesInNs = rawSamples.map((s) => s * 1e6); // Convert ms to ns
-      const cleanedSamples = removeOutliersIQR(samplesInNs);
-      const stats = calculateStatistics(cleanedSamples);
-
-      const taskResult: TaskResult = {
-        cv: stats.cv,
-        iterations: cleanedSamples.length,
-        marginOfError: stats.marginOfError,
-        max: stats.max,
-        mean: stats.mean,
-        metadata: taskData.metadata ?? {},
-        min: stats.min,
-        name: taskName,
-        opsPerSecond: results.throughput.mean || 0, // Keep tinybench's ops/sec
-        p95: stats.p95,
-        p99: stats.p99,
-        stdDev: stats.stdDev,
-        ...(taskData.tags ? { tags: taskData.tags } : {}),
-        variance: stats.variance,
-      };
-
-      return taskResult;
     } catch (error) {
       const executionError =
         error instanceof Error ? error : new Error(String(error));
@@ -339,5 +348,68 @@ export class TinybenchEngine extends ModestBenchEngine {
       };
       return errorResult;
     }
+  }
+
+  /**
+   * Extract TaskResult from a tinybench result that has statistics
+   *
+   * Handles the discriminated union types from tinybench v6+
+   */
+  private extractTaskResultFromTinybenchResult(
+    taskName: string,
+    taskData: BenchmarkTask,
+    result: TinybenchTaskResult,
+  ): null | TaskResult {
+    // Only states with statistics: 'completed' and 'aborted-with-statistics'
+    if (
+      result.state !== 'completed' &&
+      result.state !== 'aborted-with-statistics'
+    ) {
+      return null;
+    }
+
+    // Apply IQR outlier removal to raw samples
+    // Note: samples may be undefined if retainSamples wasn't enabled
+    const rawSamples = result.latency.samples ?? [];
+    if (rawSamples.length === 0) {
+      // Fall back to using tinybench's calculated stats directly
+      return {
+        cv: result.latency.rme, // Use relative margin of error as CV approximation
+        iterations: result.latency.samplesCount,
+        marginOfError: result.latency.moe,
+        max: result.latency.max,
+        mean: result.latency.mean,
+        metadata: taskData.metadata ?? {},
+        min: result.latency.min,
+        name: taskName,
+        opsPerSecond: result.throughput.mean || 0,
+        p95: result.latency.p99, // tinybench v6 doesn't have p95, use p99
+        p99: result.latency.p99,
+        stdDev: result.latency.sd,
+        ...(taskData.tags ? { tags: taskData.tags } : {}),
+        variance: result.latency.variance,
+      };
+    }
+
+    const samplesInNs = rawSamples.map((s: number) => s * 1e6); // Convert ms to ns
+    const cleanedSamples = removeOutliersIQR(samplesInNs);
+    const stats = calculateStatistics(cleanedSamples);
+
+    return {
+      cv: stats.cv,
+      iterations: cleanedSamples.length,
+      marginOfError: stats.marginOfError,
+      max: stats.max,
+      mean: stats.mean,
+      metadata: taskData.metadata ?? {},
+      min: stats.min,
+      name: taskName,
+      opsPerSecond: result.throughput.mean || 0,
+      p95: stats.p95,
+      p99: stats.p99,
+      stdDev: stats.stdDev,
+      ...(taskData.tags ? { tags: taskData.tags } : {}),
+      variance: stats.variance,
+    };
   }
 }
