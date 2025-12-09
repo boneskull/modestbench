@@ -24,7 +24,7 @@ ignores:
   - 'specs/**/*.md'
   - '.claude-skills/**/*.md'
   - './specify/**/*.md'
-  - '.worktrees/**/*.md'
+  - '..worktrees/**/*.md'
   - '.tmp/**/*.md'
   - 'CHANGELOG.md'
   - 'vendor/**/*.md'

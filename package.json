@@ -175,7 +175,7 @@
       "**/*.cts",
       "**/*.d.ts",
       "site/media/**/*",
-      ".worktrees/**/*",
+      "..worktrees/**/*",
       "site/src/content/**/*",
       "test-d/**/*",
       "site/src/components/**/*.astro",
