@@ -4,7 +4,7 @@ export default {
   autoDetect: ['node:test'],
   env: {
     params: {
-      env: 'DEBUG=modestbench*;WALLABY=1',
+      env: 'DEBUG=modestbench*',
     },
     runner: 'node',
     type: 'node',
@@ -15,9 +15,10 @@ export default {
     '!test/**/*.test.ts',
     'package.json',
     '!**/*.cts',
-    { instrument: false, pattern: 'test/fixture/**' },
-    '!src/node_modules/modestbench/**',
+    { instrument: false, pattern: 'test/**/fixture/**' },
     { instrument: false, pattern: 'test/**/*.test.ts.snapshot' },
+    // uncomment the following line for integration tests
+    // { instrument: false, pattern: 'dist/**/*.js' },
   ],
   filesWithNoCoverageCalculated: ['.tmp/**/*.test.ts'],
   preloadModules: ['tsx/esm'],
@@ -27,7 +28,8 @@ export default {
     'test/**/*.test.ts',
     '!node_modules/**',
     '!dist/**',
-    // tshy-ism
-    '!src/node_modules/modestbench/**',
+    // uncomment the following line to attempt to run integration tests
+    // which typically launch child processes
+    // '!test/integration/**/*.test.ts',
   ],
 };
