@@ -320,9 +320,8 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         '.ts': async (filepath: string): Promise<unknown> => {
           // Use cosmiconfig-typescript-loader to load TypeScript files
           // This works without tsx in the import chain
-          const { TypeScriptLoader: createTypeScriptLoader } = await import(
-            'cosmiconfig-typescript-loader'
-          );
+          const { TypeScriptLoader: createTypeScriptLoader } =
+            await import('cosmiconfig-typescript-loader');
           const loader = createTypeScriptLoader();
           const { readFile } = await import('node:fs/promises');
           const content = await readFile(filepath, 'utf-8');
