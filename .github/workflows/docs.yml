@@ -8,7 +8,7 @@ on:
       - 'site/**'
       - 'astro.config.js'
       - 'tsconfig.json'
-      - 'scripts/copy-docs.js'
+      - 'scripts/copy-docs.ts'
       - 'ARCHITECTURE.md'
       - 'CONTRIBUTING.md'
       - 'README.md'

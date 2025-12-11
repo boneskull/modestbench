@@ -85,7 +85,7 @@
     "commitlint": "commitlint",
     "dev": "zshy --watch",
     "docs:build": "run-s docs:copy astro:build",
-    "docs:copy": "node scripts/copy-docs.js",
+    "docs:copy": "tsx scripts/copy-docs.ts",
     "docs:dev": "run-s docs:copy astro:dev",
     "docs:preview": "astro preview --config astro.config.js",
     "fix": "run-s -sl fix:*",
