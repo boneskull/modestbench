@@ -1,10 +1,11 @@
 import { expect } from 'bupkis';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 describe('CLI directory path handling', () => {
   let tempDir: string;
@@ -18,19 +19,10 @@ describe('CLI directory path handling', () => {
   });
 
   it('should find benchmark files recursively when given directory path', async () => {
-    await mkdir(join(tempDir, 'my-benchmarks', 'nested'), { recursive: true });
-    await writeFile(
-      join(tempDir, 'my-benchmarks', 'test1.bench.js'),
-      'export default { suites: { "Suite 1": { benchmarks: { "test": { fn: () => 1 } } } } };',
-    );
-    await writeFile(
-      join(tempDir, 'my-benchmarks', 'nested', 'test2.bench.js'),
-      'export default { suites: { "Suite 2": { benchmarks: { "test": { fn: () => 1 } } } } };',
-    );
-
+    // Use fixture nested directory which contains Suite 1 and Suite 2 (in deep/)
     const result = await runCommand(
-      ['run', join(tempDir, 'my-benchmarks'), '--iterations', '1'],
-      tempDir,
+      ['run', fixtures.nestedDir, '--iterations', '1'],
+      dirname(fixtures.nestedDir),
     );
 
     expect(result.exitCode, 'to equal', 0);
@@ -39,6 +31,9 @@ describe('CLI directory path handling', () => {
   });
 
   it('should use sensible defaults when no paths provided', async () => {
+    // This test requires specific directory structure relative to cwd
+    // so we need to create files dynamically
+
     // Top-level file (should NOT be found with default pattern bench/**/*.bench.*)
     await writeFile(
       join(tempDir, 'top.bench.js'),
@@ -68,20 +63,16 @@ describe('CLI directory path handling', () => {
   });
 
   it('should support all extensions including .cts and .mts', async () => {
-    await mkdir(join(tempDir, 'benchmarks'), { recursive: true });
-
-    await writeFile(
-      join(tempDir, 'benchmarks', 'test.bench.mts'),
-      'export default { suites: { "MTS": { benchmarks: { "test": { fn: () => 1 } } } } };',
-    );
-    await writeFile(
-      join(tempDir, 'benchmarks', 'test.bench.cts'),
-      'export default { suites: { "CTS": { benchmarks: { "test": { fn: () => 1 } } } } };',
-    );
-
+    // Use fixture directory containing .mts and .cts files
     const result = await runCommand(
-      ['run', join(tempDir, 'benchmarks'), '--iterations', '1'],
-      tempDir,
+      [
+        'run',
+        fixtures.extensionMts,
+        fixtures.extensionCts,
+        '--iterations',
+        '1',
+      ],
+      dirname(fixtures.extensionMts),
     );
 
     expect(result.exitCode, 'to equal', 0);
