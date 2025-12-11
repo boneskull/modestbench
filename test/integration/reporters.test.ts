@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 /**
  * Integration tests for multiple reporter output formats Reference:
@@ -12,10 +13,11 @@ import { runCommand } from '../util.js';
  */
 
 describe('Multiple reporter output formats', () => {
+  // Temp dir only needed for output file tests
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-reporter-output-'));
   });
 
   afterEach(async () => {
@@ -24,26 +26,9 @@ describe('Multiple reporter output formats', () => {
 
   describe('human reporter', () => {
     it('should produce human-readable output with colors and tables', async () => {
-      const benchFile = join(tempDir, 'human-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Human Output Test': {
-              benchmarks: {
-                'fast operation': { fn: () => 1 },
-                'slow operation': { fn: () => 2 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.humanOutput,
         '--reporter',
         'human',
       ]);
@@ -57,27 +42,9 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should show progress bars during execution', async () => {
-      const benchFile = join(tempDir, 'progress-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Progress Test': {
-              benchmarks: {
-                'task 1': { fn: () => 1 },
-                'task 2': { fn: () => 2 },
-                'task 3': { fn: () => 3 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.multiTask,
         '--reporter',
         'human',
       ]);
@@ -88,25 +55,9 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should display summary statistics', async () => {
-      const benchFile = join(tempDir, 'stats-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Statistics Test': {
-              benchmarks: {
-                'stat task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'human',
         '--verbose',
@@ -122,26 +73,10 @@ describe('Multiple reporter output formats', () => {
 
   describe('json reporter', () => {
     it('should produce valid JSON output', async () => {
-      const benchFile = join(tempDir, 'json-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'JSON Test': {
-              benchmarks: {
-                'json task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const outputFile = join(tempDir, 'results', 'results.json');
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'json',
         '--output',
@@ -170,29 +105,10 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should include all benchmark metadata in JSON', async () => {
-      const benchFile = join(tempDir, 'metadata-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Metadata Suite': {
-              benchmarks: {
-                'metadata task': {
-                  fn: () => 1,
-                  tags: ['performance', 'unit']
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const outputDir = join(tempDir, 'metadata-output');
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.withMetadataTags,
         '--reporter',
         'json',
         '--output',
@@ -228,27 +144,10 @@ describe('Multiple reporter output formats', () => {
 
   describe('csv reporter', () => {
     it('should produce valid CSV output', async () => {
-      const benchFile = join(tempDir, 'csv-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'CSV Test': {
-              benchmarks: {
-                'csv task 1': { fn: () => 1 },
-                'csv task 2': { fn: () => 2 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const outputFile = join(tempDir, 'results', 'results.csv');
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.csvTasks,
         '--reporter',
         'csv',
         '--output',
@@ -277,31 +176,20 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should include all required CSV columns', async () => {
-      const benchFile = join(tempDir, 'csv-columns-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'CSV Columns Test': {
-              benchmarks: {
-                'column task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
-      const result = await runCommand(
-        ['run', benchFile, '--reporter', 'csv'],
+      const result = await runCommand([
+        'run',
+        fixtures.simple,
+        '--reporter',
+        'csv',
+        '--output',
         tempDir,
-      );
+      ]);
 
       expect(result.exitCode, 'to equal', 0);
-      expect(result.stdout, 'to be truthy');
 
-      const lines = result.stdout.trim().split('\n');
+      // Read CSV from output file
+      const csvContent = await readFile(join(tempDir, 'results.csv'), 'utf-8');
+      const lines = csvContent.trim().split('\n');
       expect(lines.length, 'to be greater than', 0);
 
       const headers = lines[0]!.toLowerCase();
@@ -316,25 +204,9 @@ describe('Multiple reporter output formats', () => {
 
     it.skip('should support custom CSV delimiters', async () => {
       // Note: --csv-delimiter flag not yet implemented
-      const benchFile = join(tempDir, 'csv-delimiter-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Delimiter Test': {
-              benchmarks: {
-                'delimiter task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'csv',
         '--csv-delimiter',
@@ -350,25 +222,9 @@ describe('Multiple reporter output formats', () => {
 
   describe('multiple reporters simultaneously', () => {
     it('should output to multiple formats at once', async () => {
-      const benchFile = join(tempDir, 'multi-reporter-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Multi Reporter Test': {
-              benchmarks: {
-                'multi task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'human',
         '--reporter',
@@ -382,7 +238,7 @@ describe('Multiple reporter output formats', () => {
       expect(result.exitCode, 'to equal', 0);
 
       // Should have human output in stdout
-      expect(result.stdout, 'to match', /Multi Reporter Test|ops/);
+      expect(result.stdout, 'to match', /Test Suite|ops/);
 
       // Should create json and csv files
       const jsonFile = join(tempDir, 'results', 'results.json');
@@ -397,25 +253,9 @@ describe('Multiple reporter output formats', () => {
 
     it.skip('should handle reporter-specific configuration', async () => {
       // Note: Reporter-specific CLI flags not yet implemented
-      const benchFile = join(tempDir, 'reporter-config-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Reporter Config Test': {
-              benchmarks: {
-                'config task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'human',
         '--reporter',
@@ -437,26 +277,10 @@ describe('Multiple reporter output formats', () => {
 
   describe('output file management', () => {
     it('should create output directories', async () => {
-      const benchFile = join(tempDir, 'output-dir-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Output Dir Test': {
-              benchmarks: {
-                'dir task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const outputDir = join(tempDir, 'nested', 'output', 'dir');
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'json',
         '--reporter',
@@ -476,22 +300,6 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should handle file naming conflicts', async () => {
-      const benchFile = join(tempDir, 'conflict-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Conflict Test': {
-              benchmarks: {
-                'conflict task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Create existing file
       const existingFile = join(tempDir, 'results', 'results.json');
       await mkdir(join(tempDir, 'results'), { recursive: true });
@@ -499,7 +307,7 @@ describe('Multiple reporter output formats', () => {
 
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'json',
         '--output',
@@ -511,26 +319,10 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should support custom output filenames', async () => {
-      const benchFile = join(tempDir, 'custom-name-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Custom Name Test': {
-              benchmarks: {
-                'name task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const customFile = join(tempDir, 'custom-results.json');
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'json',
         '--output-file',
@@ -552,26 +344,10 @@ describe('Multiple reporter output formats', () => {
 
   describe('reporter error handling', () => {
     it('should handle reporter failures gracefully', async () => {
-      const benchFile = join(tempDir, 'reporter-error-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Reporter Error Test': {
-              benchmarks: {
-                'error task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Try to write to read-only location (should fail gracefully)
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'json',
         '--output',
@@ -583,25 +359,9 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should continue with other reporters if one fails', async () => {
-      const benchFile = join(tempDir, 'partial-failure-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Partial Failure Test': {
-              benchmarks: {
-                'partial task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'human',
         '--reporter',
@@ -619,26 +379,9 @@ describe('Multiple reporter output formats', () => {
 
   describe('simple reporter', () => {
     it('should produce plain text output without colors or ANSI codes', async () => {
-      const benchFile = join(tempDir, 'simple-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Simple Output Test': {
-              benchmarks: {
-                'fast operation': { fn: () => 1 },
-                'slow operation': { fn: () => 2 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simpleOutput,
         '--reporter',
         'simple',
       ]);
@@ -653,26 +396,9 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should not include block characters or decorative symbols', async () => {
-      const benchFile = join(tempDir, 'no-blocks-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Plain Text Suite': {
-              benchmarks: {
-                'task 1': { fn: () => 1 },
-                'task 2': { fn: () => 2 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.multiTask,
         '--reporter',
         'simple',
       ]);
@@ -684,25 +410,9 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should include basic symbols (√ × ≈ ±)', async () => {
-      const benchFile = join(tempDir, 'basic-symbols-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Symbols Test': {
-              benchmarks: {
-                'passing task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'simple',
       ]);
@@ -714,27 +424,9 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should not display progress bars', async () => {
-      const benchFile = join(tempDir, 'no-progress-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'No Progress Test': {
-              benchmarks: {
-                'task 1': { fn: () => 1 },
-                'task 2': { fn: () => 2 },
-                'task 3': { fn: () => 3 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.multiTask,
         '--reporter',
         'simple',
       ]);
@@ -747,25 +439,9 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should maintain same structural output as human reporter', async () => {
-      const benchFile = join(tempDir, 'structure-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Test Suite': {
-              benchmarks: {
-                'test task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'simple',
       ]);
@@ -774,30 +450,14 @@ describe('Multiple reporter output formats', () => {
 
       // Should show suite name, task name, and statistics
       expect(result.stdout, 'to contain', 'Test Suite');
-      expect(result.stdout, 'to contain', 'test task');
+      expect(result.stdout, 'to contain', 'Fast Task');
       expect(result.stdout, 'to match', /ops\/sec/);
     });
 
     it('should work with verbose mode', async () => {
-      const benchFile = join(tempDir, 'simple-verbose-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Verbose Test': {
-              benchmarks: {
-                'verbose task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simple,
         '--reporter',
         'simple',
         '--verbose',

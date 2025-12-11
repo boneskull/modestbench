@@ -6,67 +6,29 @@
  */
 
 import { expect } from 'bupkis';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 describe('Limit-By Mode Integration Tests', () => {
-  let testDir: string;
-  let benchmarkFile: string;
-
-  beforeEach(async () => {
-    // Create a temporary test directory
-    testDir = await mkdtemp(join(tmpdir(), 'modestbench-limitby-test-'));
-
-    // Create a simple benchmark file for testing
-    benchmarkFile = join(testDir, 'simple.bench.js');
-    await writeFile(
-      benchmarkFile,
-      `
-export default {
-  suites: {
-    'Test Suite': {
-      benchmarks: {
-        'Fast Task': {
-          fn: () => {
-            // Very fast operation
-            return 1 + 1;
-          }
-        }
-      }
-    }
-  }
-};
-`,
-    );
-  });
-
-  afterEach(async () => {
-    // Clean up test directory
-    await rm(testDir, { force: true, recursive: true });
-  });
+  const benchmarkFile = fixtures.simple;
 
   describe('explicit --limit-by modes', () => {
     it('should respect --limit-by iterations', async () => {
       const startTime = Date.now();
 
       // With iterations mode, should complete quickly despite high time budget
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '5',
-          '--time',
-          '10000',
-          '--limit-by',
-          'iterations',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--time',
+        '10000',
+        '--limit-by',
+        'iterations',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -80,19 +42,16 @@ export default {
 
       // With time mode, should run for at least the time budget
       // Using a short time (100ms) to keep test fast
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '10000',
-          '--time',
-          '100',
-          '--limit-by',
-          'time',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '10000',
+        '--time',
+        '100',
+        '--limit-by',
+        'time',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -106,19 +65,16 @@ export default {
       const startTime = Date.now();
 
       // With 'any' mode and low iterations, should stop quickly
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '5',
-          '--time',
-          '10000',
-          '--limit-by',
-          'any',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--time',
+        '10000',
+        '--limit-by',
+        'any',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -130,19 +86,16 @@ export default {
     it('should respect --limit-by all (require both thresholds)', async () => {
       // With 'all' mode, need both thresholds met
       // Using small values to keep test fast
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '5',
-          '--time',
-          '50',
-          '--limit-by',
-          'all',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--time',
+        '50',
+        '--limit-by',
+        'all',
+      ]);
 
       // Should complete successfully after meeting both conditions
       expect(result.exitCode, 'to equal', 0);
@@ -154,10 +107,12 @@ export default {
       const startTime = Date.now();
 
       // Only iterations provided → should limit by iterations
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -169,10 +124,7 @@ export default {
     it('should default to time mode when only --time provided', async () => {
       // Only time provided → should limit by time
       // Using short time to keep test fast
-      const result = await runCommand(
-        ['run', benchmarkFile, '--time', '100'],
-        testDir,
-      );
+      const result = await runCommand(['run', benchmarkFile, '--time', '100']);
 
       // Should complete successfully
       expect(result.exitCode, 'to equal', 0);
@@ -182,10 +134,14 @@ export default {
       const startTime = Date.now();
 
       // Both provided → should stop at whichever comes first
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--time', '10000'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--time',
+        '10000',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -198,7 +154,7 @@ export default {
       const startTime = Date.now();
 
       // Neither provided → uses defaults with iterations mode
-      const result = await runCommand(['run', benchmarkFile], testDir);
+      const result = await runCommand(['run', benchmarkFile]);
 
       const duration = Date.now() - startTime;
 
@@ -212,18 +168,15 @@ export default {
     it('should work with --limit-by iterations and --quiet', async () => {
       const startTime = Date.now();
 
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '5',
-          '--limit-by',
-          'iterations',
-          '--quiet',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--limit-by',
+        'iterations',
+        '--quiet',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -233,18 +186,15 @@ export default {
     });
 
     it('should work with --limit-by time and --quiet', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--time',
-          '100',
-          '--limit-by',
-          'time',
-          '--quiet',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--time',
+        '100',
+        '--limit-by',
+        'time',
+        '--quiet',
+      ]);
 
       expect(result.stdout, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
@@ -255,10 +205,14 @@ export default {
     it('should work with -i short flag for iterations', async () => {
       const startTime = Date.now();
 
-      const result = await runCommand(
-        ['run', benchmarkFile, '-i', '5', '--limit-by', 'iterations'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '-i',
+        '5',
+        '--limit-by',
+        'iterations',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -267,10 +221,14 @@ export default {
     });
 
     it('should work with -t short flag for time', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '-t', '100', '--limit-by', 'time'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '-t',
+        '100',
+        '--limit-by',
+        'time',
+      ]);
 
       expect(result.exitCode, 'to equal', 0);
     });
@@ -279,19 +237,16 @@ export default {
   describe('explicit override of smart defaults', () => {
     it('should allow overriding iterations default to time mode', async () => {
       // Provide iterations but explicitly request time mode
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '10000',
-          '--time',
-          '100',
-          '--limit-by',
-          'time',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '10000',
+        '--time',
+        '100',
+        '--limit-by',
+        'time',
+      ]);
 
       // Should respect explicit time mode despite iterations being provided
       expect(result.exitCode, 'to equal', 0);
@@ -301,19 +256,16 @@ export default {
       const startTime = Date.now();
 
       // Provide time but explicitly request iterations mode
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--time',
-          '10000',
-          '--iterations',
-          '5',
-          '--limit-by',
-          'iterations',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--time',
+        '10000',
+        '--iterations',
+        '5',
+        '--limit-by',
+        'iterations',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -328,10 +280,12 @@ export default {
       const startTime = Date.now();
 
       // Low iteration count should still execute quickly (backward compatible behavior)
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '3'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '3',
+      ]);
 
       const duration = Date.now() - startTime;
 

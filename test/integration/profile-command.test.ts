@@ -6,42 +6,25 @@ import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { fixtures } from './fixture-paths.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 describe('Profile Command Integration', () => {
   it('should profile a simple script and generate report', async () => {
-    const tmpDir = await mkdtemp(join(tmpdir(), 'modestbench-profile-test-'));
+    const tmpDir = await mkdtemp(join(tmpdir(), 'modestbench-profile-'));
 
     try {
-      // Create a simple script to profile
-      const scriptPath = join(tmpDir, 'test-script.js');
-      await writeFile(
-        scriptPath,
-        `
-        function hotFunction() {
-          let sum = 0;
-          for (let i = 0; i < 1000000; i++) {
-            sum += i;
-          }
-          return sum;
-        }
-        
-        for (let i = 0; i < 10; i++) {
-          hotFunction();
-        }
-        `,
-      );
-
       // Create package.json
       await writeFile(
         join(tmpDir, 'package.json'),
         JSON.stringify({ name: 'test-project' }),
       );
 
-      // Run profile command
+      // Run profile command using fixture
       const output = execSync(
-        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${scriptPath}"`,
+        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${fixtures.profileHotFunction}"`,
         {
           cwd: tmpDir,
           encoding: 'utf-8',
@@ -64,39 +47,16 @@ describe('Profile Command Integration', () => {
   });
 
   it('should support --group-by-file option', async () => {
-    const tmpDir = await mkdtemp(join(tmpdir(), 'modestbench-profile-test-'));
+    const tmpDir = await mkdtemp(join(tmpdir(), 'modestbench-profile-'));
 
     try {
-      const scriptPath = join(tmpDir, 'test-script.js');
-      await writeFile(
-        scriptPath,
-        `
-        function funcA() {
-          let sum = 0;
-          for (let i = 0; i < 500000; i++) sum += i;
-          return sum;
-        }
-        
-        function funcB() {
-          let product = 1;
-          for (let i = 1; i < 100; i++) product *= i;
-          return product;
-        }
-        
-        for (let i = 0; i < 10; i++) {
-          funcA();
-          funcB();
-        }
-        `,
-      );
-
       await writeFile(
         join(tmpDir, 'package.json'),
         JSON.stringify({ name: 'test-project' }),
       );
 
       const output = execSync(
-        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${scriptPath}" --group-by-file`,
+        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${fixtures.profileMultiFunction}" --group-by-file`,
         {
           cwd: tmpDir,
           encoding: 'utf-8',
@@ -113,23 +73,9 @@ describe('Profile Command Integration', () => {
   });
 
   it('should respect --min-percent threshold', async () => {
-    const tmpDir = await mkdtemp(join(tmpdir(), 'modestbench-profile-test-'));
+    const tmpDir = await mkdtemp(join(tmpdir(), 'modestbench-profile-'));
 
     try {
-      const scriptPath = join(tmpDir, 'test-script.js');
-      await writeFile(
-        scriptPath,
-        `
-        function hotFunction() {
-          let sum = 0;
-          for (let i = 0; i < 1000000; i++) sum += i;
-          return sum;
-        }
-        
-        for (let i = 0; i < 10; i++) hotFunction();
-        `,
-      );
-
       await writeFile(
         join(tmpDir, 'package.json'),
         JSON.stringify({ name: 'test-project' }),
@@ -137,7 +83,7 @@ describe('Profile Command Integration', () => {
 
       // Run with high threshold - should filter out most functions
       const output = execSync(
-        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${scriptPath}" --min-percent 50`,
+        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${fixtures.profileHotFunction}" --min-percent 50`,
         {
           cwd: tmpDir,
           encoding: 'utf-8',

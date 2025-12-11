@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 /**
  * Integration tests for configuration file and CLI argument merging Reference:
@@ -12,10 +13,11 @@ import { runCommand } from '../util.js';
  */
 
 describe('Configuration file and CLI argument merging', () => {
+  // Temp dir needed for config files
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-config-'));
   });
 
   afterEach(async () => {
@@ -38,25 +40,9 @@ describe('Configuration file and CLI argument merging', () => {
         ),
       );
 
-      const benchFile = join(tempDir, 'test.bench.js');
-      await writeFile(
-        benchFile,
-        `export default {
-  suites: {
-    'Config Test': {
-      benchmarks: {
-                'test task': {
-                  fn: () => 1
-                }
-      }
-    }
-  }
-};`,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.configTest,
         '--config',
         configFile,
         '--iterations',
@@ -159,28 +145,10 @@ export default {
         }),
       );
 
-      const benchFile = join(tempDir, 'precedence.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Precedence Test': {
-              benchmarks: {
-                'precedence task': {
-                  fn: () => 1
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // CLI args should override config file
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.configTest,
         '--config',
         configFile,
         '--reporter',
@@ -199,7 +167,7 @@ export default {
 
       // Should use CLI values over config file and succeed
       expect(result.exitCode, 'to equal', 0);
-      expect(result.stdout, 'to contain', 'Precedence Test');
+      expect(result.stdout, 'to contain', 'Config Test');
     });
 
     it('should use config file defaults when CLI args not provided', async () => {
@@ -213,27 +181,9 @@ export default {
         }),
       );
 
-      const benchFile = join(tempDir, 'defaults.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Defaults Test': {
-              benchmarks: {
-                'default task': {
-                  fn: () => 1
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.configTest,
         '--config',
         configFile,
         '--time',
@@ -242,7 +192,7 @@ export default {
 
       // Should use config file defaults and succeed
       expect(result.exitCode, 'to equal', 0);
-      expect(result.stdout, 'to contain', 'Defaults Test');
+      expect(result.stdout, 'to contain', 'Config Test');
     });
   });
 
@@ -272,28 +222,10 @@ export default {
         }),
       );
 
-      const benchFile = join(tempDir, 'merge.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Merge Test': {
-              benchmarks: {
-                'merge task': {
-                  fn: () => 1
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // CLI should override both
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.configTest,
         '--config',
         projectConfig,
         '--iterations',
@@ -305,7 +237,7 @@ export default {
 
       // Should merge configurations and succeed
       expect(result.exitCode, 'to equal', 0);
-      expect(result.stdout, 'to contain', 'Merge Test');
+      expect(result.stdout, 'to contain', 'Config Test');
     });
   });
 
@@ -417,31 +349,9 @@ module.exports = {
         }),
       );
 
-      const benchFile = join(tempDir, 'inline-config.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          config: {
-            iterations: 1,  // Override global
-            warmup: 0         // Add to global
-          },
-          suites: {
-            'Inline Config Test': {
-              benchmarks: {
-                'inline task': {
-                  fn: () => 1
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.inlineConfig,
         '--config',
         globalConfig,
       ]);
@@ -459,41 +369,8 @@ module.exports = {
     });
 
     it('should support suite-level configuration', async () => {
-      const benchFile = join(tempDir, 'suite-config.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Fast Suite': {
-              config: {
-                iterations: 1,
-                warmup: 0
-              },
-              benchmarks: {
-                'fast task': {
-                  fn: () => 1
-                }
-              }
-            },
-            'Slow Suite': {
-              config: {
-                iterations: 1,
-                warmup: 0
-              },
-              benchmarks: {
-                'slow task': {
-                  fn: () => 2
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand(
-        ['run', benchFile, '--time', '100'],
+        ['run', fixtures.suiteConfig, '--time', '100'],
         tempDir,
       );
 
@@ -524,6 +401,7 @@ module.exports = {
         }),
       );
 
+      // Copy the fixture to temp dir so config discovery works
       const benchFile = join(tempDir, 'auto-discover.bench.js');
       await writeFile(
         benchFile,

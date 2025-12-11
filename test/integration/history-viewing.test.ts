@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 /**
  * Integration tests for historical results viewing and trends Reference:
@@ -12,10 +13,11 @@ import { runCommand } from '../util.js';
  */
 
 describe('Historical results viewing and trends', () => {
+  // Temp dir needed for history storage
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-history-'));
     await mkdir(join(tempDir, '.modestbench'), { recursive: true });
   });
 
@@ -25,25 +27,11 @@ describe('Historical results viewing and trends', () => {
 
   describe('history list command', () => {
     it('should list previous benchmark runs', async () => {
-      // First create some history by running benchmarks
-      const benchFile = join(tempDir, 'simple.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Test Suite': {
-              benchmarks: {
-                'test task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Run benchmark to create history
-      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
+      await runCommand(
+        ['run', fixtures.historySimple, '--iterations', '1'],
+        tempDir,
+      );
 
       // Then list history
       const result = await runCommand(['history', 'list'], tempDir);
@@ -120,25 +108,10 @@ describe('Historical results viewing and trends', () => {
 
   describe('history show command', () => {
     it('should show detailed results for specific run', async () => {
-      // Create and run benchmark to generate history
-      const benchFile = join(tempDir, 'detailed.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Detailed Suite': {
-              benchmarks: {
-                'task 1': { fn: () => 1 },
-                'task 2': { fn: () => 2 }
-              }
-            }
-          }
-        };
-      `,
+      await runCommand(
+        ['run', fixtures.historyDetailed, '--iterations', '1'],
+        tempDir,
       );
-
-      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
 
       // Get run ID and show details
       const listResult = await runCommand([
@@ -190,26 +163,15 @@ describe('Historical results viewing and trends', () => {
 
   describe('history compare command', () => {
     it('should compare two benchmark runs', async () => {
-      // Create benchmark file
-      const benchFile = join(tempDir, 'compare.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Comparison Suite': {
-              benchmarks: {
-                'stable task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Run twice to get two runs
-      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
-      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
+      await runCommand(
+        ['run', fixtures.historyCompare, '--iterations', '1'],
+        tempDir,
+      );
+      await runCommand(
+        ['run', fixtures.historyCompare, '--iterations', '1'],
+        tempDir,
+      );
 
       // Get run IDs
       const listResult = await runCommand([
@@ -263,27 +225,15 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should compare runs with task-by-task details in human format', async () => {
-      // Create benchmark file with multiple tasks
-      const benchFile = join(tempDir, 'detailed-compare.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Performance Suite': {
-              benchmarks: {
-                'task-a': { fn: () => { let x = 0; for(let i = 0; i < 100; i++) x++; return x; } },
-                'task-b': { fn: () => { return Array.from({length: 50}).map((_, i) => i); } }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Run twice
-      await runCommand(['run', benchFile, '--iterations', '10'], tempDir);
-      await runCommand(['run', benchFile, '--iterations', '10'], tempDir);
+      await runCommand(
+        ['run', fixtures.historyPerformance, '--iterations', '10'],
+        tempDir,
+      );
+      await runCommand(
+        ['run', fixtures.historyPerformance, '--iterations', '10'],
+        tempDir,
+      );
 
       // Get run IDs
       const listResult = await runCommand(
@@ -318,26 +268,15 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should output valid JSON comparison format', async () => {
-      // Create simple benchmark
-      const benchFile = join(tempDir, 'json-compare.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Test': {
-              benchmarks: {
-                'simple': { fn: () => 1 + 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Run twice
-      await runCommand(['run', benchFile, '--iterations', '5'], tempDir);
-      await runCommand(['run', benchFile, '--iterations', '5'], tempDir);
+      await runCommand(
+        ['run', fixtures.historySimple, '--iterations', '5'],
+        tempDir,
+      );
+      await runCommand(
+        ['run', fixtures.historySimple, '--iterations', '5'],
+        tempDir,
+      );
 
       // Get run IDs
       const listResult = await runCommand(
@@ -372,7 +311,7 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should handle comparing runs with different task sets gracefully', async () => {
-      // Create two different benchmark files
+      // Create two different benchmark files (need dynamic for this test)
       const benchFile1 = join(tempDir, 'compare-diff1.bench.js');
       await writeFile(
         benchFile1,
@@ -590,24 +529,11 @@ describe('Historical results viewing and trends', () => {
 
   describe('historical data persistence', () => {
     it('should persist results between runs', async () => {
-      const benchFile = join(tempDir, 'persist.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Persistent Suite': {
-              benchmarks: {
-                'persistent task': { fn: () => 1 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Run benchmark
-      await runCommand(['run', benchFile, '--iterations', '1'], tempDir);
+      await runCommand(
+        ['run', fixtures.historySimple, '--iterations', '1'],
+        tempDir,
+      );
 
       // Check that history exists
       const historyResult = await runCommand(['history', 'list'], tempDir);
@@ -617,7 +543,7 @@ describe('Historical results viewing and trends', () => {
       expect(
         historyResult.stdout,
         'to match',
-        /Persistent Suite|passed|No historical data|No matching/,
+        /Test Suite|passed|No historical data|No matching/,
       );
     });
 
@@ -642,26 +568,12 @@ describe('Historical results viewing and trends', () => {
 
   describe('trend analysis', () => {
     it('should show trends for multiple runs', async () => {
-      const benchFile = join(tempDir, 'trends-test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Trend Suite': {
-              benchmarks: {
-                'task-a': { fn: () => { let x = 0; for(let i = 0; i < 100; i++) x++; return x; } },
-                'task-b': { fn: () => { return Array.from({length: 50}).map((_, i) => i); } }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Run benchmark multiple times to create trend data
       for (let i = 0; i < 5; i++) {
-        await runCommand(['run', benchFile, '--iterations', '5'], tempDir);
+        await runCommand(
+          ['run', fixtures.historyTrends, '--iterations', '5'],
+          tempDir,
+        );
       }
 
       const trendsResult = await runCommand(['history', 'trends'], tempDir);
@@ -675,25 +587,12 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should output trends in JSON format', async () => {
-      const benchFile = join(tempDir, 'trends-json.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'JSON Trend Suite': {
-              benchmarks: {
-                'json-task': { fn: () => { return 42; } }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Create some trend data
       for (let i = 0; i < 3; i++) {
-        await runCommand(['run', benchFile, '--iterations', '5'], tempDir);
+        await runCommand(
+          ['run', fixtures.historySimple, '--iterations', '5'],
+          tempDir,
+        );
       }
 
       const trendsResult = await runCommand(
@@ -721,27 +620,12 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should limit trends output', async () => {
-      const benchFile = join(tempDir, 'trends-limit.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Limit Suite': {
-              benchmarks: {
-                'task-1': { fn: () => 1 },
-                'task-2': { fn: () => 2 },
-                'task-3': { fn: () => 3 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Create trend data
       for (let i = 0; i < 3; i++) {
-        await runCommand(['run', benchFile, '--iterations', '5'], tempDir);
+        await runCommand(
+          ['run', fixtures.multiTask, '--iterations', '5'],
+          tempDir,
+        );
       }
 
       const trendsResult = await runCommand(
@@ -766,25 +650,12 @@ describe('Historical results viewing and trends', () => {
     });
 
     it('should filter trends by date range', async () => {
-      const benchFile = join(tempDir, 'trends-date-filter.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Date Filter Suite': {
-              benchmarks: {
-                'date-task': { fn: () => 42 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       // Create some runs
       for (let i = 0; i < 3; i++) {
-        await runCommand(['run', benchFile, '--iterations', '3'], tempDir);
+        await runCommand(
+          ['run', fixtures.historySimple, '--iterations', '3'],
+          tempDir,
+        );
       }
 
       const trendsResult = await runCommand(

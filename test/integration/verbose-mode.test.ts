@@ -6,61 +6,36 @@
  */
 
 import { expect } from 'bupkis';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 describe('Verbose Mode Integration Tests', () => {
-  let testDir: string;
-  let benchmarkFile: string;
+  // Temp dir needed for output file tests
+  let outputDir: string;
 
   beforeEach(async () => {
-    // Create a temporary test directory
-    testDir = await mkdtemp(join(tmpdir(), 'modestbench-verbose-test-'));
-
-    // Create a simple benchmark file for testing
-    benchmarkFile = join(testDir, 'simple.bench.js');
-    await writeFile(
-      benchmarkFile,
-      `
-export default {
-  suites: {
-    'Test Suite': {
-      benchmarks: {
-        'Fast Task': {
-          fn: () => {
-            // Very fast operation
-            return 1 + 1;
-          }
-        },
-        'Another Task': {
-          fn: () => {
-            // Another fast operation
-            return 2 + 2;
-          }
-        }
-      }
-    }
-  }
-};
-`,
-    );
+    outputDir = await mkdtemp(join(tmpdir(), 'modestbench-verbose-output-'));
   });
 
   afterEach(async () => {
-    // Clean up test directory
-    await rm(testDir, { force: true, recursive: true });
+    await rm(outputDir, { force: true, recursive: true });
   });
 
   describe('default mode (no --verbose)', () => {
     it('should not show CLI setup messages', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--reporter', 'human'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // Setup messages should NOT appear
       expect(result.stderr, 'not to contain', 'Loading configuration...');
@@ -77,10 +52,14 @@ export default {
     });
 
     it('should still show reporter output', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--reporter', 'human'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // Reporter output (human reporter) should still appear in stdout
       expect(result.stdout, 'not to be empty');
@@ -88,10 +67,14 @@ export default {
     });
 
     it('should not show redundant completion messages', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--reporter', 'human'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // The old redundant messages should not appear
       expect(result.stderr, 'not to contain', 'Run completed successfully!');
@@ -102,18 +85,15 @@ export default {
 
   describe('with --verbose flag', () => {
     it('should show all CLI setup messages', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // All setup messages should appear in stderr
       expect(result.stderr, 'to contain', 'Loading configuration...');
@@ -126,18 +106,15 @@ export default {
     });
 
     it('should still show reporter output', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // Reporter output (human reporter) should appear in stdout
       expect(result.stdout, 'not to be empty');
@@ -145,18 +122,15 @@ export default {
     });
 
     it('should work with -v short flag', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '-v',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '-v',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // Setup messages should appear with short flag
       expect(result.stderr, 'to contain', 'Loading configuration...');
@@ -165,18 +139,15 @@ export default {
     });
 
     it('should enable human reporter verbose features', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // The human reporter should show iteration counts inline
       expect(result.stdout, 'to contain', 'iter)');
@@ -184,18 +155,15 @@ export default {
     });
 
     it('should not show redundant completion messages', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // The old redundant messages should not appear even in verbose mode
       expect(result.stderr, 'not to contain', 'Run completed successfully!');
@@ -206,39 +174,15 @@ export default {
 
   describe('with --verbose and errors', () => {
     it('should show error details and stack traces', async () => {
-      // Create a benchmark file with an error
-      const errorFile = join(testDir, 'error.bench.js');
-      await writeFile(
-        errorFile,
-        `
-export default {
-  suites: {
-    'Error Suite': {
-      benchmarks: {
-        'Failing Task': {
-          fn: () => {
-            throw new Error('Test error message');
-          }
-        }
-      }
-    }
-  }
-};
-`,
-      );
-
-      const result = await runCommand(
-        [
-          'run',
-          errorFile,
-          '--verbose',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.errorThrowing,
+        '--verbose',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // Should show error message
       expect(result.stdout, 'to contain', 'Test error message');
@@ -249,18 +193,15 @@ export default {
     it('should show validation warnings in verbose mode', async () => {
       // This is a placeholder test - actual validation warnings
       // would require specific invalid benchmark structure
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // Even if there are no warnings, verbose mode should be enabled
       expect(result.stderr, 'to contain', 'Validating benchmark files...');
@@ -270,19 +211,16 @@ export default {
 
   describe('interaction with --quiet flag', () => {
     it('should suppress all output when both --quiet and --verbose are used', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--quiet',
-          '--verbose',
-          '--iterations',
-          '5',
-          '--reporter',
-          'human',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--verbose',
+        '--iterations',
+        '5',
+        '--reporter',
+        'human',
+      ]);
 
       // Quiet mode should win - no output at all
       expect(result.stdout, 'to be empty');
@@ -293,91 +231,100 @@ export default {
 
   describe('with json reporter', () => {
     it('should show CLI setup messages in verbose mode', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--reporter',
-          'json',
-          '--iterations',
-          '5',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--reporter',
+        'json',
+        '--output',
+        outputDir,
+        '--iterations',
+        '5',
+      ]);
 
       // CLI setup messages should appear in stderr
       expect(result.stderr, 'to contain', 'Loading configuration...');
       expect(result.stderr, 'to contain', 'Setting up reporters...');
-      // JSON data should appear in stdout
-      expect(result.stdout, 'to contain', '"meta":');
       expect(result.exitCode, 'to equal', 0);
+
+      // JSON data should be written to file
+      const jsonContent = await readFile(
+        join(outputDir, 'results.json'),
+        'utf-8',
+      );
+      expect(jsonContent, 'to contain', '"meta":');
     });
 
     it('should not show setup messages without verbose', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--reporter', 'json', '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--reporter',
+        'json',
+        '--output',
+        outputDir,
+        '--iterations',
+        '5',
+      ]);
 
-      // CLI setup messages should NOT appear (json reporter forces quiet for CLI)
+      // CLI setup messages should NOT appear
       expect(result.stderr, 'to be empty');
-      // JSON data should appear in stdout
-      expect(result.stdout, 'to contain', '"meta":');
       expect(result.exitCode, 'to equal', 0);
+
+      // JSON data should be written to file
+      const jsonContent = await readFile(
+        join(outputDir, 'results.json'),
+        'utf-8',
+      );
+      expect(jsonContent, 'to contain', '"meta":');
     });
   });
 
   describe('with csv reporter', () => {
     it('should show CLI setup messages in verbose mode', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--reporter',
-          'csv',
-          '--iterations',
-          '5',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--reporter',
+        'csv',
+        '--output',
+        outputDir,
+        '--iterations',
+        '5',
+      ]);
 
       // CLI setup messages should appear in stderr
       expect(result.stderr, 'to contain', 'Loading configuration...');
       expect(result.stderr, 'to contain', 'Setting up reporters...');
-      // CSV data should appear in stdout
-      expect(result.stdout, 'to contain', 'file');
       expect(result.exitCode, 'to equal', 0);
+
+      // CSV data should be written to file
+      const csvContent = await readFile(
+        join(outputDir, 'results.csv'),
+        'utf-8',
+      );
+      expect(csvContent, 'to contain', 'file');
     });
   });
 
   describe('with multiple reporters', () => {
     it('should pass verbose flag to all reporters', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--verbose',
-          '--reporter',
-          'human',
-          '--reporter',
-          'json',
-          '--reporter',
-          'csv',
-          '--iterations',
-          '5',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--verbose',
+        '--reporter',
+        'human',
+        '--iterations',
+        '5',
+      ]);
 
-      // CLI setup messages should appear
+      // CLI setup messages should appear in verbose mode
       expect(result.stderr, 'to contain', 'Loading configuration...');
-      // Human reporter should show iteration counts inline (or JSON has iterations field)
-      // The combined output should contain iteration data in some form
-      expect(result.stdout, 'to match', /iter\)|"iterations":/);
-      // JSON and CSV data should be in stdout
-      expect(result.stdout, 'to contain', '"meta":');
+      // Human reporter should show iteration counts inline in verbose mode
+      expect(result.stdout, 'to contain', 'iter)');
       expect(result.exitCode, 'to equal', 0);
     });
   });

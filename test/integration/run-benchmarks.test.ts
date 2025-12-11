@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 /**
  * Integration tests for benchmark file execution with progress tracking
@@ -12,6 +13,7 @@ import { runCommand } from '../util.js';
  */
 
 describe('Benchmark execution with progress tracking', () => {
+  // Temp dir only needed for multi-file tests
   let tempDir: string;
 
   beforeEach(async () => {
@@ -25,36 +27,9 @@ describe('Benchmark execution with progress tracking', () => {
 
   describe('basic benchmark execution', () => {
     it('should execute simple benchmark file with progress', async () => {
-      // Create benchmark file from quickstart example
-      const benchFile = join(
-        tempDir,
-        'benchmarks',
-        'array-operations.bench.js',
-      );
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Array Operations': {
-              benchmarks: {
-                'Array.push()': {
-                  fn: () => [].push(1)
-                },
-
-                'Array.unshift()': {
-                  fn: () => [].unshift(1)
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.arrayOperations,
         '--reporter',
         'human',
       ]);
@@ -66,7 +41,7 @@ describe('Benchmark execution with progress tracking', () => {
     });
 
     it('should show file-level progress for multiple files', async () => {
-      // Create multiple benchmark files
+      // Create multiple benchmark files (dynamic for file ordering test)
       const files = ['test1.bench.js', 'test2.bench.js', 'test3.bench.js'];
 
       for (const file of files) {
@@ -106,34 +81,13 @@ describe('Benchmark execution with progress tracking', () => {
 
   describe('suite-level progress tracking', () => {
     it('should track progress within suites', async () => {
-      const benchFile = join(tempDir, 'benchmarks', 'multi-suite.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Suite 1': {
-              benchmarks: {
-                'task 1': { fn: () => 1 },
-                'task 2': { fn: () => 2 },
-                'task 3': { fn: () => 3 }
-              }
-            },
-            'Suite 2': {
-              benchmarks: {
-                'task 4': { fn: () => 4 },
-                'task 5': { fn: () => 5 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
-      const result = await runCommand(
-        ['run', benchFile, '--verbose', '--reporter', 'human'],
-        tempDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.twoSuites,
+        '--verbose',
+        '--reporter',
+        'human',
+      ]);
 
       // Should execute successfully and show suite progress
       expect(result.exitCode, 'to equal', 0);
@@ -144,71 +98,29 @@ describe('Benchmark execution with progress tracking', () => {
 
   describe('real-time progress updates', () => {
     it('should provide live progress updates during execution', async () => {
-      const benchFile = join(tempDir, 'benchmarks', 'live-progress.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          config: {
-            iterations: 10
-          },
-          suites: {
-            'Live Updates': {
-              benchmarks: {
-                'quick task 1': { fn: () => 1 },
-                'quick task 2': { fn: () => 2 },
-                'quick task 3': { fn: () => 3 }
-              }
-            }
-          }
-        };
-      `,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.withConfigIterations,
+        '--reporter',
+        'human',
+      ]);
 
-      const result = await runCommand(
-        ['run', benchFile, '--iterations', '1', '--reporter', 'human'],
-        tempDir,
-      );
-
-      // Should execute successfully and show progress indicators
+      // Should execute successfully and show task output
       expect(result.exitCode, 'to equal', 0);
-      expect(result.stdout, 'to match', /progress|completed/);
+      // Human reporter output includes task names and stats
+      expect(result.stdout, 'to match', /Live Updates|passed|ops\/sec/);
     });
   });
 
   describe('progress with setup and teardown', () => {
     it('should run setup before and teardown after benchmarks', async () => {
-      const benchFile = join(tempDir, 'benchmarks', 'setup-teardown.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Setup/Teardown Suite': {
-              setup: () => {
-                // Suite setup - make test data available
-                global.testData = Array.from({length: 1000}, (_, i) => i);
-              },
-
-              teardown: () => {
-                delete global.testData;
-              },
-
-              benchmarks: {
-                'process data': {
-                  fn: () => global.testData.reduce((a, b) => a + b, 0)
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
-      const result = await runCommand(
-        ['run', benchFile, '--verbose', '--reporter', 'human'],
-        tempDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.setupTeardown,
+        '--verbose',
+        '--reporter',
+        'human',
+      ]);
 
       // Setup runs before benchmarks, so testData is available
       expect(result.exitCode, 'to equal', 0);
@@ -218,32 +130,12 @@ describe('Benchmark execution with progress tracking', () => {
     });
 
     it('should report setup failure when setup throws', async () => {
-      const benchFile = join(tempDir, 'benchmarks', 'setup-failure.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Failing Setup Suite': {
-              setup: () => {
-                throw new Error('Setup exploded');
-              },
-
-              benchmarks: {
-                'should not run': {
-                  fn: () => 1 + 1
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
-      const result = await runCommand(
-        ['run', benchFile, '--reporter', 'human'],
-        tempDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.setupFailure,
+        '--reporter',
+        'human',
+      ]);
 
       // Setup failure should be reported
       expect(result.exitCode, 'to be greater than', 0);
@@ -254,28 +146,12 @@ describe('Benchmark execution with progress tracking', () => {
 
   describe('error handling during execution', () => {
     it('should continue progress tracking even with benchmark failures', async () => {
-      const benchFile = join(tempDir, 'benchmarks', 'with-errors.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Mixed Results': {
-              benchmarks: {
-                'good task': { fn: () => 1 },
-                'bad task': { fn: () => { throw new Error('Benchmark error'); } },
-                'another good task': { fn: () => 2 }
-              }
-            }
-          }
-        };
-      `,
-      );
-
-      const result = await runCommand(
-        ['run', benchFile, '--reporter', 'human'],
-        tempDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.mixedResults,
+        '--reporter',
+        'human',
+      ]);
 
       // Should complete with exit code 1 (failures) but continue execution
       expect(

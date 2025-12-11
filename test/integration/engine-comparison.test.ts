@@ -1,5 +1,5 @@
 import { expect } from 'bupkis';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
@@ -11,6 +11,7 @@ import { BenchmarkFileLoader } from '../../src/services/file-loader.js';
 import { FileHistoryStorage } from '../../src/services/history-storage.js';
 import { ModestBenchProgressManager } from '../../src/services/progress-manager.js';
 import { ModestBenchReporterRegistry } from '../../src/services/reporter-registry.js';
+import { fixtures } from './fixture-paths.js';
 
 /**
  * Integration tests comparing AccurateEngine and TinybenchEngine
@@ -28,6 +29,7 @@ describe('Engine comparison integration', () => {
   let tinybenchEngine: TinybenchEngine;
 
   beforeEach(async () => {
+    // Temp dir only needed for history storage
     tempDir = await mkdtemp(join(tmpdir(), 'engine-compare-'));
 
     // Create dependencies
@@ -65,29 +67,8 @@ describe('Engine comparison integration', () => {
 
   describe('result structure compatibility', () => {
     it('should produce TaskResults with same structure', async () => {
-      const benchFile = join(tempDir, 'simple.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Simple Math': {
-              benchmarks: {
-                'addition': {
-                  fn: () => 1 + 1
-                },
-                'multiplication': {
-                  fn: () => 2 * 2
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const config = {
-        files: [benchFile],
+        files: [fixtures.simpleMath],
         iterations: 10,
         quiet: true,
         reporters: ['human'],
@@ -144,26 +125,8 @@ describe('Engine comparison integration', () => {
       // during intensive async benchmark operations. This is a known limitation of the test
       // environment, not a bug in our engines. Both engines handle async operations correctly
       // in their respective contract tests.
-      const benchFile = join(tempDir, 'async.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Async Operations': {
-              benchmarks: {
-                'promise resolve': {
-                  fn: async () => Promise.resolve(42)
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const config = {
-        files: [benchFile],
+        files: [fixtures.asyncOperations],
         iterations: 10,
         quiet: true,
         reporters: ['human'],
@@ -191,26 +154,8 @@ describe('Engine comparison integration', () => {
     });
 
     it('should both handle errors gracefully', async () => {
-      const benchFile = join(tempDir, 'error.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Error Tests': {
-              benchmarks: {
-                'throws error': {
-                  fn: () => { throw new Error('Test error'); }
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const config = {
-        files: [benchFile],
+        files: [fixtures.errorThrowing],
         iterations: 10,
         quiet: true,
         reporters: ['human'],
@@ -237,32 +182,8 @@ describe('Engine comparison integration', () => {
 
   describe('measurement consistency', () => {
     it('should produce measurements in similar ranges', async () => {
-      const benchFile = join(tempDir, 'measure.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Measurements': {
-              benchmarks: {
-                'simple operation': {
-                  fn: () => {
-                    let x = 0;
-                    for (let i = 0; i < 100; i++) {
-                      x += i;
-                    }
-                    return x;
-                  }
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const config = {
-        files: [benchFile],
+        files: [fixtures.measurement],
         iterations: 10,
         quiet: true,
         reporters: ['human'],
@@ -290,26 +211,8 @@ describe('Engine comparison integration', () => {
     });
 
     it('should both complete similar number of iterations', async () => {
-      const benchFile = join(tempDir, 'iterations.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Iteration Count': {
-              benchmarks: {
-                'fast op': {
-                  fn: () => 1 + 1
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const config = {
-        files: [benchFile],
+        files: [fixtures.iterationCount],
         iterations: 10,
         quiet: true,
         reporters: ['human'],
@@ -333,32 +236,8 @@ describe('Engine comparison integration', () => {
 
   describe('feature parity', () => {
     it('should both support abort signals', async () => {
-      const benchFile = join(tempDir, 'abort.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Abortable': {
-              benchmarks: {
-                'long running': {
-                  fn: () => {
-                    let x = 0;
-                    for (let i = 0; i < 1000000; i++) {
-                      x += i;
-                    }
-                    return x;
-                  }
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const config = {
-        files: [benchFile],
+        files: [fixtures.abortable],
         iterations: 10,
         quiet: true,
         reporters: ['human'],
@@ -400,35 +279,8 @@ describe('Engine comparison integration', () => {
     it.skip('should both support tag filtering', async () => {
       // SKIPPED: Tag filtering integration test is flaky in test environment.
       // Tag filtering is tested separately in contract tests for both engines.
-      const benchFile = join(tempDir, 'tags.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Tagged Tests': {
-              benchmarks: {
-                'fast task': {
-                  fn: () => 1 + 1,
-                  tags: ['fast']
-                },
-                'slow task': {
-                  fn: () => {
-                    let x = 0;
-                    for (let i = 0; i < 10000; i++) x += i;
-                    return x;
-                  },
-                  tags: ['slow']
-                }
-              }
-            }
-          }
-        };
-      `,
-      );
-
       const config = {
-        files: [benchFile],
+        files: [fixtures.withTags],
         iterations: 10,
         quiet: true,
         reporters: ['human'],

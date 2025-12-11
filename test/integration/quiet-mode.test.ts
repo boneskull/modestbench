@@ -7,61 +7,35 @@
 
 import { expect } from 'bupkis';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 describe('Quiet Mode Integration Tests', () => {
-  let testDir: string;
-  let benchmarkFile: string;
+  // Temp dir needed for output file tests
+  let outputDir: string;
 
   beforeEach(async () => {
-    // Create a temporary test directory
-    testDir = await mkdtemp(join(tmpdir(), 'modestbench-quiet-test-'));
-
-    // Create a simple benchmark file for testing
-    benchmarkFile = join(testDir, 'simple.bench.js');
-    await writeFile(
-      benchmarkFile,
-      `
-export default {
-  suites: {
-    'Test Suite': {
-      benchmarks: {
-        'Fast Task': {
-          fn: () => {
-            // Very fast operation
-            return 1 + 1;
-          }
-        },
-        'Another Task': {
-          fn: () => {
-            // Another fast operation
-            return 2 + 2;
-          }
-        }
-      }
-    }
-  }
-};
-`,
-    );
+    outputDir = await mkdtemp(join(tmpdir(), 'modestbench-quiet-output-'));
   });
 
   afterEach(async () => {
-    // Clean up test directory
-    await rm(testDir, { force: true, recursive: true });
+    await rm(outputDir, { force: true, recursive: true });
   });
 
   describe('with --quiet flag', () => {
     it('should produce no stdout output on successful run', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--quiet', '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--iterations',
+        '5',
+      ]);
 
       // Stdout should be completely empty
       expect(result.stdout, 'to be empty');
@@ -69,10 +43,13 @@ export default {
     });
 
     it('should produce no stderr output on successful run', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--quiet', '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--iterations',
+        '5',
+      ]);
 
       // Stderr should be completely empty
       expect(result.stderr, 'to be empty');
@@ -80,10 +57,13 @@ export default {
     });
 
     it('should still exit with code 0 on success', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--quiet', '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--iterations',
+        '5',
+      ]);
 
       // Should complete successfully
       expect(result.stdout, 'to be empty');
@@ -92,94 +72,112 @@ export default {
     });
 
     it('should work with -q short flag', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '-q', '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '-q',
+        '--iterations',
+        '5',
+      ]);
 
       expect(result.stdout, 'to be empty');
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
     });
 
-    it('should work with json reporter', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--quiet',
-          '--reporter',
-          'json',
-          '--iterations',
-          '5',
-        ],
-        testDir,
-      );
+    it('should work with json reporter and output to file', async () => {
+      const outputFile = join(outputDir, 'results.json');
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--reporter',
+        'json',
+        '--output',
+        outputDir,
+        '--iterations',
+        '5',
+      ]);
 
-      // JSON output should still go to stdout (data output)
-      // even in quiet mode when no --output is specified
-      expect(result.stdout, 'not to be empty');
-      expect(result.stdout, 'to match', /"meta":/);
+      // Console should be quiet
+      expect(result.stdout, 'to be empty');
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
+
+      // JSON file should be written
+      const jsonContent = await readFile(outputFile, 'utf-8');
+      expect(jsonContent, 'to match', /"meta":/);
     });
 
-    it('should work with csv reporter', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--quiet',
-          '--reporter',
-          'csv',
-          '--iterations',
-          '5',
-        ],
-        testDir,
-      );
+    it('should work with csv reporter and output to file', async () => {
+      const outputFile = join(outputDir, 'results.csv');
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--reporter',
+        'csv',
+        '--output',
+        outputDir,
+        '--iterations',
+        '5',
+      ]);
 
-      // CSV output should still go to stdout (data output)
-      // even in quiet mode when no --output is specified
-      expect(result.stdout.length, 'to be greater than', 0);
-      expect(result.stdout, 'to contain', 'file');
+      // Console should be quiet
+      expect(result.stdout, 'to be empty');
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
+
+      // CSV file should be written
+      const csvContent = await readFile(outputFile, 'utf-8');
+      expect(csvContent, 'to contain', 'file');
     });
 
     it('should work with multiple reporters', async () => {
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--quiet',
-          '--reporter',
-          'human',
-          '--reporter',
-          'json',
-          '--reporter',
-          'csv',
-          '--iterations',
-          '5',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--reporter',
+        'human',
+        '--reporter',
+        'json',
+        '--reporter',
+        'csv',
+        '--output',
+        outputDir,
+        '--iterations',
+        '5',
+      ]);
 
-      // Data reporters (JSON/CSV) should output to stdout
-      // even in quiet mode when no --output is specified
-      expect(result.stdout, 'not to be empty');
-      // JSON output should be present
-      expect(result.stdout, 'to match', /"meta":/);
+      // Console should be quiet (human reporter suppressed in quiet mode)
+      expect(result.stdout, 'to be empty');
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
+
+      // Both JSON and CSV files should be written
+      const jsonContent = await readFile(
+        join(outputDir, 'results.json'),
+        'utf-8',
+      );
+      expect(jsonContent, 'to match', /"meta":/);
+
+      const csvContent = await readFile(
+        join(outputDir, 'results.csv'),
+        'utf-8',
+      );
+      expect(csvContent, 'to contain', 'file');
     });
   });
 
   describe('without --quiet flag', () => {
     it('should produce output as normal', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--iterations',
+        '5',
+      ]);
 
       // Should have some output when not quiet
       expect(result.stdout, 'not to be empty');
@@ -188,14 +186,13 @@ export default {
 
   describe('error handling', () => {
     it('should still produce no output on validation errors with --quiet', async () => {
-      // Create an invalid benchmark file
-      const invalidFile = join(testDir, 'invalid.bench.js');
-      await writeFile(invalidFile, 'export default { invalid: true };');
-
-      const result = await runCommand(
-        ['run', invalidFile, '--quiet', '--iterations', '5'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.invalid,
+        '--quiet',
+        '--iterations',
+        '5',
+      ]);
 
       // Even on error, quiet mode should suppress output
       expect(result.stdout, 'to be empty');
@@ -207,23 +204,17 @@ export default {
 
   describe('with file output', () => {
     it('should write to file and produce no console output with --quiet and --output', async () => {
-      const outputDir = join(testDir, 'output');
-      await mkdir(outputDir, { recursive: true });
-
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--quiet',
-          '--reporter',
-          'json',
-          '--output',
-          outputDir,
-          '--iterations',
-          '5',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        fixtures.simpleTwoTasks,
+        '--quiet',
+        '--reporter',
+        'json',
+        '--output',
+        outputDir,
+        '--iterations',
+        '5',
+      ]);
 
       expect(result.stdout, 'to be empty');
       expect(result.stderr, 'to be empty');

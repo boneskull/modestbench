@@ -6,48 +6,13 @@
  */
 
 import { expect } from 'bupkis';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterEach, beforeEach, describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 describe('Iterations Flag Integration Tests', () => {
-  let testDir: string;
-  let benchmarkFile: string;
-
-  beforeEach(async () => {
-    // Create a temporary test directory
-    testDir = await mkdtemp(join(tmpdir(), 'modestbench-iterations-test-'));
-
-    // Create a simple benchmark file for testing
-    benchmarkFile = join(testDir, 'simple.bench.js');
-    await writeFile(
-      benchmarkFile,
-      `
-export default {
-  suites: {
-    'Test Suite': {
-      benchmarks: {
-        'Fast Task': {
-          fn: () => {
-            // Very fast operation
-            return 1 + 1;
-          }
-        }
-      }
-    }
-  }
-};
-`,
-    );
-  });
-
-  afterEach(async () => {
-    // Clean up test directory
-    await rm(testDir, { force: true, recursive: true });
-  });
+  const benchmarkFile = fixtures.simple;
 
   describe('with --iterations flag', () => {
     it('should complete quickly with low iteration count despite high time budget', async () => {
@@ -55,18 +20,15 @@ export default {
 
       // Run with 5 iterations but 10 second time budget
       // Should complete in milliseconds, not 10 seconds
-      const result = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '5',
-          '--time',
-          '10000',
-          '--quiet',
-        ],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--time',
+        '10000',
+        '--quiet',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -80,10 +42,14 @@ export default {
 
       // Run with 10 iterations but 5 second time budget
       // Should complete in well under 1 second
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '10', '--time', '5000'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '10',
+        '--time',
+        '5000',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -93,10 +59,7 @@ export default {
     });
 
     it('should use default iterations when flag not provided', async () => {
-      const result = await runCommand(
-        ['run', benchmarkFile, '--time', '100'],
-        testDir,
-      );
+      const result = await runCommand(['run', benchmarkFile, '--time', '100']);
 
       // Should complete successfully with defaults
       expect(result.exitCode, 'to equal', 0);
@@ -109,34 +72,28 @@ export default {
     it.skip('should complete faster with fewer iterations', async () => {
       // Run with 3 iterations
       const startTime1 = Date.now();
-      const result1 = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '3',
-          '--time',
-          '10000',
-          '--quiet',
-        ],
-        testDir,
-      );
+      const result1 = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '3',
+        '--time',
+        '10000',
+        '--quiet',
+      ]);
       const duration1 = Date.now() - startTime1;
 
       // Run with 100 iterations
       const startTime2 = Date.now();
-      const result2 = await runCommand(
-        [
-          'run',
-          benchmarkFile,
-          '--iterations',
-          '100',
-          '--time',
-          '10000',
-          '--quiet',
-        ],
-        testDir,
-      );
+      const result2 = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '100',
+        '--time',
+        '10000',
+        '--quiet',
+      ]);
       const duration2 = Date.now() - startTime2;
 
       expect(result1.exitCode, 'to equal', 0);
@@ -153,10 +110,15 @@ export default {
     it('should accept -i as alias for --iterations', async () => {
       const startTime = Date.now();
 
-      const result = await runCommand(
-        ['run', benchmarkFile, '-i', '5', '--time', '10000', '--quiet'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '-i',
+        '5',
+        '--time',
+        '10000',
+        '--quiet',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -169,10 +131,13 @@ export default {
     it('should not affect iteration behavior when quiet is enabled', async () => {
       const startTime = Date.now();
 
-      const result = await runCommand(
-        ['run', benchmarkFile, '--iterations', '5', '--quiet'],
-        testDir,
-      );
+      const result = await runCommand([
+        'run',
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--quiet',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -189,10 +154,14 @@ export default {
 
       // Test that default command works with --iterations
       // This ensures the default command coverage for --iterations
-      const result = await runCommand(
-        [benchmarkFile, '--iterations', '5', '--time', '10000', '--quiet'],
-        testDir,
-      );
+      const result = await runCommand([
+        benchmarkFile,
+        '--iterations',
+        '5',
+        '--time',
+        '10000',
+        '--quiet',
+      ]);
 
       const duration = Date.now() - startTime;
 
@@ -204,10 +173,14 @@ export default {
     it('should work with -i short flag without explicit "run" command', async () => {
       const startTime = Date.now();
 
-      const result = await runCommand(
-        [benchmarkFile, '-i', '5', '--time', '10000', '--quiet'],
-        testDir,
-      );
+      const result = await runCommand([
+        benchmarkFile,
+        '-i',
+        '5',
+        '--time',
+        '10000',
+        '--quiet',
+      ]);
 
       const duration = Date.now() - startTime;
 

@@ -1,40 +1,24 @@
 import { expect } from 'bupkis';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { beforeEach, describe, it } from 'node:test';
 
 import { runCommand } from '../util.js';
+import { fixtures } from './fixture-paths.js';
 
 describe('Custom output filename', () => {
+  // Temp dir only needed for output files
   let tempDir: string;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), 'modestbench-output-'));
   });
 
   it('should error when using --output-file with multiple reporters', async () => {
-    const benchFile = join(tempDir, 'test.bench.js');
-    await writeFile(
-      benchFile,
-      `
-      export default {
-        suites: {
-          'Test Suite': {
-            benchmarks: {
-              'simple task': {
-                fn: () => 42
-              }
-            }
-          }
-        }
-      };
-      `,
-    );
-
     const result = await runCommand([
       'run',
-      benchFile,
+      fixtures.simpleReturn42,
       '--reporter',
       'json,csv',
       '--output-file',
@@ -47,27 +31,9 @@ describe('Custom output filename', () => {
   });
 
   it('should succeed when using --output-file with single reporter', async () => {
-    const benchFile = join(tempDir, 'test.bench.js');
-    await writeFile(
-      benchFile,
-      `
-      export default {
-        suites: {
-          'Test Suite': {
-            benchmarks: {
-              'simple task': {
-                fn: () => 42
-              }
-            }
-          }
-        }
-      };
-      `,
-    );
-
     const result = await runCommand([
       'run',
-      benchFile,
+      fixtures.simpleReturn42,
       '--reporter',
       'json',
       '--output-file',
@@ -80,28 +46,10 @@ describe('Custom output filename', () => {
   });
 
   it('should write to custom filename with --output-file and --output', async () => {
-    const benchFile = join(tempDir, 'test.bench.js');
-    await writeFile(
-      benchFile,
-      `
-      export default {
-        suites: {
-          'Test Suite': {
-            benchmarks: {
-              'simple task': {
-                fn: () => 42
-              }
-            }
-          }
-        }
-      };
-      `,
-    );
-
     const customFile = 'my-benchmarks.json';
     const result = await runCommand([
       'run',
-      benchFile,
+      fixtures.simpleReturn42,
       '--reporter',
       'json',
       '--output',
@@ -124,29 +72,11 @@ describe('Custom output filename', () => {
   });
 
   it('should write to custom filename without --output (relative to cwd)', async () => {
-    const benchFile = join(tempDir, 'test.bench.js');
-    await writeFile(
-      benchFile,
-      `
-      export default {
-        suites: {
-          'Test Suite': {
-            benchmarks: {
-              'simple task': {
-                fn: () => 42
-              }
-            }
-          }
-        }
-      };
-      `,
-    );
-
     // Use absolute path to avoid cwd issues in test
     const customFile = join(tempDir, 'standalone.json');
     const result = await runCommand([
       'run',
-      benchFile,
+      fixtures.simpleReturn42,
       '--reporter',
       'json',
       '--output-file',
@@ -166,28 +96,10 @@ describe('Custom output filename', () => {
   });
 
   it('should work with CSV reporter and custom filename', async () => {
-    const benchFile = join(tempDir, 'test.bench.js');
-    await writeFile(
-      benchFile,
-      `
-      export default {
-        suites: {
-          'Test Suite': {
-            benchmarks: {
-              'simple task': {
-                fn: () => 42
-              }
-            }
-          }
-        }
-      };
-      `,
-    );
-
     const customFile = 'benchmarks.csv';
     const result = await runCommand([
       'run',
-      benchFile,
+      fixtures.simpleReturn42,
       '--reporter',
       'csv',
       '--output',
@@ -205,26 +117,10 @@ describe('Custom output filename', () => {
 
   describe('Edge cases', () => {
     it('should handle absolute paths for --output-file', async () => {
-      const benchFile = join(tempDir, 'test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Test Suite': {
-              benchmarks: {
-                'simple task': { fn: () => 42 }
-              }
-            }
-          }
-        };
-        `,
-      );
-
       const absolutePath = join(tempDir, 'absolute', 'custom.json');
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simpleReturn42,
         '--reporter',
         'json',
         '--output-file',
@@ -239,25 +135,9 @@ describe('Custom output filename', () => {
     });
 
     it('should handle outputFile with subdirectories', async () => {
-      const benchFile = join(tempDir, 'test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Test Suite': {
-              benchmarks: {
-                'simple task': { fn: () => 42 }
-              }
-            }
-          }
-        };
-        `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simpleReturn42,
         '--reporter',
         'json',
         '--output',
@@ -275,25 +155,9 @@ describe('Custom output filename', () => {
     });
 
     it('should work with --of short flag', async () => {
-      const benchFile = join(tempDir, 'test.bench.js');
-      await writeFile(
-        benchFile,
-        `
-        export default {
-          suites: {
-            'Test Suite': {
-              benchmarks: {
-                'simple task': { fn: () => 42 }
-              }
-            }
-          }
-        };
-        `,
-      );
-
       const result = await runCommand([
         'run',
-        benchFile,
+        fixtures.simpleReturn42,
         '--reporter',
         'json',
         '--output',
