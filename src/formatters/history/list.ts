@@ -12,9 +12,7 @@ import { ansiChars, colorize } from '../../utils/ansi.js';
 /**
  * Formatter for history list command
  */
-export class HistoryListFormatter
-  implements HistoryFormatter<HistoryListResult>
-{
+export class HistoryListFormatter implements HistoryFormatter<HistoryListResult> {
   /**
    * Format as CSV
    */

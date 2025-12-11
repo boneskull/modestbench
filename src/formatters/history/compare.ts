@@ -13,9 +13,7 @@ import { ansiChars } from '../../utils/ansi.js';
 /**
  * Formatter for history compare command
  */
-export class HistoryCompareFormatter
-  implements HistoryFormatter<CompareResult>
-{
+export class HistoryCompareFormatter implements HistoryFormatter<CompareResult> {
   /**
    * Format as human-readable comparison
    */

@@ -142,9 +142,8 @@ export class BenchmarkFileLoader implements FileLoader {
 
       if (ext === '.ts' || ext === '.mts' || ext === '.cts') {
         // For TypeScript files, use cosmiconfig-typescript-loader
-        const { TypeScriptLoader: createTypeScriptLoader } = await import(
-          'cosmiconfig-typescript-loader'
-        );
+        const { TypeScriptLoader: createTypeScriptLoader } =
+          await import('cosmiconfig-typescript-loader');
         const loader = createTypeScriptLoader();
         module = (await loader(filePath, content)) as {
           [key: string]: unknown;
