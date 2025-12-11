@@ -1,7 +1,13 @@
-#!/usr/bin/env node
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+#!/usr/bin/env npx tsx
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+interface DocFile {
+  dest: string;
+  frontmatter: string;
+  source: string;
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
@@ -50,7 +56,7 @@ copyFileSync(
 console.log('✓ Copied HandelGothic Regular.woff2 → public/fonts/');
 
 // Files to copy with their frontmatter
-const files = [
+const files: DocFile[] = [
   {
     dest: join(siteContentDir, 'architecture.md'),
     frontmatter: `---
@@ -89,10 +95,7 @@ for (const file of files) {
 
     console.log(`✓ Copied ${file.source} → ${file.dest}`);
   } catch (error) {
-    console.error(
-      `✗ Failed to copy ${file.source}:`,
-      /** @type {Error} */ (error).message,
-    );
+    console.error(`✗ Failed to copy ${file.source}:`, (error as Error).message);
     process.exit(1);
   }
 }
