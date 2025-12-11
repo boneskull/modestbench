@@ -376,7 +376,7 @@ export class TinybenchEngine extends ModestBenchEngine {
       return {
         cv: result.latency.rme, // Use relative margin of error as CV approximation
         iterations: result.latency.samplesCount,
-        marginOfError: result.latency.moe,
+        marginOfError: result.latency.rme, // rme is already a percentage
         max: result.latency.max,
         mean: result.latency.mean,
         metadata: taskData.metadata ?? {},

@@ -11,7 +11,7 @@
 export interface SampleStatistics {
   /** Coefficient of variation (stdDev/mean × 100) */
   readonly cv: number;
-  /** Margin of error at 95% confidence */
+  /** Relative margin of error at 95% confidence (as percentage) */
   readonly marginOfError: number;
   /** Maximum value */
   readonly max: number;
@@ -79,10 +79,12 @@ export const calculateStatistics = (samples: number[]): SampleStatistics => {
   // Coefficient of Variation
   const cv = mean === 0 || samples.length < 2 ? 0 : (stdDev / mean) * 100;
 
-  // Margin of Error (95% confidence)
+  // Relative Margin of Error (95% confidence) - as percentage
+  // Formula: (Z * stdDev / sqrt(n)) / mean * 100
   const Z = 1.96;
-  const marginOfError =
+  const absoluteMoe =
     samples.length === 0 ? 0 : (Z * stdDev) / Math.sqrt(samples.length);
+  const marginOfError = mean === 0 ? 0 : (absoluteMoe / mean) * 100;
 
   // Percentiles (using standard formula: floor((n-1) * p))
   const p95 = samples[Math.floor((samples.length - 1) * 0.95)] ?? 0;
