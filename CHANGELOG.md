@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/boneskull/modestbench/compare/modestbench-v0.5.0...modestbench-v0.5.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* **stats:** calculate margin of error as relative percentage ([91c5d75](https://github.com/boneskull/modestbench/commit/91c5d75a222c0ce2188ea98909f1af12c0923675))
+
 ## [0.5.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.4.0...modestbench-v0.5.0) (2025-12-09)
 
 
