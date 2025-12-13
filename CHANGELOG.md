@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.5.1...modestbench-v0.6.0) (2025-12-13)
+
+
+### Features
+
+* **adapters:** add Jest adapter with ESM loader hooks ([9a23066](https://github.com/boneskull/modestbench/commit/9a230665788d04da1487824a71bc8dfccb5212cc))
+
 ## [0.5.1](https://github.com/boneskull/modestbench/compare/modestbench-v0.5.0...modestbench-v0.5.1) (2025-12-11)
 
 
