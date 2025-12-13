@@ -450,9 +450,12 @@ See the [Profiling Guide](/guides/profiling/) for detailed workflows, best pract
 
 ### `modestbench test`
 
-Run existing test files as benchmarks. Captures test definitions from Mocha, node:test, or AVA test files and executes them as benchmark tasks.
+Run existing test files as benchmarks. Captures test definitions from Jest, Mocha, node:test, or AVA test files and executes them as benchmark tasks.
 
 ```bash
+# Run Jest tests as benchmarks
+modestbench test jest "test/*.test.js"
+
 # Run Mocha tests as benchmarks
 modestbench test mocha "test/*.spec.js"
 
@@ -468,6 +471,7 @@ modestbench test mocha "test/unit/*.spec.js" "test/integration/*.spec.js"
 
 #### Supported Frameworks
 
+- **`jest`** - Jest test files using `describe`/`it`/`test` syntax
 - **`mocha`** - Mocha test files using `describe`/`it` syntax
 - **`node-test`** - Node.js built-in test runner (`node:test` module)
 - **`ava`** - AVA test files
@@ -476,7 +480,7 @@ modestbench test mocha "test/unit/*.spec.js" "test/integration/*.spec.js"
 
 ##### `<framework>` (required)
 
-The test framework to use. Must be one of: `mocha`, `node-test`, `ava`.
+The test framework to use. Must be one of: `jest`, `mocha`, `node-test`, `ava`.
 
 ##### `[files..]`
 

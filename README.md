@@ -14,7 +14,7 @@
 - **Multiple Output Formats**: Human-readable, JSON, and CSV reports (at the same time!!)
 - **Historical Tracking**: Store and compare benchmark results over time
 - **Code Profiling & Analysis**: Identify hot code paths that need benchmarking using V8's built-in profiler
-- **Run Tests as Benchmarks**: Use your existing Mocha, AVA, or node:test tests as benchmarks
+- **Run Tests as Benchmarks**: Use your existing Jest, Mocha, AVA, or node:test tests as benchmarks
 - **Performance Budgets**: Enforce performance standards and prevent regressions
 - **CLI & API**: Command-line interface and programmatic API
 - **TypeScript Support**: Full type safety
@@ -409,6 +409,9 @@ Functions that appear at the top of the profile report are good candidates for b
 Already have test files? Run them as benchmarks without writing any new code:
 
 ```bash
+# Run Jest tests as benchmarks
+modestbench test jest "test/*.test.js"
+
 # Run Mocha tests as benchmarks
 modestbench test mocha "test/*.spec.js"
 
@@ -424,6 +427,7 @@ modestbench test mocha "test/unit/*.spec.js" --iterations 500 --json
 
 **Supported Frameworks:**
 
+- `jest` - Jest test files with `describe`/`it`/`test` syntax
 - `mocha` - Mocha test files with `describe`/`it` syntax
 - `node-test` - Node.js built-in test runner (`node:test`)
 - `ava` - AVA test files

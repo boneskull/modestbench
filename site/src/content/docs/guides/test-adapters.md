@@ -1,6 +1,6 @@
 ---
 title: Running Tests as Benchmarks
-description: Use your existing Mocha, AVA, or node:test files as benchmarks
+description: Use your existing Jest, Mocha, AVA, or node:test files as benchmarks
 ---
 
 Already have a test suite? **modestbench** can run your existing test files as benchmarks without any code changes. This is useful for quick performance checks, finding slow tests, and adding performance metrics to your CI pipeline.
@@ -8,6 +8,9 @@ Already have a test suite? **modestbench** can run your existing test files as b
 ## Quick Start
 
 ```bash
+# Run Jest tests as benchmarks
+modestbench test jest "test/*.test.js"
+
 # Run Mocha tests as benchmarks
 modestbench test mocha "test/*.spec.js"
 
@@ -21,6 +24,35 @@ modestbench test ava "test/*.js"
 That's it. Each test becomes a benchmark task, and you get timing statistics for every test in your suite.
 
 ## Supported Frameworks
+
+### Jest
+
+Works with standard Jest test files using `describe`/`it`/`test` syntax:
+
+```javascript
+// test/example.test.js
+import { parseConfig } from '../src/config.js';
+
+describe('Config Parser', () => {
+  beforeEach(() => {
+    // Runs before each iteration
+  });
+
+  it('parses JSON config', () => {
+    const result = parseConfig('{"key": "value"}');
+    expect(result).toEqual({ key: 'value' });
+  });
+
+  test('handles empty config', () => {
+    const result = parseConfig('{}');
+    expect(result).toEqual({});
+  });
+});
+```
+
+```bash
+modestbench test jest "test/*.test.js"
+```
 
 ### Mocha
 
@@ -113,7 +145,7 @@ modestbench test ava "test/*.js"
 
 ## How It Works
 
-The `test` command uses ES module loader hooks to intercept imports of your test framework. When your test file imports `mocha`, `ava`, or `node:test`, modestbench provides a mock implementation that captures test definitions instead of running them.
+The `test` command uses ES module loader hooks to intercept imports of your test framework. When your test file imports `jest`, `mocha`, `ava`, or `node:test`, modestbench provides a mock implementation that captures test definitions instead of running them.
 
 ```text
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
