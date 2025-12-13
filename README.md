@@ -19,7 +19,7 @@
 - **CLI & API**: Command-line interface and programmatic API
 - **TypeScript Support**: Full type safety
 
-In summary, **modestbench** wraps [tinybench][] and enhances it with a bunch of crap so you don't have to think.
+In summary, **modestbench** makes writing and running benchmarks so easy, your burrow owl could do it.
 
 ## Quick Start
 
