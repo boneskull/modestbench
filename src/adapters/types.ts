@@ -20,6 +20,10 @@ export interface CapturedSuite {
   readonly hooks: SuiteHooks;
   /** Suite name */
   readonly name: string;
+  /** Whether this suite is marked .only */
+  readonly only?: boolean;
+  /** Whether this suite is marked .skip */
+  readonly skip?: boolean;
   /** Tests in this suite */
   readonly tests: CapturedTest[];
 }
@@ -79,7 +83,7 @@ export interface SuiteHooks {
 /**
  * Supported test frameworks
  */
-export type TestFramework = 'ava' | 'mocha' | 'node-test';
+export type TestFramework = 'ava' | 'jest' | 'mocha' | 'node-test';
 
 /**
  * Interface for test framework adapters

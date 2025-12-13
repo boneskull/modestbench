@@ -993,11 +993,11 @@ export const main = async (
       )
       .command(
         'test <framework> [files..]',
-        'Run test files as benchmarks (captures tests from Mocha, node:test, or AVA)',
+        'Run test files as benchmarks (captures tests from Jest, Mocha, node:test, or AVA)',
         (yargs) => {
           return yargs
             .positional('framework', {
-              choices: ['mocha', 'node-test', 'ava'] as const,
+              choices: ['ava', 'jest', 'mocha', 'node-test'] as const,
               demandOption: true,
               describe: 'Test framework to use',
               nargs: 1,

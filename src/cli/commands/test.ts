@@ -21,6 +21,7 @@ import type {
 import type { CliContext } from '../index.js';
 
 import { AvaAdapter } from '../../adapters/ava-adapter.js';
+import { JestAdapter } from '../../adapters/jest-adapter.js';
 import { MochaAdapter } from '../../adapters/mocha-adapter.js';
 import { NodeTestAdapter } from '../../adapters/node-test-adapter.js';
 import {
@@ -512,6 +513,8 @@ const selectAdapter = (framework: TestFramework) => {
   switch (framework) {
     case 'ava':
       return new AvaAdapter();
+    case 'jest':
+      return new JestAdapter();
     case 'mocha':
       return new MochaAdapter();
     case 'node-test':

@@ -21,7 +21,11 @@
     "types": ["node"],
     "verbatimModuleSyntax": false
   },
-  "exclude": ["astro.config.js", "test/integration/fixture/**"],
+  "exclude": [
+    "astro.config.js",
+    "test/integration/fixture/**",
+    "test/fixtures/adapters/jest/**"
+  ],
   "files": [
     "examples/modestbench.config.js",
     "test/fixtures/config/test-config.js"

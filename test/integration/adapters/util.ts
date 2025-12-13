@@ -1,0 +1,91 @@
+/**
+ * Utilities for adapter E2E tests
+ */
+import { type ChildProcess, spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+// Paths to CLI and adapter loaders
+const cliPath = fileURLToPath(
+  new URL('../../../dist/cli/index.js', import.meta.url),
+);
+
+// Adapters that have register/hooks pattern (ESM loader support)
+const adapterPaths = {
+  jest: fileURLToPath(
+    new URL('../../../dist/adapters/jest-register.js', import.meta.url),
+  ),
+} as const;
+
+export interface AdapterCommandOptions {
+  /** Working directory */
+  cwd?: string;
+  /** Number of benchmark iterations */
+  iterations?: number;
+  /** Output JSON */
+  json?: boolean;
+  /** Verbose output */
+  verbose?: boolean;
+}
+
+export type AdapterFramework = keyof typeof adapterPaths;
+
+/**
+ * Run the test command with an adapter
+ */
+export const runAdapterCommand = async (
+  framework: AdapterFramework,
+  files: string[],
+  options: AdapterCommandOptions = {},
+): Promise<{
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+}> => {
+  const adapterPath = adapterPaths[framework];
+  const args = ['--import', adapterPath, cliPath, 'test', framework, ...files];
+
+  // Add options
+  if (options.iterations !== undefined) {
+    args.push('--iterations', String(options.iterations));
+  }
+  if (options.json) {
+    args.push('--json');
+  }
+  if (options.verbose) {
+    args.push('--verbose');
+  }
+
+  return new Promise((resolve) => {
+    const child: ChildProcess = spawn('node', args, {
+      cwd: options.cwd ?? process.cwd(),
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout?.on('data', (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    child.stderr?.on('data', (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    child.on('close', (code: null | number) => {
+      resolve({
+        exitCode: code ?? -1,
+        stderr,
+        stdout,
+      });
+    });
+
+    child.on('error', (error: Error) => {
+      resolve({
+        exitCode: -1,
+        stderr: stderr + error.message,
+        stdout,
+      });
+    });
+  });
+};
