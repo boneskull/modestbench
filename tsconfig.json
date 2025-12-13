@@ -24,7 +24,7 @@
   "exclude": [
     "astro.config.js",
     "test/integration/fixture/**",
-    "test/fixtures/adapters/jest/**"
+    "test/fixtures/adapters/**"
   ],
   "files": [
     "examples/modestbench.config.js",

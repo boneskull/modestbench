@@ -179,7 +179,7 @@ export default defineConfig(
       'test-d/**/*',
       'vendor/**/*',
       'test/integration/fixture/**/*',
-      'test/fixtures/adapters/jest/**/*',
+      'test/fixtures/adapters/**/*',
     ],
   },
 );

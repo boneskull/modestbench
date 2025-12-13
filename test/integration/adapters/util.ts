@@ -10,11 +10,21 @@ const cliPath = fileURLToPath(
 );
 
 // Adapters that have register/hooks pattern (ESM loader support)
+// Note: Mocha uses global injection, not ESM loader hooks
 const adapterPaths = {
+  ava: fileURLToPath(
+    new URL('../../../dist/adapters/ava-register.js', import.meta.url),
+  ),
   jest: fileURLToPath(
     new URL('../../../dist/adapters/jest-register.js', import.meta.url),
   ),
+  'node-test': fileURLToPath(
+    new URL('../../../dist/adapters/node-test-register.js', import.meta.url),
+  ),
 } as const;
+
+// Frameworks that use global injection (no loader needed)
+const globalAdapters = ['mocha'] as const;
 
 export interface AdapterCommandOptions {
   /** Working directory */
@@ -27,7 +37,18 @@ export interface AdapterCommandOptions {
   verbose?: boolean;
 }
 
-export type AdapterFramework = keyof typeof adapterPaths;
+export type AdapterFramework =
+  | (typeof globalAdapters)[number]
+  | keyof typeof adapterPaths;
+
+/**
+ * Check if a framework uses global injection (no loader needed)
+ */
+const isGlobalAdapter = (
+  framework: AdapterFramework,
+): framework is (typeof globalAdapters)[number] => {
+  return (globalAdapters as readonly string[]).includes(framework);
+};
 
 /**
  * Run the test command with an adapter
@@ -41,8 +62,17 @@ export const runAdapterCommand = async (
   stderr: string;
   stdout: string;
 }> => {
-  const adapterPath = adapterPaths[framework];
-  const args = ['--import', adapterPath, cliPath, 'test', framework, ...files];
+  // Build args differently for global vs loader-hook adapters
+  let args: string[];
+
+  if (isGlobalAdapter(framework)) {
+    // Mocha and similar - no loader needed, globals are injected at runtime
+    args = [cliPath, 'test', framework, ...files];
+  } else {
+    // ESM loader hook adapters (jest, ava, node-test)
+    const adapterPath = adapterPaths[framework];
+    args = ['--import', adapterPath, cliPath, 'test', framework, ...files];
+  }
 
   // Add options
   if (options.iterations !== undefined) {
