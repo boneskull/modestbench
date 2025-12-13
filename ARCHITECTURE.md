@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**ModestBench** is a TypeScript-based benchmarking framework that wraps [tinybench](https://github.com/tinylibs/tinybench) to provide structure, CLI tooling, historical tracking, and multiple output formats for JavaScript/TypeScript performance testing. The architecture follows a dependency injection pattern with clear separation of concerns across subsystems.
+**ModestBench** is a TypeScript-based benchmarking framework that wraps [tinybench](https://github.com/tinylibs/tinybench) to provide structure, CLI tooling, historical tracking, performance budgets, and multiple output formats for JavaScript/TypeScript performance testing. The architecture follows a dependency injection pattern with clear separation of concerns across subsystems.
 
 **Core Technology**: Node.js 18+, TypeScript, tinybench 2.6.0
 
@@ -11,8 +11,8 @@
 - `tinybench` - Core benchmarking engine
 - `yargs` - CLI argument parsing
 - `glob` - File discovery
-- `cli-progress` - Terminal progress bars
-- `consola` - Logging
+- `cosmiconfig` - Configuration loading
+- `zod` - Schema validation
 
 ---
 
@@ -21,10 +21,10 @@
 ### 1.1 High-Level Subsystems
 
 ```mermaid
-
 graph TB
     subgraph CLI["CLI Layer"]
         Entry[CLI Entry]
+        Commands[Commands]
     end
 
     subgraph Core["Core Engines"]
@@ -37,28 +37,46 @@ graph TB
         Config[Configuration]
         Progress[Progress]
         Reporters[Reporters]
-        Storage[History]
-        Types[Types]
+        Storage[History Storage]
+        Baseline[Baseline Storage]
+        Budget[Budget Evaluator]
+        Profiler[Profiler]
     end
 
-    Entry --> Abstract
+    subgraph Adapters["Test Framework Adapters"]
+        Mocha[Mocha]
+        NodeTest[node:test]
+        AVA[AVA]
+        Jest[Jest]
+    end
+
+    Entry --> Commands
+    Commands --> Abstract
     Abstract -.-> Tinybench
     Abstract -.-> Accurate
     Abstract --> Services
-
+    Commands --> Adapters
 ```
 
 ### 1.2 Subsystem Breakdown
 
-| Subsystem     | Purpose                                    | Key Files                                                         | Stateful?           |
-| ------------- | ------------------------------------------ | ----------------------------------------------------------------- | ------------------- |
-| **CLI**       | Command-line interface and command routing | `cli/index.ts`<br/>`cli/commands/*.ts`                            | No                  |
-| **Core**      | Benchmark orchestration and execution      | `core/engine.ts`<br/>`core/loader.ts`<br/>`core/error-manager.ts` | Yes (ErrorManager)  |
-| **Config**    | Configuration loading and merging          | `config/manager.ts`                                               | No                  |
-| **Progress**  | Real-time progress tracking                | `progress/manager.ts`                                             | Yes                 |
-| **Reporters** | Output formatting (human/JSON/CSV)         | `reporters/*.ts`                                                  | Yes (HumanReporter) |
-| **Storage**   | Historical benchmark data persistence      | `storage/history.ts`                                              | Yes                 |
-| **Types**     | TypeScript interfaces and types            | `types/*.ts`                                                      | No                  |
+| Subsystem      | Purpose                                    | Key Files                                | Stateful?           |
+| -------------- | ------------------------------------------ | ---------------------------------------- | ------------------- |
+| **CLI**        | Command-line interface and command routing | `cli/index.ts`<br/>`cli/commands/*.ts`   | No                  |
+| **Core**       | Benchmark orchestration and execution      | `core/engine.ts`<br/>`core/engines/*.ts` | No                  |
+| **Services**   | Business logic and data management         | `services/*.ts`                          | Mixed               |
+| **Config**     | Configuration loading and merging          | `services/config-manager.ts`             | No                  |
+| **Progress**   | Real-time progress tracking                | `services/progress-manager.ts`           | Yes                 |
+| **Reporters**  | Output formatting (human/JSON/CSV/nyan)    | `reporters/*.ts`                         | Yes (HumanReporter) |
+| **History**    | Historical benchmark data persistence      | `services/history-storage.ts`            | Yes                 |
+| **Baseline**   | Named baseline management                  | `services/baseline-storage.ts`           | Yes                 |
+| **Budget**     | Performance budget evaluation              | `services/budget-evaluator.ts`           | No                  |
+| **Profiler**   | CPU profiling and analysis                 | `services/profiler/*.ts`                 | No                  |
+| **Adapters**   | Test framework integration                 | `adapters/*.ts`                          | No                  |
+| **Formatters** | History output formatting                  | `formatters/history/*.ts`                | No                  |
+| **Errors**     | Structured error handling                  | `errors/*.ts`                            | No                  |
+| **Types**      | TypeScript interfaces and types            | `types/*.ts`                             | No                  |
+| **Utils**      | Shared utilities                           | `utils/*.ts`                             | No                  |
 
 ---
 
@@ -73,7 +91,7 @@ sequenceDiagram
     participant User
     participant CLI as CLI Entry<br/>(index.ts)
     participant Yargs
-    participant Context as createCliContext()
+    participant Bootstrap as bootstrap()
     participant Command as handleRunCommand()
     participant Engine as ModestBenchEngine
     participant TinyBench
@@ -81,17 +99,19 @@ sequenceDiagram
     User->>CLI: modestbench run
     CLI->>CLI: setupSignalHandlers()
     CLI->>Yargs: Parse arguments
-    Yargs->>Context: Create dependencies
+    Yargs->>Bootstrap: Create dependencies
 
-    Context->>Context: New ConfigManager
-    Context->>Context: New FileLoader
-    Context->>Context: New HistoryStorage
-    Context->>Context: New ProgressManager
-    Context->>Context: New ReporterRegistry
-    Context->>Context: New ErrorManager
-    Context->>Context: New ModestBenchEngine(deps)
+    Bootstrap->>Bootstrap: New ConfigManager
+    Bootstrap->>Bootstrap: New FileLoader
+    Bootstrap->>Bootstrap: New HistoryStorage
+    Bootstrap->>Bootstrap: New ProgressManager
+    Bootstrap->>Bootstrap: New ReporterRegistry
 
-    Context-->>Command: CliContext
+    Bootstrap-->>CLI: Dependencies
+    CLI->>CLI: createCliContext()
+    CLI->>CLI: Select Engine (Tinybench/Accurate)
+
+    CLI-->>Command: CliContext
 
     Command->>Command: loadConfiguration()
     Command->>Command: setupReporters()
@@ -111,41 +131,28 @@ sequenceDiagram
     Command-->>User: Exit code
 ```
 
-### 2.2 Detailed Run Command Flow
+### 2.2 CLI Commands
 
-**Source**: `src/cli/commands/run.ts`
+The CLI provides the following commands:
 
-```mermaid
-graph TD
-    Start[handleRunCommand] --> LoadConfig[Load Configuration<br/>Merge CLI + File + Defaults]
-    LoadConfig --> SetupReporters[Setup Reporters<br/>human, json, csv]
-    SetupReporters --> Discovery[File Discovery<br/>glob pattern matching]
-    Discovery --> Validation[Validate Files<br/>syntax + structure]
-    Validation --> Execute[Execute Benchmarks]
-
-    Execute --> InitProgress[Initialize Progress Tracking]
-    InitProgress --> ForEach[For Each File...]
-
-    ForEach --> LoadFile[Load File<br/>dynamic import]
-    LoadFile --> ForSuite[For Each Suite...]
-    ForSuite --> ForTask[For Each Task...]
-    ForTask --> RunTask[Run Task with TinyBench]
-
-    RunTask --> Results[Collect Results]
-    Results --> SaveHistory[Save to History Storage]
-    SaveHistory --> ReporterEnd[Call Reporter onEnd]
-    ReporterEnd --> ExitCode[Return Exit Code]
-```
+| Command                 | Description                        | Handler File               |
+| ----------------------- | ---------------------------------- | -------------------------- |
+| `run [pattern..]`       | Run benchmark files (default)      | `cli/commands/run.ts`      |
+| `test <framework>`      | Run test files as benchmarks       | `cli/commands/test.ts`     |
+| `analyze [command]`     | CPU profiling and analysis         | `cli/commands/analyze.ts`  |
+| `baseline <subcommand>` | Manage performance baselines       | `cli/commands/baseline.ts` |
+| `history <subcommand>`  | View and manage benchmark history  | `cli/commands/history.ts`  |
+| `init [type]`           | Initialize a new benchmark project | `cli/commands/init.ts`     |
 
 ### 2.3 Dependency Injection Pattern
 
-The CLI creates a **CliContext** object (lines 44-52 in `src/cli/index.ts`) containing all initialized services:
+The CLI creates a **CliContext** object containing all initialized services:
 
 ```typescript
 export interface CliContext {
+  readonly abortController: AbortController;
   readonly configManager: ConfigurationManager;
   readonly engine: BenchmarkEngine;
-  readonly errorManager: ErrorManager;
   readonly historyStorage: HistoryStorage;
   readonly options: GlobalOptions;
   readonly progressManager: ProgressManager;
@@ -176,7 +183,7 @@ graph TB
     Abstract -->|implements| Tinybench
     Abstract -->|implements| Accurate
 
-    Abstract -->|Provides| Orchestration[Orchestration Logic<br/>• File discovery<br/>• Suite management<br/>• Progress tracking<br/>• Reporter callbacks]
+    Abstract -->|Provides| Orchestration[Orchestration Logic<br/>• File discovery<br/>• Suite management<br/>• Progress tracking<br/>• Reporter callbacks<br/>• Budget evaluation]
 
     Tinybench -->|Delegates to| TinybenchLib[tinybench library]
     Accurate -->|Uses| V8[V8 Intrinsics<br/>+ Node hrtime]
@@ -186,7 +193,7 @@ graph TB
 
 - Provides **all orchestration logic**: file discovery, validation, suite/task iteration, progress tracking, reporter lifecycle
 - Defines **single abstract method**: `executeBenchmarkTask()` for concrete engines to implement
-- Handles setup/teardown, error recovery, history storage, and result aggregation
+- Handles setup/teardown, error recovery, history storage, budget evaluation, and result aggregation
 
 **Concrete Implementations**: `src/core/engines/`
 
@@ -331,277 +338,312 @@ This ensures **consistent result quality** regardless of engine choice.
 
 ---
 
-## 4. Interface Points with TinyBench
+## 4. Test Framework Adapters
 
-### 4.1 Integration Layer
+### 4.1 Overview
 
-**Location**: `src/core/engines/tinybench-engine.ts` (lines 27-334)
+**Location**: `src/adapters/`
 
-ModestBench wraps TinyBench at the **task execution level** only. The integration is isolated to the `TinybenchEngine.executeBenchmarkTask()` method:
+ModestBench can capture test definitions from popular test frameworks and convert them to benchmarks, allowing you to measure test execution performance.
 
 ```mermaid
 graph LR
-    MB[ModestBench Engine] -->|Creates| Bench[TinyBench Bench Instance]
-    MB -->|Configures| Bench
-    MB -->|Adds Task| Bench
-    MB -->|Runs| Bench
-    Bench -->|Returns| Results[Benchmark Results]
-    MB -->|Transforms| Results
-    MB -->|Wraps in| TaskResult[ModestBench TaskResult]
+    TestFile[Test File] --> Adapter[Framework Adapter]
+    Adapter --> Captured[CapturedTestFile]
+    Captured --> Convert[capturedToBenchmark]
+    Convert --> Benchmark[BenchmarkDefinition]
+    Benchmark --> Engine[Execute via Engine]
 ```
 
-### 4.2 Configuration Mapping
+### 4.2 Supported Frameworks
 
-TinybenchEngine maps ModestBench configuration to TinyBench options:
+| Framework     | Adapter File           | Registration File       |
+| ------------- | ---------------------- | ----------------------- |
+| **Mocha**     | `mocha-adapter.ts`     | N/A (global hooks)      |
+| **node:test** | `node-test-adapter.ts` | `node-test-register.ts` |
+| **AVA**       | `ava-adapter.ts`       | `ava-register.ts`       |
+| **Jest**      | `jest-adapter.ts`      | `jest-register.ts`      |
 
-| ModestBench Config | TinyBench Option | Default      | Notes                                                   |
-| ------------------ | ---------------- | ------------ | ------------------------------------------------------- |
-| `time`             | `time`           | 1000ms       | Capped at 2000ms to prevent overflow                    |
-| `warmup`           | `warmupTime`     | 0            | Warmup duration in ms, capped at 500ms                  |
-| `iterations`       | `iterations`     | 100          | Direct mapping                                          |
-| `limitBy`          | N/A              | 'iterations' | Controls how time/iterations interact (see section 3.2) |
-| `timeout`          | N/A              | 30000ms      | Enforced at task level, not TinyBench                   |
+### 4.3 Architecture
 
-**Source**: `src/core/engines/tinybench-engine.ts` (lines 77-82)
+**Types**: `src/adapters/types.ts`
 
 ```typescript
-const bench = new Bench({
-  iterations: effectiveIterations,
-  time: effectiveTime,
-  warmupIterations: config.warmup,
-  warmupTime: config.warmup > 0 ? Math.min(config.warmup || 0, 500) : 0,
-});
+interface TestFrameworkAdapter {
+  readonly framework: TestFramework;
+  capture(filePath: string): Promise<CapturedTestFile>;
+}
+
+interface CapturedTestFile {
+  readonly filePath: string;
+  readonly framework: TestFramework;
+  readonly rootSuites: CapturedSuite[];
+  readonly rootTests: CapturedTest[];
+}
 ```
 
-### 4.3 Result Transformation
+**Conversion Flow**:
 
-TinyBench returns results with the following structure, which TinybenchEngine transforms:
+1. Adapter intercepts test framework globals (`describe`, `it`, `test`)
+2. Test definitions are captured without execution
+3. `capturedToBenchmark()` converts to ModestBench format
+4. Hooks (`beforeEach`, `afterEach`) are wrapped into benchmark setup/teardown
 
-**TinyBench → ModestBench Mapping**:
+### 4.4 CLI Usage
 
-| TinyBench Field                      | ModestBench Field | Transformation                  |
-| ------------------------------------ | ----------------- | ------------------------------- |
-| `latency.samples`                    | `samples`         | Converted ms → ns, IQR filtered |
-| `latency.samples` (filtered)         | `mean`            | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `min`             | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `max`             | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `stdDev`          | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `variance`        | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `p95`             | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `p99`             | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `cv`              | Calculated from cleaned samples |
-| `latency.samples` (filtered)         | `marginOfError`   | Calculated from cleaned samples |
-| `throughput.mean`                    | `opsPerSecond`    | Direct from tinybench           |
-| `latency.samples.length` (after IQR) | `iterations`      | After outlier removal           |
+```bash
+# Run Mocha tests as benchmarks
+modestbench test mocha test/*.spec.js
 
-**Note**: TinybenchEngine applies **IQR outlier removal** to raw samples before calculating most statistics. Only `opsPerSecond` comes directly from tinybench.
+# Run node:test tests with custom iterations
+modestbench test node-test test/*.test.js --iterations 500
 
-**Source**: `src/core/engines/tinybench-engine.ts` (lines 287-310)
+# Run AVA tests
+modestbench test ava test/*.js
+```
 
-### 4.4 Error Handling
+---
 
-TinybenchEngine implements special error handling for TinyBench edge cases:
+## 5. Performance Budgets System
 
-**Array Length Overflow**: When operations are extremely fast (<1ns), TinyBench can throw "Invalid array length" errors. TinybenchEngine automatically retries with minimal time (1-10ms depending on `limitBy` mode) and gracefully reports if still failing.
+### 5.1 Overview
 
-**Source**: `src/core/engines/tinybench-engine.ts` (lines 98-178)
+**Location**: `src/services/budget-evaluator.ts`, `src/types/budgets.ts`
+
+Performance budgets allow setting thresholds for benchmark results, enabling CI/CD integration for performance regression detection.
+
+### 5.2 Budget Types
 
 ```typescript
-catch (error) {
-  if (errorMessage.includes('Invalid array length')) {
-    // Retry with minimal time for extremely fast operations
-    const minimalBench = new Bench({ time: retryTime, iterations: config.iterations });
-    await minimalBench.run();
-    // ... apply IQR and return results
-  }
+interface Budget {
+  absolute?: AbsoluteBudget;
+  relative?: RelativeBudget;
+}
+
+interface AbsoluteBudget {
+  maxTime?: number; // Max mean execution time (ns)
+  minOpsPerSec?: number; // Min operations per second
+  maxP99?: number; // Max 99th percentile (ns)
+}
+
+interface RelativeBudget {
+  maxRegression?: number; // Max regression vs baseline (decimal, e.g., 0.10 = 10%)
+  baseline?: string; // Named baseline to compare against
+}
+```
+
+### 5.3 Evaluation Flow
+
+```mermaid
+graph TD
+    Run[Benchmark Run] --> Evaluator[BudgetEvaluator]
+    Baseline[Baseline Data] --> Evaluator
+    Budgets[Budget Config] --> Evaluator
+    Evaluator --> Results[BudgetResult per Task]
+    Results --> Summary[BudgetSummary]
+    Summary --> Pass{Passed?}
+    Pass -->|Yes| Success[Exit 0]
+    Pass -->|No| Failure[Exit 1 + Violations]
+```
+
+### 5.4 BudgetEvaluator Service
+
+```typescript
+class BudgetEvaluator {
+  evaluateRun(
+    budgets: Record<string, Budget>,
+    taskResults: Map<TaskId, TaskResult>,
+    baselineData?: Map<TaskId, BaselineSummaryData>,
+  ): BudgetSummary;
 }
 ```
 
 ---
 
-## 5. Programmatic API
+## 6. Baseline Management
 
-### 5.1 API Entry Point
+### 6.1 Overview
 
-ModestBench **does not currently expose a documented programmatic API** for library consumers. The CLI is the primary interface.
+**Location**: `src/services/baseline-storage.ts`, `src/cli/commands/baseline.ts`
 
-However, the architecture supports programmatic use through the exported engine:
+Baselines are named snapshots of benchmark results that serve as reference points for relative budget comparisons.
 
-**Potential API Usage** (not officially documented):
+### 6.2 Storage Format
+
+**File**: `.modestbench.baselines.json`
 
 ```typescript
-import { TinybenchEngine, AccurateEngine } from 'modestbench';
-import {
-  ModestBenchConfigurationManager,
-  BenchmarkFileLoader,
-  FileHistoryStorage,
-  ModestBenchProgressManager,
-  ModestBenchReporterRegistry,
-  ModestBenchErrorManager,
-} from 'modestbench';
+interface BaselineStorage {
+  version: string;
+  default?: string; // Default baseline name
+  baselines: Record<string, BaselineReference>;
+}
 
-// Manual setup required
-const engine = new TinybenchEngine({
-  // or new AccurateEngine({
-  configManager: new ModestBenchConfigurationManager(),
-  fileLoader: new BenchmarkFileLoader(),
-  historyStorage: new FileHistoryStorage(),
-  progressManager: new ModestBenchProgressManager(),
-  reporterRegistry: new ModestBenchReporterRegistry(),
-  errorManager: new ModestBenchErrorManager(),
-});
-
-// Execute benchmarks
-const result = await engine.execute({
-  pattern: '**/*.bench.js',
-  iterations: 1000,
-});
-```
-
-### 5.2 Export Structure
-
-**Package Exports** (`package.json` lines 24-30):
-
-```json
-{
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.cts"
-    }
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.cts"
+interface BaselineReference {
+  name: string;
+  runId: RunId;
+  date: Date;
+  commit?: string;
+  branch?: string;
+  summary: Record<TaskId, BaselineSummaryData>;
 }
 ```
 
-The project currently does **not have an `src/index.ts`** file that aggregates exports for library consumers. This would need to be created to support programmatic API usage.
+### 6.3 CLI Commands
 
-### 5.3 Recommendation: Create Public API
+```bash
+# Save current run as baseline
+modestbench baseline set production-v1.0
 
-**Opinion**: To support programmatic usage, create `src/index.ts`:
+# Set as default baseline
+modestbench baseline set v1.0 --default
 
-```typescript
-// Proposed src/index.ts
-export { ModestBenchEngine } from './core/engine.js';
-export { TinybenchEngine } from './core/engines/tinybench-engine.js';
-export { AccurateEngine } from './core/engines/accurate-engine.js';
-export { BenchmarkFileLoader } from './core/loader.js';
-export { ModestBenchConfigurationManager } from './config/manager.js';
-export { FileHistoryStorage } from './storage/history.js';
-export { ModestBenchProgressManager } from './progress/manager.js';
-export {
-  ModestBenchReporterRegistry,
-  BaseReporter,
-} from './reporters/registry.js';
-export { HumanReporter } from './reporters/human.js';
-export { JsonReporter } from './reporters/json.js';
-export { CsvReporter } from './reporters/csv.js';
-export { ModestBenchErrorManager } from './core/error-manager.js';
+# List all baselines
+modestbench baseline list
 
-// Export all types
-export * from './types/index.js';
+# Show baseline details
+modestbench baseline show production-v1.0
+
+# Delete a baseline
+modestbench baseline delete old-baseline
+
+# Analyze history to suggest budgets
+modestbench baseline analyze --runs 20 --confidence 0.95
 ```
 
 ---
 
-## 6. Bespoke Systems: Replacement Candidates
-
-### 6.1 Configuration File Loading
-
-**Current Implementation**: `src/config/manager.ts` using [**cosmiconfig**](https://github.com/cosmiconfig/cosmiconfig)
-
-**Status**: ✅ **Migrated from custom implementation**
-
-**What it does**:
-
-- Discovers config files in directory tree using cosmiconfig
-- Loads JSON, YAML, JavaScript, and TypeScript config files
-- Merges CLI args with config file with defaults
-- Validates configuration
-
-**Implementation**:
-
-```typescript
-import { cosmiconfig } from 'cosmiconfig';
-
-private createExplorer() {
-  return cosmiconfig('modestbench', {
-    loaders: {
-      '.ts': async (filepath: string) => {
-        // Use dynamic import for TypeScript files
-        const module = await import(filepath);
-        return module.default || module;
-      },
-    },
-    searchPlaces: [
-      'package.json',
-      '.modestbenchrc',
-      '.modestbenchrc.json',
-      '.modestbenchrc.yaml',
-      '.modestbenchrc.yml',
-      'modestbench.config.json',
-      'modestbench.config.yaml',
-      'modestbench.config.yml',
-      'modestbench.config.js',
-      'modestbench.config.mjs',
-      'modestbench.config.ts',
-    ],
-  });
-}
-```
-
-**Benefits Realized**:
-
-- ✅ Full support for JSON, YAML, JS, TS, package.json, RC files
-- ✅ Smart caching and directory traversal handled by cosmiconfig
-- ✅ ~150 lines of code removed (discovery and loading logic)
-- ✅ Standard tool used by ESLint, Prettier, Babel, etc.
-- ✅ Automatic parent directory searching
-
----
-
-### 6.2 File Discovery and Validation
-
-**Current Implementation**: `src/core/loader.ts`
-
-**What it does**:
-
-- Uses `glob` for file discovery ✅
-- Validates file syntax (bracket matching) ⚠️
-- Validates structure (benchmark patterns) ⚠️
-
-#### Opinion: ⚠️ PARTIAL REPLACEMENT CANDIDATE
-
-**File Discovery**: ✅ **Keep as-is** - `glob` package is the standard
-
-**Syntax Validation** (lines 363-413): ⚠️ **Consider removing**
-
-- Current implementation is simplistic (counts braces/parens)
-- Doesn't catch real syntax errors
-- Dynamic import will fail anyway if syntax is invalid
-- **False negatives**: Braces in strings/comments break detection
-
-**Structure Validation** (lines 298-358): ✅ **Keep**
-
-- Useful warnings for missing benchmark patterns
-- Low complexity
-
-**Recommendation**: Remove syntax validation, keep structure validation
-
----
-
-## 7. History System: In-Depth Architecture
+## 7. Profiling System
 
 ### 7.1 Overview
 
-The history system provides **persistent storage** of benchmark runs with querying, cleanup, and export capabilities.
+**Location**: `src/services/profiler/`, `src/cli/commands/analyze.ts`, `src/types/profiler.ts`
 
-**Implementation**: `src/storage/history.ts`
+The profiling system allows CPU profiling of arbitrary commands and analysis of existing `.cpuprofile` files to identify benchmark candidates.
 
-### 7.2 Storage Architecture
+### 7.2 Architecture
+
+```mermaid
+graph TB
+    Command[analyze command] --> Check{Input provided?}
+    Check -->|--input file| Parse[parseProfile]
+    Check -->|command| Run[runWithProfiling]
+    Run --> Profile[*.cpuprofile]
+    Profile --> Parse
+    Parse --> Raw[RawProfileData]
+    Raw --> Filter[filterProfile]
+    Filter --> Filtered[FilteredProfileData]
+    Filtered --> Report[ProfileHumanReporter]
+```
+
+### 7.3 Services
+
+| Service            | Location                              | Purpose                         |
+| ------------------ | ------------------------------------- | ------------------------------- |
+| `runWithProfiling` | `services/profiler/profile-runner.ts` | Execute command with --cpu-prof |
+| `parseProfile`     | `services/profiler/profile-parser.ts` | Parse .cpuprofile files         |
+| `filterProfile`    | `services/profiler/profile-filter.ts` | Filter and sort functions       |
+
+### 7.4 CLI Usage
+
+```bash
+# Profile a command
+modestbench analyze "npm test"
+
+# Analyze existing profile
+modestbench analyze --input profile.cpuprofile
+
+# Filter by file pattern
+modestbench analyze "npm test" --filter-file "src/**/*.ts"
+
+# Show top N functions
+modestbench analyze "npm test" --top 50 --min-percent 1.0
+```
+
+---
+
+## 8. Reporters
+
+### 8.1 Available Reporters
+
+**Location**: `src/reporters/`
+
+| Reporter                 | File               | Description                               |
+| ------------------------ | ------------------ | ----------------------------------------- |
+| **HumanReporter**        | `human.ts`         | Rich terminal output with colors/progress |
+| **JsonReporter**         | `json.ts`          | Machine-readable JSON output              |
+| **CsvReporter**          | `csv.ts`           | Tabular CSV format                        |
+| **SimpleReporter**       | `simple.ts`        | Plain text, no colors (CI-friendly)       |
+| **NyanReporter**         | `nyan.ts`          | Animated nyan cat rainbow reporter        |
+| **ProfileHumanReporter** | `profile-human.ts` | Human-readable CPU profile output         |
+
+### 8.2 Reporter Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant Engine
+    participant Reporter
+
+    Engine->>Reporter: onStart(run)
+
+    loop For each file
+        Engine->>Reporter: onFileStart(path)
+
+        loop For each suite
+            Engine->>Reporter: onSuiteInit(name, taskNames)
+            Engine->>Reporter: onSuiteStart(name)
+
+            loop For each task
+                Engine->>Reporter: onTaskStart(name)
+                Engine->>Reporter: onProgress(state)
+                Engine->>Reporter: onTaskResult(result)
+            end
+
+            Engine->>Reporter: onSuiteEnd(result)
+        end
+
+        Engine->>Reporter: onFileEnd(result)
+    end
+
+    Engine->>Reporter: onBudgetResult(summary)
+    Engine->>Reporter: onEnd(run)
+```
+
+### 8.3 Reporter Interface
+
+```typescript
+interface Reporter {
+  onStart(run: BenchmarkRun): Promise<void> | void;
+  onEnd(run: BenchmarkRun): Promise<void> | void;
+  onError(error: Error): Promise<void> | void;
+  onTaskResult(result: TaskResult): Promise<void> | void;
+
+  // Optional methods
+  onFileStart?(file: string): Promise<void> | void;
+  onFileEnd?(result: FileResult): Promise<void> | void;
+  onSuiteInit?(
+    suite: string,
+    taskNames: readonly string[],
+  ): Promise<void> | void;
+  onSuiteStart?(suite: string): Promise<void> | void;
+  onSuiteEnd?(result: SuiteResult): Promise<void> | void;
+  onTaskStart?(task: string): Promise<void> | void;
+  onProgress?(state: ProgressState): Promise<void> | void;
+  onBudgetResult?(summary: BudgetSummary): Promise<void> | void;
+}
+```
+
+---
+
+## 9. History System
+
+### 9.1 Overview
+
+The history system provides **persistent storage** of benchmark runs with querying, trend analysis, cleanup, and export capabilities.
+
+**Implementation**: `src/services/history-storage.ts`
+
+### 9.2 Storage Architecture
 
 ```mermaid
 graph TB
@@ -620,348 +662,396 @@ graph TB
     Runs -->|Full Data| Data[• Complete BenchmarkRun<br/>• All task results<br/>• Environment info<br/>• Git info<br/>• CI info]
 ```
 
-### 7.3 Data Structures
+### 9.3 History Formatters
 
-#### Storage Index (lines 28-46 in `src/storage/history.ts`)
+**Location**: `src/formatters/history/`
+
+| Formatter            | File               | Purpose                       |
+| -------------------- | ------------------ | ----------------------------- |
+| **ListFormatter**    | `list.ts`          | Format run listings           |
+| **ShowFormatter**    | `show.ts`          | Format single run details     |
+| **CompareFormatter** | `compare.ts`       | Format run comparisons        |
+| **TrendsFormatter**  | `trends.ts`        | Format trend analysis results |
+| **Visualization**    | `visualization.ts` | Terminal charts and graphs    |
+
+### 9.4 Trend Analysis
+
+**Location**: `src/services/history/trend-analysis.ts`
 
 ```typescript
-interface StorageIndex {
-  readonly version: string; // Index schema version
-  readonly created: Date; // Index creation timestamp
-  readonly lastModified: Date; // Last update timestamp
-  readonly entries: IndexEntry[]; // All run entries
+class TrendAnalysisService {
+  analyzeTrends(runs: BenchmarkRun[]): TrendsResult;
 }
 
-interface IndexEntry {
-  readonly id: string; // Unique run ID
-  readonly filename: string; // run-YYYY-MM-DD-HASH.json
-  readonly date: Date; // Run timestamp
-  readonly sizeBytes: number; // File size
-  readonly summary: string; // "10 files, 50 tasks"
-  readonly tags: string[]; // User tags
-}
-```
-
-#### Run File Structure
-
-Each run is stored as a complete JSON serialization of `BenchmarkRun` (`src/types/core.ts` lines 12-37):
-
-```json
-{
-  "ci": {
-    "provider": "GitHub Actions"
-    /* ... */
-  },
-  "config": {
-    /* ... */
-  },
-  "duration": 150000,
-  "endTime": "2025-10-18T12:02:30.000Z",
-  "environment": {
-    "nodeVersion": "v18.0.0",
-    "platform": "darwin",
-    "arch": "arm64",
-    "cpu": {
-      /* ... */
-    },
-    "memory": {
-      /* ... */
-    }
-  },
-  "files": [
-    /* all file results */
-  ],
-  "git": {
-    "commit": "abc123",
-    "branch": "main"
-    /* ... */
-  },
-  "id": "run-1729257600000-abc123def",
-  "startTime": "2025-10-18T12:00:00.000Z",
-  "summary": {
-    "totalFiles": 10,
-    "totalSuites": 25,
-    "totalTasks": 150,
-    "passedTasks": 148,
-    "failedTasks": 2
-    /* ... */
-  }
+interface TrendsResult {
+  trends: TrendData[];
+  summary: {
+    totalTasks: number;
+    improvingTasks: number;
+    stableTasks: number;
+    degradingTasks: number;
+  };
+  regressions: TrendData[];
+  lowConfidenceRegressions: TrendData[];
+  timespan: { start: Date; end: Date };
+  runs: number;
 }
 ```
 
-### 7.4 Key Operations
+**Trend Classification**:
 
-#### Save Run (lines 353-382 in `src/storage/history.ts`)
+- **Improving**: Negative slope (values decreasing = faster)
+- **Stable**: Slope within 5% of mean
+- **Degrading**: Positive slope (values increasing = slower)
+
+### 9.5 CLI Commands
+
+```bash
+# List recent runs
+modestbench history list --since "1 week ago"
+
+# Show run details
+modestbench history show abc123
+
+# Compare two runs
+modestbench history compare abc123 def456
+
+# Analyze trends
+modestbench history trends --since "1 month ago"
+
+# Clean old history
+modestbench history clean --max-runs 50 --yes
+
+# Export to file
+modestbench history export -o history.json
+```
+
+---
+
+## 10. Error Handling
+
+### 10.1 Error Architecture
+
+**Location**: `src/errors/`
+
+All errors extend `ModestBenchError` and include error codes and documentation URLs.
 
 ```mermaid
-sequenceDiagram
-    participant E as Engine
-    participant H as HistoryStorage
-    participant FS as File System
+graph TB
+    Base[ModestBenchError] --> Budget[BudgetExceededError]
+    Base --> CLI[CLI Errors]
+    Base --> Config[Configuration Errors]
+    Base --> Exec[Execution Errors]
+    Base --> File[File Errors]
+    Base --> Reporter[Reporter Errors]
+    Base --> Storage[Storage Errors]
+    Base --> Validation[Validation Errors]
 
-    E->>H: saveRun(benchmarkRun)
-    H->>H: generateFilename()<br/>(timestamp + hash)
-    H->>H: Check file size limit<br/>(default 10MB)
-    H->>FS: Write run file
-    H->>H: updateIndex()
-    H->>FS: Write index.json
-    H-->>E: Success
+    CLI --> InvalidArg[InvalidArgumentError]
+    CLI --> InvalidDate[InvalidDateFormatError]
+    CLI --> Unknown[UnknownError]
+
+    Config --> ConfigLoad[ConfigLoadError]
+    Config --> ConfigNotFound[ConfigNotFoundError]
+    Config --> ConfigValidation[ConfigValidationError]
+
+    Exec --> BenchExec[BenchmarkExecutionError]
+    Exec --> TaskExec[TaskExecutionError]
+    Exec --> Setup[SetupError]
+    Exec --> Teardown[TeardownError]
+    Exec --> Timeout[TimeoutError]
+    Exec --> TooFast[OperationTooFastError]
 ```
 
-#### Query Runs (lines 283-348 in `src/storage/history.ts`)
+### 10.2 Error Files
 
-Supports filtering by:
+| File               | Error Types                                                       |
+| ------------------ | ----------------------------------------------------------------- |
+| `base.ts`          | `ModestBenchError`, `ModestBenchAggregateError`                   |
+| `budget.ts`        | `BudgetExceededError`                                             |
+| `cli.ts`           | `InvalidArgumentError`, `InvalidDateFormatError`, `UnknownError`  |
+| `configuration.ts` | `ConfigLoadError`, `ConfigNotFoundError`, `ConfigValidationError` |
+| `execution.ts`     | `BenchmarkExecutionError`, `TaskExecutionError`, `TimeoutError`   |
+| `file.ts`          | `FileDiscoveryError`, `FileLoadError`, `FileNotFoundError`        |
+| `reporter.ts`      | `ReporterAlreadyRegisteredError`, `UnknownReporterError`          |
+| `storage.ts`       | `StorageError`, `StorageCorruptionError`, `StorageIndexError`     |
+| `validation.ts`    | `SchemaValidationError`, `StructureValidationError`               |
 
-- **Date range**: `since`, `until`
-- **Pattern matching**: Regex on summary
-- **Tags**: Filter by benchmark tags
-- **Sorting**: By date, name, duration
-- **Pagination**: `offset`, `limit`
+### 10.3 Error Codes
+
+All error codes are defined in `src/constants.ts`:
 
 ```typescript
-const runs = await history.queryRuns({
-  since: new Date('2025-10-01'),
-  until: new Date('2025-10-18'),
-  tags: ['performance', 'algorithm'],
-  pattern: 'sorting',
-  sortBy: 'date',
-  sort: 'desc',
-  limit: 10,
-  offset: 0,
+export const ErrorCodes = {
+  BUDGET_EXCEEDED: 'ERR_MB_BUDGET_EXCEEDED',
+  CLI_INVALID_ARGUMENT: 'ERR_MB_CLI_INVALID_ARGUMENT',
+  CONFIG_LOAD_FAILED: 'ERR_MB_CONFIG_LOAD_FAILED',
+  EXECUTION_TIMEOUT: 'ERR_MB_EXECUTION_TIMEOUT',
+  FILE_NOT_FOUND: 'ERR_MB_FILE_NOT_FOUND',
+  STORAGE_FAILED: 'ERR_MB_STORAGE_FAILED',
+  // ... etc
+} as const;
+```
+
+---
+
+## 11. Configuration System
+
+### 11.1 Overview
+
+**Location**: `src/services/config-manager.ts`, `src/config/schema.ts`
+
+Uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for configuration discovery and [Zod](https://github.com/colinhacks/zod) for validation.
+
+### 11.2 Search Locations
+
+```typescript
+const searchPlaces = [
+  'package.json',
+  '.modestbenchrc',
+  '.modestbenchrc.json',
+  '.modestbenchrc.yaml',
+  '.modestbenchrc.yml',
+  'modestbench.config.json',
+  'modestbench.config.yaml',
+  'modestbench.config.yml',
+  'modestbench.config.js',
+  'modestbench.config.mjs',
+  'modestbench.config.ts',
+];
+```
+
+### 11.3 Configuration Schemas
+
+**Location**: `src/config/schema.ts`, `src/config/budget-schema.ts`
+
+```typescript
+// Main configuration schema (Zod)
+const ModestBenchConfigSchema = z.object({
+  pattern: z.union([z.string(), z.array(z.string())]),
+  exclude: z.array(z.string()).optional(),
+  iterations: z.number().int().positive(),
+  time: z.number().positive(),
+  warmup: z.number().int().nonnegative(),
+  timeout: z.number().positive(),
+  bail: z.boolean(),
+  limitBy: z.enum(['time', 'iterations', 'any', 'all']),
+  budgets: z.record(BudgetSchema).optional(),
+  // ... more options
 });
 ```
 
-#### Cleanup (lines 77-153 in `src/storage/history.ts`)
+---
 
-Implements **retention policies** to manage storage:
+## 12. Programmatic API
 
-```typescript
-interface RetentionPolicy {
-  maxAge?: number; // Max age in milliseconds
-  maxRuns?: number; // Max number of runs to keep
-  maxSize?: number; // Max total storage in bytes
-}
-```
+### 12.1 API Entry Point
 
-**Cleanup Algorithm**:
+**Location**: `src/index.ts`
 
-1. Load index
-2. Sort entries by date (oldest first)
-3. For each entry, check if it violates any policy:
-   - Age > maxAge
-   - Total runs > maxRuns
-   - Total size > maxSize
-4. Remove violating files and update index
-
-#### Export (lines 158-174 in `src/storage/history.ts`)
-
-Supports:
-
-- **JSON**: Pretty-printed benchmark runs
-- **CSV**: Tabular format for spreadsheets
-
-CSV fields (lines 397-430):
-
-```csv
-runId, startTime, endTime, duration, files, suites, tasks,
-passed, failed, nodeVersion, platform, arch, gitCommit, gitBranch
-```
-
-### 7.5 Storage Location
-
-**Default**: `.modestbench/history/` in current working directory
-
-**Configurable**: Pass `storageDir` option to `FileHistoryStorage` constructor
+ModestBench exports a complete programmatic API:
 
 ```typescript
-new FileHistoryStorage({
-  storageDir: '/path/to/custom/history',
-  maxFileSize: 10 * 1024 * 1024, // 10MB
+// Main bootstrap function
+export { bootstrap as modestbench } from './bootstrap.js';
+
+// Core engine
+export { ModestBenchEngine } from './core/engine.js';
+export { AccurateEngine, TinybenchEngine } from './core/engines/index.js';
+
+// Statistical utilities
+export { calculateStatistics, removeOutliersIQR } from './core/stats-utils.js';
+
+// Services
+export { ModestBenchConfigurationManager } from './services/config-manager.js';
+export { BenchmarkFileLoader } from './services/file-loader.js';
+export { FileHistoryStorage } from './services/history-storage.js';
+export { ModestBenchProgressManager } from './services/progress-manager.js';
+export {
+  ModestBenchReporterRegistry,
+  BaseReporter,
+  CompositeReporter,
+} from './services/reporter-registry.js';
+
+// Profiler services
+export { runWithProfiling } from './services/profiler/profile-runner.js';
+export { parseProfile } from './services/profiler/profile-parser.js';
+export { filterProfile } from './services/profiler/profile-filter.js';
+
+// Reporters
+export { HumanReporter } from './reporters/human.js';
+export { JsonReporter } from './reporters/json.js';
+export { CsvReporter } from './reporters/csv.js';
+export { ProfileHumanReporter } from './reporters/profile-human.js';
+
+// Error classes
+export * from './errors/index.js';
+
+// All types
+export * from './types/index.js';
+
+// Utilities
+export { findPackageRoot } from './utils/package.js';
+```
+
+### 12.2 Usage Example
+
+```typescript
+import { TinybenchEngine, bootstrap, HumanReporter } from 'modestbench';
+
+// Bootstrap all dependencies
+const deps = bootstrap();
+
+// Create engine
+const engine = new TinybenchEngine(deps);
+
+// Register reporters
+engine.registerReporter('human', new HumanReporter({ color: true }));
+
+// Execute benchmarks
+const result = await engine.execute({
+  pattern: '**/*.bench.js',
+  iterations: 1000,
 });
 ```
 
-### 7.6 Index Caching
+---
 
-The index is **cached in memory** after first load (line 52 in `src/storage/history.ts`):
+## 13. Directory Structure
 
-```typescript
-private index: null | StorageIndex = null;
+```text
+src/
+├── adapters/               # Test framework adapters
+│   ├── ava-adapter.ts
+│   ├── ava-hooks.ts
+│   ├── ava-register.ts
+│   ├── jest-adapter.ts
+│   ├── jest-hooks.ts
+│   ├── jest-register.ts
+│   ├── mocha-adapter.ts
+│   ├── node-test-adapter.ts
+│   ├── node-test-hooks.ts
+│   ├── node-test-register.ts
+│   └── types.ts
+├── bootstrap.ts            # Dependency injection setup
+├── cli/
+│   ├── commands/
+│   │   ├── analyze.ts      # CPU profiling command
+│   │   ├── baseline.ts     # Baseline management
+│   │   ├── history.ts      # History commands
+│   │   ├── init.ts         # Project initialization
+│   │   ├── run.ts          # Main benchmark runner
+│   │   └── test.ts         # Test-as-benchmark command
+│   └── index.ts            # CLI entry point
+├── config/
+│   ├── budget-schema.ts    # Budget configuration schema
+│   └── schema.ts           # Main config schema (Zod)
+├── constants.ts            # Exit codes, error codes, defaults
+├── core/
+│   ├── benchmark-schema.ts # Benchmark file schema
+│   ├── engine.ts           # Abstract benchmark engine
+│   ├── engines/
+│   │   ├── accurate-engine.ts
+│   │   ├── index.ts
+│   │   └── tinybench-engine.ts
+│   ├── output-path-resolver.ts
+│   └── stats-utils.ts      # Statistical calculations
+├── errors/                 # Structured error classes
+│   ├── base.ts
+│   ├── budget.ts
+│   ├── cli.ts
+│   ├── configuration.ts
+│   ├── execution.ts
+│   ├── file.ts
+│   ├── index.ts
+│   ├── reporter.ts
+│   ├── storage.ts
+│   └── validation.ts
+├── formatters/             # History output formatters
+│   └── history/
+│       ├── base.ts
+│       ├── compare.ts
+│       ├── list.ts
+│       ├── show.ts
+│       ├── trends.ts
+│       └── visualization.ts
+├── index.ts                # Public API exports
+├── reporters/
+│   ├── csv.ts
+│   ├── human.ts
+│   ├── index.ts
+│   ├── json.ts
+│   ├── nyan.ts             # Nyan cat reporter
+│   ├── profile-human.ts    # CPU profile reporter
+│   └── simple.ts           # Plain text reporter
+├── services/
+│   ├── baseline-storage.ts # Named baseline management
+│   ├── budget-evaluator.ts # Performance budget evaluation
+│   ├── config-manager.ts   # Configuration loading
+│   ├── file-loader.ts      # Benchmark file discovery
+│   ├── history/
+│   │   ├── comparison.ts
+│   │   ├── models.ts
+│   │   ├── query.ts
+│   │   └── trend-analysis.ts
+│   ├── history-storage.ts  # Run persistence
+│   ├── profiler/
+│   │   ├── profile-filter.ts
+│   │   ├── profile-parser.ts
+│   │   └── profile-runner.ts
+│   ├── progress-manager.ts
+│   └── reporter-registry.ts
+├── types/
+│   ├── budgets.ts          # Budget-related types
+│   ├── core.ts             # Core types (Run, Result, etc.)
+│   ├── index.ts
+│   ├── interfaces.ts       # Service interfaces
+│   ├── profiler.ts         # Profiler types
+│   └── utility.ts          # Utility types
+└── utils/
+    ├── ansi.ts             # ANSI color utilities
+    ├── identifiers.ts      # ID generation
+    ├── package.ts          # Package.json utilities
+    └── type-guards.ts      # Type guard functions
 ```
 
-**Invalidation**: Index is rewritten on every `saveRun()` and `cleanup()` operation.
+---
 
-**Performance**: This is efficient for CLI usage (short-lived processes) but could cause issues for long-running programmatic use if multiple processes write simultaneously.
+## 14. Source Code Reference Map
+
+| Subsystem        | Primary File                              | Lines | Key Classes/Functions                         |
+| ---------------- | ----------------------------------------- | ----- | --------------------------------------------- |
+| CLI Entry        | `src/cli/index.ts`                        | ~1250 | `cli()`, `main()`, `createCliContext()`       |
+| Run Command      | `src/cli/commands/run.ts`                 | ~500  | `handleRunCommand()`                          |
+| Test Command     | `src/cli/commands/test.ts`                | ~550  | `handleTestCommand()`                         |
+| Analyze Command  | `src/cli/commands/analyze.ts`             | ~200  | `handleAnalyzeCommand()`                      |
+| Baseline Command | `src/cli/commands/baseline.ts`            | ~400  | `handleSetCommand()`, `handleListCommand()`   |
+| Engine Base      | `src/core/engine.ts`                      | ~1000 | `ModestBenchEngine` (abstract)                |
+| Tinybench        | `src/core/engines/tinybench-engine.ts`    | ~350  | `TinybenchEngine`                             |
+| Accurate         | `src/core/engines/accurate-engine.ts`     | ~410  | `AccurateEngine`                              |
+| Stats            | `src/core/stats-utils.ts`                 | ~150  | `calculateStatistics`, `removeOutliersIQR`    |
+| Config           | `src/services/config-manager.ts`          | ~470  | `ModestBenchConfigurationManager`             |
+| File Loader      | `src/services/file-loader.ts`             | ~420  | `BenchmarkFileLoader`                         |
+| History          | `src/services/history-storage.ts`         | ~610  | `FileHistoryStorage`                          |
+| Baseline         | `src/services/baseline-storage.ts`        | ~200  | `BaselineStorageService`                      |
+| Budget           | `src/services/budget-evaluator.ts`        | ~185  | `BudgetEvaluator`                             |
+| Progress         | `src/services/progress-manager.ts`        | ~415  | `ModestBenchProgressManager`                  |
+| Trend Analysis   | `src/services/history/trend-analysis.ts`  | ~240  | `TrendAnalysisService`                        |
+| Profile Runner   | `src/services/profiler/profile-runner.ts` | ~125  | `runWithProfiling()`                          |
+| Human Reporter   | `src/reporters/human.ts`                  | ~600  | `HumanReporter`                               |
+| Nyan Reporter    | `src/reporters/nyan.ts`                   | ~410  | `NyanReporter`                                |
+| Simple Reporter  | `src/reporters/simple.ts`                 | ~550  | `SimpleReporter`                              |
+| Adapters Types   | `src/adapters/types.ts`                   | ~290  | `TestFrameworkAdapter`, `capturedToBenchmark` |
+| Types            | `src/types/`                              | ~700  | Interface definitions                         |
+| Errors           | `src/errors/`                             | ~500  | All error classes                             |
+
+**Total Source Code**: ~11,000 lines
 
 ---
 
-## 8. Rarely-Used Features: Removal Candidates
+## 15. Environment Variable Behaviors
 
-### 8.1 Init Command Templates
-
-**Command**: `modestbench init [type]`  
-**Location**: `src/cli/commands/init.ts`
-
-#### Opinion: ⚠️ SIMPLIFY
-
-**Current Features**:
-
-- Project type templates: `basic`, `advanced`, `library`
-- Config file generation: JSON, YAML, JS, TS
-- Example benchmark files
-
-**Issues**:
-
-1. **Inconsistent support**: Only JSON configs are loadable; YAML/JS/TS are templates only
-2. **Maintenance overhead**: Each template needs updates when config schema changes
-3. **Limited differentiation**: "basic" vs "advanced" vs "library" types aren't significantly different
-
-**Recommendation**:
-
-- Keep single `init` command with JSON config only
-- Remove template variations
-- Focus on one high-quality example
-
----
-
-### 8.2 Git Information Collection
-
-**Location**: `src/core/engine.ts` (lines 896-900)
-
-#### Opinion: ⚠️ INCOMPLETE IMPLEMENTATION
-
-**Current Status**:
-
-```typescript
-private async getGitInfo(): Promise<GitInfo | undefined> {
-  // TODO: Implement Git information extraction
-  // This would use child_process to run git commands
-  return undefined;
-}
-```
-
-**The `GitInfo` type is defined** (`src/types/core.ts` lines 182-200) but never populated.
-
-**Options**:
-
-1. **Implement**: Use `simple-git` package or `child_process`
-2. **Remove**: Delete `GitInfo` type and references if not critical
-
-**Recommendation**: Either implement fully or remove the placeholder. Git info is useful for CI tracking but not critical for local benchmarking.
-
----
-
-### 8.3 History Compare Command
-
-**Command**: `modestbench history compare <run-id1> <run-id2>`  
-**Location**: `src/cli/commands/history.ts`
-
-#### Opinion: 🤔 VERIFY IMPLEMENTATION
-
-**Status**: Command is registered but actual comparison logic implementation unclear.
-
-**Recommendation**: If not implemented, remove from CLI until implemented. If implemented, document thoroughly as it's a key differentiator.
-
----
-
-## 9. Stateful Systems
-
-### 9.1 State Inventory
-
-| Subsystem            | Statefulness | Lifecycle  | Persistence      |
-| -------------------- | ------------ | ---------- | ---------------- |
-| **ErrorManager**     | ✅ Yes       | Per run    | None (in-memory) |
-| **ProgressManager**  | ✅ Yes       | Per run    | None (in-memory) |
-| **HistoryStorage**   | ✅ Yes       | Persistent | File system      |
-| **ReporterRegistry** | ✅ Yes       | Process    | None (in-memory) |
-| **HumanReporter**    | ✅ Yes       | Per run    | None (in-memory) |
-| **ConfigManager**    | ❌ No        | Stateless  | N/A              |
-| **BenchmarkEngine**  | ❌ No        | Stateless  | N/A              |
-| **FileLoader**       | ❌ No        | Stateless  | N/A              |
-
-### 9.2 ErrorManager State
-
-**Location**: `src/core/error-manager.ts`
-
-**State Stored**:
-
-- `errors: ExecutionError[]` - Array of all handled errors (line 81)
-- `handlers: ErrorHandler[]` - Registered error callbacks (line 83)
-- `maxRecentErrors = 50` - Memory limit (line 85)
-
-**Lifecycle**:
-
-- Created per CLI invocation
-- Accumulates errors during benchmark run
-- Automatically trims to last 50 errors (lines 300-302)
-
-**Memory Safety**: ✅ Bounded by `maxRecentErrors`
-
-### 9.3 ProgressManager State
-
-**Location**: `src/progress/manager.ts`
-
-**State Stored**:
-
-- `state: ProgressState` - Current progress (line 41)
-- `callbacks: ProgressCallback[]` - Registered listeners (line 33)
-- `metrics: ProgressMetrics | null` - Throughput calculations (line 39)
-- `lastUpdate: number` - Throttling timestamp (line 35)
-
-**Throttling**: Updates limited to every 100ms (line 43)
-
-**Lifecycle**:
-
-- `initialize(run)` - Set totals (lines 208-243)
-- `update(changes)` - Incremental updates (lines 298-322)
-- `cleanup()` - Reset state (lines 52-56)
-
-**Memory Safety**: ✅ Bounded state, cleared after run
-
-### 9.4 HistoryStorage State
-
-**Location**: `src/storage/history.ts`
-
-**In-Memory State**:
-
-- `index: StorageIndex | null` - Cached index (line 52)
-
-**Persistent State**:
-
-- `.modestbench/history/index.json` - Run metadata
-- `.modestbench/history/run-*.json` - Full benchmark results
-
-**Concurrency**: ⚠️ **Not thread-safe**  
-Multiple processes writing simultaneously could corrupt index.
-
-**Size Limits**:
-
-- Default max file size: 10MB
-- Automatic cleanup via retention policies
-
-### 9.5 HumanReporter State
-
-**Location**: `src/reporters/human.ts`
-
-**State Stored**:
-
-- `startTime` - Run start timestamp (line 52)
-- `lastProgressLine` - For terminal clearing (line 44)
-- `progressTimer` - Spinner animation interval (line 46)
-- `spinnerIndex` - Animation frame counter (line 50)
-
-**Lifecycle**:
-
-- `onStart()` - Initialize (lines 200-244)
-- `onProgress()` - Update display (lines 166-198)
-- `onEnd()` - Finalize (lines 78-123)
-
-**Memory Safety**: ✅ Minimal state, timer cleaned up
-
----
-
-## 10. Environment Variable Behaviors
-
-### 10.1 Environment Variables Used
+### 15.1 Environment Variables Used
 
 | Variable           | Purpose                     | Location                 | Default         | Impact                     |
 | ------------------ | --------------------------- | ------------------------ | --------------- | -------------------------- |
@@ -972,32 +1062,7 @@ Multiple processes writing simultaneously could corrupt index.
 | `NO_COLOR`         | Disable color output        | `src/reporters/human.ts` | `undefined`     | Override color detection   |
 | **GitHub Actions** | CI provider detection       | `src/core/engine.ts`     | N/A             | See below                  |
 
-### 10.2 DEBUG Mode
-
-**Usage**: `DEBUG=1 modestbench run`
-
-**Behavior**:
-
-- Shows full error stack traces (lines 477-479 in `src/cli/index.ts`)
-- Prints error details on uncaught exceptions (lines 494-496)
-
-```typescript
-if (process.env.DEBUG) {
-  console.error(err.stack);
-}
-```
-
-### 10.3 CI Detection
-
-**Primary Detection**: `src/core/engine.ts` (lines 724-759)
-
-```typescript
-if (!process.env.CI) {
-  return undefined; // Not in CI
-}
-```
-
-**GitHub Actions Detection**:
+### 15.2 CI Detection
 
 When `GITHUB_ACTIONS` is set, captures:
 
@@ -1010,283 +1075,51 @@ When `GITHUB_ACTIONS` is set, captures:
 | `GITHUB_EVENT_NAME` | Determines `pullRequest` | Event type         |
 | `GITHUB_SHA`        | `commit`                 | Commit SHA         |
 
-**Other CI Providers**:
-
-Falls back to generic detection:
-
-- `BRANCH` → `branch`
-- `COMMIT` → `commit`
-- Provider shown as "Unknown CI"
-
-**Output in Results**:
-
-```json
-{
-  "ci": {
-    "provider": "GitHub Actions",
-    "buildNumber": "42",
-    "buildUrl": "https://github.com/owner/repo/actions/runs/123456",
-    "branch": "main",
-    "commit": "abc123",
-    "pullRequest": "refs/pull/42/merge"
-  }
-}
-```
-
-### 10.4 Color Output Control
-
-**Location**: `src/reporters/human.ts` (lines 68-72)
-
-**Detection Logic**:
-
-```typescript
-this.useColor =
-  options.color ??
-  (process.stdout.isTTY &&
-    process.env.FORCE_COLOR !== '0' &&
-    process.env.NO_COLOR == null);
-```
-
-**Priority**:
-
-1. Explicit `--color` / `--no-color` CLI flag
-2. `NO_COLOR` environment variable (disables color)
-3. `FORCE_COLOR` environment variable (enables color unless `'0'`)
-4. TTY detection
-
-**Examples**:
-
-```bash
-# Force color in CI
-FORCE_COLOR=1 modestbench run
-
-# Disable color
-NO_COLOR=1 modestbench run
-```
-
-### 10.5 NODE_ENV
-
-**Usage**: Stored in environment info but **does not change behavior**
-
-```typescript
-env: {
-  CI: process.env.CI || 'false',
-  NODE_ENV: process.env.NODE_ENV || 'development',
-}
-```
-
-This is captured for historical tracking but doesn't affect benchmark execution.
-
 ---
 
-## 11. Architecture Diagrams
+## 16. Key Architectural Decisions
 
-### 11.1 Complete System Data Flow
-
-```mermaid
-flowchart TB
-    subgraph CLI["CLI Layer"]
-        Entry[CLI Entry Point]
-        Commands[Command Handlers]
-    end
-
-    subgraph Services["Service Layer"]
-        Config[Config Manager]
-        Engine[Benchmark Engine]
-        Progress[Progress Manager]
-        Error[Error Manager]
-        Reporters[Reporter Registry]
-        History[History Storage]
-    end
-
-    subgraph External["External Systems"]
-        FS[File System]
-        TinyBench[TinyBench Library]
-        Terminal[Terminal/TTY]
-    end
-
-    Entry -->|Parse Args| Commands
-    Commands -->|Create Context| Config
-    Commands -->|Create Context| Engine
-    Commands -->|Create Context| Progress
-    Commands -->|Create Context| Error
-    Commands -->|Create Context| Reporters
-    Commands -->|Create Context| History
-
-    Config -->|Load Files| FS
-    Engine -->|Discover Files| FS
-    Engine -->|Execute Tasks| TinyBench
-    Engine -->|Track Progress| Progress
-    Engine -->|Handle Errors| Error
-    Engine -->|Report Results| Reporters
-    Engine -->|Save Results| History
-
-    Progress -->|Update UI| Terminal
-    Reporters -->|Write Files| FS
-    Reporters -->|Print Output| Terminal
-    History -->|Read/Write| FS
-```
-
-### 11.2 Reporter Lifecycle
-
-```mermaid
-sequenceDiagram
-    participant Engine
-    participant Human as HumanReporter
-    participant JSON as JsonReporter
-    participant CSV as CsvReporter
-
-    Engine->>Human: onStart(run)
-    Engine->>JSON: onStart(run)
-    Engine->>CSV: onStart(run)
-
-    Note over Engine: For each file...
-
-    Engine->>Human: onFileStart(path)
-    Engine->>JSON: onFileStart(path)
-    Engine->>CSV: onFileStart(path)
-
-    Note over Engine: For each suite...
-
-    Engine->>Human: onSuiteStart(name)
-    Engine->>JSON: onSuiteStart(name)
-    Engine->>CSV: onSuiteStart(name)
-
-    Note over Engine: For each task...
-
-    Engine->>Human: onTaskStart(name)
-    Engine->>JSON: onTaskStart(name)
-    Engine->>CSV: onTaskStart(name)
-
-    Engine->>Human: onProgress(state)
-
-    Engine->>Human: onTaskResult(result)
-    Engine->>JSON: onTaskResult(result)
-    Engine->>CSV: onTaskResult(result)
-
-    Engine->>Human: onSuiteEnd(result)
-    Engine->>JSON: onSuiteEnd(result)
-    Engine->>CSV: onSuiteEnd(result)
-
-    Engine->>Human: onFileEnd(result)
-    Engine->>JSON: onFileEnd(result)
-    Engine->>CSV: onFileEnd(result)
-
-    Engine->>Human: onEnd(run)
-    Engine->>JSON: onEnd(run)
-    Engine->>CSV: onEnd(run)
-
-    Note over JSON: Write results.json
-    Note over CSV: Write results.csv
-```
-
----
-
-## 12. Key Architectural Decisions
-
-### 12.1 Engine Abstraction Pattern
+### 16.1 Engine Abstraction Pattern
 
 **Why**: Support multiple benchmark execution strategies without code duplication  
 **How**: Abstract base class with single `executeBenchmarkTask()` hook  
 **Trade-off**: Easier to add new engines, but requires understanding the abstraction
 
-### 12.2 Dependency Injection
+### 16.2 Dependency Injection
 
 **Why**: Enables testing and flexibility  
-**How**: Services passed to `ModestBenchEngine` constructor  
+**How**: Services passed via `bootstrap()` and `createCliContext()`  
 **Trade-off**: More verbose setup for programmatic use
 
-### 12.3 Synchronous File I/O in HistoryStorage
+### 16.3 Branded Types for IDs
 
-**Why**: Simplicity  
-**Where**: Uses `fs.readFileSync`, `fs.writeFileSync`  
-**Trade-off**: Could block in high-frequency scenarios  
-**Mitigation**: CLI usage is typically one-shot
+**Why**: Prevent accidental mixing of `RunId` and `TaskId`  
+**How**: TypeScript branded types (`string & { __brand: 'RunId' }`)  
+**Trade-off**: Requires explicit creation functions
 
-### 12.4 TinyBench Wrapper (Not Fork)
+### 16.4 Cosmiconfig for Configuration
 
-**Why**: Leverage maintained library, avoid duplication  
-**How**: Thin wrapper in `TinybenchEngine.executeBenchmarkTask()`  
-**Trade-off**: Dependent on TinyBench API stability  
-**Alternative**: AccurateEngine provides custom implementation option
+**Why**: Standard tool used by ESLint, Prettier, Babel  
+**How**: Automatic discovery of config files in multiple formats  
+**Trade-off**: External dependency, but well-maintained
 
-### 12.5 Shared Statistical Processing
+### 16.5 Zod for Schema Validation
 
-**Why**: Consistent result quality across engines  
-**How**: Both engines use same IQR filtering and statistics calculation  
-**Trade-off**: Requires standardizing on nanosecond-precision samples
+**Why**: Type-safe schema validation with inference  
+**How**: Schemas define configuration structure and generate types  
+**Trade-off**: Runtime overhead, but provides better error messages
 
-### 12.6 File-Based History Storage
+### 16.6 Service Layer Consolidation
 
-**Why**: Simple, portable, no database dependencies  
-**Where**: JSON files in `.modestbench/history/`  
-**Trade-off**: No multi-process safety, query performance limited  
-**Alternative considered**: SQLite
+**Why**: Clear separation between CLI, core, and services  
+**How**: All services in `src/services/` directory  
+**Trade-off**: More files, but better organization
 
 ---
 
-## 13. Performance Characteristics
+## 17. Testing Strategy
 
-### 13.1 File Discovery
-
-**Implementation**: Uses `glob` package  
-**Performance**: O(n) where n = number of files scanned  
-**Typical**: <100ms for 1000 files
-
-### 13.2 Progress Updates
-
-**Throttling**: 100ms minimum between updates  
-**Impact**: Reduces terminal I/O overhead  
-**UI responsiveness**: Acceptable for human perception
-
-### 13.3 History Queries
-
-**Index loading**: O(1) with in-memory cache  
-**Filtering**: O(n) linear scan of entries  
-**Run loading**: O(m) where m = matching runs  
-**Optimization**: Index filters before loading full run files
-
-### 13.4 Benchmark Execution
-
-**TinybenchEngine Overhead**: Minimal wrapper around TinyBench  
-**AccurateEngine Overhead**: Custom measurement loop with V8 guards  
-**Progress updates**: Every 500ms (TinybenchEngine) or every 100 samples (AccurateEngine)  
-**Reporter callbacks**: Synchronous execution could add overhead if reporters are slow
-
----
-
-## 14. Security Considerations
-
-### 14.1 Dynamic Imports
-
-**Risk**: Benchmark files are dynamically imported  
-**Mitigation**: Limited to files matching glob patterns  
-**Recommendation**: Run benchmarks in isolated environments if executing untrusted code
-
-### 14.2 File System Access
-
-**History storage**: Writes to `.modestbench/history/`  
-**Reporter output**: Writes to configured `outputDir`  
-**Risk**: Path traversal if user controls paths  
-**Current mitigation**: Paths resolved relative to CWD
-
-### 14.3 Configuration Loading
-
-**Risk**: JS/TS config files execute arbitrary code via dynamic imports  
-**Mitigation**: Config files are treated as trusted code (like package.json scripts)  
-**Implementation**: Uses cosmiconfig with dynamic `import()` for TypeScript files
-
-### 14.4 V8 Native Syntax
-
-**Risk**: AccurateEngine uses `new Function()` with V8 intrinsics  
-**Mitigation**: String is hardcoded, never influenced by user input  
-**Alternative**: Falls back to basic mode without `--allow-natives-syntax`
-
----
-
-## 15. Testing Strategy
-
-### 15.1 Test Organization
+### 17.1 Test Organization
 
 **Location**: `/test/`
 
@@ -1296,7 +1129,7 @@ sequenceDiagram
 - `integration/` - Component interaction tests
 - `contract/` - Interface compliance tests
 
-### 15.2 Key Test Files
+### 17.2 Key Test Files
 
 | Test File                                     | Coverage                       |
 | --------------------------------------------- | ------------------------------ |
@@ -1306,79 +1139,35 @@ sequenceDiagram
 | `test/integration/test_reporters.test.ts`     | Reporter output                |
 | `test/integration/test_configuration.test.ts` | Config loading                 |
 
-### 15.3 Engine Contract Testing
+### 17.3 Engine Contract Testing
 
-Both concrete engines (`TinybenchEngine` and `AccurateEngine`) are tested against the same contract to ensure API compatibility. This guarantees they can be swapped without breaking user code.
-
-### 15.4 Test Utilities
-
-**Location**: `test/util.ts`  
-Provides test helpers and fixtures
-
----
-
-## 16. Source Code Reference Map
-
-| Subsystem     | Primary File                           | Lines of Code | Key Classes/Functions                          |
-| ------------- | -------------------------------------- | ------------- | ---------------------------------------------- |
-| CLI Entry     | `src/cli/index.ts`                     | 650           | `cli()`, `main()`, `createCliContext()`        |
-| Run Command   | `src/cli/commands/run.ts`              | 305           | `handleRunCommand()`                           |
-| Engine Base   | `src/core/engine.ts`                   | 891           | `ModestBenchEngine` (abstract)                 |
-| Tinybench     | `src/core/engines/tinybench-engine.ts` | 336           | `TinybenchEngine`                              |
-| Accurate      | `src/core/engines/accurate-engine.ts`  | 408           | `AccurateEngine`                               |
-| Stats         | `src/core/stats-utils.ts`              | ~150          | `calculateStatistics`, `removeOutliersIQR`     |
-| Loader        | `src/core/loader.ts`                   | 416           | `BenchmarkFileLoader`                          |
-| Error Manager | `src/core/error-manager.ts`            | 373           | `ModestBenchErrorManager`                      |
-| Config        | `src/config/manager.ts`                | 465           | `ModestBenchConfigurationManager`              |
-| History       | `src/storage/history.ts`               | 605           | `FileHistoryStorage`                           |
-| Progress      | `src/progress/manager.ts`              | 413           | `ModestBenchProgressManager`                   |
-| Reporters     | `src/reporters/`                       | ~800          | `HumanReporter`, `JsonReporter`, `CsvReporter` |
-| Types         | `src/types/`                           | ~600          | Interface definitions                          |
-
-**Total Source Code**: ~6,500 lines
-
----
-
-## 17. Recommendations Summary
-
-### High Priority
-
-1. **✅ Replace configuration loading with cosmiconfig** - Enables YAML/JS/TS support, reduces code
-2. **✅ Create public API entry point** - Document programmatic usage
-3. **⚠️ Complete or remove Git info collection** - Half-implemented feature
-4. **⚠️ Add concurrency control to HistoryStorage** - Prevent index corruption
-
-### Medium Priority
-
-1. **🤔 Remove syntax validation** - Redundant, error-prone
-2. **🤔 Simplify init command** - Remove unused template variations
-
-### Low Priority
-
-1. Document environment variables in README
-2. Add programmatic API examples
-3. Consider SQLite for history storage (performance + safety)
+Both concrete engines (`TinybenchEngine` and `AccurateEngine`) are tested against the same contract to ensure API compatibility.
 
 ---
 
 ## 18. Glossary
 
-| Term                | Definition                                                            |
-| ------------------- | --------------------------------------------------------------------- |
-| **Benchmark Run**   | Complete execution of all discovered benchmark files                  |
-| **Suite**           | Collection of related benchmark tasks                                 |
-| **Task**            | Single benchmark operation (one function to measure)                  |
-| **Reporter**        | Output formatter (human, JSON, CSV)                                   |
-| **History Storage** | Persistent benchmark result storage                                   |
-| **Progress State**  | Real-time execution progress tracking                                 |
-| **Execution Phase** | Stage of benchmark execution (discovery, validation, execution, etc.) |
-| **TinyBench**       | External benchmark library wrapped by TinybenchEngine                 |
-| **AccurateEngine**  | Custom benchmark engine with V8 optimization guards                   |
-| **TinybenchEngine** | Engine that wraps the tinybench library                               |
-| **IQR Filtering**   | Interquartile Range outlier removal for sample cleanup                |
-| **V8 Intrinsics**   | Low-level V8 functions for optimization control                       |
-| **CliContext**      | Dependency injection container for CLI commands                       |
+| Term                | Definition                                             |
+| ------------------- | ------------------------------------------------------ |
+| **Benchmark Run**   | Complete execution of all discovered benchmark files   |
+| **Suite**           | Collection of related benchmark tasks                  |
+| **Task**            | Single benchmark operation (one function to measure)   |
+| **Reporter**        | Output formatter (human, JSON, CSV, nyan, simple)      |
+| **History Storage** | Persistent benchmark result storage                    |
+| **Baseline**        | Named reference snapshot for budget comparisons        |
+| **Budget**          | Performance threshold (absolute or relative)           |
+| **Progress State**  | Real-time execution progress tracking                  |
+| **TaskId**          | Unique identifier: `{filePath}/{suiteName}/{taskName}` |
+| **RunId**           | 7-character alphanumeric run identifier                |
+| **TinyBench**       | External benchmark library wrapped by TinybenchEngine  |
+| **AccurateEngine**  | Custom benchmark engine with V8 optimization guards    |
+| **TinybenchEngine** | Engine that wraps the tinybench library                |
+| **IQR Filtering**   | Interquartile Range outlier removal for sample cleanup |
+| **V8 Intrinsics**   | Low-level V8 functions for optimization control        |
+| **CliContext**      | Dependency injection container for CLI commands        |
+| **Test Adapter**    | Converts test framework definitions to benchmarks      |
+| **Trend Analysis**  | Statistical analysis of performance changes over time  |
 
 ---
 
-This architectural overview provides a comprehensive understanding of ModestBench's internal structure, design decisions, and areas for improvement. The system is well-architected with clear separation of concerns through the engine abstraction pattern, enabling both tinybench integration and custom measurement approaches.
+This architectural overview provides a comprehensive understanding of ModestBench's internal structure, design decisions, and capabilities. The system is well-architected with clear separation of concerns through the engine abstraction pattern, service layer consolidation, and comprehensive feature set for performance testing.
