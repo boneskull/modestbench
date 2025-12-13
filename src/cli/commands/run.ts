@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 import type { BenchmarkRun, ModestBenchConfig } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
-import { ErrorCodes } from '../../constants.js';
+import { ErrorCodes, ExitCodes } from '../../constants.js';
 import { resolveOutputPath } from '../../core/output-path-resolver.js';
 import {
   type BudgetExceededError,
@@ -20,8 +20,8 @@ import {
 import { CsvReporter } from '../../reporters/csv.js';
 import { HumanReporter } from '../../reporters/human.js';
 import { JsonReporter } from '../../reporters/json.js';
+import { NyanReporter } from '../../reporters/nyan.js';
 import { SimpleReporter } from '../../reporters/simple.js';
-import { ExitCodes } from '../../types/cli.js';
 import { hasErrorCode, isError } from '../../utils/type-guards.js';
 
 /**
@@ -395,7 +395,7 @@ const setupReporters = (
         : undefined;
 
     // Built-in reporter names for error messages
-    const builtInReporters = ['human', 'json', 'csv', 'simple'];
+    const builtInReporters = ['human', 'json', 'csv', 'nyan', 'simple'];
 
     for (const reporterName of requestedReporters) {
       let reporter;
@@ -439,6 +439,13 @@ const setupReporters = (
           });
           break;
         }
+
+        case 'nyan':
+          reporter = new NyanReporter({
+            color: true,
+            quiet: explicitQuiet,
+          });
+          break;
 
         case 'simple':
           reporter = new SimpleReporter({

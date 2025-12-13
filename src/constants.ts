@@ -1,4 +1,4 @@
-import { type Engine } from './types/cli.js';
+import { type Engine } from './types/core.js';
 
 /**
  * Supported benchmark file extensions
@@ -60,6 +60,7 @@ export const Reporters = {
   CSV: 'csv',
   HUMAN: 'human',
   JSON: 'json',
+  NYAN: 'nyan',
   SIMPLE: 'simple',
 } as const;
 

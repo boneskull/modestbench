@@ -5,9 +5,6 @@
  * This file re-exports all types from the individual type modules.
  */
 
-// CLI-specific types
-export * from './cli.js';
-
 // Core data types
 export type * from './core.js';
 // Helper functions from core (value exports)

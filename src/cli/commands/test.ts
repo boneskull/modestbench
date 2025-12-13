@@ -5,8 +5,7 @@
  * executing them through a lightweight benchmark runner.
  */
 
-import { hostname } from 'node:os';
-import { cpus, freemem, totalmem } from 'node:os';
+import { cpus, freemem, hostname, totalmem } from 'node:os';
 import { resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 
@@ -31,7 +30,7 @@ import {
   type ConvertedBenchmarkSuite,
   type TestFramework,
 } from '../../adapters/types.js';
-import { ExitCodes } from '../../types/cli.js';
+import { ExitCodes } from '../../constants.js';
 import { createRunId } from '../../types/core.js';
 import { isError } from '../../utils/type-guards.js';
 

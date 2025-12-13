@@ -8,6 +8,9 @@
 
 export { bootstrap as modestbench } from './bootstrap.js';
 
+// Constants
+export { ExitCodes } from './constants.js';
+
 // Core engine
 export { ModestBenchEngine } from './core/engine.js';
 export { AccurateEngine, TinybenchEngine } from './core/engines/index.js';

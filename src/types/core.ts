@@ -38,6 +38,20 @@ export type {
 } from '../core/benchmark-schema.js';
 
 /**
+ * Benchmark file structure after parsing
+ */
+export interface BenchmarkFile {
+  /** Raw file content */
+  readonly content: string;
+  /** Parsed exports from the file */
+  readonly exports: unknown;
+  /** Absolute path to the file */
+  readonly filePath: string;
+  /** File metadata */
+  readonly metadata: FileMetadata;
+}
+
+/**
  * ModestBench Core Types
  *
  * Defines the fundamental data structures used throughout the ModestBench
@@ -51,20 +65,6 @@ export type {
 
 // Re-export identifier helper functions
 export { createRunId, createTaskId } from '../utils/identifiers.js';
-
-/**
- * Benchmark file structure after parsing
- */
-export interface BenchmarkFile {
-  /** Raw file content */
-  readonly content: string;
-  /** Parsed exports from the file */
-  readonly exports: unknown;
-  /** Absolute path to the file */
-  readonly filePath: string;
-  /** File metadata */
-  readonly metadata: FileMetadata;
-}
 
 /**
  * Represents a complete benchmark run across multiple files
@@ -127,6 +127,8 @@ export interface CpuInfo {
   /** CPU speed in MHz */
   readonly speed: number;
 }
+
+export type Engine = 'accurate' | 'tinybench';
 
 /**
  * Environment information captured during benchmark execution

@@ -39,6 +39,7 @@ import {
   CsvReporter,
   HumanReporter,
   JsonReporter,
+  NyanReporter,
   SimpleReporter,
 } from '../reporters/index.js';
 // Import commands
@@ -1148,6 +1149,13 @@ const createCliContext = async (
       'simple',
       new SimpleReporter({
         verbose: options.verbose,
+      }),
+    );
+
+    engine.registerReporter(
+      'nyan',
+      new NyanReporter({
+        color: !options.noColor,
       }),
     );
 
