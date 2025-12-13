@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.6.0...modestbench-v0.7.0) (2025-12-13)
+
+
+### Features
+
+* **reporters:** add nyan reporter ([99bcced](https://github.com/boneskull/modestbench/commit/99bcceda9accd21c5acc193da15d18fc43da0e37))
+
 ## [0.6.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.5.1...modestbench-v0.6.0) (2025-12-13)
 
 
