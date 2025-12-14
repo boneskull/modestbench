@@ -109,7 +109,7 @@ const createReporter: ReporterFactory = (options, context) => {
 export default createReporter;
 ```
 
-::tip[Async Factory Functions]
+:::tip[Async Factory Functions]
 If you need to do async work during initialization, you can return a `Promise` from the factory function.
 :::
 
@@ -435,7 +435,7 @@ Want to share your reporter with the world? Follow npm conventions:
 
 ## Error Handling
 
-Avoid throwing exceptions to avoid crashing when multiple reporters are in use. Instead, be a good dog andjust log an error:
+Avoid throwing exceptions to avoid crashing when multiple reporters are in use. Instead, be a good dog and just log an error:
 
 ```typescript
 const createReporter: ReporterFactory = (options, context) => {
