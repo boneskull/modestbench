@@ -121,9 +121,9 @@ const isClass = (
     return false;
   }
 
-  // Check if it uses class syntax
+  // Check if it uses class syntax (handles both 'class Foo' and 'class{')
   const funcStr = func.toString();
-  return funcStr.startsWith('class ') || funcStr.startsWith('class{');
+  return /^class\b/.test(funcStr);
 };
 
 /**
@@ -136,6 +136,7 @@ export const isFilePath = (specifier: string): boolean => {
   return (
     specifier.startsWith('.') ||
     specifier.startsWith('/') ||
+    // isAbsolute handles Windows paths like 'C:\path\to\file.js'
     isAbsolute(specifier)
   );
 };
