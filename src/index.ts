@@ -41,6 +41,15 @@ export { parseProfile } from './services/profiler/profile-parser.js';
 
 export { runWithProfiling } from './services/profiler/profile-runner.js';
 export { ModestBenchProgressManager } from './services/progress-manager.js';
+// Reporter plugin loader
+export {
+  createReporterContext,
+  isBuiltInReporter,
+  isFilePath,
+  loadReporter,
+  PLUGIN_API_VERSION,
+} from './services/reporter-loader.js';
+
 export {
   BaseReporter,
   CompositeReporter,
@@ -51,4 +60,13 @@ export {
 export * from './types/index.js';
 
 // Utilities
-export { findPackageRoot } from './utils/package.js';
+export { findPackageRoot, getPackageVersion } from './utils/package.js';
+
+// Reporter utilities (for plugin authors)
+export {
+  formatBytes,
+  formatDuration,
+  formatOpsPerSecond,
+  formatPercentage,
+  reporterUtils,
+} from './utils/reporter-utils.js';

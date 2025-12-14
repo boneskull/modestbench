@@ -13,6 +13,9 @@ export { createRunId, createTaskId } from './core.js';
 // Interface contracts
 export type * from './interfaces.js';
 
+// Plugin types (for third-party reporter authors)
+export type * from './plugin.js';
+
 // Profiler types
 export type * from './profiler.js';
 
