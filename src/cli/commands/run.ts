@@ -7,7 +7,11 @@
 
 import { resolve } from 'node:path';
 
-import type { BenchmarkRun, ModestBenchConfig } from '../../types/index.js';
+import type {
+  BenchmarkRun,
+  ModestBenchConfig,
+  Reporter,
+} from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
 import { ErrorCodes, ExitCodes } from '../../constants.js';
@@ -15,6 +19,8 @@ import { resolveOutputPath } from '../../core/output-path-resolver.js';
 import {
   type BudgetExceededError,
   InvalidArgumentError,
+  ReporterLoadError,
+  ReporterValidationError,
   UnknownReporterError,
 } from '../../errors/index.js';
 import { CsvReporter } from '../../reporters/csv.js';
@@ -22,6 +28,11 @@ import { HumanReporter } from '../../reporters/human.js';
 import { JsonReporter } from '../../reporters/json.js';
 import { NyanReporter } from '../../reporters/nyan.js';
 import { SimpleReporter } from '../../reporters/simple.js';
+import {
+  isBuiltInReporter,
+  isFilePath,
+  loadReporter,
+} from '../../services/reporter-loader.js';
 import { hasErrorCode, isError } from '../../utils/type-guards.js';
 
 /**
@@ -106,7 +117,7 @@ export const handleRunCommand = async (
     if (showCliMessages) {
       console.error('Setting up reporters...');
     }
-    const reporters = setupReporters(
+    const reporters = await setupReporters(
       context,
       config,
       verbose,
@@ -370,19 +381,26 @@ const loadConfiguration = async (context: CliContext, options: RunOptions) => {
 
 /**
  * Setup and configure reporters based on configuration
+ *
+ * Supports built-in reporters, registry-based custom reporters, and external
+ * reporters loaded from file paths or npm packages.
  */
-const setupReporters = (
+const setupReporters = async (
   context: CliContext,
-  config: { outputDir?: string; reporters?: string[] },
+  config: {
+    outputDir?: string;
+    reporterConfig?: Record<string, unknown>;
+    reporters?: string[];
+  },
   isVerbose: boolean,
   showCliMessages: boolean,
   explicitQuiet: boolean,
   explicitOutputDir?: string,
   explicitOutputFile?: string,
   progressOption?: boolean,
-) => {
+): Promise<Reporter[]> => {
   try {
-    const reporters = [];
+    const reporters: Reporter[] = [];
     // Dedupe requested reporters
     const requestedReporters = [...new Set(config.reporters || ['human'])];
 
@@ -398,67 +416,103 @@ const setupReporters = (
     const builtInReporters = ['human', 'json', 'csv', 'nyan', 'simple'];
 
     for (const reporterName of requestedReporters) {
-      let reporter;
+      let reporter: Reporter;
 
-      // Create reporter instances with output path configuration
-      switch (reporterName) {
-        case 'csv': {
-          const outputPath = resolveOutputPath(
-            outputDir,
-            explicitOutputFile,
-            'results.csv',
-          );
-          reporter = new CsvReporter({
-            includeHeaders: true,
-            includeMetadata: true,
-            ...(outputPath ? { outputPath } : {}),
-            quiet: explicitQuiet, // Only applies explicit --quiet flag; CSV output can coexist with progress messages on different streams
-            verbose: isVerbose,
-          });
-          break;
+      // Check if this is a built-in reporter
+      if (isBuiltInReporter(reporterName)) {
+        // Create reporter instances with output path configuration
+        switch (reporterName) {
+          case 'csv': {
+            const outputPath = resolveOutputPath(
+              outputDir,
+              explicitOutputFile,
+              'results.csv',
+            );
+            reporter = new CsvReporter({
+              includeHeaders: true,
+              includeMetadata: true,
+              ...(outputPath ? { outputPath } : {}),
+              quiet: explicitQuiet,
+              verbose: isVerbose,
+            });
+            break;
+          }
+
+          case 'human':
+            reporter = new HumanReporter({
+              color: true,
+              progress: progressOption ?? true,
+              quiet: explicitQuiet,
+              verbose: isVerbose,
+            });
+            break;
+
+          case 'json': {
+            const outputPath = resolveOutputPath(
+              outputDir,
+              explicitOutputFile,
+              'results.json',
+            );
+            reporter = new JsonReporter({
+              ...(outputPath ? { outputPath } : {}),
+              prettyPrint: true,
+            });
+            break;
+          }
+
+          case 'nyan':
+            reporter = new NyanReporter({
+              color: true,
+              quiet: explicitQuiet,
+            });
+            break;
+
+          case 'simple':
+            reporter = new SimpleReporter({
+              quiet: explicitQuiet,
+              verbose: isVerbose,
+            });
+            break;
+
+          default:
+            // TypeScript exhaustiveness check - should never reach here
+            throw new Error(`Unhandled built-in reporter: ${reporterName}`);
         }
-
-        case 'human':
-          reporter = new HumanReporter({
-            color: true,
-            progress: progressOption ?? true,
-            quiet: explicitQuiet, // Only applies explicit --quiet flag; JSON reporter forcing quiet mode does not affect HumanReporter progress output
-            verbose: isVerbose,
-          });
-          break;
-
-        case 'json': {
-          const outputPath = resolveOutputPath(
-            outputDir,
-            explicitOutputFile,
-            'results.json',
-          );
-          reporter = new JsonReporter({
-            ...(outputPath ? { outputPath } : {}),
-            prettyPrint: true,
-          });
-          break;
+      } else if (isFilePath(reporterName)) {
+        // External reporter from file path
+        const reporterOptions =
+          (config.reporterConfig?.[reporterName] as Record<string, unknown>) ??
+          {};
+        if (showCliMessages) {
+          console.error(`Loading external reporter: ${reporterName}`);
         }
-
-        case 'nyan':
-          reporter = new NyanReporter({
-            color: true,
-            quiet: explicitQuiet,
-          });
-          break;
-
-        case 'simple':
-          reporter = new SimpleReporter({
-            quiet: explicitQuiet,
-            verbose: isVerbose,
-          });
-          break;
-
-        default:
-          // Fall back to registry for custom reporters
-          reporter = context.reporterRegistry.get(reporterName);
-          if (!reporter) {
-            // Combine built-in reporters with registered custom reporters
+        reporter = await loadReporter(reporterName, reporterOptions);
+      } else {
+        // Try registry first, then npm package
+        const registryReporter = context.reporterRegistry.get(reporterName);
+        if (registryReporter) {
+          reporter = registryReporter;
+        } else {
+          // Try loading as npm package
+          const reporterOptions =
+            (config.reporterConfig?.[reporterName] as Record<
+              string,
+              unknown
+            >) ?? {};
+          if (showCliMessages) {
+            console.error(`Loading reporter package: ${reporterName}`);
+          }
+          try {
+            reporter = await loadReporter(reporterName, reporterOptions);
+          } catch (error) {
+            // If loading fails and it's not a file path, provide helpful error
+            if (
+              error instanceof ReporterLoadError ||
+              error instanceof ReporterValidationError
+            ) {
+              throw error;
+            }
+            // Combine built-in reporters with registered custom reporters for error message
             const registeredReporters = Object.keys(
               context.reporterRegistry.getAll(),
             );
@@ -467,10 +521,11 @@ const setupReporters = (
               ...registeredReporters,
             ];
             throw new UnknownReporterError(
-              `Unknown reporter: ${reporterName}. Available: ${availableReporters.join(', ')}`,
+              `Unknown reporter: ${reporterName}. Available built-in reporters: ${availableReporters.join(', ')}. ` +
+                `For external reporters, use a file path (./my-reporter.js) or npm package name.`,
             );
           }
-          break;
+        }
       }
 
       reporters.push(reporter);
@@ -484,7 +539,11 @@ const setupReporters = (
   } catch (error) {
     // Re-throw our custom errors
     const errorCode = hasErrorCode(error) ? error.code : undefined;
-    if (errorCode === ErrorCodes.REPORTER_UNKNOWN) {
+    if (
+      errorCode === ErrorCodes.REPORTER_UNKNOWN ||
+      errorCode === ErrorCodes.REPORTER_LOAD_FAILED ||
+      errorCode === ErrorCodes.REPORTER_INVALID
+    ) {
       throw error;
     }
     throw new InvalidArgumentError(

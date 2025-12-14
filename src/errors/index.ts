@@ -53,7 +53,9 @@ export {
 // Reporter errors
 export {
   ReporterAlreadyRegisteredError,
+  ReporterLoadError,
   ReporterOutputError,
+  ReporterValidationError,
   UnknownReporterError,
 } from './reporter.js';
 
