@@ -9,6 +9,7 @@ interface Props extends HTMLAttributes<'div'> {
   theme?: string;
   rows?: number;
   cols?: number;
+  terminalFontSize?: number;
 }
 
 const {
@@ -19,6 +20,7 @@ const {
   theme = 'asciinema',
   rows,
   cols,
+  terminalFontSize,
   ...rest
 } = Astro.props;
 
@@ -33,7 +35,7 @@ const playerId = `player-${Math.random().toString(36).slice(2, 9)}`;
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.css" />
 <script src="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.min.js" defer is:inline></script>
 
-<script define:vars={{ playerId, src, autoPlay, loop, speed, theme, rows, cols }} is:inline>
+<script define:vars={{ playerId, src, autoPlay, loop, speed, theme, rows, cols, terminalFontSize }} is:inline>
   // Wait for AsciinemaPlayer to be available
   function initPlayer() {
     const playerDiv = document.getElementById(playerId);
@@ -45,7 +47,8 @@ const playerId = `player-${Math.random().toString(36).slice(2, 9)}`;
         loop,
         speed,
         theme,
-        fit: 'width',
+        fit: terminalFontSize ? false : 'width',
+        terminalFontSize: terminalFontSize ?? 'medium'
       };
 
       if (rows) options.rows = parseInt(rows);
