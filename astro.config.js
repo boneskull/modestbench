@@ -29,12 +29,14 @@ export default defineConfig({
             { label: 'Output Formats', link: '/guides/output/' },
             { label: 'Understanding Statistics', link: '/guides/statistics/' },
             { label: 'Advanced Usage', link: '/guides/advanced/' },
+            { label: 'Custom Reporters', link: '/guides/custom-reporters/' },
           ],
           label: 'Guides',
         },
         {
           items: [
             { label: 'API Documentation', link: '/reference/api/' },
+            { label: 'Reporter API', link: '/reference/reporter-api/' },
             { label: 'Architecture', link: '/reference/architecture/' },
             { label: 'Contributing', link: '/reference/contributing/' },
             { label: 'Error Reference', link: '/reference/errors/' },
