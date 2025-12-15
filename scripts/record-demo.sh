@@ -29,13 +29,15 @@ echo ""
 # Make sure we're in the project root
 cd "$(dirname "$0")/.."
 
+npm run build
+
 # Record the demo
 asciinema rec "$OUTPUT_FILE" \
   --overwrite \
   --cols 100 \
   --rows 60 \
   --title "modestbench Getting Started Demo" \
-  --command "modestbench run examples/bench/advanced-operations.bench.js --iterations 1000 --warmup 100"
+  --command "node ./dist/cli/index.js run examples/bench/advanced-operations.bench.js --iterations 1000 --warmup 100"
 
 echo ""
 echo "Recording saved to: $OUTPUT_FILE"
