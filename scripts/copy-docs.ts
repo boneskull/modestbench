@@ -55,6 +55,13 @@ copyFileSync(
 );
 console.log('✓ Copied HandelGothic Regular.woff2 → public/fonts/');
 
+// Copy JSON schema to public for serving at site root
+copyFileSync(
+  join(rootDir, 'dist/schema/modestbench-config.schema.json'),
+  join(publicDir, 'modestbench-config.schema.json'),
+);
+console.log('✓ Copied modestbench-config.schema.json → public/');
+
 // Files to copy with their frontmatter
 const files: DocFile[] = [
   {
