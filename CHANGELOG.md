@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.7.0...modestbench-v0.8.0) (2025-12-15)
+
+
+### Features
+
+* **reporters:** add third-party reporter plugin system ([53b24e3](https://github.com/boneskull/modestbench/commit/53b24e3a4741de04c0b7161030ffdc09e66a0759))
+
+
+### Bug Fixes
+
+* **reporters:** address PR review feedback ([1c3eaf2](https://github.com/boneskull/modestbench/commit/1c3eaf27dcf2d928fa2dbef83352c48fdaec5327))
+
 ## [0.7.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.6.0...modestbench-v0.7.0) (2025-12-13)
 
 
