@@ -144,7 +144,7 @@
     "@types/node": "24.10.3",
     "@types/wallabyjs": "0.0.15",
     "@types/yargs": "17.0.35",
-    "asciinema-player": "3.13.2",
+    "asciinema-player": "3.13.3",
     "astro": "5.16.5",
     "astro-broken-link-checker": "file:./vendor/astro-broken-link-checker",
     "ava": "6.4.1",
