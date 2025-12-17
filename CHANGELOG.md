@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.8.0...modestbench-v0.9.0) (2025-12-17)
+
+
+### Features
+
+* **docs:** load asciinema-player from node_modules ([6ecb8be](https://github.com/boneskull/modestbench/commit/6ecb8beba8579e31d086b11b489ce66148766fcb))
+
 ## [0.8.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.7.0...modestbench-v0.8.0) (2025-12-15)
 
 
