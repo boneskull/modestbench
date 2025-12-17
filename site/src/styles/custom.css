@@ -352,6 +352,23 @@ h2,
   border: 1px solid rgba(255, 1, 154, 0.2);
 }
 
+/* asciinema-player workaround: ensure SVG background layer renders properly
+   See: https://github.com/asciinema/asciinema-player/issues/302 */
+.ap-player .ap-term svg.ap-term-bg {
+  width: 100%;
+  height: 100%;
+}
+
+.ap-player .ap-term pre.ap-term-text {
+  background-color: transparent;
+}
+
+/* Dark mode exception: override our pre styling for asciinema player */
+:root[data-theme='dark'] .ap-player .ap-term pre.ap-term-text {
+  background-color: transparent;
+  border: none;
+}
+
 /* Search button */
 :root[data-theme='dark'] .search-button {
   background-color: rgba(0, 241, 255, 0.1);
