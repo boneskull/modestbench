@@ -1,5 +1,6 @@
 ---
-import type { HTMLAttributes } from 'astro/types';
+import type {HTMLAttributes} from 'astro/types';
+import 'asciinema-player/dist/bundle/asciinema-player.css';
 
 interface Props extends HTMLAttributes<'div'> {
   src: string;
@@ -29,44 +30,59 @@ const playerId = `player-${Math.random().toString(36).slice(2, 9)}`;
 ---
 
 <div class="asciinema-player-wrapper">
-  <div id={playerId}></div>
+  <div
+    id={playerId}
+    data-src={src}
+    data-options={JSON.stringify({
+      autoPlay,
+      loop,
+      speed,
+      theme,
+      fit: terminalFontSize ? false : 'width',
+      terminalFontSize: terminalFontSize ?? 'medium',
+      rows,
+      cols,
+    })}
+  >
+  </div>
 </div>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.css" />
-<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3/dist/bundle/asciinema-player.min.js" defer is:inline></script>
+<script>
+  import * as AsciinemaPlayer from 'asciinema-player';
 
-<script define:vars={{ playerId, src, autoPlay, loop, speed, theme, rows, cols, terminalFontSize }} is:inline>
-  // Wait for AsciinemaPlayer to be available
-  function initPlayer() {
-    const playerDiv = document.getElementById(playerId);
-    if (!playerDiv) return;
+  function initPlayers() {
+    document
+      .querySelectorAll('.asciinema-player-wrapper > div[data-src]')
+      .forEach((el) => {
+        const src = el.getAttribute('data-src');
+        const options = JSON.parse(el.getAttribute('data-options') || '{}');
 
-    if (window.AsciinemaPlayer) {
-      const options = {
-        autoPlay,
-        loop,
-        speed,
-        theme,
-        fit: terminalFontSize ? false : 'width',
-        terminalFontSize: terminalFontSize ?? 'medium'
-      };
+        // Clean up undefined values and parse numbers
+        if (options.rows) options.rows = parseInt(options.rows);
+        if (options.cols) options.cols = parseInt(options.cols);
+        Object.keys(options).forEach((key) => {
+          if (options[key] === null || options[key] === undefined) {
+            delete options[key];
+          }
+        });
 
-      if (rows) options.rows = parseInt(rows);
-      if (cols) options.cols = parseInt(cols);
+        // Remove data attributes to prevent re-initialization
+        el.removeAttribute('data-src');
+        el.removeAttribute('data-options');
 
-      window.AsciinemaPlayer.create(src, playerDiv, options);
-    } else {
-      // Retry if player library not loaded yet
-      setTimeout(initPlayer, 50);
-    }
+        AsciinemaPlayer.create(src, el, options);
+      });
   }
 
-  // Wait for DOM to be fully loaded
+  // Initialize on page load and on Astro page transitions
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPlayer);
+    document.addEventListener('DOMContentLoaded', initPlayers);
   } else {
-    initPlayer();
+    initPlayers();
   }
+
+  // Support Astro View Transitions
+  document.addEventListener('astro:page-load', initPlayers);
 </script>
 
 <style>
@@ -76,4 +92,3 @@ const playerId = `player-${Math.random().toString(36).slice(2, 9)}`;
     overflow: hidden;
   }
 </style>
-
