@@ -100,7 +100,6 @@
     "docs:preview": "astro preview --config astro.config.js",
     "fix": "run-s -sl fix:*",
     "fix:eslint": "eslint --fix .",
-    "fix:pkg": "npm pkg fix",
     "fix:prettier": "prettier --write . && markdownlint-cli2 --fix \"**/*.md\"",
     "lint": "run-p -sl --aggregate-output lint:*",
     "lint-staged": "lint-staged",
