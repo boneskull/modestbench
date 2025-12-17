@@ -81,6 +81,30 @@ export interface Budget {
 }
 
 /**
+ * A budget pattern with glob support for files and simple wildcards for
+ * suite/task
+ *
+ * File patterns use minimatch glob syntax (e.g., `**\/*.bench.js`). Suite/task
+ * patterns use simple `*` wildcard (matches any value).
+ */
+export interface BudgetPattern {
+  /** The budget to apply when this pattern matches */
+  readonly budget: Budget;
+
+  /** Glob pattern for file matching (minimatch syntax) */
+  readonly filePattern: string;
+
+  /** Computed specificity score (higher = more specific) */
+  readonly specificity: number;
+
+  /** Suite name or `*` for wildcard */
+  readonly suitePattern: string;
+
+  /** Task name or `*` for wildcard */
+  readonly taskPattern: string;
+}
+
+/**
  * Budget evaluation result for a single task
  */
 export interface BudgetResult {
@@ -157,6 +181,20 @@ export interface RelativeBudget {
 
   /** Maximum performance regression as decimal (0.10 = 10%) */
   readonly maxRegression?: number;
+}
+
+/**
+ * Resolved budgets structure with exact matches and patterns separated
+ *
+ * During evaluation, exact matches are checked first, then patterns are matched
+ * in order of specificity (highest first).
+ */
+export interface ResolvedBudgets {
+  /** Exact TaskId matches (no wildcards or globs) */
+  readonly exact: Record<string, Budget>;
+
+  /** Patterns with wildcards/globs, sorted by specificity descending */
+  readonly patterns: readonly BudgetPattern[];
 }
 
 /**

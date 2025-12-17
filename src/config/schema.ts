@@ -8,9 +8,17 @@
 
 import * as z from 'zod';
 
-import type { Budget } from '../types/budgets.js';
+import type {
+  Budget,
+  BudgetPattern,
+  ResolvedBudgets,
+} from '../types/budgets.js';
 
 import { BENCHMARK_FILE_PATTERN } from '../constants.js';
+import {
+  createBudgetPattern,
+  isGlobPattern,
+} from '../services/budget-resolver.js';
 import { parsePercentageString, parseTimeString } from './budget-schema.js';
 
 /**
@@ -194,33 +202,64 @@ const budgetsInputSchema = z.record(
 );
 
 /**
- * Transform nested budget structure to flat TaskId → Budget mapping
+ * Check if a suite or task name is a wildcard
+ *
+ * @param name - The suite or task name
+ * @returns True if the name is a wildcard (`*`)
+ */
+const isWildcard = (name: string): boolean => name === '*';
+
+/**
+ * Check if a budget entry contains any wildcards or glob patterns
+ *
+ * @param file - File pattern
+ * @param suite - Suite name or wildcard
+ * @param task - Task name or wildcard
+ * @returns True if any part contains wildcards
+ */
+const hasWildcards = (file: string, suite: string, task: string): boolean => {
+  return isGlobPattern(file) || isWildcard(suite) || isWildcard(task);
+};
+
+/**
+ * Transform nested budget structure to ResolvedBudgets with exact matches and
+ * patterns separated
  *
  * @param nested - Nested budgets structure (file → suite → task → budget)
- * @returns Flat budgets map (taskId → budget)
+ * @returns ResolvedBudgets with exact matches and wildcard patterns
  */
 const flattenBudgets = (
   nested: z.infer<typeof budgetsInputSchema>,
-): Record<string, Budget> => {
-  const flat: Record<string, Budget> = {};
+): ResolvedBudgets => {
+  const exact: Record<string, Budget> = {};
+  const patterns: BudgetPattern[] = [];
 
   for (const [file, suites] of Object.entries(nested)) {
     for (const [suite, tasks] of Object.entries(suites)) {
       for (const [task, budget] of Object.entries(tasks)) {
-        const taskId = `${file}/${suite}/${task}`;
-        flat[taskId] = budget;
+        if (hasWildcards(file, suite, task)) {
+          // This is a pattern budget
+          patterns.push(createBudgetPattern(file, suite, task, budget));
+        } else {
+          // This is an exact match
+          const taskId = `${file}/${suite}/${task}`;
+          exact[taskId] = budget;
+        }
       }
     }
   }
 
-  return flat;
+  // Sort patterns by specificity descending for consistent iteration order
+  patterns.sort((a, b) => b.specificity - a.specificity);
+
+  return { exact, patterns };
 };
 
 /**
- * Budgets schema with transform for nested-to-flat conversion
+ * Budgets schema with transform for nested-to-ResolvedBudgets conversion
  *
- * Input: { [file]: { [suite]: { [task]: Budget } } } Output: { [taskId]: Budget
- * } where taskId = "file/suite/task"
+ * Input: { [file]: { [suite]: { [task]: Budget } } } Output: ResolvedBudgets {
+ * exact: { [taskId]: Budget }, patterns: BudgetPattern[] }
  */
 const budgetsSchema = budgetsInputSchema.transform(flattenBudgets);
 
@@ -386,7 +425,7 @@ const baseConfigProperties = {
 
 /** Description for the budgets field */
 const budgetsDescription =
-  'Performance budgets organized by file → suite → task. Budgets define acceptable performance thresholds.';
+  'Performance budgets organized by file → suite → task. Budgets define acceptable performance thresholds. Supports wildcards (* for suite/task, glob patterns for files).';
 
 /** Description and metadata for the config schema */
 const configSchemaDescription =
@@ -402,7 +441,7 @@ const configSchemaMeta = { title: 'ModestBench Configuration' };
  * The budgets field uses transforms to:
  *
  * 1. Parse string values like "10ms" or "10%" to numbers
- * 2. Flatten nested structure to flat taskId → Budget mapping
+ * 2. Separate exact matches from wildcard patterns into ResolvedBudgets
  */
 const modestBenchConfigSchema = z
   .object({
@@ -472,8 +511,8 @@ export const safeParseConfig = (config: unknown) => {
 /**
  * Configuration type after parsing (output type)
  *
- * This is the type you get after parsing a config file - budgets are flattened
- * to taskId keys and string values are converted to numbers.
+ * This is the type you get after parsing a config file - budgets are
+ * transformed to ResolvedBudgets and string values are converted to numbers.
  */
 export type ModestBenchConfig = z.infer<typeof modestBenchConfigSchema>;
 

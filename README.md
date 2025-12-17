@@ -324,10 +324,14 @@ Define budgets in your `modestbench.config.json`:
 {
   "budgetMode": "fail",
   "budgets": {
-    "benchmarks/critical.bench.js/default/parseConfig": {
-      "absolute": {
-        "maxTime": "10ms",
-        "minOpsPerSec": 100000
+    "benchmarks/critical.bench.js": {
+      "default": {
+        "parseConfig": {
+          "absolute": {
+            "maxTime": "10ms",
+            "minOpsPerSec": 100000
+          }
+        }
       }
     }
   }
@@ -343,6 +347,35 @@ Define budgets in your `modestbench.config.json`:
 
 - **Relative Budgets**: Comparison against baseline
   - `maxRegression` - Maximum performance degradation (e.g., `"10%"`, `0.1`)
+
+#### Wildcard Patterns
+
+Apply budgets broadly using wildcards:
+
+```json
+{
+  "budgets": {
+    "**/*.bench.js": {
+      "*": {
+        "*": {
+          "relative": { "maxRegression": "15%" }
+        }
+      }
+    },
+    "benchmarks/critical.bench.js": {
+      "*": {
+        "*": {
+          "relative": { "maxRegression": "5%" }
+        }
+      }
+    }
+  }
+}
+```
+
+- **Files**: Use glob patterns (`**/*.bench.js`, `benchmarks/*.bench.js`)
+- **Suites/Tasks**: Use `*` to match any name
+- **Precedence**: Most specific pattern wins (exact matches override wildcards)
 
 **Budget Modes:**
 
