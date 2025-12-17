@@ -163,6 +163,7 @@
     "mocha": "11.7.5",
     "npm-run-all2": "8.0.4",
     "prettier": "3.7.4",
+    "prettier-plugin-astro": "0.14.1",
     "prettier-plugin-jsdoc": "1.8.0",
     "prettier-plugin-pkg": "0.21.2",
     "prettier-plugin-sort-json": "4.1.1",
@@ -215,6 +216,9 @@
     }
   },
   "lint-staged": {
+    "*.astro": [
+      "prettier --write"
+    ],
     "*.{ts,cts,js,cjs,yml,json5}": [
       "eslint --fix",
       "prettier --write",
@@ -238,7 +242,16 @@
   "prettier": {
     "jsdocCommentLineStrategy": "keep",
     "jsdocPreferCodeFences": true,
+    "overrides": [
+      {
+        "files": "*.astro",
+        "options": {
+          "parser": "astro"
+        }
+      }
+    ],
     "plugins": [
+      "prettier-plugin-astro",
       "prettier-plugin-jsdoc",
       "prettier-plugin-pkg",
       "prettier-plugin-sort-json"
