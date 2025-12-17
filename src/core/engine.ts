@@ -353,93 +353,99 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
       // Evaluate budgets if configured
       let budgetSummary: BudgetSummary | undefined;
 
-      if (config.budgets && Object.keys(config.budgets).length > 0) {
-        const evaluator = new BudgetEvaluator();
-        const baselineStorage = new BaselineStorageService(process.cwd());
+      if (config.budgets) {
+        const budgets = config.budgets;
+        const hasBudgets =
+          Object.keys(budgets.exact).length > 0 || budgets.patterns.length > 0;
 
-        // Collect task results
-        const taskResults = new Map<TaskId, TaskResult>();
+        if (hasBudgets) {
+          const evaluator = new BudgetEvaluator();
+          const baselineStorage = new BaselineStorageService(process.cwd());
 
-        for (const file of fileResults) {
-          for (const suite of file.suites) {
-            for (const task of suite.tasks) {
-              if (!task.error) {
-                // file.filePath is already relative to cwd
-                const taskId = createTaskId(
-                  file.filePath,
-                  suite.name,
-                  task.name,
-                );
-                taskResults.set(taskId, task);
+          // Collect task results
+          const taskResults = new Map<TaskId, TaskResult>();
+
+          for (const file of fileResults) {
+            for (const suite of file.suites) {
+              for (const task of suite.tasks) {
+                if (!task.error) {
+                  // file.filePath is already relative to cwd
+                  const taskId = createTaskId(
+                    file.filePath,
+                    suite.name,
+                    task.name,
+                  );
+                  taskResults.set(taskId, task);
+                }
               }
             }
           }
-        }
 
-        // Load baseline data if needed for relative budgets
-        let baselineData: Map<TaskId, BaselineSummaryData> | undefined;
+          // Load baseline data if needed for relative budgets
+          let baselineData: Map<TaskId, BaselineSummaryData> | undefined;
 
-        // Check if any budgets use relative thresholds
-        const hasRelativeBudgets = Object.values(config.budgets).some(
-          (budget) => budget.relative,
-        );
+          // Check if any budgets use relative thresholds
+          const hasRelativeBudgets =
+            Object.values(budgets.exact).some((budget) => budget.relative) ||
+            budgets.patterns.some((pattern) => pattern.budget.relative);
 
-        if (hasRelativeBudgets) {
-          const baselineName =
-            config.baseline || (await baselineStorage.getDefault());
+          if (hasRelativeBudgets) {
+            const baselineName =
+              config.baseline || (await baselineStorage.getDefault());
 
-          if (baselineName) {
-            const baseline = await baselineStorage.getBaseline(baselineName);
+            if (baselineName) {
+              const baseline = await baselineStorage.getBaseline(baselineName);
 
-            if (baseline) {
-              // Cast keys to TaskId since they come from validated baseline storage
-              baselineData = new Map(
-                Object.entries(baseline.summary) as [
-                  TaskId,
-                  BaselineSummaryData,
-                ][],
-              );
+              if (baseline) {
+                // Cast keys to TaskId since they come from validated baseline storage
+                baselineData = new Map(
+                  Object.entries(baseline.summary) as [
+                    TaskId,
+                    BaselineSummaryData,
+                  ][],
+                );
+              } else {
+                console.warn(
+                  `Warning: Baseline "${baselineName}" not found. Relative budgets will be skipped.`,
+                );
+              }
             } else {
               console.warn(
-                `Warning: Baseline "${baselineName}" not found. Relative budgets will be skipped.`,
+                'Warning: Relative budgets configured but no baseline specified. Relative budgets will be skipped.',
               );
             }
-          } else {
-            console.warn(
-              'Warning: Relative budgets configured but no baseline specified. Relative budgets will be skipped.',
-            );
           }
-        }
 
-        // Evaluate budgets
-        budgetSummary = evaluator.evaluateRun(
-          config.budgets,
-          taskResults,
-          baselineData,
-        );
+          // Evaluate budgets
+          budgetSummary = evaluator.evaluateRun(
+            budgets,
+            taskResults,
+            baselineData,
+          );
 
-        // Notify reporters of budget results
-        for (const reporter of reporters) {
-          if (reporter.onBudgetResult) {
-            await reporter.onBudgetResult(budgetSummary);
+          // Notify reporters of budget results
+          for (const reporter of reporters) {
+            if (reporter.onBudgetResult) {
+              await reporter.onBudgetResult(budgetSummary);
+            }
           }
-        }
 
-        // Handle budget failures based on budgetMode
-        if (budgetSummary.failed > 0) {
-          const mode = config.budgetMode || 'fail';
+          // Handle budget failures based on budgetMode
+          if (budgetSummary.failed > 0) {
+            const mode = config.budgetMode || 'fail';
 
-          if (mode === 'fail') {
-            throw new BudgetExceededError(
-              `${budgetSummary.failed} of ${budgetSummary.total} budget(s) exceeded`,
-              budgetSummary,
-            );
-          } else if (mode === 'warn') {
-            console.warn(
-              `Warning: ${budgetSummary.failed} of ${budgetSummary.total} budget(s) exceeded`,
-            );
+            if (mode === 'fail') {
+              throw new BudgetExceededError(
+                `${budgetSummary.failed} of ${budgetSummary.total} budget(s) exceeded`,
+                budgetSummary,
+              );
+            } else if (mode === 'warn') {
+              console.warn(
+                `Warning: ${budgetSummary.failed} of ${budgetSummary.total} budget(s) exceeded`,
+              );
+            }
+            // mode === 'report': just include in output, don't fail
           }
-          // mode === 'report': just include in output, don't fail
         }
       }
 

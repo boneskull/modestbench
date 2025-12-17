@@ -24,12 +24,10 @@ describe('Budget Configuration Schema Integration', () => {
       const result = safeParsePartialConfig(config);
 
       expect(result.success, 'to be true');
-      // Verify transform flattened to TaskId keys
+      // Verify transform created ResolvedBudgets with exact matches
       if (result.success && result.data.budgets) {
-        expect(
-          result.data.budgets['test.bench.js/default/task'],
-          'to be defined',
-        );
+        const resolved = result.data.budgets;
+        expect(resolved.exact['test.bench.js/default/task'], 'to be defined');
       }
     });
 
@@ -265,10 +263,11 @@ describe('Budget Configuration Schema Integration', () => {
       const result = safeParsePartialConfig(config);
 
       expect(result.success, 'to be true');
-      // Verify transform worked
+      // Verify transform created ResolvedBudgets with exact matches
       if (result.success && result.data.budgets) {
+        const resolved = result.data.budgets;
         expect(
-          result.data.budgets['test.bench.js/default/criticalPath'],
+          resolved.exact['test.bench.js/default/criticalPath'],
           'to be defined',
         );
       }
@@ -305,22 +304,23 @@ describe('Budget Configuration Schema Integration', () => {
       const result = safeParsePartialConfig(config);
 
       expect(result.success, 'to be true');
-      // Verify all tasks were flattened
+      // Verify all tasks were transformed to ResolvedBudgets
       if (result.success && result.data.budgets) {
+        const resolved = result.data.budgets;
         expect(
-          result.data.budgets['api.bench.js/HTTP Routes/getUser'],
+          resolved.exact['api.bench.js/HTTP Routes/getUser'],
           'to be defined',
         );
         expect(
-          result.data.budgets['api.bench.js/HTTP Routes/createUser'],
+          resolved.exact['api.bench.js/HTTP Routes/createUser'],
           'to be defined',
         );
         expect(
-          result.data.budgets['api.bench.js/default/healthCheck'],
+          resolved.exact['api.bench.js/default/healthCheck'],
           'to be defined',
         );
         expect(
-          result.data.budgets['db.bench.js/Query Performance/selectOne'],
+          resolved.exact['db.bench.js/Query Performance/selectOne'],
           'to be defined',
         );
       }

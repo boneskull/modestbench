@@ -4,9 +4,12 @@ import type {
   BudgetResult,
   BudgetSummary,
   BudgetViolation,
+  ResolvedBudgets,
   TaskId,
   TaskResult,
 } from '../types/core.js';
+
+import { resolveBudget } from './budget-resolver.js';
 
 /**
  * Service for evaluating performance budgets
@@ -49,30 +52,31 @@ export class BudgetEvaluator {
    * Evaluate budgets for an entire benchmark run
    */
   evaluateRun(
-    budgets: Record<string, Budget>,
+    budgets: ResolvedBudgets,
     taskResults: Map<TaskId, TaskResult>,
     baselineData?: Map<TaskId, BaselineSummaryData>,
   ): BudgetSummary {
     const results: BudgetResult[] = [];
 
-    for (const [taskId, budget] of Object.entries(budgets)) {
-      const taskResult = taskResults.get(taskId as TaskId);
+    for (const [taskId, taskResult] of taskResults) {
+      const budget = resolveBudget(taskId, budgets);
 
-      // Skip if no result for this task
-      if (!taskResult) {
+      // Skip if no budget matches this task
+      if (!budget) {
         continue;
       }
 
-      // Skip relative budgets if no baseline data
-      if (budget.relative && !baselineData) {
+      // Skip if budget has ONLY relative thresholds and no baseline data
+      // (absolute budgets can still be evaluated without baseline)
+      if (budget.relative && !budget.absolute && !baselineData) {
         continue;
       }
 
       const budgetResult = this.evaluateTask(
-        taskId as TaskId,
+        taskId,
         budget,
         taskResult,
-        baselineData?.get(taskId as TaskId),
+        baselineData?.get(taskId),
       );
 
       results.push(budgetResult);

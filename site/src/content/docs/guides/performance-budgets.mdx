@@ -149,6 +149,129 @@ Use both absolute and relative:
 }
 ```
 
+## Wildcard Patterns
+
+Instead of specifying every file, suite, and task individually, you can use wildcard patterns to apply budgets broadly:
+
+### Pattern Syntax
+
+| Level | Exact Match | Wildcard |
+|-------|-------------|----------|
+| File | `"api.bench.js"` | `"**/*.bench.js"` (glob) |
+| Suite | `"String Operations"` | `"*"` (any suite) |
+| Task | `"parseJSON"` | `"*"` (any task) |
+
+- **Files**: Use glob patterns (e.g., `**/*.bench.js`, `benchmarks/*.bench.js`)
+- **Suites/Tasks**: Use `*` to match any name
+
+### Example: Global Default Budget
+
+Apply a budget to all benchmarks:
+
+```json
+{
+  "budgets": {
+    "**/*.bench.js": {
+      "*": {
+        "*": {
+          "relative": {
+            "maxRegression": "15%"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Example: Stricter Budget for Specific Files
+
+Override the global default with stricter limits for critical paths:
+
+```json
+{
+  "budgets": {
+    "**/*.bench.js": {
+      "*": {
+        "*": {
+          "relative": { "maxRegression": "15%" }
+        }
+      }
+    },
+    "benchmarks/critical.bench.js": {
+      "*": {
+        "*": {
+          "relative": { "maxRegression": "5%" }
+        }
+      }
+    }
+  }
+}
+```
+
+### Example: Mixed Specificity
+
+Combine wildcards with exact matches for fine-grained control:
+
+```json
+{
+  "budgets": {
+    "**/*.bench.js": {
+      "*": {
+        "*": {
+          "relative": { "maxRegression": "20%" }
+        }
+      }
+    },
+    "api.bench.js": {
+      "Authentication": {
+        "*": {
+          "relative": { "maxRegression": "10%" }
+        }
+      },
+      "Authentication": {
+        "login": {
+          "absolute": { "maxTime": "50ms" },
+          "relative": { "maxRegression": "5%" }
+        }
+      }
+    }
+  }
+}
+```
+
+### Precedence Rules
+
+When multiple patterns match a task, the **most specific** pattern wins:
+
+1. **Exact matches** always take precedence over wildcards
+2. **File specificity**: Exact file > partial glob > full glob
+3. **Suite/task specificity**: Exact name > `*` wildcard
+
+**Specificity scoring:**
+
+| Pattern Component | Points |
+|-------------------|--------|
+| Exact file name | +3 |
+| Partial glob (e.g., `benchmarks/*.js`) | +2 |
+| Full glob (`**/*.js`) | +1 |
+| Exact suite name | +2 |
+| Exact task name | +1 |
+| Wildcard (`*`) | +0 |
+
+**Example:**
+
+For task `api.bench.js/Authentication/login`:
+
+| Pattern | Specificity | Result |
+|---------|-------------|--------|
+| `**/*.bench.js/*/*` | 1 | Lowest priority |
+| `api.bench.js/*/*` | 3 | Medium priority |
+| `api.bench.js/Authentication/*` | 5 | Higher priority |
+| `api.bench.js/Authentication/login` | 6 | **Wins** |
+
+When patterns have equal specificity, the budgets are **merged**, with later definitions overriding earlier ones.
+
 ## Baseline Management
 
 ### Creating Baselines
@@ -472,29 +595,59 @@ Adjust budget if current performance is legitimately slower.
 }
 ```
 
-### Example 2: Regression Guard
+### Example 2: Regression Guard for All Tasks
 
-:::note
-To apply budgets to all tasks, you'll need to specify each file/suite/task. Wildcard patterns are not currently supported, but are being considered for a future release. See [issue #72](https://github.com/boneskull/modestbench/issues/72) for details.
-:::
+Apply a regression guard to all benchmarks using wildcards:
 
 ```json
 {
   "baseline": "production",
   "budgets": {
-    "api.bench.js": {
-      "default": {
-        "parseRequest": {
+    "**/*.bench.js": {
+      "*": {
+        "*": {
           "relative": { "maxRegression": "15%" }
         }
       }
     }
-    // Repeat for other files/suites/tasks...
   }
 }
 ```
 
-### Example 3: Per-Task Budgets
+### Example 3: Regression Guard with Overrides
+
+Apply different thresholds to different areas:
+
+```json
+{
+  "baseline": "production",
+  "budgets": {
+    "**/*.bench.js": {
+      "*": {
+        "*": {
+          "relative": { "maxRegression": "20%" }
+        }
+      }
+    },
+    "api.bench.js": {
+      "*": {
+        "*": {
+          "relative": { "maxRegression": "10%" }
+        }
+      }
+    },
+    "api.bench.js": {
+      "default": {
+        "parseRequest": {
+          "relative": { "maxRegression": "5%" }
+        }
+      }
+    }
+  }
+}
+```
+
+### Example 4: Per-Task Budgets
 
 ```json
 {
