@@ -8,10 +8,35 @@
 
 import * as z from 'zod';
 
-import type { ModestBenchConfig } from '../types/core.js';
-
 import { BENCHMARK_FILE_PATTERN } from '../constants.js';
 import { parsePercentageString, parseTimeString } from './budget-schema.js';
+
+/**
+ * Schema for JSON reporter configuration options
+ */
+export const jsonReporterConfigSchema = z.object({
+  prettyPrint: z
+    .boolean()
+    .optional()
+    .describe('Whether to pretty-print JSON output (default: false)'),
+});
+
+/**
+ * Schema for reporter-specific configuration
+ *
+ * Allows typed configuration for known reporters while permitting unknown
+ * reporter configs via catchall.
+ */
+export const reporterConfigSchema = z
+  .object({
+    json: jsonReporterConfigSchema
+      .optional()
+      .describe('Configuration options for the JSON reporter'),
+  })
+  .catchall(z.unknown())
+  .describe(
+    'Configuration options specific to individual reporters, keyed by reporter name',
+  );
 
 /**
  * Schema for threshold configuration
@@ -226,11 +251,7 @@ const modestBenchConfigSchema = z
       .describe(
         'Run in quiet mode with minimal console output (only errors and final results)',
       ),
-    reporterConfig: z
-      .record(z.string(), z.unknown())
-      .describe(
-        'Configuration options specific to individual reporters, keyed by reporter name',
-      ),
+    reporterConfig: reporterConfigSchema,
     reporters: z
       .array(z.string())
       .min(1)
@@ -446,3 +467,5 @@ export const safeParseConfig = (config: unknown) => {
 
   return result;
 };
+
+export type ModestBenchConfig = z.infer<typeof modestBenchConfigSchema>;

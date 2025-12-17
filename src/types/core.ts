@@ -1,3 +1,10 @@
+import type { z } from 'zod';
+
+import type {
+  jsonReporterConfigSchema,
+  ModestBenchConfig,
+  reporterConfigSchema,
+} from '../config/schema.js';
 // Budget-related types
 import type {
   AbsoluteBudget,
@@ -13,30 +20,6 @@ import type {
   TaskId,
 } from './budgets.js';
 
-export type {
-  AbsoluteBudget,
-  BaselineReference,
-  BaselineStorage,
-  BaselineSummaryData,
-  Budget,
-  BudgetResult,
-  BudgetSummary,
-  BudgetViolation,
-  RelativeBudget,
-  RunId,
-  TaskId,
-};
-
-// Re-export schema-derived types
-export type {
-  BenchmarkDefinition,
-  BenchmarkDefinitionInput,
-  BenchmarkSuite,
-  BenchmarkSuiteInput,
-  BenchmarkTask,
-  BenchmarkTaskInput,
-} from '../core/benchmark-schema.js';
-
 /**
  * Benchmark file structure after parsing
  */
@@ -50,21 +33,6 @@ export interface BenchmarkFile {
   /** File metadata */
   readonly metadata: FileMetadata;
 }
-
-/**
- * ModestBench Core Types
- *
- * Defines the fundamental data structures used throughout the ModestBench
- * system. These types represent benchmark results, metadata, configuration, and
- * system state.
- *
- * Note: BenchmarkDefinition, BenchmarkSuite, and BenchmarkTask types are
- * derived from Zod schemas and re-exported from benchmark-schema.ts for type
- * safety and consistency.
- */
-
-// Re-export identifier helper functions
-export { createRunId, createTaskId } from '../utils/identifiers.js';
 
 /**
  * Represents a complete benchmark run across multiple files
@@ -98,6 +66,22 @@ export interface BenchmarkRun {
   readonly tags?: string[];
 }
 
+export type {
+  AbsoluteBudget,
+  BaselineReference,
+  BaselineStorage,
+  BaselineSummaryData,
+  Budget,
+  BudgetResult,
+  BudgetSummary,
+  BudgetViolation,
+  RelativeBudget,
+  RunId,
+  TaskId,
+};
+
+export type { ModestBenchConfig };
+
 /**
  * CI/CD environment information
  */
@@ -115,6 +99,28 @@ export interface CiInfo {
   /** Pull request number */
   readonly pullRequest?: string;
 }
+
+/**
+ * ModestBench Core Types
+ *
+ * Defines the fundamental data structures used throughout the ModestBench
+ * system. These types represent benchmark results, metadata, configuration, and
+ * system state.
+ *
+ * Note: BenchmarkDefinition, BenchmarkSuite, and BenchmarkTask types are
+ * derived from Zod schemas and re-exported from benchmark-schema.ts for type
+ * safety and consistency.
+ */
+
+// Re-export schema-derived types
+export type {
+  BenchmarkDefinition,
+  BenchmarkDefinitionInput,
+  BenchmarkSuite,
+  BenchmarkSuiteInput,
+  BenchmarkTask,
+  BenchmarkTaskInput,
+} from '../core/benchmark-schema.js';
 
 /**
  * CPU information
@@ -278,6 +284,11 @@ export interface GitInfo {
 }
 
 /**
+ * Configuration options for the JSON reporter
+ */
+export type JsonReporterConfig = z.infer<typeof jsonReporterConfigSchema>;
+
+/**
  * Memory information
  */
 export interface MemoryInfo {
@@ -289,69 +300,15 @@ export interface MemoryInfo {
   readonly used: number;
 }
 
+// Re-export identifier helper functions
+export { createRunId, createTaskId } from '../utils/identifiers.js';
 /**
- * Benchmark configuration
+ * Reporter-specific configuration
  *
- * The JSON Schema for this configuration is available at
- * `dist/schema/modestbench-config.schema.json` after building the project.
- *
- * Config files can optionally include a `$schema` property pointing to the
- * schema file for IDE autocomplete and validation support.
- *
- * @example
- *
- * ```json
- * {
- *   "$schema": "./node_modules/modestbench/dist/schema/modestbench-config.schema.json",
- *   "iterations": 1000,
- *   "reporters": ["human", "json"],
- *   "time": 5000
- * }
- * ```
+ * Provides typed configuration for known reporters. Unknown reporter configs
+ * are allowed via index signature.
  */
-export interface ModestBenchConfig {
-  readonly $schema?: string | undefined;
-  /** Whether to stop on first failure */
-  readonly bail: boolean;
-  /** Name of baseline to use for relative budget comparisons */
-  readonly baseline?: string | undefined;
-  /** How to handle budget violations: 'fail', 'warn', or 'report' */
-  readonly budgetMode?: 'fail' | 'report' | 'warn' | undefined;
-  /** Performance budgets mapped by task identifier */
-  readonly budgets?: Record<string, unknown> | undefined;
-  /** Patterns to exclude from discovery */
-  readonly exclude: string[];
-  /** Tags to exclude from execution */
-  readonly excludeTags: string[];
-  /** Default number of iterations per task */
-  readonly iterations: number;
-  /** How to limit benchmark execution: 'time', 'iterations', 'any', or 'all' */
-  readonly limitBy: 'all' | 'any' | 'iterations' | 'time';
-  /** Custom metadata to attach to runs */
-  readonly metadata: Record<string, unknown>;
-  /** Output directory for reports (undefined means stdout for data reporters) */
-  readonly outputDir?: string;
-  /** Pattern(s) for discovering benchmark files */
-  readonly pattern: string | string[];
-  /** Whether to run in quiet mode */
-  readonly quiet: boolean;
-  /** Configuration for specific reporters */
-  readonly reporterConfig: Record<string, unknown>;
-  /** Reporters to use for output */
-  readonly reporters: string[];
-  /** Tags to include (if empty, include all) */
-  readonly tags: string[];
-  /** Threshold configuration for performance assertions */
-  readonly thresholds: ThresholdConfig;
-  /** Maximum time to spend on each task in milliseconds */
-  readonly time: number;
-  /** Timeout for individual tasks in milliseconds */
-  readonly timeout: number;
-  /** Whether to run in verbose mode */
-  readonly verbose: boolean;
-  /** Number of warmup iterations before measurement */
-  readonly warmup: number;
-}
+export type ReporterConfig = z.infer<typeof reporterConfigSchema>;
 
 /**
  * Summary statistics for a benchmark run
@@ -441,6 +398,8 @@ export interface TaskResult {
 
 /**
  * Threshold configuration for performance assertions
+ *
+ * TODO: Derive from thresholdConfigSchema via z.infer (see #15)
  */
 export interface ThresholdConfig {
   /** Maximum allowed margin of error percentage */

@@ -66,12 +66,12 @@ describe('ModestBenchConfigurationManager', () => {
       const manager = new ModestBenchConfigurationManager();
       const result = manager.merge(
         { reporterConfig: { human: { color: true } } },
-        { reporterConfig: { json: { pretty: false } } },
+        { reporterConfig: { json: { prettyPrint: false } } },
       );
 
       expect(result.reporterConfig, 'to satisfy', {
         human: { color: true },
-        json: { pretty: false },
+        json: { prettyPrint: false },
       });
     });
 

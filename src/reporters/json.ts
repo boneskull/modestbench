@@ -90,7 +90,7 @@ export class JsonReporter extends BaseReporter {
     super('json', options);
 
     this.outputPath = options.outputPath;
-    this.prettyPrint = options.prettyPrint ?? true;
+    this.prettyPrint = options.prettyPrint ?? false;
     this.includeStatistics = options.includeStatistics ?? true;
     this.includeMetadata = options.includeMetadata ?? true;
   }
