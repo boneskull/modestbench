@@ -21,8 +21,8 @@ In Markdown text, refer to the name of this project as `**modestbench**` (bold) 
 
 ```bash
 # Create worktree INSIDE project directory
-git worktree add ..worktrees/<feature-name> -b feature/<feature-name>
-cd ..worktrees/<feature-name>/
+git worktree add ./.worktrees/<feature-name> -b feature/<feature-name>
+cd ./.worktrees/<feature-name>/
 
 # Work on feature...
 
@@ -32,7 +32,7 @@ cd ..worktrees/<feature-name>/
 #### Branch Naming
 
 - Use `feature/<descriptive-name>` (not `feat/`)
-- Worktrees go in `..worktrees/` directory
+- Worktrees go in `./.worktrees/` directory
 
 ### Code Style
 
