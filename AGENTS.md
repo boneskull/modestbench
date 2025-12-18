@@ -34,6 +34,17 @@ cd ./.worktrees/<feature-name>/
 - Use `feature/<descriptive-name>` (not `feat/`)
 - Worktrees go in `./.worktrees/` directory
 
+#### Commit Message Prefixes
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) format with **only** these prefixes:
+
+- `feat` - New features or enhancements
+- `fix` - Bug fixes
+- `docs` - Documentation changes (including `site/` docs)
+- `chore` - Everything else (refactoring, dependencies, tooling, etc.)
+
+**Do NOT use** `refactor`, `style`, `perf`, `test`, `ci`, or other prefixes. When in doubt, use `chore`.
+
 ### Code Style
 
 #### Testing
@@ -124,7 +135,7 @@ class MyReporter implements Reporter {
 ## Quality Standards
 
 - All tests must pass: `npm test`
-- No linting errors: Check with `eslint`
+- No linting errors: Check with `npm run lint`
 - Linear git history (no merge commits)
 - Comprehensive test coverage for new features
 - Documentation updates for user-facing changes
