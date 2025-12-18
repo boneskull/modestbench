@@ -39,12 +39,12 @@ export abstract class BaseReporter implements Reporter {
   protected static formatDuration(this: void, nanoseconds: number): string {
     if (nanoseconds < 1000) {
       return `${nanoseconds.toFixed(2)}ns`;
-    } else if (nanoseconds < 1000000) {
+    } else if (nanoseconds < 1_000_000) {
       return `${(nanoseconds / 1000).toFixed(2)}μs`;
-    } else if (nanoseconds < 1000000000) {
-      return `${(nanoseconds / 1000000).toFixed(2)}ms`;
+    } else if (nanoseconds < 1_000_000_000) {
+      return `${(nanoseconds / 1_000_000).toFixed(2)}ms`;
     } else {
-      return `${(nanoseconds / 1000000000).toFixed(2)}s`;
+      return `${(nanoseconds / 1_000_000_000).toFixed(2)}s`;
     }
   }
 
@@ -57,12 +57,12 @@ export abstract class BaseReporter implements Reporter {
   ): string {
     if (opsPerSecond < 1000) {
       return `${opsPerSecond.toFixed(2)} ops/sec`;
-    } else if (opsPerSecond < 1000000) {
+    } else if (opsPerSecond < 1_000_000) {
       return `${(opsPerSecond / 1000).toFixed(2)}K ops/sec`;
-    } else if (opsPerSecond < 1000000000) {
-      return `${(opsPerSecond / 1000000).toFixed(2)}M ops/sec`;
+    } else if (opsPerSecond < 1_000_000_000) {
+      return `${(opsPerSecond / 1_000_000).toFixed(2)}M ops/sec`;
     } else {
-      return `${(opsPerSecond / 1000000000).toFixed(2)}B ops/sec`;
+      return `${(opsPerSecond / 1_000_000_000).toFixed(2)}B ops/sec`;
     }
   }
 

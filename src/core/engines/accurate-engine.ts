@@ -38,7 +38,7 @@ export class AccurateEngine extends ModestBenchEngine {
    * Maximum iterations per round to prevent overwhelming Node.js test runner
    * and excessive memory usage
    */
-  private static readonly MAX_ITERATIONS_PER_ROUND = 10000;
+  private static readonly MAX_ITERATIONS_PER_ROUND = 10_000;
 
   /**
    * Maximum iterations per round for async functions (much lower due to

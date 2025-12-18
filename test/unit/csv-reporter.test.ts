@@ -50,8 +50,8 @@ const createMockRun = (): BenchmarkRun => {
       env: {},
       hostname: '',
       memory: {
-        free: 8000000000,
-        total: 16000000000,
+        free: 8_000_000_000,
+        total: 16_000_000_000,
         used: 0,
       },
       nodeVersion: 'v20.0.0',
@@ -72,7 +72,7 @@ const createMockRun = (): BenchmarkRun => {
     summary: {
       failedTasks: 0,
       fastest: null,
-      overallMean: 1000000,
+      overallMean: 1_000_000,
       passedTasks: 1,
       slowest: null,
       totalFiles: 1,
@@ -93,15 +93,15 @@ const createMockTaskResult = (
     cv: 5, // 50000/1000000 * 100 = 5%
     iterations: 100,
     marginOfError: 2.5,
-    max: 1050000,
-    mean: 1000000,
-    min: 950000,
+    max: 1_050_000,
+    mean: 1_000_000,
+    min: 950_000,
     name: 'test task',
     opsPerSecond: 1000,
-    p95: 1040000,
-    p99: 1045000,
-    stdDev: 50000,
-    variance: 2500000000,
+    p95: 1_040_000,
+    p99: 1_045_000,
+    stdDev: 50_000,
+    variance: 2_500_000_000,
     ...overrides,
   };
 };

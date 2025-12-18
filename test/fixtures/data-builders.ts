@@ -71,7 +71,7 @@ export const buildMockConfig = (
     tags: [],
     thresholds: {},
     time: 1000,
-    timeout: 30000,
+    timeout: 30_000,
     verbose: false,
     warmup: 0,
     ...overrides,

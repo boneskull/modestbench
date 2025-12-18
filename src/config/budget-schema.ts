@@ -26,7 +26,7 @@ export const parseTimeString = (value: string): number => {
     ms: 1_000_000,
     ns: 1,
     s: 1_000_000_000,
-    us: 1_000,
+    us: 1000,
   };
 
   return num * multipliers[unit as keyof typeof multipliers];

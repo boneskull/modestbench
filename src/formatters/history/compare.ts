@@ -51,8 +51,8 @@ export class HistoryCompareFormatter implements HistoryFormatter<CompareResult> 
       lines.push('');
 
       for (const comparison of data.tasksInBoth) {
-        const mean1 = comparison.run1!.mean / 1000000; // Convert to ms
-        const mean2 = comparison.run2!.mean / 1000000;
+        const mean1 = comparison.run1!.mean / 1_000_000; // Convert to ms
+        const mean2 = comparison.run2!.mean / 1_000_000;
         const changeSign = comparison.percentChange >= 0 ? '+' : '';
         const changeStr = `${changeSign}${comparison.percentChange.toFixed(1)}%`;
 
@@ -73,8 +73,8 @@ export class HistoryCompareFormatter implements HistoryFormatter<CompareResult> 
         );
 
         // Min - highlight higher number
-        const min1 = comparison.run1!.min / 1000000;
-        const min2 = comparison.run2!.min / 1000000;
+        const min1 = comparison.run1!.min / 1_000_000;
+        const min2 = comparison.run2!.min / 1_000_000;
         const minHigher = min2 > min1;
         const min1Str = minHigher
           ? colorize('magenta', `${min1.toFixed(3)}ms`)
@@ -87,8 +87,8 @@ export class HistoryCompareFormatter implements HistoryFormatter<CompareResult> 
         );
 
         // Max - highlight higher number
-        const max1 = comparison.run1!.max / 1000000;
-        const max2 = comparison.run2!.max / 1000000;
+        const max1 = comparison.run1!.max / 1_000_000;
+        const max2 = comparison.run2!.max / 1_000_000;
         const maxHigher = max2 > max1;
         const max1Str = maxHigher
           ? colorize('magenta', `${max1.toFixed(3)}ms`)

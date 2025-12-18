@@ -122,7 +122,7 @@ export default {
         {
           cwd: testDir,
           env: { ...process.env, NODE_ENV: 'test' },
-          timeout: 30000, // 30 second timeout
+          timeout: 30_000, // 30 second timeout
         },
       );
 

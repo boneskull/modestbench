@@ -37,10 +37,10 @@ export class BudgetEvaluator {
    * Format time in nanoseconds to human-readable string
    */
   private static formatTime(this: void, nanoseconds: number): string {
-    if (nanoseconds < 1_000) {
+    if (nanoseconds < 1000) {
       return `${nanoseconds.toFixed(0)}ns`;
     } else if (nanoseconds < 1_000_000) {
-      return `${(nanoseconds / 1_000).toFixed(2)}μs`;
+      return `${(nanoseconds / 1000).toFixed(2)}μs`;
     } else if (nanoseconds < 1_000_000_000) {
       return `${(nanoseconds / 1_000_000).toFixed(2)}ms`;
     } else {

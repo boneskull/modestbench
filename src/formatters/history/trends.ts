@@ -24,7 +24,7 @@ const NS_PER_MS = 1_000_000;
 /**
  * Nanoseconds per microsecond conversion constant
  */
-const NS_PER_US = 1_000;
+const NS_PER_US = 1000;
 
 /**
  * Intelligently format a time range with appropriate precision Displays

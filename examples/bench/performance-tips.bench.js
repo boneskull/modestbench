@@ -29,7 +29,7 @@ export default {
       benchmarks: {
         // Fast operations need more iterations
         'Array Access': {
-          config: { iterations: 10000 },
+          config: { iterations: 10_000 },
           fn: () => iterationState.smallArray[50],
           tags: ['fast', 'array'],
         },
@@ -46,7 +46,7 @@ export default {
         iterationState.smallArray = Array.from({ length: 100 }, (_, i) => i);
         iterationState.largeComputation = () => {
           let result = 0;
-          for (let i = 0; i < 100000; i++) {
+          for (let i = 0; i < 100_000; i++) {
             result += Math.sqrt(i);
           }
           return result;
@@ -84,7 +84,7 @@ export default {
 
       setup: () => {
         // Generate large dataset once for all benchmarks
-        optimizationState.dataset = Array.from({ length: 10000 }, (_, i) => ({
+        optimizationState.dataset = Array.from({ length: 10_000 }, (_, i) => ({
           id: i,
           name: `item-${i}`,
           value: Math.random(),

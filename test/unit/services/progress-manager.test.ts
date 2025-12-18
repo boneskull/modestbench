@@ -35,11 +35,11 @@ const createMockRun = (
   endTime: new Date(),
   environment: {
     arch: 'x64',
-    availableMemory: 1000000,
+    availableMemory: 1_000_000,
     cpu: { cores: 4, model: 'Test CPU', speed: 2000 },
     env: {},
     hostname: 'test',
-    memory: { free: 500000, total: 1000000, used: 500000 },
+    memory: { free: 500_000, total: 1_000_000, used: 500_000 },
     nodeVersion: 'v20.0.0',
     platform: 'linux',
   },
@@ -199,7 +199,7 @@ describe('ModestBenchProgressManager', () => {
     it('should format seconds correctly', () => {
       const manager = new ModestBenchProgressManager();
       manager.initialize(createMockRun());
-      (manager as any).state.elapsed = 42000; // 42 seconds in ms
+      (manager as any).state.elapsed = 42_000; // 42 seconds in ms
 
       const formatted = manager.getFormattedElapsed();
 
@@ -209,7 +209,7 @@ describe('ModestBenchProgressManager', () => {
     it('should format minutes and seconds correctly', () => {
       const manager = new ModestBenchProgressManager();
       manager.initialize(createMockRun());
-      (manager as any).state.elapsed = 330000; // 5m 30s
+      (manager as any).state.elapsed = 330_000; // 5m 30s
 
       const formatted = manager.getFormattedElapsed();
 
@@ -219,7 +219,7 @@ describe('ModestBenchProgressManager', () => {
     it('should format hours, minutes, and seconds correctly', () => {
       const manager = new ModestBenchProgressManager();
       manager.initialize(createMockRun());
-      (manager as any).state.elapsed = 8145000; // 2h 15m 45s
+      (manager as any).state.elapsed = 8_145_000; // 2h 15m 45s
 
       const formatted = manager.getFormattedElapsed();
 
@@ -239,7 +239,7 @@ describe('ModestBenchProgressManager', () => {
     it('should handle very large values', () => {
       const manager = new ModestBenchProgressManager();
       manager.initialize(createMockRun());
-      (manager as any).state.elapsed = 36000000; // 10 hours
+      (manager as any).state.elapsed = 36_000_000; // 10 hours
 
       const formatted = manager.getFormattedElapsed();
 
@@ -249,7 +249,7 @@ describe('ModestBenchProgressManager', () => {
     it('should format exactly 1 minute as 1m 0s', () => {
       const manager = new ModestBenchProgressManager();
       manager.initialize(createMockRun());
-      (manager as any).state.elapsed = 60000; // 1 minute
+      (manager as any).state.elapsed = 60_000; // 1 minute
 
       const formatted = manager.getFormattedElapsed();
 
@@ -284,7 +284,7 @@ describe('ModestBenchProgressManager', () => {
       manager.update({ tasksCompleted: 50 });
 
       // Mock the estimateCompletion to return a specific time
-      const futureTime = new Date(Date.now() + 45000); // 45 seconds from now
+      const futureTime = new Date(Date.now() + 45_000); // 45 seconds from now
       manager.estimateCompletion = () => futureTime;
 
       const formatted = manager.getFormattedEstimate();
@@ -298,7 +298,7 @@ describe('ModestBenchProgressManager', () => {
       advanceTime(100); // Advance past throttle time
       manager.update({ tasksCompleted: 50 });
 
-      const futureTime = new Date(Date.now() + 150000); // 2m 30s from now
+      const futureTime = new Date(Date.now() + 150_000); // 2m 30s from now
       manager.estimateCompletion = () => futureTime;
 
       const formatted = manager.getFormattedEstimate();
@@ -312,7 +312,7 @@ describe('ModestBenchProgressManager', () => {
       advanceTime(100); // Advance past throttle time
       manager.update({ tasksCompleted: 10 });
 
-      const futureTime = new Date(Date.now() + 7200000); // 2 hours from now
+      const futureTime = new Date(Date.now() + 7_200_000); // 2 hours from now
       manager.estimateCompletion = () => futureTime;
 
       const formatted = manager.getFormattedEstimate();

@@ -28,7 +28,7 @@ const createMockTaskResult = function (
     metadata: {},
     min: 500,
     name: 'test-task',
-    opsPerSecond: 1333333.33,
+    opsPerSecond: 1_333_333.33,
     p95: 950,
     p99: 980,
     stdDev: 50,
@@ -69,7 +69,7 @@ describe('JsonReporter', () => {
         p99: 1980,
 
         stdDev: 100,
-        variance: 10000,
+        variance: 10_000,
       });
 
       const task3 = createMockTaskResult({
@@ -83,7 +83,7 @@ describe('JsonReporter', () => {
         p99: 2970,
 
         stdDev: 150,
-        variance: 22500,
+        variance: 22_500,
       });
 
       // Call onTaskResult for each task
@@ -196,7 +196,7 @@ describe('JsonReporter', () => {
         p99: 1980,
 
         stdDev: 100,
-        variance: 10000,
+        variance: 10_000,
       });
 
       const mediumTask = createMockTaskResult({
@@ -254,7 +254,7 @@ describe('JsonReporter', () => {
         p99: 1980,
 
         stdDev: 100,
-        variance: 10000,
+        variance: 10_000,
       });
 
       reporter.onTaskResult(task1);
@@ -341,7 +341,7 @@ describe('JsonReporter', () => {
         p99: 1980,
 
         stdDev: 100,
-        variance: 10000,
+        variance: 10_000,
       });
 
       reporter.onTaskResult(task2);

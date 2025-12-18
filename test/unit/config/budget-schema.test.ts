@@ -134,7 +134,7 @@ describe('Budget Schema', () => {
       const result = budgetSchema.parse({
         absolute: {
           maxTime: '10ms',
-          minOpsPerSec: 100000,
+          minOpsPerSec: 100_000,
         },
         relative: {
           baseline: 'production-v1.0',
@@ -145,7 +145,7 @@ describe('Budget Schema', () => {
       expect(result, 'to satisfy', {
         absolute: {
           maxTime: 10_000_000,
-          minOpsPerSec: 100000,
+          minOpsPerSec: 100_000,
         },
         relative: {
           baseline: 'production-v1.0',
@@ -179,9 +179,9 @@ describe('Budget Schema', () => {
             runId: 'k3m9x2p',
             summary: {
               parseConfig: {
-                mean: 8200000,
-                opsPerSecond: 121951,
-                p99: 9000000,
+                mean: 8_200_000,
+                opsPerSecond: 121_951,
+                p99: 9_000_000,
               },
             },
           },

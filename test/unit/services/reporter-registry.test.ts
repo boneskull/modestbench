@@ -70,23 +70,23 @@ describe('BaseReporter', () => {
 
       expect(reporter.testFormatDuration(1000), 'to equal', '1.00μs');
       expect(reporter.testFormatDuration(5000), 'to equal', '5.00μs');
-      expect(reporter.testFormatDuration(999999), 'to equal', '1000.00μs');
+      expect(reporter.testFormatDuration(999_999), 'to equal', '1000.00μs');
     });
 
     it('should format milliseconds (1ms - 1s)', () => {
       const reporter = new TestReporter();
 
-      expect(reporter.testFormatDuration(1000000), 'to equal', '1.00ms');
-      expect(reporter.testFormatDuration(5500000), 'to equal', '5.50ms');
-      expect(reporter.testFormatDuration(999999999), 'to equal', '1000.00ms');
+      expect(reporter.testFormatDuration(1_000_000), 'to equal', '1.00ms');
+      expect(reporter.testFormatDuration(5_500_000), 'to equal', '5.50ms');
+      expect(reporter.testFormatDuration(999_999_999), 'to equal', '1000.00ms');
     });
 
     it('should format seconds (>= 1s)', () => {
       const reporter = new TestReporter();
 
-      expect(reporter.testFormatDuration(1000000000), 'to equal', '1.00s');
-      expect(reporter.testFormatDuration(2500000000), 'to equal', '2.50s');
-      expect(reporter.testFormatDuration(60000000000), 'to equal', '60.00s');
+      expect(reporter.testFormatDuration(1_000_000_000), 'to equal', '1.00s');
+      expect(reporter.testFormatDuration(2_500_000_000), 'to equal', '2.50s');
+      expect(reporter.testFormatDuration(60_000_000_000), 'to equal', '60.00s');
     });
 
     it('should use 2 decimal places', () => {
@@ -94,7 +94,7 @@ describe('BaseReporter', () => {
 
       expect(reporter.testFormatDuration(1234), 'to match', /^\d+\.\d{2}μs$/);
       expect(
-        reporter.testFormatDuration(1234567),
+        reporter.testFormatDuration(1_234_567),
         'to match',
         /^\d+\.\d{2}ms$/,
       );
@@ -109,7 +109,7 @@ describe('BaseReporter', () => {
     it('should handle very large values', () => {
       const reporter = new TestReporter();
 
-      const result = reporter.testFormatDuration(1000000000000); // 1000 seconds
+      const result = reporter.testFormatDuration(1_000_000_000_000); // 1000 seconds
       expect(result, 'to contain', 's');
       expect(result, 'to match', /^\d+\.\d{2}s$/);
     });
@@ -124,10 +124,10 @@ describe('BaseReporter', () => {
       expect(reporter.testFormatDuration(1000), 'to contain', 'μs');
 
       // Just under millisecond threshold
-      expect(reporter.testFormatDuration(999999), 'to contain', 'μs');
+      expect(reporter.testFormatDuration(999_999), 'to contain', 'μs');
 
       // Just at millisecond threshold
-      expect(reporter.testFormatDuration(1000000), 'to contain', 'ms');
+      expect(reporter.testFormatDuration(1_000_000), 'to contain', 'ms');
     });
   });
 
@@ -162,7 +162,7 @@ describe('BaseReporter', () => {
         '5.50K ops/sec',
       );
       expect(
-        reporter.testFormatOpsPerSecond(999999),
+        reporter.testFormatOpsPerSecond(999_999),
         'to equal',
         '1000.00K ops/sec',
       );
@@ -172,17 +172,17 @@ describe('BaseReporter', () => {
       const reporter = new TestReporter();
 
       expect(
-        reporter.testFormatOpsPerSecond(1000000),
+        reporter.testFormatOpsPerSecond(1_000_000),
         'to equal',
         '1.00M ops/sec',
       );
       expect(
-        reporter.testFormatOpsPerSecond(2500000),
+        reporter.testFormatOpsPerSecond(2_500_000),
         'to equal',
         '2.50M ops/sec',
       );
       expect(
-        reporter.testFormatOpsPerSecond(999999999),
+        reporter.testFormatOpsPerSecond(999_999_999),
         'to equal',
         '1000.00M ops/sec',
       );
@@ -192,12 +192,12 @@ describe('BaseReporter', () => {
       const reporter = new TestReporter();
 
       expect(
-        reporter.testFormatOpsPerSecond(1000000000),
+        reporter.testFormatOpsPerSecond(1_000_000_000),
         'to equal',
         '1.00B ops/sec',
       );
       expect(
-        reporter.testFormatOpsPerSecond(5500000000),
+        reporter.testFormatOpsPerSecond(5_500_000_000),
         'to equal',
         '5.50B ops/sec',
       );
@@ -212,7 +212,7 @@ describe('BaseReporter', () => {
         /^\d+\.\d{2} ops\/sec$/,
       );
       expect(
-        reporter.testFormatOpsPerSecond(123456),
+        reporter.testFormatOpsPerSecond(123_456),
         'to match',
         /^\d+\.\d{2}[KMB] ops\/sec$/,
       );
@@ -242,14 +242,14 @@ describe('BaseReporter', () => {
 
       // Just under M threshold
       expect(
-        reporter.testFormatOpsPerSecond(999999),
+        reporter.testFormatOpsPerSecond(999_999),
         'to contain',
         'K ops/sec',
       );
 
       // Just at M threshold
       expect(
-        reporter.testFormatOpsPerSecond(1000000),
+        reporter.testFormatOpsPerSecond(1_000_000),
         'to contain',
         'M ops/sec',
       );

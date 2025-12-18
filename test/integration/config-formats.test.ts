@@ -202,14 +202,14 @@ describe('Configuration format loading', () => {
 
       const config = await manager.load(configPath, {
         iterations: 1000, // Override TS value of 500
-        timeout: 120000, // Override TS value of 60000
+        timeout: 120_000, // Override TS value of 60000
       });
 
       expect(config, 'to satisfy', {
         iterations: 1000, // CLI override
         pattern: 'test/**/*.bench.ts', // From TS
         time: 2000, // From TS
-        timeout: 120000, // CLI override
+        timeout: 120_000, // CLI override
       });
     });
 

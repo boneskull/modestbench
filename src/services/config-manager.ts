@@ -63,7 +63,7 @@ const DEFAULT_CONFIG: ModestBenchConfig = {
   tags: [],
   thresholds: {},
   time: 1000, // 1 second minimum for tinybench to gather samples
-  timeout: 30000, // 30 seconds
+  timeout: 30_000, // 30 seconds
   verbose: false, // No verbose output by default
   warmup: 30, // Light warmup by default - enough for basic JIT optimization
 };
@@ -291,7 +291,7 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       }
 
       // Warn about potentially long runtime
-      if (validConfig.iterations > 1000 && validConfig.time > 60000) {
+      if (validConfig.iterations > 1000 && validConfig.time > 60_000) {
         warnings.push({
           code: 'LONG_RUNTIME_WARNING',
           file: 'configuration',

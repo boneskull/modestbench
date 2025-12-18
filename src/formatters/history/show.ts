@@ -148,8 +148,8 @@ const formatTime = (ns: number): string => {
   if (ns < 1000) {
     return `${ns.toFixed(2)}ns`;
   }
-  if (ns < 1000000) {
+  if (ns < 1_000_000) {
     return `${(ns / 1000).toFixed(3)}µs`;
   }
-  return `${(ns / 1000000).toFixed(3)}ms`;
+  return `${(ns / 1_000_000).toFixed(3)}ms`;
 };
