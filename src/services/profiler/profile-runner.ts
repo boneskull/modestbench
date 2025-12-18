@@ -27,16 +27,31 @@ interface RunOptions {
 }
 
 /**
+ * Node.js major version number
+ */
+const nodeMajorVersion = Number(process.versions.node.split('.')[0]);
+
+/**
  * Run a command with Node.js profiling enabled
  *
  * @param command - Command to run (e.g., "npm test")
  * @param options - Execution options
  * @returns Path to generated *.cpuprofile file
+ * @throws Error if running on Node.js 20 (--cpu-prof not allowed in
+ *   NODE_OPTIONS)
  */
 export const runWithProfiling = async (
   command: string,
   options: RunOptions = {},
 ): Promise<string> => {
+  // Node.js 20 blocks --cpu-prof in NODE_OPTIONS for security reasons
+  if (nodeMajorVersion === 20) {
+    throw new Error(
+      'CPU profiling requires Node.js 22 or later. ' +
+        'Node.js 20 blocks --cpu-prof in NODE_OPTIONS for security reasons.',
+    );
+  }
+
   const cwd = options.cwd || process.cwd();
 
   // Create profiles directory

@@ -8,6 +8,19 @@ import { fileURLToPath } from 'node:url';
 const cliPath = fileURLToPath(new URL('../dist/cli/index.js', import.meta.url));
 
 /**
+ * Node.js major version number
+ */
+export const nodeMajorVersion = Number(process.versions.node.split('.')[0]);
+
+/**
+ * Whether we're running on Node.js v20
+ *
+ * Useful for skipping tests that use features not available in v20, such as
+ * `--cpu-prof` in `NODE_OPTIONS` (blocked for security reasons in v20).
+ */
+export const isNode20 = nodeMajorVersion === 20;
+
+/**
  * Helper function to run CLI commands and capture output
  */
 export const runCommand = async (
