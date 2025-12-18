@@ -127,7 +127,7 @@
     "minimatch": "10.1.1",
     "tinybench": "6.0.0",
     "yargs": "18.0.0",
-    "zod": "4.1.13"
+    "zod": "4.2.0"
   },
   "devDependencies": {
     "@astrojs/mdx": "4.3.13",
