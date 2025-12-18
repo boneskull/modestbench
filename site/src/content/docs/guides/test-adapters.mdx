@@ -147,17 +147,19 @@ modestbench test ava "test/*.js"
 
 The `test` command uses ES module loader hooks to intercept imports of your test framework. When your test file imports `jest`, `mocha`, `ava`, or `node:test`, modestbench provides a mock implementation that captures test definitions instead of running them.
 
-```text
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Test File     │ ──▶ │  Loader Hooks    │ ──▶ │  Mock Framework │
-│ import 'mocha'  │     │  Intercept import│     │  Capture tests  │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-                                                          │
-                                                          ▼
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Reporter      │ ◀── │  Benchmark Run   │ ◀── │  Convert to     │
-│   Output        │     │  Execute N times │     │  Benchmarks     │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
+```mermaid
+flowchart TD
+    subgraph capture["Test Capture"]
+        A["Test File<br/><code>import 'mocha'</code>"] --> B["Loader Hooks<br/><em>Intercept import</em>"]
+        B --> C["Mock Framework<br/><em>Capture tests</em>"]
+    end
+
+    subgraph execute["Benchmark Execution"]
+        D["Convert to<br/>Benchmarks"] --> E["Benchmark Run<br/><em>Execute N times</em>"]
+        E --> F["Reporter<br/>Output"]
+    end
+
+    capture --> execute
 ```
 
 ### Test → Benchmark Mapping
@@ -320,3 +322,4 @@ modestbench run "benchmarks/**/*.bench.js" --iterations 1000
 - Learn about [CLI options](/guides/cli/#modestbench-test) for the test command
 - Explore [Output Formats](/guides/output/) for reporter options
 - Set up [Performance Budgets](/guides/performance-budgets/) to enforce standards
+
