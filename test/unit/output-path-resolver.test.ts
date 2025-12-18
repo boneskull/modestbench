@@ -76,12 +76,42 @@ describe('generateTimestampedFilename', () => {
     );
   });
 
-  it('should generate different filenames at different times', async () => {
-    const result1 = generateTimestampedFilename('json');
-    // Wait a second to ensure different timestamp
-    await new Promise((resolve) => setTimeout(resolve, 1100));
-    const result2 = generateTimestampedFilename('json');
-    expect(result1, 'not to equal', result2);
+  it('should generate different filenames at different times', () => {
+    const RealDate = globalThis.Date;
+
+    const fixedTime1 = new RealDate('2020-01-01T00:00:00Z').getTime();
+    const fixedTime2 = new RealDate('2020-01-01T00:00:01Z').getTime();
+
+    const mockDate = (ms: number) => {
+      const MockDate = class extends RealDate {
+        constructor(...args: Parameters<typeof RealDate>) {
+          if (args.length === 0) {
+            super(ms);
+          } else {
+            super(...args);
+          }
+        }
+
+        static override now() {
+          return ms;
+        }
+      };
+      globalThis.Date = MockDate as typeof Date;
+    };
+
+    try {
+      mockDate(fixedTime1);
+      const result1 = generateTimestampedFilename('json');
+
+      mockDate(fixedTime2);
+      const result2 = generateTimestampedFilename('json');
+
+      expect(result1, 'not to equal', result2);
+      expect(result1, 'to equal', 'benchmarks-2020-01-01-00-00-00.json');
+      expect(result2, 'to equal', 'benchmarks-2020-01-01-00-00-01.json');
+    } finally {
+      globalThis.Date = RealDate;
+    }
   });
 
   it('should use zero-padded date and time components', () => {

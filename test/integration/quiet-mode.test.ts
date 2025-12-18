@@ -158,7 +158,7 @@ describe('Quiet Mode Integration Tests', () => {
       // Both JSON and CSV files should be written with timestamped names
       const jsonFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.json$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
       );
       expect(jsonFile, 'to be truthy');
       const jsonContent = await readFile(jsonFile!, 'utf-8');
@@ -166,7 +166,7 @@ describe('Quiet Mode Integration Tests', () => {
 
       const csvFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.csv$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.csv$/,
       );
       expect(csvFile, 'to be truthy');
       const csvContent = await readFile(csvFile!, 'utf-8');
@@ -227,7 +227,7 @@ describe('Quiet Mode Integration Tests', () => {
       // Verify file was written with timestamped name
       const outputFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.json$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
       );
       expect(outputFile, 'to be truthy');
       const fileExists = existsSync(outputFile!);

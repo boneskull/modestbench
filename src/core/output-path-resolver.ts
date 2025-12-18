@@ -4,12 +4,13 @@ import { extname, isAbsolute, join, resolve } from 'node:path';
  * Generates a timestamped filename for benchmark output files.
  *
  * @param extension - File extension without the dot (e.g., 'json', 'csv')
- * @returns Filename in format `benchmarks-YYYY-MM-DD-HH-MM-SS.{extension}`
+ * @returns Filename in format `benchmarks-YYYY-MM-DD-HH-MM-SS.{extension}` (UTC
+ *   time)
  */
 export const generateTimestampedFilename = (extension: string): string => {
   const now = new Date();
   const pad = (n: number) => n.toString().padStart(2, '0');
-  const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  const timestamp = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}-${pad(now.getUTCHours())}-${pad(now.getUTCMinutes())}-${pad(now.getUTCSeconds())}`;
   return `benchmarks-${timestamp}.${extension}`;
 };
 

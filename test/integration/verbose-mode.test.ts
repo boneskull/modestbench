@@ -251,7 +251,7 @@ describe('Verbose Mode Integration Tests', () => {
       // JSON data should be written to file with timestamped name
       const jsonFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.json$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
       );
       expect(jsonFile, 'to be truthy');
       const jsonContent = await readFile(jsonFile!, 'utf-8');
@@ -277,7 +277,7 @@ describe('Verbose Mode Integration Tests', () => {
       // JSON data should be written to file with timestamped name
       const jsonFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.json$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
       );
       expect(jsonFile, 'to be truthy');
       const jsonContent = await readFile(jsonFile!, 'utf-8');
@@ -307,7 +307,7 @@ describe('Verbose Mode Integration Tests', () => {
       // CSV data should be written to file with timestamped name
       const csvFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.csv$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.csv$/,
       );
       expect(csvFile, 'to be truthy');
       const csvContent = await readFile(csvFile!, 'utf-8');

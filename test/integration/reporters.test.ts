@@ -245,11 +245,11 @@ describe('Multiple reporter output formats', () => {
       // Should create json and csv files with timestamped names
       const jsonFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.json$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
       );
       const csvFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.csv$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.csv$/,
       );
 
       expect(jsonFile, 'to be truthy');
@@ -305,7 +305,7 @@ describe('Multiple reporter output formats', () => {
       // Should create nested directories and timestamped files
       const jsonFile = await findFileByPattern(
         outputDir,
-        /^benchmarks-.*\.json$/,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
       );
       expect(jsonFile, 'to be truthy');
       const jsonContent = await readFile(jsonFile!, 'utf-8');
