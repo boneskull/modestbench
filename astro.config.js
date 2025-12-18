@@ -28,6 +28,12 @@ export default defineConfig({
             { label: 'CLI Reference', link: '/guides/cli/' },
             { label: 'Output Formats', link: '/guides/output/' },
             { label: 'Understanding Statistics', link: '/guides/statistics/' },
+            {
+              label: 'Performance Budgets',
+              link: '/guides/performance-budgets/',
+            },
+            { label: 'Profiling', link: '/guides/profiling/' },
+            { label: 'Test Adapters', link: '/guides/test-adapters/' },
             { label: 'Advanced Usage', link: '/guides/advanced/' },
             { label: 'Custom Reporters', link: '/guides/custom-reporters/' },
           ],
