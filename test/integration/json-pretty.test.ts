@@ -31,7 +31,11 @@ describe('JSON reporter prettyPrint configuration', () => {
     it('should output compact JSON by default (no newlines in JSON body)', async () => {
       const outputFile = join(tempDir, 'results.json');
 
-      // Create an empty config file to override any project-level config
+      // Create an explicit, empty config file and pass it via `--config` so that:
+      //   - no project-/repo-level modestbench.config.json is picked up, and
+      //   - the JSON reporter behavior observed here reflects the built-in defaults.
+      // The tempDir is a fresh directory created for this test, so this empty file
+      // effectively neutralizes any parent config and lets us validate default behavior.
       const configPath = join(tempDir, 'modestbench.config.json');
       await writeFile(configPath, JSON.stringify({}));
 

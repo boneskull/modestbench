@@ -399,8 +399,6 @@ export interface TaskResult {
 
 /**
  * Threshold configuration for performance assertions
- *
- * TODO: Derive from thresholdConfigSchema via z.infer (see #15)
  */
 export interface ThresholdConfig {
   /** Maximum allowed margin of error percentage */
