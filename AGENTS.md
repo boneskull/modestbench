@@ -64,7 +64,9 @@ cd ./.worktrees/<feature-name>/
    - Keep functions focused (see `skills/coding/keeping-routines-focused`)
    - Name by domain (see `skills/coding/naming-by-domain`)
 3. **Linting:** Run `npm run fix` to fix linting errors (and report remaining errors)
-4. **Testing:** Run `npm test` - aim for high coverage (see `skills/debugging/verification-before-completion`)
+4. **Testing:**
+   1. To run THE WHOLE SUITE, execute `npm test` - aim for high coverage (see `skills/debugging/verification-before-completion`)
+   2. To run a SPECIFIC TEST FILE, execute `npm test:base -- [options] <path-to-test-file>`
 5. **Building:** `npm run build` before committing
 
 ### Common Patterns
