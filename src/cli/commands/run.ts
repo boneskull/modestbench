@@ -11,6 +11,7 @@ import type {
   BenchmarkRun,
   ModestBenchConfig,
   Reporter,
+  ReporterConfig,
 } from '../../types/index.js';
 import type { CliContext } from '../index.js';
 
@@ -61,6 +62,7 @@ interface RunOptions {
   excludeTags?: string[] | undefined;
   iterations?: number | undefined;
   json?: boolean | undefined;
+  jsonPretty?: boolean | undefined;
   noColor?: boolean | undefined;
   outputDir?: string | undefined;
   outputFile?: string | undefined;
@@ -126,6 +128,7 @@ export const handleRunCommand = async (
       options.outputDir,
       options.outputFile,
       options.progress,
+      options.jsonPretty,
     );
 
     // Step 3: Discovery phase
@@ -389,7 +392,7 @@ const setupReporters = async (
   context: CliContext,
   config: {
     outputDir?: string;
-    reporterConfig?: Record<string, unknown>;
+    reporterConfig?: ReporterConfig;
     reporters?: string[];
   },
   isVerbose: boolean,
@@ -398,6 +401,7 @@ const setupReporters = async (
   explicitOutputDir?: string,
   explicitOutputFile?: string,
   progressOption?: boolean,
+  explicitJsonPretty?: boolean,
 ): Promise<Reporter[]> => {
   try {
     const reporters: Reporter[] = [];
@@ -453,9 +457,14 @@ const setupReporters = async (
               explicitOutputFile,
               'results.json',
             );
+            // Precedence: CLI flag > config file > default (false)
+            const prettyPrint =
+              explicitJsonPretty ??
+              config.reporterConfig?.json?.prettyPrint ??
+              false;
             reporter = new JsonReporter({
               ...(outputPath ? { outputPath } : {}),
-              prettyPrint: true,
+              prettyPrint,
             });
             break;
           }

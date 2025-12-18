@@ -276,6 +276,12 @@ export const main = async (
                 'Benchmark engine: tinybench (default) or accurate (requires --allow-natives-syntax)',
               type: 'string',
             })
+            .option('json-pretty', {
+              defaultDescription: 'false',
+              description:
+                'Pretty-print JSON output (only affects json reporter)',
+              type: 'boolean',
+            })
             .example([
               ['$0 run', 'Run benchmarks in current directory and bench/'],
               ['$0 run benchmarks/', 'Run all benchmarks in a directory'],
@@ -315,6 +321,7 @@ export const main = async (
             excludeTags: argv['exclude-tag'],
             iterations: argv.iterations,
             json: argv.json,
+            jsonPretty: argv['json-pretty'],
             noColor: argv.noColor,
             outputDir: argv.output,
             outputFile: argv['output-file'],
@@ -1133,7 +1140,7 @@ const createCliContext = async (
     engine.registerReporter(
       'json',
       new JsonReporter({
-        prettyPrint: true,
+        prettyPrint: false,
       }),
     );
 
