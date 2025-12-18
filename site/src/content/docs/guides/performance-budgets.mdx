@@ -227,9 +227,7 @@ Combine wildcards with exact matches for fine-grained control:
       "Authentication": {
         "*": {
           "relative": { "maxRegression": "10%" }
-        }
-      },
-      "Authentication": {
+        },
         "login": {
           "absolute": { "maxTime": "50ms" },
           "relative": { "maxRegression": "5%" }
@@ -252,10 +250,10 @@ When multiple patterns match a task, the **most specific** pattern wins:
 
 | Pattern Component | Points |
 |-------------------|--------|
-| Exact file name | +3 |
-| Partial glob (e.g., `benchmarks/*.js`) | +2 |
-| Full glob (`**/*.js`) | +1 |
-| Exact suite name | +2 |
+| Exact file name | +2 |
+| Glob with specific parts (e.g., `**/api/**/*.bench.js`) | +1 |
+| Full glob (`**/*` or `*`) | +0 |
+| Exact suite name | +1 |
 | Exact task name | +1 |
 | Wildcard (`*`) | +0 |
 
@@ -266,9 +264,9 @@ For task `api.bench.js/Authentication/login`:
 | Pattern | Specificity | Result |
 |---------|-------------|--------|
 | `**/*.bench.js/*/*` | 1 | Lowest priority |
-| `api.bench.js/*/*` | 3 | Medium priority |
-| `api.bench.js/Authentication/*` | 5 | Higher priority |
-| `api.bench.js/Authentication/login` | 6 | **Wins** |
+| `api.bench.js/*/*` | 2 | Medium priority |
+| `api.bench.js/Authentication/*` | 3 | Higher priority |
+| `api.bench.js/Authentication/login` | 4 | **Wins** |
 
 When patterns have equal specificity, the budgets are **merged**, with later definitions overriding earlier ones.
 
