@@ -214,7 +214,7 @@
     }
   },
   "lint-staged": {
-    "*.astro": [
+    "*.{astro,css}": [
       "prettier --write"
     ],
     "*.{ts,cts,js,cjs,yml,json5}": [
