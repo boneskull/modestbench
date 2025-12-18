@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import type {
   jsonReporterConfigSchema,
   ModestBenchConfig,
+  ModestBenchConfigInput,
   reporterConfigSchema,
 } from '../config/schema.js';
 // Budget-related types
@@ -80,7 +81,7 @@ export type {
   TaskId,
 };
 
-export type { ModestBenchConfig };
+export type { ModestBenchConfig, ModestBenchConfigInput };
 
 // Re-export schema-derived types
 export type {
@@ -90,7 +91,7 @@ export type {
   BenchmarkSuiteInput,
   BenchmarkTask,
   BenchmarkTaskInput,
-} from '../core/benchmark-schema.js';
+} from '../config/benchmark-schema.js';
 
 /**
  * CI/CD environment information
@@ -399,6 +400,8 @@ export interface TaskResult {
 
 /**
  * Threshold configuration for performance assertions
+ *
+ * TODO: Derive from thresholdConfigSchema via z.infer (see #15)
  */
 export interface ThresholdConfig {
   /** Maximum allowed margin of error percentage */

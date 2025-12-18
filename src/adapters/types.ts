@@ -8,7 +8,7 @@
 import type {
   BenchmarkDefinition,
   BenchmarkSuite,
-} from '../core/benchmark-schema.js';
+} from '../config/benchmark-schema.js';
 
 /**
  * A captured test suite (describe block) from a test framework

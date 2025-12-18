@@ -11,7 +11,7 @@ import { z } from 'zod';
 
 import type { ModestBenchConfig } from '../types/core.js';
 
-import { partialModestBenchConfigSchema } from '../config/schema.js';
+import { partialModestBenchConfigSchema } from './schema.js';
 
 /**
  * Schema for benchmark functions

@@ -10,7 +10,7 @@ import { describe, it } from 'node:test';
 
 import type { BenchmarkSuite } from '../../src/types/core.js';
 
-import { benchmarkFileSchema } from '../../src/core/benchmark-schema.js';
+import { benchmarkFileSchema } from '../../src/config/benchmark-schema.js';
 
 describe('Benchmark file format validation', () => {
   describe('traditional suite-based format', () => {

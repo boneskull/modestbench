@@ -181,7 +181,6 @@
       "@types/wallabyjs",
       "@types/mocha",
       "markdownlint-cli2-formatter-pretty",
-      "asciinema-player",
       "@astrojs/mdx",
       "astro-broken-link-checker",
       "jest",
