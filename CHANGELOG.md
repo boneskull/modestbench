@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.8.0...modestbench-v0.9.0) (2025-12-18)
+
+
+### Features
+
+* **budgets:** add wildcard pattern support for budget configuration ([945fb87](https://github.com/boneskull/modestbench/commit/945fb8783e213a6ee9549765ada00ad17e4664f8))
+* **json-reporter:** make compact output the default ([#197](https://github.com/boneskull/modestbench/issues/197)) ([9fe0dd6](https://github.com/boneskull/modestbench/commit/9fe0dd66a5a573211b549487809f12f4b05b7901))
+
+
+### Bug Fixes
+
+* **reporters:** use timestamped filenames for JSON/CSV output ([#200](https://github.com/boneskull/modestbench/issues/200)) ([89f3170](https://github.com/boneskull/modestbench/commit/89f3170f4cc25b6028849ff62bfd72df0e3ddb76))
+
 ## [0.8.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.7.0...modestbench-v0.8.0) (2025-12-15)
 
 
