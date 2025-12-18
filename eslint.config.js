@@ -6,6 +6,8 @@ import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import numericSeparatorsPlugin from './vendor/eslint-numeric-separators-style/index.js';
+
 // TODO: setup eslint-plugin-n
 export default defineConfig(
   jsPlugin.configs.recommended,
@@ -25,6 +27,7 @@ export default defineConfig(
     plugins: {
       '@perfectionist': perfectionist,
       '@stylistic': stylistic,
+      'numeric-separators': numericSeparatorsPlugin,
     },
     rules: {
       '@perfectionist/sort-classes': ['error', { partitionByNewLine: true }],
@@ -42,7 +45,6 @@ export default defineConfig(
       ],
       '@stylistic/lines-between-class-members': ['error', 'always'],
       '@stylistic/semi': 'error',
-
       '@typescript-eslint/consistent-type-exports': [
         'error',
         { fixMixedExportsWithInlineTypeSpecifier: true },
@@ -92,9 +94,9 @@ export default defineConfig(
 
       // these 6 bytes add up
       '@typescript-eslint/require-await': 'off',
+
       // I like my template expressions, tyvm
       '@typescript-eslint/restrict-template-expressions': 'off',
-
       '@typescript-eslint/unified-signatures': [
         'error',
         {
@@ -111,6 +113,7 @@ export default defineConfig(
       'no-constructor-return': 'error',
 
       'no-empty': ['error', { allowEmptyCatch: true }],
+
       'no-restricted-syntax': [
         'error',
         {
@@ -121,6 +124,7 @@ export default defineConfig(
         },
       ],
       'no-self-compare': 'error',
+      'numeric-separators/numeric-separators-style': 'error',
       'object-shorthand': ['error', 'always'],
       'prefer-arrow-callback': 'error',
       semi: 'error',
