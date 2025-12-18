@@ -54,7 +54,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/fastTask'),
           {
             mean: 5_000_000, // 5ms - under budget
-            opsPerSecond: 200000,
+            opsPerSecond: 200_000,
             p99: 6_000_000,
           } as TaskResult,
         ],
@@ -88,7 +88,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/slowTask'),
           {
             mean: 15_000_000, // 15ms - over budget
-            opsPerSecond: 66666,
+            opsPerSecond: 66_666,
             p99: 16_000_000,
           } as TaskResult,
         ],
@@ -117,7 +117,7 @@ describe('BudgetEvaluator', () => {
       const budgets = toResolvedBudgets({
         'test.bench.js/default/task': {
           absolute: {
-            minOpsPerSec: 100000,
+            minOpsPerSec: 100_000,
           },
         },
       });
@@ -127,7 +127,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 8_000_000,
-            opsPerSecond: 125000, // Above minimum
+            opsPerSecond: 125_000, // Above minimum
             p99: 9_000_000,
           } as TaskResult,
         ],
@@ -145,7 +145,7 @@ describe('BudgetEvaluator', () => {
       const budgets = toResolvedBudgets({
         'test.bench.js/default/task': {
           absolute: {
-            minOpsPerSec: 100000,
+            minOpsPerSec: 100_000,
           },
         },
       });
@@ -155,7 +155,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 15_000_000,
-            opsPerSecond: 66666, // Below minimum
+            opsPerSecond: 66_666, // Below minimum
             p99: 16_000_000,
           } as TaskResult,
         ],
@@ -167,8 +167,8 @@ describe('BudgetEvaluator', () => {
         passed: false,
       });
       expect(summary.results[0]!.violations[0], 'to satisfy', {
-        actual: 66666,
-        threshold: 100000,
+        actual: 66_666,
+        threshold: 100_000,
         type: 'minOpsPerSec',
       });
     });
@@ -187,7 +187,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 10_000_000,
-            opsPerSecond: 100000,
+            opsPerSecond: 100_000,
             p99: 15_000_000, // Under budget
           } as TaskResult,
         ],
@@ -215,7 +215,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 10_000_000,
-            opsPerSecond: 100000,
+            opsPerSecond: 100_000,
             p99: 25_000_000, // Over budget
           } as TaskResult,
         ],
@@ -244,7 +244,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 11_000_000, // 10% slower than baseline
-            opsPerSecond: 90909,
+            opsPerSecond: 90_909,
             p99: 12_000_000,
           } as TaskResult,
         ],
@@ -255,7 +255,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 10_000_000,
-            opsPerSecond: 100000,
+            opsPerSecond: 100_000,
             p99: 11_000_000,
           },
         ],
@@ -283,7 +283,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 15_000_000, // 50% slower than baseline
-            opsPerSecond: 66666,
+            opsPerSecond: 66_666,
             p99: 16_000_000,
           } as TaskResult,
         ],
@@ -294,7 +294,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 10_000_000,
-            opsPerSecond: 100000,
+            opsPerSecond: 100_000,
             p99: 11_000_000,
           },
         ],
@@ -328,7 +328,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 12_000_000, // Under absolute, 20% regression
-            opsPerSecond: 83333,
+            opsPerSecond: 83_333,
             p99: 13_000_000,
           } as TaskResult,
         ],
@@ -339,7 +339,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 10_000_000,
-            opsPerSecond: 100000,
+            opsPerSecond: 100_000,
             p99: 11_000_000,
           },
         ],
@@ -358,7 +358,7 @@ describe('BudgetEvaluator', () => {
         'test.bench.js/default/task': {
           absolute: {
             maxTime: 15_000_000, // Pass
-            minOpsPerSec: 100000, // Fail
+            minOpsPerSec: 100_000, // Fail
           },
         },
       });
@@ -368,7 +368,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 12_000_000,
-            opsPerSecond: 83333, // Below minimum
+            opsPerSecond: 83_333, // Below minimum
             p99: 13_000_000,
           } as TaskResult,
         ],
@@ -398,7 +398,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task1'),
           {
             mean: 5_000_000,
-            opsPerSecond: 200000,
+            opsPerSecond: 200_000,
             p99: 6_000_000,
           } as TaskResult,
         ],
@@ -407,7 +407,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task3'),
           {
             mean: 5_000_000,
-            opsPerSecond: 200000,
+            opsPerSecond: 200_000,
             p99: 6_000_000,
           } as TaskResult,
         ],
@@ -439,7 +439,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 15_000_000,
-            opsPerSecond: 66666,
+            opsPerSecond: 66_666,
             p99: 16_000_000,
           } as TaskResult,
         ],
@@ -466,7 +466,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 11_000_000,
-            opsPerSecond: 90909,
+            opsPerSecond: 90_909,
             p99: 12_000_000,
           } as TaskResult,
         ],
@@ -477,7 +477,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 10_000_000,
-            opsPerSecond: 100000,
+            opsPerSecond: 100_000,
             p99: 11_000_000,
           },
         ],
@@ -487,7 +487,7 @@ describe('BudgetEvaluator', () => {
 
       expect(summary.results[0]!.baseline, 'to satisfy', {
         mean: 10_000_000,
-        opsPerSecond: 100000,
+        opsPerSecond: 100_000,
         p99: 11_000_000,
       });
     });
@@ -506,7 +506,7 @@ describe('BudgetEvaluator', () => {
           createTaskId('test.bench.js/default/task'),
           {
             mean: 15_000_000,
-            opsPerSecond: 66666,
+            opsPerSecond: 66_666,
             p99: 16_000_000,
           } as TaskResult,
         ],

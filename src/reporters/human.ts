@@ -234,7 +234,7 @@ export class HumanReporter extends BaseReporter {
       );
     }
     this.printLine(
-      `${this.colorize('cyan', ansiChars.approx + ' Duration:')} ${this.colorize('brightWhite', BaseReporter.formatDuration(duration * 1000000))}`,
+      `${this.colorize('cyan', ansiChars.approx + ' Duration:')} ${this.colorize('brightWhite', BaseReporter.formatDuration(duration * 1_000_000))}`,
     );
     this.printLine();
 
@@ -463,7 +463,7 @@ export class HumanReporter extends BaseReporter {
       });
 
       const durationStr = BaseReporter.formatDuration(
-        result.duration * 1000000,
+        result.duration * 1_000_000,
       );
 
       // Display suite setup failure
@@ -487,7 +487,9 @@ export class HumanReporter extends BaseReporter {
     const passed = result.tasks.filter((t) => !t.error && !t.aborted).length;
     const failed = result.tasks.filter((t) => t.error).length;
     const aborted = result.tasks.filter((t) => t.aborted).length;
-    const durationStr = BaseReporter.formatDuration(result.duration * 1000000); // ms to ns
+    const durationStr = BaseReporter.formatDuration(
+      result.duration * 1_000_000,
+    ); // ms to ns
 
     // Build summary parts
     const parts: string[] = [];

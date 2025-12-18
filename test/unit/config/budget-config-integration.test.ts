@@ -13,7 +13,7 @@ describe('Budget Configuration Schema Integration', () => {
               task: {
                 absolute: {
                   maxTime: 10_000_000,
-                  minOpsPerSec: 100000,
+                  minOpsPerSec: 100_000,
                 },
               },
             },
@@ -124,7 +124,7 @@ describe('Budget Configuration Schema Integration', () => {
             default: {
               task: {
                 absolute: {
-                  maxTime: 100000,
+                  maxTime: 100_000,
                 },
               },
             },
@@ -233,7 +233,7 @@ describe('Budget Configuration Schema Integration', () => {
               criticalPath: {
                 absolute: {
                   maxTime: '50ms',
-                  minOpsPerSec: 20000,
+                  minOpsPerSec: 20_000,
                 },
                 relative: {
                   maxRegression: '10%',
@@ -255,7 +255,7 @@ describe('Budget Configuration Schema Integration', () => {
         tags: [],
         thresholds: {},
         time: 5000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 10,
       };

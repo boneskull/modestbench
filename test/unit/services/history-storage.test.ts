@@ -14,11 +14,11 @@ const createMockRun = (overrides: Partial<BenchmarkRun> = {}): BenchmarkRun => {
     endTime: new Date('2024-01-01T12:01:00Z'),
     environment: {
       arch: 'x64',
-      availableMemory: 1000000,
+      availableMemory: 1_000_000,
       cpu: { cores: 4, model: 'Test CPU', speed: 2000 },
       env: {},
       hostname: 'test',
-      memory: { free: 500000, total: 1000000, used: 500000 },
+      memory: { free: 500_000, total: 1_000_000, used: 500_000 },
       nodeVersion: 'v20.0.0',
       platform: 'linux',
     },

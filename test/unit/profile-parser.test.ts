@@ -15,7 +15,7 @@ describe('ProfileParser', () => {
       try {
         // Create a mock CPU profile
         const profile = {
-          endTime: 1000000,
+          endTime: 1_000_000,
           nodes: [
             {
               callFrame: {
@@ -83,7 +83,7 @@ describe('ProfileParser', () => {
 
       try {
         const profile = {
-          endTime: 1000000,
+          endTime: 1_000_000,
           nodes: [
             {
               callFrame: {
@@ -118,7 +118,7 @@ describe('ProfileParser', () => {
 
       try {
         const profile = {
-          endTime: 1000000,
+          endTime: 1_000_000,
           nodes: [
             {
               callFrame: {
@@ -153,7 +153,7 @@ describe('ProfileParser', () => {
 
       try {
         const profile = {
-          endTime: 1000000,
+          endTime: 1_000_000,
           nodes: [
             {
               callFrame: {
@@ -188,7 +188,7 @@ describe('ProfileParser', () => {
 
       try {
         const profile = {
-          endTime: 1000000,
+          endTime: 1_000_000,
           nodes: [
             {
               callFrame: {

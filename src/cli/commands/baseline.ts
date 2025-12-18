@@ -69,13 +69,13 @@ const formatDuration = (nanoseconds: number): string => {
   if (nanoseconds < 1000) {
     return `${nanoseconds.toFixed(2)}ns`;
   }
-  if (nanoseconds < 1000000) {
+  if (nanoseconds < 1_000_000) {
     return `${(nanoseconds / 1000).toFixed(2)}μs`;
   }
-  if (nanoseconds < 1000000000) {
-    return `${(nanoseconds / 1000000).toFixed(2)}ms`;
+  if (nanoseconds < 1_000_000_000) {
+    return `${(nanoseconds / 1_000_000).toFixed(2)}ms`;
   }
-  return `${(nanoseconds / 1000000000).toFixed(2)}s`;
+  return `${(nanoseconds / 1_000_000_000).toFixed(2)}s`;
 };
 
 /**
@@ -85,13 +85,13 @@ const formatOpsPerSec = (ops: number): string => {
   if (ops < 1000) {
     return `${ops.toFixed(2)} ops/sec`;
   }
-  if (ops < 1000000) {
+  if (ops < 1_000_000) {
     return `${(ops / 1000).toFixed(2)}K ops/sec`;
   }
-  if (ops < 1000000000) {
-    return `${(ops / 1000000).toFixed(2)}M ops/sec`;
+  if (ops < 1_000_000_000) {
+    return `${(ops / 1_000_000).toFixed(2)}M ops/sec`;
   }
-  return `${(ops / 1000000000).toFixed(2)}B ops/sec`;
+  return `${(ops / 1_000_000_000).toFixed(2)}B ops/sec`;
 };
 
 /**

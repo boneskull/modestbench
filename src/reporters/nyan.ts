@@ -345,7 +345,7 @@ export class NyanReporter extends BaseReporter {
    */
   private printEpilogue(run: BenchmarkRun): void {
     const duration = Date.now() - this.startTime;
-    const durationStr = BaseReporter.formatDuration(duration * 1000000);
+    const durationStr = BaseReporter.formatDuration(duration * 1_000_000);
 
     console.log();
     console.log(

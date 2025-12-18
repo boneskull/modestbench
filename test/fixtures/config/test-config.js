@@ -20,7 +20,7 @@ export default {
     maxMean: 1000,
   },
   time: 2000,
-  timeout: 60000,
+  timeout: 60_000,
   verbose: true,
   warmup: 100,
 };

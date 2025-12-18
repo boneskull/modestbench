@@ -319,12 +319,12 @@ describe('Trend Analysis', () => {
 
     it('should handle very large numbers', () => {
       const dataPoints: TrendDataPoint[] = [
-        { date: new Date('2025-01-01'), mean: 1000000000 },
-        { date: new Date('2025-01-02'), mean: 2000000000 },
+        { date: new Date('2025-01-01'), mean: 1_000_000_000 },
+        { date: new Date('2025-01-02'), mean: 2_000_000_000 },
       ];
 
       const stats = calculateStatistics(dataPoints);
-      expect(stats.mean, 'to equal', 1500000000);
+      expect(stats.mean, 'to equal', 1_500_000_000);
     });
 
     it('should handle very small numbers', () => {

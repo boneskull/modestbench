@@ -21,7 +21,7 @@ describe('reporter-utils', () => {
     it('should format kilobytes', () => {
       expect(formatBytes(1024), 'to equal', '1.0 KB');
       expect(formatBytes(1536), 'to equal', '1.5 KB');
-      expect(formatBytes(10240), 'to equal', '10.0 KB');
+      expect(formatBytes(10_240), 'to equal', '10.0 KB');
     });
 
     it('should format megabytes', () => {
@@ -47,7 +47,7 @@ describe('reporter-utils', () => {
     it('should cap at terabytes for very large values', () => {
       // 10 petabytes would be 10240 TB
       expect(
-        formatBytes(1024 * 1024 * 1024 * 1024 * 10240),
+        formatBytes(1024 * 1024 * 1024 * 1024 * 10_240),
         'to equal',
         '10240.0 TB',
       );

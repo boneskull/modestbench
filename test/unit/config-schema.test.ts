@@ -21,7 +21,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -50,7 +50,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -76,7 +76,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -112,12 +112,12 @@ describe('safeParseConfig()', () => {
           maxMarginOfError: 5,
           maxMean: 1000,
           maxP95: 5000,
-          maxP99: 10000,
+          maxP99: 10_000,
           maxStdDev: 500,
           minOpsPerSecond: 1000,
         },
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -149,7 +149,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -174,7 +174,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -199,7 +199,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -224,7 +224,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: -1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -249,7 +249,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: -1,
       };
@@ -274,7 +274,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -299,7 +299,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -324,7 +324,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -351,7 +351,7 @@ describe('safeParseConfig()', () => {
           maxMean: -1000,
         },
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         verbose: false,
         warmup: 0,
       };
@@ -376,7 +376,7 @@ describe('safeParseConfig()', () => {
         tags: [],
         thresholds: {},
         time: 1000,
-        timeout: 30000,
+        timeout: 30_000,
         unknownField: 'should not be allowed',
         verbose: false,
         warmup: 0,

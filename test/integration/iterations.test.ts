@@ -33,7 +33,7 @@ describe('Iterations Flag Integration Tests', () => {
       const duration = Date.now() - startTime;
 
       // Should complete in well under 1 second (being generous with 2s threshold)
-      expect(duration, 'to be less than', 10000);
+      expect(duration, 'to be less than', 10_000);
       expect(result.exitCode, 'to equal', 0);
     });
 
@@ -54,7 +54,7 @@ describe('Iterations Flag Integration Tests', () => {
       const duration = Date.now() - startTime;
 
       // Should complete quickly, not wait for full 5 second time budget
-      expect(duration, 'to be less than', 10000);
+      expect(duration, 'to be less than', 10_000);
       expect(result.exitCode, 'to equal', 0);
     });
 
@@ -122,7 +122,7 @@ describe('Iterations Flag Integration Tests', () => {
 
       const duration = Date.now() - startTime;
 
-      expect(duration, 'to be less than', 10000);
+      expect(duration, 'to be less than', 10_000);
       expect(result.exitCode, 'to equal', 0);
     });
   });
@@ -142,7 +142,7 @@ describe('Iterations Flag Integration Tests', () => {
       const duration = Date.now() - startTime;
 
       // Should still complete in reasonable time with quiet mode
-      expect(duration, 'to be less than', 10000);
+      expect(duration, 'to be less than', 10_000);
       expect(result.exitCode, 'to equal', 0);
       expect(result.stdout, 'to be empty');
     });
@@ -166,7 +166,7 @@ describe('Iterations Flag Integration Tests', () => {
       const duration = Date.now() - startTime;
 
       // Should complete quickly just like with explicit "run" command
-      expect(duration, 'to be less than', 10000);
+      expect(duration, 'to be less than', 10_000);
       expect(result.exitCode, 'to equal', 0);
     });
 
@@ -184,7 +184,7 @@ describe('Iterations Flag Integration Tests', () => {
 
       const duration = Date.now() - startTime;
 
-      expect(duration, 'to be less than', 10000);
+      expect(duration, 'to be less than', 10_000);
       expect(result.exitCode, 'to equal', 0);
     });
   });

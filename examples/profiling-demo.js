@@ -9,7 +9,7 @@
 
 // Medium function - string manipulation
 const parseAndFormat = () => {
-  const data = Array.from({ length: 100000 }, (_, i) => {
+  const data = Array.from({ length: 100_000 }, (_, i) => {
     const raw = `${i}|item-${i}|${Math.random() * 100}`;
     const parts = raw.split('|');
     return {
@@ -23,7 +23,7 @@ const parseAndFormat = () => {
 
 // Warm function - moderate CPU time
 const processStrings = () => {
-  const strings = Array.from({ length: 500000 }, (_, i) => `item-${i}`);
+  const strings = Array.from({ length: 500_000 }, (_, i) => `item-${i}`);
   return strings
     .map((s) => s.toUpperCase())
     .filter((s) => s.includes('5'))
@@ -32,7 +32,7 @@ const processStrings = () => {
 
 // Medium-warm function - JSON serialization
 const serializeData = () => {
-  const data = Array.from({ length: 50000 }, (_, i) => ({
+  const data = Array.from({ length: 50_000 }, (_, i) => ({
     id: i,
     metadata: { created: Date.now(), updated: Date.now() },
     name: `Record ${i}`,
@@ -48,13 +48,13 @@ const simpleCalculation = () => {
 
 // Hot function - lots of CPU time
 const sortLargeArray = () => {
-  const arr = Array.from({ length: 1000000 }, () => Math.random());
+  const arr = Array.from({ length: 1_000_000 }, () => Math.random());
   return arr.sort((a, b) => a - b);
 };
 
 // Warm function - object manipulation
 const transformData = () => {
-  const data = Array.from({ length: 200000 }, (_, i) => ({
+  const data = Array.from({ length: 200_000 }, (_, i) => ({
     id: i,
     name: `Item ${i}`,
     value: Math.random() * 100,
@@ -72,7 +72,7 @@ const transformData = () => {
 // Another hot function - regex processing
 const validateEmails = () => {
   const emails = Array.from(
-    { length: 100000 },
+    { length: 100_000 },
     (_, i) => `user${i}@example.com`,
   );
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -111,7 +111,7 @@ validateEmails();
 transformData();
 
 console.log('Simple calculations (cold path)...');
-for (let i = 0; i < 10000; i++) {
+for (let i = 0; i < 10_000; i++) {
   simpleCalculation();
 }
 

@@ -55,7 +55,7 @@ const getDefaultTestConfig = (
   tags: [],
   thresholds: {},
   time: 1000,
-  timeout: 30000,
+  timeout: 30_000,
   verbose,
   warmup,
 });
