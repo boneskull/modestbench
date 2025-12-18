@@ -343,6 +343,7 @@ modestbench --iterations 5000 --reporter csv
 ### JSON
 
 ```json
+// modestbench.config.json
 {
   "pattern": "benchmarks/**/*.bench.js",
   "iterations": 1000,
@@ -355,6 +356,7 @@ modestbench --iterations 5000 --reporter csv
 ### YAML
 
 ```yaml
+# modestbench.config.yaml
 pattern: benchmarks/**/*.bench.js
 iterations: 1000
 warmup: 50
