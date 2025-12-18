@@ -38,7 +38,7 @@ CPU profiles are stored in `.modestbench/profiles/` to keep your workspace clean
 You can analyze existing profiles with the `--input` flag:
 
 ```bash
-modestbench analyze --input .modestbench/profiles/CPU.20231027.161625.89167.0.001.cpuprofile
+modestbench analyze --input .modestbench/profiles/CPU.bunchanumbers.cpuprofile
 ```
 
 ## Understanding the Output
@@ -119,14 +119,14 @@ Output:
 ```text
 ██ Grouped by File
 
-▓ src/utils/sorting.js                                      18.5%  (1,523 ticks)
-  ▪ sortArray                                               12.3%  (1,013 ticks)  :42
-  ▪ quickSort                                                4.2%  (346 ticks)    :98
-  ▪ partition                                                2.0%  (164 ticks)    :125
+▓ src/utils/sorting.js                                18.5%  (1,523 ticks)
+  ▪ sortArray                                         12.3%  (1,013 ticks)  :42
+  ▪ quickSort                                          4.2%  (346 ticks)    :98
+  ▪ partition                                          2.0%  (164 ticks)    :125
 
-▓ src/validators/schema.js                                  11.3%  (931 ticks)
-  ▪ validateSchema                                           8.7%  (716 ticks)    :28
-  ▪ checkRequired                                            2.6%  (215 ticks)    :145
+▓ src/validators/schema.js                            11.3%  (931 ticks)
+  ▪ validateSchema                                     8.7%  (716 ticks)    :28
+  ▪ checkRequired                                      2.6%  (215 ticks)    :145
 ```
 
 This view is particularly useful for:
@@ -181,14 +181,16 @@ Functions with 5%+ execution time that are pure, frequently called, and algorith
 
 ### 3. Create Benchmarks
 
-For each candidate, create a focused benchmark:
+First, initialize the benchmarking system if you haven't already:
 
 ```bash
-# Initialize if you haven't already
 modestbench init
+```
 
-# Create a benchmark file
-cat > benchmarks/sorting.bench.js << 'EOF'
+Now, for each candidate, create a focused benchmark:
+
+```javascript
+// benchmarks/sorting.bench.js
 import { sortArray } from '../src/utils/sorting.js';
 
 const small = Array.from({ length: 100 }, () => Math.random());
@@ -206,7 +208,6 @@ export default {
     },
   },
 };
-EOF
 ```
 
 ### 4. Run and Track
@@ -235,6 +236,11 @@ modestbench analyze "npm test"
 - Tests often exercise core functionality
 - High test execution time often indicates real performance issues
 - Easy to reproduce and measure
+
+:::tip[Wanna Benchmark Tests?]
+
+See the [Test Adapters](/guides/test-adapters/) guide for more information.
+:::
 
 ### Profiling Application Startup
 
@@ -396,7 +402,7 @@ If the profiler shows 0 user functions:
 
 ### Profile Data is Stale
 
-Profile logs are reused if they exist. To get fresh data:
+Profile logs are reused if they exist. To get fresh data, remove the `isolate-*.log` files created by Node.js's V8 profiler (via the `--cpu-prof` flag that `modestbench analyze` uses under the hood):
 
 ```bash
 # Remove old logs
