@@ -303,6 +303,7 @@
 /* Apply custom font to h1 and site title */
 h1,
 h2,
+h3,
 .site-title {
   font-family: 'Handel Gothic', sans-serif;
 }
