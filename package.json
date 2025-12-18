@@ -93,7 +93,6 @@
     "build:schema": "tsx scripts/generate-schema.ts",
     "clean": "rm -rf dist",
     "commitlint": "commitlint",
-    "dev": "zshy --watch",
     "docs:build": "run-s build:schema docs:copy astro:build",
     "docs:copy": "tsx scripts/copy-docs.ts",
     "docs:dev": "run-s docs:copy astro:dev",
