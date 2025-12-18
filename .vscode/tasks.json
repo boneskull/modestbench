@@ -1,0 +1,24 @@
+{
+  "tasks": [
+    {
+      "detail": "Build Modestbench",
+      "group": {
+        "isDefault": true,
+        "kind": "build"
+      },
+      "label": "npm: build",
+      "problemMatcher": ["$tsc"],
+      "script": "build",
+      "type": "npm"
+    },
+    {
+      "detail": "Start dev server for docs site",
+      "isBackground": true,
+      "label": "npm: docs:dev",
+      "problemMatcher": [],
+      "script": "docs:dev",
+      "type": "npm"
+    }
+  ],
+  "version": "2.0.0"
+}

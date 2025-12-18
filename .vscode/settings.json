@@ -1,0 +1,28 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "eslint.useFlatConfig": true,
+  "files.exclude": {
+    ".worktrees": true
+  },
+  "files.insertFinalNewline": false,
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "modestbench.config.json",
+        "modestbench.config.yaml",
+        "modestbench.config.yml"
+      ],
+      "url": "file://./dist/schema/modestbench-config.schema.json"
+    }
+  ],
+  "prettier.useEditorConfig": true,
+  "search.exclude": {
+    "dist": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
