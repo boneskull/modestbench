@@ -18,11 +18,11 @@ import type {
   ValidationWarning,
 } from '../types/index.js';
 
+import { benchmarkFileSchema } from '../config/benchmark-schema.js';
 import {
   BENCHMARK_FILE_EXTENSIONS,
   BENCHMARK_FILE_PATTERN,
 } from '../constants.js';
-import { benchmarkFileSchema } from '../core/benchmark-schema.js';
 import {
   FileDiscoveryError,
   FileLoadError,

@@ -198,10 +198,7 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
         );
       }
 
-      // TODO: safeParseConfig transforms budgets from nested to flat format,
-      // but the schema type doesn't reflect this. Fix by defining a separate
-      // output type for the transformed config. (see #15)
-      return validation.data as ModestBenchConfig;
+      return validation.data;
     } catch (error) {
       // Re-throw our custom errors
       if (

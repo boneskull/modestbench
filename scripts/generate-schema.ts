@@ -12,7 +12,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as z from 'zod';
 
-import { partialModestBenchConfigSchema } from '../src/config/schema.js';
+import { partialModestBenchConfigInputSchema } from '../src/config/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,7 +20,7 @@ const __dirname = dirname(__filename);
 const generateSchema = async () => {
   try {
     // Convert Zod schema to JSON Schema using native Zod v4 functionality
-    const jsonSchema = z.toJSONSchema(partialModestBenchConfigSchema, {
+    const jsonSchema = z.toJSONSchema(partialModestBenchConfigInputSchema, {
       target: 'draft-2020-12',
     });
 

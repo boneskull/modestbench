@@ -16,7 +16,6 @@ import type {
   BenchmarkRun,
   BenchmarkSuite,
   BenchmarkTask,
-  Budget,
   BudgetSummary,
   CiInfo,
   ConfigurationManager,
@@ -382,7 +381,7 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
 
         // Check if any budgets use relative thresholds
         const hasRelativeBudgets = Object.values(config.budgets).some(
-          (budget) => (budget as Budget).relative,
+          (budget) => budget.relative,
         );
 
         if (hasRelativeBudgets) {
@@ -414,7 +413,7 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
 
         // Evaluate budgets
         budgetSummary = evaluator.evaluateRun(
-          config.budgets as Record<string, Budget>,
+          config.budgets,
           taskResults,
           baselineData,
         );
