@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { runCommand } from '../util.js';
+import { findFileByPattern, runCommand } from '../util.js';
 import { fixtures } from './fixture-paths.js';
 
 describe('Quiet Mode Integration Tests', () => {
@@ -93,8 +93,8 @@ describe('Quiet Mode Integration Tests', () => {
         '--quiet',
         '--reporter',
         'json',
-        '--output',
-        outputDir,
+        '--output-file',
+        outputFile,
         '--iterations',
         '5',
       ]);
@@ -117,8 +117,8 @@ describe('Quiet Mode Integration Tests', () => {
         '--quiet',
         '--reporter',
         'csv',
-        '--output',
-        outputDir,
+        '--output-file',
+        outputFile,
         '--iterations',
         '5',
       ]);
@@ -155,17 +155,21 @@ describe('Quiet Mode Integration Tests', () => {
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
 
-      // Both JSON and CSV files should be written
-      const jsonContent = await readFile(
-        join(outputDir, 'results.json'),
-        'utf-8',
+      // Both JSON and CSV files should be written with timestamped names
+      const jsonFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
       );
+      expect(jsonFile, 'to be truthy');
+      const jsonContent = await readFile(jsonFile!, 'utf-8');
       expect(jsonContent, 'to match', /"meta":/);
 
-      const csvContent = await readFile(
-        join(outputDir, 'results.csv'),
-        'utf-8',
+      const csvFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.csv$/,
       );
+      expect(csvFile, 'to be truthy');
+      const csvContent = await readFile(csvFile!, 'utf-8');
       expect(csvContent, 'to contain', 'file');
     });
   });
@@ -220,9 +224,13 @@ describe('Quiet Mode Integration Tests', () => {
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
 
-      // Verify file was written
-      const outputFile = join(outputDir, 'results.json');
-      const fileExists = existsSync(outputFile);
+      // Verify file was written with timestamped name
+      const outputFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
+      );
+      expect(outputFile, 'to be truthy');
+      const fileExists = existsSync(outputFile!);
       expect(fileExists, 'to be true');
     });
   });

@@ -1,4 +1,6 @@
 import { type ChildProcess, spawn } from 'node:child_process';
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
@@ -66,3 +68,21 @@ export const nullStream = new Writable({
     callback();
   },
 });
+
+/**
+ * Find the first file in a directory matching a pattern.
+ *
+ * Useful for finding timestamped output files like `benchmarks-*.json`.
+ *
+ * @param dir - Directory to search
+ * @param pattern - RegExp pattern to match filenames
+ * @returns Full path to the first matching file, or undefined if none found
+ */
+export const findFileByPattern = async (
+  dir: string,
+  pattern: RegExp,
+): Promise<string | undefined> => {
+  const files = await readdir(dir);
+  const match = files.find((f) => pattern.test(f));
+  return match ? join(dir, match) : undefined;
+};

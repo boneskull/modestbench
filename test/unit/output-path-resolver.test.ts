@@ -2,7 +2,10 @@ import { expect } from 'bupkis';
 import { resolve } from 'node:path';
 import { describe, it } from 'node:test';
 
-import { resolveOutputPath } from '../../src/core/output-path-resolver.js';
+import {
+  generateTimestampedFilename,
+  resolveOutputPath,
+} from '../../src/core/output-path-resolver.js';
 
 describe('resolveOutputPath', () => {
   it('should return undefined when no paths provided', () => {
@@ -42,5 +45,92 @@ describe('resolveOutputPath', () => {
       'default.json',
     );
     expect(result, 'to equal', '/tmp/subdir/custom.json');
+  });
+});
+
+describe('generateTimestampedFilename', () => {
+  it('should generate filename with json extension', () => {
+    const result = generateTimestampedFilename('json');
+    expect(
+      result,
+      'to match',
+      /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json$/,
+    );
+  });
+
+  it('should generate filename with csv extension', () => {
+    const result = generateTimestampedFilename('csv');
+    expect(
+      result,
+      'to match',
+      /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.csv$/,
+    );
+  });
+
+  it('should generate filename with arbitrary extension', () => {
+    const result = generateTimestampedFilename('xml');
+    expect(
+      result,
+      'to match',
+      /^benchmarks-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.xml$/,
+    );
+  });
+
+  it('should generate different filenames at different times', () => {
+    const RealDate = globalThis.Date;
+
+    const fixedTime1 = new RealDate('2020-01-01T00:00:00Z').getTime();
+    const fixedTime2 = new RealDate('2020-01-01T00:00:01Z').getTime();
+
+    const mockDate = (ms: number) => {
+      const MockDate = class extends RealDate {
+        constructor(...args: Parameters<typeof RealDate>) {
+          if (args.length === 0) {
+            super(ms);
+          } else {
+            super(...args);
+          }
+        }
+
+        static override now() {
+          return ms;
+        }
+      };
+      globalThis.Date = MockDate as typeof Date;
+    };
+
+    try {
+      mockDate(fixedTime1);
+      const result1 = generateTimestampedFilename('json');
+
+      mockDate(fixedTime2);
+      const result2 = generateTimestampedFilename('json');
+
+      expect(result1, 'not to equal', result2);
+      expect(result1, 'to equal', 'benchmarks-2020-01-01-00-00-00.json');
+      expect(result2, 'to equal', 'benchmarks-2020-01-01-00-00-01.json');
+    } finally {
+      globalThis.Date = RealDate;
+    }
+  });
+
+  it('should use zero-padded date and time components', () => {
+    const result = generateTimestampedFilename('json');
+    // The format should be: benchmarks-YYYY-MM-DD-HH-MM-SS.ext
+    // All numeric parts should be properly padded (year 4 digits, rest 2 digits)
+    const match = result.match(
+      /^benchmarks-(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})\.json$/,
+    );
+    expect(match, 'to be truthy');
+    if (match) {
+      // Verify all parts are numbers within valid ranges
+      const [, year, month, day, hour, minute, second] = match;
+      expect(Number(year), 'to be greater than', 2020);
+      expect(Number(month), 'to be within', 1, 12);
+      expect(Number(day), 'to be within', 1, 31);
+      expect(Number(hour), 'to be within', 0, 23);
+      expect(Number(minute), 'to be within', 0, 59);
+      expect(Number(second), 'to be within', 0, 59);
+    }
   });
 });
