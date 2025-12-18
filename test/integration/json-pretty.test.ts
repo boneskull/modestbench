@@ -201,5 +201,43 @@ describe('JSON reporter prettyPrint configuration', () => {
       const lines = jsonContent.trim().split('\n');
       expect(lines.length, 'to be greater than', 1);
     });
+
+    it('--no-json-pretty should override config prettyPrint: true', async () => {
+      const outputFile = join(tempDir, 'results.json');
+
+      // Create a config file with prettyPrint: true
+      const configPath = join(tempDir, 'modestbench.config.json');
+      await writeFile(
+        configPath,
+        JSON.stringify({
+          reporterConfig: {
+            json: {
+              prettyPrint: true,
+            },
+          },
+        }),
+      );
+
+      // CLI flag --no-json-pretty should override the config
+      const result = await runCommand([
+        'run',
+        fixtures.simple,
+        '--config',
+        configPath,
+        '--reporter',
+        'json',
+        '--no-json-pretty',
+        '--output-file',
+        outputFile,
+      ]);
+
+      expect(result.exitCode, 'to equal', 0);
+
+      const jsonContent = await readFile(outputFile, 'utf-8');
+
+      // Should be compact despite config setting prettyPrint: true
+      const lines = jsonContent.trim().split('\n');
+      expect(lines.length, 'to equal', 1);
+    });
   });
 });

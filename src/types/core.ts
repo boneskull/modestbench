@@ -82,6 +82,16 @@ export type {
 
 export type { ModestBenchConfig };
 
+// Re-export schema-derived types
+export type {
+  BenchmarkDefinition,
+  BenchmarkDefinitionInput,
+  BenchmarkSuite,
+  BenchmarkSuiteInput,
+  BenchmarkTask,
+  BenchmarkTaskInput,
+} from '../core/benchmark-schema.js';
+
 /**
  * CI/CD environment information
  */
@@ -112,15 +122,8 @@ export interface CiInfo {
  * safety and consistency.
  */
 
-// Re-export schema-derived types
-export type {
-  BenchmarkDefinition,
-  BenchmarkDefinitionInput,
-  BenchmarkSuite,
-  BenchmarkSuiteInput,
-  BenchmarkTask,
-  BenchmarkTaskInput,
-} from '../core/benchmark-schema.js';
+// Re-export identifier helper functions
+export { createRunId, createTaskId } from '../utils/identifiers.js';
 
 /**
  * CPU information
@@ -300,8 +303,6 @@ export interface MemoryInfo {
   readonly used: number;
 }
 
-// Re-export identifier helper functions
-export { createRunId, createTaskId } from '../utils/identifiers.js';
 /**
  * Reporter-specific configuration
  *
