@@ -19,6 +19,22 @@ modestbench supports multiple configuration file formats, powered by [cosmiconfi
 
 modestbench automatically searches for configuration files in the current directory and parent directories, following standard conventions.
 
+### JSON Schema
+
+A JSON Schema is published at [`https://modestbench.dev/modestbench-config.schema.json`](https://modestbench.dev/modestbench-config.schema.json) for IDE autocompletion and validation. Add the `$schema` property to your JSON config file:
+
+```json
+{
+  "$schema": "https://modestbench.dev/modestbench-config.schema.json",
+  "iterations": 1000,
+  "reporters": ["human", "json"]
+}
+```
+
+:::tip[IDE Support]
+Most modern editors (VS Code, WebStorm, etc.) will automatically provide autocompletion, hover documentation, and validation when the `$schema` property is present.
+:::
+
 ## Generate a Configuration File
 
 Use the `init` command to generate a configuration file:
