@@ -1,6 +1,19 @@
 import { extname, isAbsolute, join, resolve } from 'node:path';
 
 /**
+ * Generates a timestamped filename for benchmark output files.
+ *
+ * @param extension - File extension without the dot (e.g., 'json', 'csv')
+ * @returns Filename in format `benchmarks-YYYY-MM-DD-HH-MM-SS.{extension}`
+ */
+export const generateTimestampedFilename = (extension: string): string => {
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  return `benchmarks-${timestamp}.${extension}`;
+};
+
+/**
  * Resolves the final output path for a reporter
  *
  * @param outputDir - Optional output directory from --output flag

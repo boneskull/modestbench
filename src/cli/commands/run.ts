@@ -16,7 +16,10 @@ import type {
 import type { CliContext } from '../index.js';
 
 import { ErrorCodes, ExitCodes } from '../../constants.js';
-import { resolveOutputPath } from '../../core/output-path-resolver.js';
+import {
+  generateTimestampedFilename,
+  resolveOutputPath,
+} from '../../core/output-path-resolver.js';
 import {
   type BudgetExceededError,
   InvalidArgumentError,
@@ -430,7 +433,7 @@ const setupReporters = async (
             const outputPath = resolveOutputPath(
               outputDir,
               explicitOutputFile,
-              'results.csv',
+              generateTimestampedFilename('csv'),
             );
             reporter = new CsvReporter({
               includeHeaders: true,
@@ -455,7 +458,7 @@ const setupReporters = async (
             const outputPath = resolveOutputPath(
               outputDir,
               explicitOutputFile,
-              'results.json',
+              generateTimestampedFilename('json'),
             );
             // Precedence: CLI flag > config file > default (false)
             const prettyPrint =

@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { runCommand } from '../util.js';
+import { findFileByPattern, runCommand } from '../util.js';
 import { fixtures } from './fixture-paths.js';
 
 /**
@@ -79,8 +79,8 @@ describe('Multiple reporter output formats', () => {
         fixtures.simple,
         '--reporter',
         'json',
-        '--output',
-        join(tempDir, 'results'),
+        '--output-file',
+        outputFile,
       ]);
 
       expect(result.exitCode, 'to equal', 0);
@@ -106,19 +106,19 @@ describe('Multiple reporter output formats', () => {
 
     it('should include all benchmark metadata in JSON', async () => {
       const outputDir = join(tempDir, 'metadata-output');
+      const jsonFile = join(outputDir, 'results.json');
       const result = await runCommand([
         'run',
         fixtures.withMetadataTags,
         '--reporter',
         'json',
-        '--output',
-        outputDir,
+        '--output-file',
+        jsonFile,
       ]);
 
       expect(result.exitCode, 'to equal', 0);
 
       // Read JSON output file
-      const jsonFile = join(outputDir, 'results.json');
       const jsonContent = await readFile(jsonFile, 'utf-8');
       const data = JSON.parse(jsonContent);
 
@@ -150,8 +150,8 @@ describe('Multiple reporter output formats', () => {
         fixtures.csvTasks,
         '--reporter',
         'csv',
-        '--output',
-        join(tempDir, 'results'),
+        '--output-file',
+        outputFile,
       ]);
 
       expect(result.exitCode, 'to equal', 0);
@@ -176,19 +176,20 @@ describe('Multiple reporter output formats', () => {
     });
 
     it('should include all required CSV columns', async () => {
+      const outputFile = join(tempDir, 'results.csv');
       const result = await runCommand([
         'run',
         fixtures.simple,
         '--reporter',
         'csv',
-        '--output',
-        tempDir,
+        '--output-file',
+        outputFile,
       ]);
 
       expect(result.exitCode, 'to equal', 0);
 
       // Read CSV from output file
-      const csvContent = await readFile(join(tempDir, 'results.csv'), 'utf-8');
+      const csvContent = await readFile(outputFile, 'utf-8');
       const lines = csvContent.trim().split('\n');
       expect(lines.length, 'to be greater than', 0);
 
@@ -222,6 +223,7 @@ describe('Multiple reporter output formats', () => {
 
   describe('multiple reporters simultaneously', () => {
     it('should output to multiple formats at once', async () => {
+      const outputDir = join(tempDir, 'results');
       const result = await runCommand([
         'run',
         fixtures.simple,
@@ -232,7 +234,7 @@ describe('Multiple reporter output formats', () => {
         '--reporter',
         'csv',
         '--output',
-        join(tempDir, 'results'),
+        outputDir,
       ]);
 
       expect(result.exitCode, 'to equal', 0);
@@ -240,12 +242,21 @@ describe('Multiple reporter output formats', () => {
       // Should have human output in stdout
       expect(result.stdout, 'to match', /Test Suite|ops/);
 
-      // Should create json and csv files
-      const jsonFile = join(tempDir, 'results', 'results.json');
-      const csvFile = join(tempDir, 'results', 'results.csv');
+      // Should create json and csv files with timestamped names
+      const jsonFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-.*\.json$/,
+      );
+      const csvFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-.*\.csv$/,
+      );
 
-      const jsonContent = await readFile(jsonFile, 'utf-8');
-      const csvContent = await readFile(csvFile, 'utf-8');
+      expect(jsonFile, 'to be truthy');
+      expect(csvFile, 'to be truthy');
+
+      const jsonContent = await readFile(jsonFile!, 'utf-8');
+      const csvContent = await readFile(csvFile!, 'utf-8');
 
       expect(jsonContent.length, 'to be greater than', 0);
       expect(csvContent.length, 'to be greater than', 0);
@@ -291,30 +302,33 @@ describe('Multiple reporter output formats', () => {
 
       expect(result.exitCode, 'to equal', 0);
 
-      // Should create nested directories
-      const jsonContent = await readFile(
-        join(outputDir, 'results.json'),
-        'utf-8',
+      // Should create nested directories and timestamped files
+      const jsonFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-.*\.json$/,
       );
+      expect(jsonFile, 'to be truthy');
+      const jsonContent = await readFile(jsonFile!, 'utf-8');
       expect(jsonContent.length, 'to be greater than', 0);
     });
 
     it('should handle file naming conflicts', async () => {
-      // Create existing file
+      // Create existing file with explicit name
       const existingFile = join(tempDir, 'results', 'results.json');
       await mkdir(join(tempDir, 'results'), { recursive: true });
       await writeFile(existingFile, '{"existing": true}');
 
+      // Use explicit --output-file to test overwrite behavior
       const result = await runCommand([
         'run',
         fixtures.simple,
         '--reporter',
         'json',
-        '--output',
-        join(tempDir, 'results'),
+        '--output-file',
+        existingFile,
       ]);
 
-      // Should handle existing files (overwrite or append)
+      // Should handle existing files (overwrite)
       expect(result.exitCode, 'to equal', 0);
     });
 

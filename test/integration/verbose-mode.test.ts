@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 
-import { runCommand } from '../util.js';
+import { findFileByPattern, runCommand } from '../util.js';
 import { fixtures } from './fixture-paths.js';
 
 describe('Verbose Mode Integration Tests', () => {
@@ -248,11 +248,13 @@ describe('Verbose Mode Integration Tests', () => {
       expect(result.stderr, 'to contain', 'Setting up reporters...');
       expect(result.exitCode, 'to equal', 0);
 
-      // JSON data should be written to file
-      const jsonContent = await readFile(
-        join(outputDir, 'results.json'),
-        'utf-8',
+      // JSON data should be written to file with timestamped name
+      const jsonFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-.*\.json$/,
       );
+      expect(jsonFile, 'to be truthy');
+      const jsonContent = await readFile(jsonFile!, 'utf-8');
       expect(jsonContent, 'to contain', '"meta":');
     });
 
@@ -272,11 +274,13 @@ describe('Verbose Mode Integration Tests', () => {
       expect(result.stderr, 'to be empty');
       expect(result.exitCode, 'to equal', 0);
 
-      // JSON data should be written to file
-      const jsonContent = await readFile(
-        join(outputDir, 'results.json'),
-        'utf-8',
+      // JSON data should be written to file with timestamped name
+      const jsonFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-.*\.json$/,
       );
+      expect(jsonFile, 'to be truthy');
+      const jsonContent = await readFile(jsonFile!, 'utf-8');
       expect(jsonContent, 'to contain', '"meta":');
     });
   });
@@ -300,11 +304,13 @@ describe('Verbose Mode Integration Tests', () => {
       expect(result.stderr, 'to contain', 'Setting up reporters...');
       expect(result.exitCode, 'to equal', 0);
 
-      // CSV data should be written to file
-      const csvContent = await readFile(
-        join(outputDir, 'results.csv'),
-        'utf-8',
+      // CSV data should be written to file with timestamped name
+      const csvFile = await findFileByPattern(
+        outputDir,
+        /^benchmarks-.*\.csv$/,
       );
+      expect(csvFile, 'to be truthy');
+      const csvContent = await readFile(csvFile!, 'utf-8');
       expect(csvContent, 'to contain', 'file');
     });
   });
