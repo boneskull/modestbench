@@ -143,7 +143,7 @@
     "@types/wallabyjs": "0.0.15",
     "@types/yargs": "17.0.35",
     "asciinema-player": "3.13.5",
-    "astro": "5.16.5",
+    "astro": "5.16.6",
     "astro-broken-link-checker": "file:./vendor/astro-broken-link-checker",
     "ava": "6.4.1",
     "bupkis": "0.14.0",
