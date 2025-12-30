@@ -8,7 +8,6 @@
 
 import { parse } from 'node-html-parser';
 import fs from 'fs';
-import fetch from 'node-fetch';
 import { URL } from 'url';
 import path from 'path';
 import pLimit from 'p-limit';
