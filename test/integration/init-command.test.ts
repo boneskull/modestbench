@@ -36,7 +36,7 @@ describe('modestbench init command - integration', () => {
   describe('JSON config generation', () => {
     it('should create valid JSON config file', async () => {
       const result = await runCommand(
-        ['init', '--config-type', 'json', '--no-examples'],
+        ['init', '--config-type', 'json'],
         tempDir,
       );
 
@@ -60,10 +60,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
-      await runCommand(
-        ['init', '--config-type', 'json', '--no-examples'],
-        tempDir,
-      );
+      await runCommand(['init', '--config-type', 'json'], tempDir);
 
       const manager = new ModestBenchConfigurationManager();
       const configPath = join(tempDir, 'modestbench.config.json');
@@ -81,7 +78,7 @@ describe('modestbench init command - integration', () => {
   describe('YAML config generation', () => {
     it('should create valid YAML config file', async () => {
       const result = await runCommand(
-        ['init', '--config-type', 'yaml', '--no-examples'],
+        ['init', '--config-type', 'yaml'],
         tempDir,
       );
 
@@ -107,10 +104,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
-      await runCommand(
-        ['init', '--config-type', 'yaml', '--no-examples'],
-        tempDir,
-      );
+      await runCommand(['init', '--config-type', 'yaml'], tempDir);
 
       const manager = new ModestBenchConfigurationManager();
       const configPath = join(tempDir, 'modestbench.config.yaml');
@@ -125,10 +119,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should generate YAML with proper array formatting', async () => {
-      await runCommand(
-        ['init', 'advanced', '--config-type', 'yaml', '--no-examples'],
-        tempDir,
-      );
+      await runCommand(['init', 'advanced', '--config-type', 'yaml'], tempDir);
 
       const content = await readFile(
         join(tempDir, 'modestbench.config.yaml'),
@@ -142,10 +133,7 @@ describe('modestbench init command - integration', () => {
 
   describe('JavaScript config generation', () => {
     it('should create valid JavaScript config file', async () => {
-      const result = await runCommand(
-        ['init', '--config-type', 'js', '--no-examples'],
-        tempDir,
-      );
+      const result = await runCommand(['init', '--config-type', 'js'], tempDir);
 
       expect(result.exitCode, 'to equal', 0);
 
@@ -166,10 +154,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
-      await runCommand(
-        ['init', '--config-type', 'js', '--no-examples'],
-        tempDir,
-      );
+      await runCommand(['init', '--config-type', 'js'], tempDir);
 
       const manager = new ModestBenchConfigurationManager();
       const configPath = join(tempDir, 'modestbench.config.js');
@@ -186,10 +171,7 @@ describe('modestbench init command - integration', () => {
 
   describe('TypeScript config generation', () => {
     it('should create valid TypeScript config file', async () => {
-      const result = await runCommand(
-        ['init', '--config-type', 'ts', '--no-examples'],
-        tempDir,
-      );
+      const result = await runCommand(['init', '--config-type', 'ts'], tempDir);
 
       expect(result.exitCode, 'to equal', 0);
 
@@ -213,10 +195,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should generate config loadable by cosmiconfig', async () => {
-      await runCommand(
-        ['init', '--config-type', 'ts', '--no-examples'],
-        tempDir,
-      );
+      await runCommand(['init', '--config-type', 'ts'], tempDir);
 
       const manager = new ModestBenchConfigurationManager();
       const configPath = join(tempDir, 'modestbench.config.ts');
@@ -233,7 +212,7 @@ describe('modestbench init command - integration', () => {
 
   describe('Project type templates', () => {
     it('should generate basic project with minimal config', async () => {
-      await runCommand(['init', 'basic', '--no-examples'], tempDir);
+      await runCommand(['init', 'basic'], tempDir);
 
       const manager = new ModestBenchConfigurationManager();
       const config = await manager.load(
@@ -249,7 +228,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should generate advanced project with full config', async () => {
-      await runCommand(['init', 'advanced', '--no-examples'], tempDir);
+      await runCommand(['init', 'advanced'], tempDir);
 
       const manager = new ModestBenchConfigurationManager();
       const config = await manager.load(
@@ -266,7 +245,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should generate library project optimized for testing', async () => {
-      await runCommand(['init', 'library', '--no-examples'], tempDir);
+      await runCommand(['init', 'library'], tempDir);
 
       const manager = new ModestBenchConfigurationManager();
       const config = await manager.load(
@@ -290,8 +269,8 @@ describe('modestbench init command - integration', () => {
       await access(join(tempDir, 'bench', 'string-operations.bench.js'));
     });
 
-    it('should not create examples when --no-examples is specified', async () => {
-      await runCommand(['init', '--no-examples'], tempDir);
+    it('should not create examples by default (examples opt-in)', async () => {
+      await runCommand(['init'], tempDir);
 
       // Bench directory should exist but be empty
       const benchmarksDir = join(tempDir, DEFAULT_BENCHMARK_DIR);
@@ -325,7 +304,7 @@ describe('modestbench init command - integration', () => {
 
   describe('Additional files generation', () => {
     it('should create .gitignore file', async () => {
-      await runCommand(['init', '--no-examples'], tempDir);
+      await runCommand(['init'], tempDir);
 
       const gitignorePath = join(tempDir, '.gitignore');
       await access(gitignorePath);
@@ -342,7 +321,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should include .modestbench/ in new .gitignore', async () => {
-      await runCommand(['init', '--no-examples'], tempDir);
+      await runCommand(['init'], tempDir);
 
       const gitignorePath = join(tempDir, '.gitignore');
       const content = await readFile(gitignorePath, 'utf8');
@@ -357,7 +336,7 @@ describe('modestbench init command - integration', () => {
       await writeFile(gitignorePath, 'node_modules/\n*.log\n', 'utf8');
 
       // Run init with --yes to auto-accept prompt
-      await runCommand(['init', '--yes', '--no-examples'], tempDir);
+      await runCommand(['init', '--yes'], tempDir);
 
       const content = await readFile(gitignorePath, 'utf8');
 
@@ -377,7 +356,7 @@ describe('modestbench init command - integration', () => {
       await writeFile(gitignorePath, 'node_modules/\n', 'utf8');
 
       // Run init with --quiet to auto-accept prompt
-      await runCommand(['init', '--quiet', '--no-examples'], tempDir);
+      await runCommand(['init', '--quiet'], tempDir);
 
       const content = await readFile(gitignorePath, 'utf8');
 
@@ -396,7 +375,7 @@ describe('modestbench init command - integration', () => {
       );
 
       // Run init with --yes
-      await runCommand(['init', '--yes', '--no-examples'], tempDir);
+      await runCommand(['init', '--yes'], tempDir);
 
       const content = await readFile(gitignorePath, 'utf8');
 
@@ -412,7 +391,7 @@ describe('modestbench init command - integration', () => {
       await writeFile(gitignorePath, 'node_modules/', 'utf8');
 
       // Run init with --yes
-      await runCommand(['init', '--yes', '--no-examples'], tempDir);
+      await runCommand(['init', '--yes'], tempDir);
 
       const content = await readFile(gitignorePath, 'utf8');
 
@@ -425,7 +404,7 @@ describe('modestbench init command - integration', () => {
     });
 
     it('should create README.md file', async () => {
-      await runCommand(['init', '--no-examples'], tempDir);
+      await runCommand(['init'], tempDir);
 
       const readmePath = join(tempDir, 'README.md');
       await access(readmePath);
@@ -445,44 +424,41 @@ describe('modestbench init command - integration', () => {
   describe('Force flag behavior', () => {
     it('should fail when reinitializing without --force', async () => {
       // First init
-      const result1 = await runCommand(['init', '--no-examples'], tempDir);
+      const result1 = await runCommand(['init'], tempDir);
       expect(result1.exitCode, 'to equal', 0);
 
       // Second init without force
-      const result2 = await runCommand(['init', '--no-examples'], tempDir);
+      const result2 = await runCommand(['init'], tempDir);
       expect(result2.exitCode, 'to equal', 1);
       expect(result2.stderr + result2.stdout, 'to match', /already exist/);
     });
 
     it('should succeed when reinitializing with --force', async () => {
       // First init
-      const result1 = await runCommand(['init', '--no-examples'], tempDir);
+      const result1 = await runCommand(['init'], tempDir);
       expect(result1.exitCode, 'to equal', 0);
 
       // Second init with force
-      const result2 = await runCommand(
-        ['init', '--force', '--no-examples'],
-        tempDir,
-      );
+      const result2 = await runCommand(['init', '--force'], tempDir);
       expect(result2.exitCode, 'to equal', 0);
     });
   });
 
   describe('Directory structure', () => {
     it('should create bench directory for all project types', async () => {
-      await runCommand(['init', 'basic', '--no-examples'], tempDir);
+      await runCommand(['init', 'basic'], tempDir);
       await access(join(tempDir, 'bench'));
     });
 
     it('should create multiple directories for advanced projects', async () => {
-      await runCommand(['init', 'advanced', '--no-examples'], tempDir);
+      await runCommand(['init', 'advanced'], tempDir);
 
       await access(join(tempDir, 'bench'));
       await access(join(tempDir, '.modestbench'));
     });
 
     it('should create nested directories for library projects', async () => {
-      await runCommand(['init', 'library', '--no-examples'], tempDir);
+      await runCommand(['init', 'library'], tempDir);
 
       await access(join(tempDir, 'bench'));
       await access(join(tempDir, 'bench', 'suites'));

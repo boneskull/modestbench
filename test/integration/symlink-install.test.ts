@@ -103,9 +103,9 @@ export default {
       },
     );
 
-    // Should output help text
+    // Should output help text (bargs uses uppercase section headers)
     expect(stderr, 'to equal', '');
-    expect(stdout, 'to contain', 'Commands:');
+    expect(stdout, 'to contain', 'COMMANDS');
     expect(stdout, 'to contain', 'run');
     expect(stdout, 'to contain', 'history');
     expect(stdout, 'to contain', 'init');

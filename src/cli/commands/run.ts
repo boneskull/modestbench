@@ -46,7 +46,7 @@ import { hasErrorCode, isError } from '../../utils/type-guards.js';
  * arguments provide values. They represent sensible defaults for running
  * benchmarks.
  */
-export const RUN_COMMAND_DEFAULTS = {
+const RUN_COMMAND_DEFAULTS = {
   bail: false,
   quiet: false,
   reporters: ['human'],

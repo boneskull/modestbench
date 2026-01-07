@@ -3,14 +3,25 @@
 /**
  * ModestBench CLI Entry Point
  *
- * Command-line interface using yargs for command parsing and routing. Provides
+ * Command-line interface using bargs for command parsing and routing. Provides
  * global options, help generation, and dependency injection setup.
+ *
+ * @packageDocumentation
  */
 
+import {
+  ansi,
+  bargs,
+  BargsError,
+  HelpError,
+  type InferParserValues,
+  map,
+  merge,
+  opt,
+  pos,
+} from '@boneskull/bargs';
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
 
 import type {
   BenchmarkEngine,
@@ -24,7 +35,6 @@ import type {
 import { bootstrap } from '../bootstrap.js';
 import {
   ABORT_TIMEOUT,
-  DEFAULT_BENCHMARK_DIR,
   DEFAULT_ENGINE,
   DEFAULT_REPORTER,
   Engines,
@@ -63,10 +73,7 @@ import {
   handleTrendsCommand,
 } from './commands/history.js';
 import { handleInitCommand as initCommand } from './commands/init.js';
-import {
-  RUN_COMMAND_DEFAULTS,
-  handleRunCommand as runCommand,
-} from './commands/run.js';
+import { handleRunCommand as runCommand } from './commands/run.js';
 import {
   handleTestCommand as testCommand,
   type TestOptions,
@@ -80,26 +87,810 @@ export interface CliContext {
   readonly configManager: ConfigurationManager;
   readonly engine: BenchmarkEngine;
   readonly historyStorage: HistoryStorage;
-  readonly options: GlobalOptions;
+  readonly options: InferParserValues<typeof globalOptions>;
   readonly progressManager: ProgressManager;
   readonly reporterRegistry: ReporterRegistry;
 }
 
+// ============================================================================
+// Global Options Parser
+// ============================================================================
+
+const globalOptions = opt.options({
+  config: opt.string({
+    aliases: ['c'],
+    description: 'Path to configuration file',
+  }),
+  cwd: opt.string({
+    description: 'Working directory',
+  }),
+  json: opt.boolean({
+    description: 'Output results in JSON format',
+  }),
+  'no-color': opt.boolean({
+    description: 'Disable colored output',
+  }),
+  progress: opt.boolean({
+    description: 'Show animated progress bar',
+  }),
+  verbose: opt.boolean({
+    aliases: ['v'],
+    description: 'Enable verbose output',
+  }),
+});
+
+// ============================================================================
+// History Command Parsers
+// ============================================================================
+
+const historyListParser = opt.options({
+  format: opt.enum(['human', 'json', 'csv'] as const, {
+    description: 'Output format',
+  }),
+  limit: opt.number({
+    description: 'Maximum number of results',
+  }),
+  pattern: opt.string({
+    description: 'Filter by benchmark name pattern',
+  }),
+  since: opt.string({
+    description:
+      'Show runs since date (ISO 8601 or relative like "1 week ago")',
+  }),
+  tag: opt.array('string', {
+    aliases: ['t'],
+    description: 'Filter by tags',
+  }),
+  until: opt.string({
+    description: 'Show runs until date (ISO 8601 or relative like "1 day ago")',
+  }),
+});
+
+const historyShowParser = merge(
+  opt.options({
+    format: opt.enum(['human', 'json', 'csv'] as const, {
+      description: 'Output format',
+    }),
+  }),
+  pos.positionals(
+    pos.string({
+      description: 'ID of the benchmark run to show',
+      name: 'run-id',
+      required: true,
+    }),
+  ),
+);
+
+const historyCompareParser = merge(
+  opt.options({
+    format: opt.enum(['human', 'json'] as const, {
+      description: 'Output format',
+    }),
+  }),
+  pos.positionals(
+    pos.string({
+      description: 'ID of the first benchmark run',
+      name: 'run-id1',
+      required: true,
+    }),
+    pos.string({
+      description: 'ID of the second benchmark run',
+      name: 'run-id2',
+      required: true,
+    }),
+  ),
+);
+
+const historyTrendsParser = merge(
+  opt.options({
+    all: opt.boolean({
+      aliases: ['a'],
+      description: 'Analyze all runs (ignore limit)',
+    }),
+    format: opt.enum(['human', 'json'] as const, {
+      description: 'Output format',
+    }),
+    limit: opt.number({
+      description: 'Maximum number of runs to analyze',
+    }),
+    since: opt.string({
+      description:
+        'Show trends since date (ISO 8601 or relative like "1 week ago")',
+    }),
+    tag: opt.array('string', {
+      aliases: ['t'],
+      description: 'Filter by tags',
+    }),
+    until: opt.string({
+      description:
+        'Show trends until date (ISO 8601 or relative like "1 day ago")',
+    }),
+  }),
+  pos.positionals(
+    pos.string({
+      description: 'Filter by benchmark name pattern',
+      name: 'pattern',
+    }),
+  ),
+);
+
+const historyCleanParser = map(
+  opt.options({
+    'max-age': opt.number({
+      description: 'Remove runs older than this many days',
+    }),
+    'max-runs': opt.number({
+      description: 'Keep only this many most recent runs',
+    }),
+    'max-size': opt.number({
+      description: 'Keep history under this size in bytes',
+    }),
+    yes: opt.boolean({
+      aliases: ['y'],
+      description: 'Confirm cleanup without prompting',
+    }),
+  }),
+  ({ positionals, values }) => {
+    if (!values['max-age'] && !values['max-runs'] && !values['max-size']) {
+      throw new Error(
+        'At least one cleanup criterion must be specified (--max-age, --max-runs, or --max-size)',
+      );
+    }
+    return { positionals, values };
+  },
+);
+
+const historyExportParser = opt.options({
+  format: opt.enum(['json', 'csv'] as const, {
+    description: 'Export format',
+  }),
+  output: opt.string({
+    aliases: ['o'],
+    description: 'Output file path',
+    required: true,
+  }),
+  since: opt.string({
+    description: 'Export runs since date',
+  }),
+  until: opt.string({
+    description: 'Export runs until date',
+  }),
+});
+
+// ============================================================================
+// Baseline Command Parsers
+// ============================================================================
+
+const baselineSetParser = merge(
+  opt.options({
+    branch: opt.string({
+      description: 'Git branch name',
+    }),
+    commit: opt.string({
+      description: 'Git commit SHA (40 characters)',
+    }),
+    default: opt.boolean({
+      description: 'Set as default baseline',
+    }),
+    'run-id': opt.string({
+      description: 'Specific run ID to save (default: most recent)',
+    }),
+  }),
+  pos.positionals(
+    pos.string({
+      description: 'Name for the baseline',
+      name: 'name',
+      required: true,
+    }),
+  ),
+);
+
+const baselineListParser = opt.options({
+  format: opt.enum(['human', 'json'] as const, {
+    description: 'Output format',
+  }),
+});
+
+const baselineShowParser = merge(
+  opt.options({
+    format: opt.enum(['human', 'json'] as const, {
+      description: 'Output format',
+    }),
+  }),
+  pos.positionals(
+    pos.string({
+      description: 'Baseline name to show',
+      name: 'name',
+      required: true,
+    }),
+  ),
+);
+
+const baselineDeleteParser = pos.positionals(
+  pos.string({
+    description: 'Baseline name to delete',
+    name: 'name',
+    required: true,
+  }),
+);
+
+const baselineAnalyzeParser = opt.options({
+  confidence: opt.number({
+    description: 'Confidence level (0.5-0.999, default 0.95)',
+  }),
+  runs: opt.number({
+    description: 'Number of recent runs to analyze',
+  }),
+});
+
+// ============================================================================
+// Run Command Parser
+// ============================================================================
+
+const runParserBase = merge(
+  opt.options({
+    bail: opt.boolean({
+      aliases: ['b'],
+      description: 'Stop on first failure',
+    }),
+    engine: opt.enum([Engines.TINYBENCH, Engines.ACCURATE] as const, {
+      aliases: ['e'],
+      description:
+        'Benchmark engine: tinybench (default) or accurate (requires --allow-natives-syntax)',
+    }),
+    exclude: opt.array('string', {
+      aliases: ['X'],
+      description: 'Exclude patterns',
+    }),
+    'exclude-tag': opt.array('string', {
+      aliases: ['T'],
+      description: 'Exclude benchmarks with any of these tags',
+    }),
+    iterations: opt.number({
+      aliases: ['i'],
+      description: 'Number of iterations per benchmark',
+    }),
+    'json-pretty': opt.boolean({
+      description: 'Pretty-print JSON output (only affects json reporter)',
+    }),
+    'limit-by': opt.enum(['time', 'iterations', 'any', 'all'] as const, {
+      aliases: ['l', 'limit'],
+      description:
+        'How to limit benchmarks: time (time budget), iterations (sample count), any (either threshold), all (both thresholds)',
+    }),
+    output: opt.string({
+      aliases: ['o'],
+      description: 'Output directory for reports',
+    }),
+    'output-file': opt.string({
+      aliases: ['of', 'file'],
+      description:
+        'Custom filename for reporter output (use with single reporter only)',
+    }),
+    quiet: opt.boolean({
+      aliases: ['q'],
+      description: 'Minimal output',
+    }),
+    reporter: opt.array(
+      [
+        Reporters.HUMAN,
+        Reporters.JSON,
+        Reporters.CSV,
+        Reporters.NYAN,
+        Reporters.SIMPLE,
+      ] as const,
+      {
+        aliases: ['r'],
+        default: [DEFAULT_REPORTER],
+        description: 'Output reporters to use (human,json,csv)',
+      },
+    ),
+    tag: opt.array('string', {
+      description: 'Include only benchmarks with any of these tags',
+    }),
+    time: opt.number({
+      aliases: ['t'],
+      description: 'Time budget per benchmark in milliseconds',
+    }),
+    timeout: opt.number({
+      description: 'Timeout per benchmark in milliseconds',
+    }),
+    warmup: opt.number({
+      aliases: ['w', 'warm'],
+      description: 'Number of warmup iterations',
+    }),
+  }),
+  pos.positionals(
+    pos.variadic('string', {
+      description:
+        'File paths, directory paths, or glob patterns for benchmark files',
+      name: 'pattern',
+    }),
+  ),
+);
+
+// Add validation via map()
+const runParser = map(runParserBase, ({ positionals, values }) => {
+  if (values.reporter && values.reporter.length > 1 && values['output-file']) {
+    throw new Error(
+      '--output-file can only be used with a single reporter. Use --output <dir> for multiple reporters.',
+    );
+  }
+  return { positionals, values };
+});
+
+// ============================================================================
+// Init Command Parser
+// ============================================================================
+
+const initParser = merge(
+  opt.options({
+    'config-type': opt.enum(['json', 'yaml', 'js', 'ts'] as const, {
+      description: 'Configuration file format',
+    }),
+    examples: opt.boolean({
+      description: 'Include example benchmark files',
+    }),
+    force: opt.boolean({
+      description: 'Overwrite existing files',
+    }),
+    quiet: opt.boolean({
+      aliases: ['q'],
+      description: 'Minimal output',
+    }),
+    yes: opt.boolean({
+      aliases: ['y'],
+      description: 'Accept all prompts automatically',
+    }),
+  }),
+  pos.positionals(
+    pos.enum(['basic', 'advanced', 'library'] as const, {
+      description: 'Type of project to initialize',
+      name: 'type',
+    }),
+  ),
+);
+
+// ============================================================================
+// Analyze Command Parser
+// ============================================================================
+
+const analyzeParserBase = merge(
+  opt.options({
+    'filter-file': opt.string({
+      description: 'Filter functions by file glob pattern',
+    }),
+    'group-by-file': opt.boolean({
+      description: 'Group results by file',
+    }),
+    input: opt.string({
+      aliases: ['i'],
+      description: 'Path to existing *.cpuprofile file',
+    }),
+    'min-percent': opt.number({
+      aliases: ['m', 'min'],
+      default: 0.5,
+      description: 'Minimum execution percentage to show',
+    }),
+    top: opt.number({
+      aliases: ['n'],
+      default: 25,
+      description: 'Number of top functions to show',
+    }),
+  }),
+  pos.positionals(
+    pos.string({
+      description: 'Command to analyze (e.g., "npm test")',
+      name: 'command',
+    }),
+  ),
+);
+
+// Add validation
+const analyzeParser = map(analyzeParserBase, ({ positionals, values }) => {
+  const [command] = positionals;
+  if (!command && !values.input) {
+    throw new Error('Either [command] or --input must be provided');
+  }
+  return { positionals, values };
+});
+
+// ============================================================================
+// Test Command Parser
+// ============================================================================
+
+const testParser = merge(
+  opt.options({
+    bail: opt.boolean({
+      aliases: ['b'],
+      description: 'Stop on first failure',
+    }),
+    iterations: opt.number({
+      aliases: ['i'],
+      default: 100,
+      description: 'Number of iterations per test',
+    }),
+    quiet: opt.boolean({
+      aliases: ['q'],
+      description: 'Minimal output',
+    }),
+    warmup: opt.number({
+      aliases: ['w'],
+      default: 5,
+      description: 'Number of warmup iterations',
+    }),
+  }),
+  pos.positionals(
+    pos.enum(['ava', 'jest', 'mocha', 'node-test'] as const, {
+      description: 'Test framework to use',
+      name: 'framework',
+      required: true,
+    }),
+    pos.variadic('string', {
+      description: 'Test file paths or glob patterns',
+      name: 'files',
+    }),
+  ),
+);
+
+// ============================================================================
+// Subcommand-specific options
+// ============================================================================
+
 /**
- * Global CLI options shared across all commands
+ * Additional global options for history and baseline subcommands
  */
-interface GlobalOptions {
-  /** Configuration file path */
-  config?: string | undefined;
-  /** Working directory */
-  cwd?: string;
-  /** JSON output for machine parsing */
-  json?: boolean;
-  /** Disable colored output */
-  noColor?: boolean;
-  /** Enable verbose output */
-  verbose?: boolean;
-}
+const quietOption = opt.options({
+  quiet: opt.boolean({
+    description: 'Minimal output',
+  }),
+});
+
+// ============================================================================
+// Main CLI Builder
+// ============================================================================
+
+/**
+ * Synthwave-inspired theme for CLI help output
+ *
+ * Matches the retro aesthetic used in modestbench reporters
+ */
+const synthwaveTheme = {
+  colors: {
+    command: ansi.brightMagenta,
+    defaultText: ansi.dim,
+    defaultValue: ansi.brightYellow,
+    description: ansi.brightWhite,
+    epilog: ansi.brightWhite,
+    example: ansi.cyan,
+    flag: ansi.brightCyan,
+    positional: ansi.brightMagenta,
+    scriptName: ansi.brightCyan + ansi.bold,
+    sectionHeader: ansi.magenta + ansi.bold,
+    type: ansi.brightWhite + ansi.dim,
+    url: ansi.brightCyan + ansi.underline,
+    usage: ansi.white,
+  },
+};
+
+const createCli = (abortController: AbortController) => {
+  return bargs('modestbench', {
+    description: 'A modern benchmark runner for Node.js',
+    theme: synthwaveTheme,
+  })
+    .globals(globalOptions)
+    .command(
+      'run',
+      runParser,
+      async ({ positionals, values }) => {
+        const [pattern] = positionals;
+        const context = await createCliContext(
+          values,
+          abortController,
+          values.engine,
+        );
+        const exitCode = await runCommand(context, {
+          bail: values.bail,
+          config: values.config,
+          cwd: values.cwd,
+          engine: values.engine,
+          exclude: values.exclude,
+          excludeTags: values['exclude-tag'],
+          iterations: values.iterations,
+          json: values.json,
+          jsonPretty: values['json-pretty'],
+          noColor: values['no-color'],
+          outputDir: values.output,
+          outputFile: values['output-file'],
+          pattern,
+          progress: values.progress,
+          quiet: values.quiet,
+          reporters: values.reporter,
+          tags: values.tag,
+          time: values.time,
+          timeout: values.timeout,
+          verbose: values.verbose,
+          warmup: values.warmup,
+        });
+        process.exit(exitCode);
+      },
+      'Run benchmark files',
+    )
+    .command(
+      'history',
+      (history) =>
+        history
+          .globals(quietOption)
+          .command(
+            'list',
+            historyListParser,
+            async ({ values }) => {
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleListCommand(context, {
+                cwd: values.cwd,
+                format: values.format,
+                limit: values.limit,
+                pattern: values.pattern,
+                since: values.since,
+                tags: values.tag,
+                until: values.until,
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'List recent benchmark runs',
+          )
+          .command(
+            'show',
+            historyShowParser,
+            async ({ positionals, values }) => {
+              const [runId] = positionals;
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleShowCommand(context, {
+                cwd: values.cwd,
+                format: values.format,
+                runId,
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Show detailed results for a specific run',
+          )
+          .command(
+            'compare',
+            historyCompareParser,
+            async ({ positionals, values }) => {
+              const [runId1, runId2] = positionals;
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleCompareCommand(context, {
+                cwd: values.cwd,
+                format: values.format,
+                runId1,
+                runId2,
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Compare two benchmark runs',
+          )
+          .command(
+            'trends',
+            historyTrendsParser,
+            async ({ positionals, values }) => {
+              const [pattern] = positionals;
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleTrendsCommand(context, {
+                all: values.all,
+                cwd: values.cwd,
+                format: values.format,
+                limit: values.limit,
+                pattern,
+                since: values.since,
+                tags: values.tag,
+                until: values.until,
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Show performance trends over time',
+          )
+          .command(
+            'clean',
+            historyCleanParser,
+            async ({ values }) => {
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleCleanCommand(context, {
+                confirm: values.yes,
+                cwd: values.cwd,
+                maxAge: values['max-age'],
+                maxRuns: values['max-runs'],
+                maxSize: values['max-size'],
+                quiet: values.quiet,
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Clean up old benchmark history',
+          )
+          .command(
+            'export',
+            historyExportParser,
+            async ({ values }) => {
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleExportCommand(context, {
+                cwd: values.cwd,
+                format: values.format,
+                outputPath: values.output,
+                quiet: Boolean(values.quiet),
+                since: values.since,
+                until: values.until,
+                verbose: values.verbose,
+              });
+              process.exitCode = exitCode;
+            },
+            'Export benchmark history to a file',
+          ),
+      'View and manage benchmark history',
+    )
+    .command(
+      'baseline',
+      (baseline) =>
+        baseline
+          .globals(quietOption)
+          .command(
+            'set',
+            baselineSetParser,
+            async ({ positionals, values }) => {
+              const [name] = positionals;
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleBaselineSetCommand(context, {
+                branch: values.branch,
+                commit: values.commit,
+                cwd: values.cwd,
+                default: values.default,
+                name,
+                quiet: Boolean(values.quiet),
+                runId: values['run-id'],
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Save a benchmark run as a baseline',
+          )
+          .command(
+            'list',
+            baselineListParser,
+            async ({ values }) => {
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleBaselineListCommand(context, {
+                cwd: values.cwd,
+                format: values.format,
+                quiet: Boolean(values.quiet),
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'List all saved baselines',
+          )
+          .command(
+            'show',
+            baselineShowParser,
+            async ({ positionals, values }) => {
+              const [name] = positionals;
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleBaselineShowCommand(context, {
+                cwd: values.cwd,
+                format: values.format,
+                name,
+                quiet: Boolean(values.quiet),
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Show baseline details',
+          )
+          .command(
+            'delete',
+            baselineDeleteParser,
+            async ({ positionals, values }) => {
+              const [name] = positionals;
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleBaselineDeleteCommand(context, {
+                cwd: values.cwd,
+                name,
+                quiet: Boolean(values.quiet),
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Delete a baseline',
+          )
+          .command(
+            'analyze',
+            baselineAnalyzeParser,
+            async ({ values }) => {
+              const context = await createCliContext(values, abortController);
+              const exitCode = await handleBaselineAnalyzeCommand(context, {
+                confidence: values.confidence,
+                cwd: values.cwd,
+                quiet: Boolean(values.quiet),
+                runs: values.runs,
+                verbose: values.verbose,
+              });
+              process.exit(exitCode);
+            },
+            'Analyze history and suggest performance budgets',
+          ),
+      'Manage performance baselines',
+    )
+    .command(
+      'init',
+      initParser,
+      async ({ positionals, values }) => {
+        const [type] = positionals;
+        const context = await createCliContext(values, abortController);
+        const exitCode = await initCommand(context, {
+          configType: values['config-type'],
+          cwd: values.cwd,
+          examples: values.examples,
+          force: values.force,
+          quiet: values.quiet,
+          type,
+          verbose: values.verbose,
+          yes: values.yes,
+        });
+        process.exitCode = exitCode;
+      },
+      'Initialize a new benchmark project',
+    )
+    .command(
+      'analyze',
+      analyzeParser,
+      async ({ positionals, values }) => {
+        const [command] = positionals;
+        // Context not needed for analyze command currently
+        const context = {} as CliContext;
+
+        const options: AnalyzeOptions = {
+          color: !values['no-color'],
+          command,
+          cwd: values.cwd || process.cwd(),
+          filterFile: values['filter-file'],
+          groupByFile: values['group-by-file'],
+          input: values.input,
+          minPercent: values['min-percent'],
+          top: values.top,
+        };
+
+        process.exitCode = await analyzeCommand(context, options);
+      },
+      'Analyze code execution and identify benchmark candidates',
+    )
+    .command(
+      'test',
+      testParser,
+      async ({ positionals, values }) => {
+        const [framework, files] = positionals;
+        const context = await createCliContext(values, abortController);
+        const options: TestOptions = {
+          bail: values.bail,
+          cwd: values.cwd,
+          framework,
+          iterations: values.iterations,
+          json: values.json,
+          noColor: values['no-color'],
+          pattern: files,
+          quiet: values.quiet,
+          verbose: values.verbose,
+          warmup: values.warmup,
+        };
+        const exitCode = await testCommand(context, options);
+        process.exit(exitCode);
+      },
+      'Run test files as benchmarks',
+    )
+    .defaultCommand('run');
+};
 
 /**
  * Initialize and run the CLI
@@ -120,986 +911,49 @@ export const main = async (
   argv?: string[],
   abortController?: AbortController,
 ): Promise<void> => {
+  const controller = abortController ?? new AbortController();
+
   try {
-    const args = argv || hideBin(process.argv);
-
-    const cli = yargs(args);
-
-    // Configure global options and commands
-
-    await cli
-      .scriptName('modestbench')
-      .option('config', {
-        alias: 'c',
-        description: 'Path to configuration file',
-        global: true,
-        type: 'string',
-      })
-      .option('verbose', {
-        alias: 'v',
-        defaultDescription: String(RUN_COMMAND_DEFAULTS.verbose),
-        description: 'Enable verbose output',
-        global: true,
-        type: 'boolean',
-      })
-      .option('no-color', {
-        defaultDescription: 'false',
-        description: 'Disable colored output',
-        global: true,
-        type: 'boolean',
-      })
-      .option('progress', {
-        defaultDescription: 'true',
-        description: 'Show animated progress bar',
-        global: true,
-        type: 'boolean',
-      })
-      .option('json', {
-        defaultDescription: 'false',
-        description: 'Output results in JSON format',
-        global: true,
-        type: 'boolean',
-      })
-      .option('cwd', {
-        defaultDescription: '.',
-        description: 'Working directory',
-        global: true,
-        normalize: true,
-        type: 'string',
-      })
-      .help()
-      .alias('help', 'h')
-      .version()
-      .alias('version', 'V')
-      .strict()
-      .demandCommand(1)
-      .recommendCommands()
-      .completion()
-      .wrap(Math.min(120, cli.terminalWidth()))
-      .command(
-        ['$0 [pattern..]', 'run [pattern..]'],
-        'Run benchmark files',
-        (yargs) =>
-          yargs
-            .positional('pattern', {
-              array: true,
-              defaultDescription: `(auto-discovered from ${DEFAULT_BENCHMARK_DIR} directory)`,
-              describe:
-                'File paths, directory paths, or glob patterns for benchmark files',
-              type: 'string',
-            })
-            .option('config', {
-              alias: 'c',
-              description: 'Path to configuration file',
-              type: 'string',
-            })
-            .option('reporter', {
-              alias: 'r',
-              array: true,
-              choices: Object.values(Reporters).sort(),
-              defaultDescription: DEFAULT_REPORTER,
-              description: 'Output reporters to use (human,json,csv)',
-              type: 'string',
-            })
-            .option('output', {
-              alias: 'o',
-              description: 'Output directory for reports',
-              type: 'string',
-            })
-            .option('output-file', {
-              alias: ['of', 'file'],
-              description:
-                'Custom filename for reporter output (use with single reporter only)',
-              requiresArg: true,
-              type: 'string',
-            })
-            .option('iterations', {
-              alias: 'i',
-              description: 'Number of iterations per benchmark',
-              type: 'number',
-            })
-            .option('time', {
-              alias: 't',
-              description: 'Time budget per benchmark in milliseconds',
-              type: 'number',
-            })
-            .option('warmup', {
-              alias: ['w', 'warm'],
-              description: 'Number of warmup iterations',
-              type: 'number',
-            })
-            .option('limit-by', {
-              alias: ['l', 'limit'],
-              choices: ['time', 'iterations', 'any', 'all'],
-              description:
-                'How to limit benchmarks: time (time budget), iterations (sample count), any (either threshold), all (both thresholds)',
-              type: 'string',
-            })
-            .option('bail', {
-              alias: 'b',
-              defaultDescription: String(RUN_COMMAND_DEFAULTS.bail),
-              description: 'Stop on first failure',
-              type: 'boolean',
-            })
-            .option('exclude', {
-              alias: 'X',
-              array: true,
-              description: 'Exclude patterns (comma-separated)',
-              type: 'string',
-            })
-            .option('timeout', {
-              description: 'Timeout per benchmark in milliseconds',
-              type: 'number',
-            })
-            .option('quiet', {
-              alias: 'q',
-              defaultDescription: String(RUN_COMMAND_DEFAULTS.quiet),
-              description: 'Minimal output',
-              type: 'boolean',
-            })
-            .option('tag', {
-              array: true,
-              description: 'Include only benchmarks with any of these tags',
-              type: 'string',
-            })
-            .option('exclude-tag', {
-              alias: 'T',
-              array: true,
-              description: 'Exclude benchmarks with any of these tags',
-              type: 'string',
-            })
-            .option('engine', {
-              alias: 'e',
-              choices: Object.values(Engines),
-              defaultDescription: DEFAULT_ENGINE,
-              description:
-                'Benchmark engine: tinybench (default) or accurate (requires --allow-natives-syntax)',
-              type: 'string',
-            })
-            .option('json-pretty', {
-              defaultDescription: 'false',
-              description:
-                'Pretty-print JSON output (only affects json reporter)',
-              type: 'boolean',
-            })
-            .example([
-              ['$0 run', 'Run benchmarks in current directory and bench/'],
-              ['$0 run benchmarks/', 'Run all benchmarks in a directory'],
-              ['$0 run src/perf/', 'Run benchmarks in specific directory'],
-              ['$0 run "src/**/*.bench.js"', 'Run specific glob pattern'],
-              ['$0 run file1.bench.js file2.bench.js', 'Run specific files'],
-              ['$0 run benchmarks/ tests/perf/', 'Run multiple directories'],
-              ['$0 run -r json -r csv', 'Use multiple reporters'],
-              ['$0 run --iterations 1000', 'Set iteration count'],
-              ['$0 run --engine accurate', 'Use high-accuracy engine'],
-              ['$0 run --bail', 'Stop on first failure'],
-            ])
-            .check((argv) => {
-              if (
-                argv.reporter &&
-                argv.reporter.length > 1 &&
-                argv['output-file']
-              ) {
-                throw new Error(
-                  '--output-file can only be used with a single reporter. Use --output <dir> for multiple reporters.',
-                );
-              }
-              return true;
-            }),
-        async (argv) => {
-          const context = await createCliContext(
-            argv,
-            abortController!,
-            argv.engine,
-          );
-          const exitCode = await runCommand(context, {
-            bail: argv.bail,
-            config: argv.config,
-            cwd: argv.cwd,
-            engine: argv.engine,
-            exclude: argv.exclude,
-            excludeTags: argv['exclude-tag'],
-            iterations: argv.iterations,
-            json: argv.json,
-            jsonPretty: argv['json-pretty'],
-            noColor: argv.noColor,
-            outputDir: argv.output,
-            outputFile: argv['output-file'],
-            pattern: argv.pattern,
-            progress: argv.progress,
-            quiet: argv.quiet,
-            reporters: argv.reporter,
-            tags: argv.tag,
-            time: argv.time,
-            timeout: argv.timeout,
-            verbose: argv.verbose,
-            warmup: argv.warmup,
-          });
-          process.exit(exitCode);
-        },
-      )
-      .command('history', 'View and manage benchmark history', (yargs) =>
-        yargs
-          .command(
-            'list',
-            'List recent benchmark runs',
-            (yargs) =>
-              yargs
-                .option('since', {
-                  description:
-                    'Show runs since date (ISO 8601 or relative like "1 week ago")',
-                  type: 'string',
-                })
-                .option('until', {
-                  description:
-                    'Show runs until date (ISO 8601 or relative like "1 day ago")',
-                  type: 'string',
-                })
-                .option('pattern', {
-                  description: 'Filter by benchmark name pattern',
-                  type: 'string',
-                })
-                .option('tag', {
-                  alias: 't',
-                  array: true,
-                  description: 'Filter by tags (comma-separated)',
-                  type: 'string',
-                })
-                .option('limit', {
-                  defaultDescription: '10',
-                  description: 'Maximum number of results',
-                  type: 'number',
-                })
-                .option('format', {
-                  choices: ['human', 'json', 'csv'] as const,
-                  defaultDescription: 'human' as const,
-                  description: 'Output format',
-                  type: 'string',
-                })
-                .example([
-                  ['$0 history list', 'List recent benchmark runs'],
-                  [
-                    '$0 history list --since "1 week ago"',
-                    'List runs from last week',
-                  ],
-                  ['$0 history list --limit 20', 'List 20 most recent runs'],
-                  ['$0 history list --format json', 'List runs in JSON format'],
-                ]),
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleListCommand(context, {
-                cwd: argv.cwd,
-                format: argv.format,
-                limit: argv.limit,
-                pattern: argv.pattern,
-                since: argv.since,
-                tags: argv.tag,
-                until: argv.until,
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'show <run-id>',
-            'Show detailed results for a specific run',
-            (yargs) =>
-              yargs
-                .positional('run-id', {
-                  demandOption: true,
-                  describe: 'ID of the benchmark run to show',
-                  type: 'string',
-                })
-                .option('format', {
-                  choices: ['human', 'json', 'csv'] as const,
-                  defaultDescription: 'human' as const,
-                  description: 'Output format',
-                  type: 'string',
-                })
-                .example([
-                  [
-                    '$0 history show abc123',
-                    'Show detailed results for run abc123',
-                  ],
-                  [
-                    '$0 history show abc123 --format json',
-                    'Show run in JSON format',
-                  ],
-                ]),
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleShowCommand(context, {
-                cwd: argv.cwd,
-                format: argv.format,
-                runId: argv['run-id'],
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'compare <run-id1> <run-id2>',
-            'Compare two benchmark runs',
-            (yargs) =>
-              yargs
-                .positional('run-id1', {
-                  demandOption: true,
-                  describe: 'ID of the first benchmark run',
-                  type: 'string',
-                })
-                .positional('run-id2', {
-                  demandOption: true,
-                  describe: 'ID of the second benchmark run',
-                  type: 'string',
-                })
-                .option('format', {
-                  choices: ['human', 'json'] as const,
-                  defaultDescription: 'human' as const,
-                  description: 'Output format',
-                  type: 'string',
-                })
-                .example([
-                  ['$0 history compare abc123 def456', 'Compare two runs'],
-                  [
-                    '$0 history compare abc123 def456 --format json',
-                    'Compare in JSON format',
-                  ],
-                ]),
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleCompareCommand(context, {
-                cwd: argv.cwd,
-                format: argv.format,
-                runId1: argv['run-id1'],
-                runId2: argv['run-id2'],
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'trends [pattern]',
-            'Show performance trends over time',
-            (yargs) =>
-              yargs
-                .positional('pattern', {
-                  describe: 'Filter by benchmark name pattern',
-                  type: 'string',
-                })
-                .option('since', {
-                  description:
-                    'Show trends since date (ISO 8601 or relative like "1 week ago")',
-                  type: 'string',
-                })
-                .option('until', {
-                  description:
-                    'Show trends until date (ISO 8601 or relative like "1 day ago")',
-                  type: 'string',
-                })
-                .option('tag', {
-                  alias: 't',
-                  array: true,
-                  description: 'Filter by tags (comma-separated)',
-                  type: 'string',
-                })
-                .option('limit', {
-                  description: 'Maximum number of runs to analyze',
-                  type: 'number',
-                })
-                .option('all', {
-                  alias: 'a',
-                  defaultDescription: 'false',
-                  description: 'Analyze all runs (ignore limit)',
-                  type: 'boolean',
-                })
-                .option('format', {
-                  choices: ['human', 'json'] as const,
-                  defaultDescription: 'human' as const,
-                  description: 'Output format',
-                  type: 'string',
-                })
-                .example([
-                  [
-                    '$0 history trends',
-                    'Show performance trends for all benchmarks',
-                  ],
-                  [
-                    '$0 history trends --since "1 month ago"',
-                    'Show trends from last month',
-                  ],
-                  [
-                    '$0 history trends "array-*"',
-                    'Show trends for array benchmarks',
-                  ],
-                  [
-                    '$0 history trends --format json',
-                    'Output trends in JSON format',
-                  ],
-                ]),
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleTrendsCommand(context, {
-                all: argv.all,
-                cwd: argv.cwd,
-                format: argv.format,
-                limit: argv.limit,
-                pattern: argv.pattern,
-                since: argv.since,
-                tags: argv.tag,
-                until: argv.until,
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'clean',
-            'Clean up old benchmark history',
-            (yargs) =>
-              yargs
-                .option('max-age', {
-                  description: 'Remove runs older than this many days',
-                  type: 'number',
-                })
-                .option('max-runs', {
-                  description: 'Keep only this many most recent runs',
-                  type: 'number',
-                })
-                .option('max-size', {
-                  description: 'Keep history under this size in bytes',
-                  type: 'number',
-                })
-                .option('yes', {
-                  alias: 'y',
-                  description: 'Confirm cleanup without prompting',
-                  type: 'boolean',
-                })
-                .option('quiet', {
-                  default: false,
-                  description: 'Minimal output',
-                  type: 'boolean',
-                })
-                .check((argv) => {
-                  if (
-                    !argv['max-age'] &&
-                    !argv['max-runs'] &&
-                    !argv['max-size']
-                  ) {
-                    throw new Error(
-                      'At least one cleanup criterion must be specified (--max-age, --max-runs, or --max-size)',
-                    );
-                  }
-                  return true;
-                })
-                .example([
-                  [
-                    '$0 history clean --max-runs 50 --yes',
-                    'Keep only latest 50 runs',
-                  ],
-                  [
-                    '$0 history clean --max-age 30',
-                    'Preview removing runs older than 30 days',
-                  ],
-                  [
-                    '$0 history clean --max-size 10485760',
-                    'Keep history under 10MB',
-                  ],
-                ]),
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleCleanCommand(context, {
-                confirm: argv.yes,
-                cwd: argv.cwd,
-                maxAge: argv['max-age'],
-                maxRuns: argv['max-runs'],
-                maxSize: argv['max-size'],
-                quiet: argv.quiet,
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'export',
-            'Export benchmark history to a file',
-            (yargs) =>
-              yargs
-                .option('format', {
-                  choices: ['json', 'csv'] as const,
-                  defaultDescription: 'json' as const,
-                  description: 'Export format',
-                  type: 'string',
-                })
-                .option('output', {
-                  alias: 'o',
-                  demandOption: true,
-                  description: 'Output file path',
-                  type: 'string',
-                })
-                .option('since', {
-                  description: 'Export runs since date',
-                  type: 'string',
-                })
-                .option('until', {
-                  description: 'Export runs until date',
-                  type: 'string',
-                })
-                .example([
-                  [
-                    '$0 history export -o history.json',
-                    'Export all history to JSON',
-                  ],
-                  [
-                    '$0 history export -o history.csv --format csv',
-                    'Export to CSV',
-                  ],
-                  [
-                    '$0 history export -o recent.json --since "1 week ago"',
-                    'Export recent runs',
-                  ],
-                ]),
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleExportCommand(context, {
-                cwd: argv.cwd,
-                format: argv.format,
-                outputPath: argv.output,
-                quiet: Boolean(argv.quiet),
-                since: argv.since,
-                until: argv.until,
-                verbose: argv.verbose,
-              });
-              process.exitCode = exitCode;
-            },
-          )
-          .demandCommand(1, 'You must specify a history subcommand')
-          .strict()
-          .example([
-            ['$0 history list', 'List recent benchmark runs'],
-            ['$0 history show <run-id>', 'Show detailed results'],
-            ['$0 history compare <run-id1> <run-id2>', 'Compare two runs'],
-            ['$0 history trends', 'Show performance trends'],
-            ['$0 history clean --max-runs 50', 'Keep only latest 50 runs'],
-            ['$0 history export -o data.json', 'Export history'],
-          ]),
-      )
-      .command('baseline', 'Manage performance baselines', (yargs) => {
-        return yargs
-          .command(
-            'set <name>',
-            'Save a benchmark run as a baseline',
-            (yargs) => {
-              return yargs
-                .positional('name', {
-                  describe: 'Name for the baseline',
-                  type: 'string',
-                })
-                .option('run-id', {
-                  description: 'Specific run ID to save (default: most recent)',
-                  type: 'string',
-                })
-                .option('commit', {
-                  description: 'Git commit SHA (40 characters)',
-                  type: 'string',
-                })
-                .option('branch', {
-                  description: 'Git branch name',
-                  type: 'string',
-                })
-                .option('default', {
-                  defaultDescription: 'false',
-                  description: 'Set as default baseline',
-                  type: 'boolean',
-                })
-                .example([
-                  [
-                    '$0 baseline set production-v1.0',
-                    'Save most recent run as baseline',
-                  ],
-                  ['$0 baseline set v1.0 --default', 'Save and set as default'],
-                  [
-                    '$0 baseline set v1.0 --commit abc123...',
-                    'Save with commit info',
-                  ],
-                ]);
-            },
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleBaselineSetCommand(context, {
-                branch: argv.branch,
-                commit: argv.commit,
-                cwd: argv.cwd,
-                default: argv.default,
-                name: String(argv.name),
-                quiet: Boolean(argv.quiet),
-                runId: argv['run-id'],
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'list',
-            'List all saved baselines',
-            (yargs) => {
-              return yargs
-                .option('format', {
-                  choices: ['human', 'json'] as const,
-                  defaultDescription: 'human' as const,
-                  description: 'Output format',
-                  type: 'string',
-                })
-                .example([
-                  ['$0 baseline list', 'List all baselines'],
-                  ['$0 baseline list --format json', 'List in JSON format'],
-                ]);
-            },
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleBaselineListCommand(context, {
-                cwd: argv.cwd,
-                format: argv.format,
-                quiet: Boolean(argv.quiet),
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'show <name>',
-            'Show baseline details',
-            (yargs) => {
-              return yargs
-                .positional('name', {
-                  describe: 'Baseline name to show',
-                  type: 'string',
-                })
-                .option('format', {
-                  choices: ['human', 'json'] as const,
-                  defaultDescription: 'human' as const,
-                  description: 'Output format',
-                  type: 'string',
-                })
-                .example([
-                  ['$0 baseline show production-v1.0', 'Show baseline details'],
-                  [
-                    '$0 baseline show v1.0 --format json',
-                    'Show in JSON format',
-                  ],
-                ]);
-            },
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleBaselineShowCommand(context, {
-                cwd: argv.cwd,
-                format: argv.format,
-                name: String(argv.name),
-                quiet: Boolean(argv.quiet),
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'delete <name>',
-            'Delete a baseline',
-            (yargs) => {
-              return yargs
-                .positional('name', {
-                  describe: 'Baseline name to delete',
-                  type: 'string',
-                })
-                .example([
-                  ['$0 baseline delete old-baseline', 'Delete a baseline'],
-                ]);
-            },
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleBaselineDeleteCommand(context, {
-                cwd: argv.cwd,
-                name: String(argv.name),
-                quiet: Boolean(argv.quiet),
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .command(
-            'analyze',
-            'Analyze history and suggest performance budgets',
-            (yargs) => {
-              return yargs
-                .option('runs', {
-                  defaultDescription: '10',
-                  description: 'Number of recent runs to analyze',
-                  type: 'number',
-                })
-                .option('confidence', {
-                  defaultDescription: '0.95',
-                  description: 'Confidence level (0.5-0.999, default 0.95)',
-                  type: 'number',
-                })
-                .example([
-                  [
-                    '$0 baseline analyze',
-                    'Analyze last 10 runs with 95% confidence',
-                  ],
-                  ['$0 baseline analyze --runs 20', 'Analyze last 20 runs'],
-                  [
-                    '$0 baseline analyze --confidence 0.90',
-                    'Use 90% confidence level',
-                  ],
-                ]);
-            },
-            async (argv) => {
-              const context = await createCliContext(argv, abortController!);
-              const exitCode = await handleBaselineAnalyzeCommand(context, {
-                confidence: argv.confidence,
-                cwd: argv.cwd,
-                quiet: Boolean(argv.quiet),
-                runs: argv.runs,
-                verbose: argv.verbose,
-              });
-              process.exit(exitCode);
-            },
-          )
-          .demandCommand(1, 'You must specify a baseline subcommand')
-          .strict()
-          .example([
-            ['$0 baseline set production-v1.0', 'Save current run as baseline'],
-            ['$0 baseline list', 'List all baselines'],
-            ['$0 baseline show production-v1.0', 'Show baseline details'],
-            ['$0 baseline delete old-baseline', 'Delete a baseline'],
-            ['$0 baseline analyze', 'Suggest budgets from history'],
-          ]);
-      })
-      .command(
-        'init [type]',
-        'Initialize a new benchmark project',
-        (yargs) => {
-          return yargs
-            .positional('type', {
-              choices: ['basic', 'advanced', 'library'] as const,
-              defaultDescription: 'basic' as const,
-              describe: 'Type of project to initialize',
-              type: 'string',
-            })
-            .option('examples', {
-              defaultDescription: 'true',
-              description: 'Include example benchmark files',
-              type: 'boolean',
-            })
-            .option('config-type', {
-              choices: ['json', 'yaml', 'js', 'ts'] as const,
-              defaultDescription: 'json' as const,
-              description: 'Configuration file format',
-              type: 'string',
-            })
-            .option('force', {
-              defaultDescription: 'false',
-              description: 'Overwrite existing files',
-              type: 'boolean',
-            })
-            .option('yes', {
-              alias: 'y',
-              defaultDescription: 'false',
-              description: 'Accept all prompts automatically',
-              type: 'boolean',
-            })
-            .option('quiet', {
-              alias: 'q',
-              defaultDescription: 'false',
-              description: 'Minimal output',
-              type: 'boolean',
-            })
-            .example([
-              ['$0 init', 'Initialize a basic project'],
-              [
-                '$0 init advanced --config-type ts',
-                'Initialize advanced project with TypeScript config',
-              ],
-              [
-                '$0 init library --no-examples',
-                'Initialize library project without examples',
-              ],
-            ]);
-        },
-        async (argv) => {
-          const context = await createCliContext(argv, abortController!);
-          const exitCode = await initCommand(context, {
-            configType: argv['config-type'],
-            cwd: argv.cwd,
-            examples: argv.examples,
-            force: argv.force,
-            quiet: argv.quiet,
-            type: argv.type,
-            verbose: argv.verbose,
-            yes: argv.yes,
-          });
-          process.exitCode = exitCode;
-        },
-      )
-      .command(
-        ['analyze [command]', 'profile [command]'],
-        'Analyze code execution and identify benchmark candidates',
-        (yargs) => {
-          return yargs
-            .positional('command', {
-              description: 'Command to analyze (e.g., "npm test")',
-              type: 'string',
-            })
-            .option('input', {
-              alias: 'i',
-              description: 'Path to existing *.cpuprofile file',
-              type: 'string',
-            })
-            .option('filter-file', {
-              description: 'Filter functions by file glob pattern',
-              type: 'string',
-            })
-            .option('min-percent', {
-              alias: ['m', 'min'],
-              default: 0.5,
-              description: 'Minimum execution percentage to show',
-              type: 'number',
-            })
-            .option('top', {
-              alias: 'n',
-              default: 25,
-              description: 'Number of top functions to show',
-              type: 'number',
-            })
-            .option('group-by-file', {
-              default: false,
-              description: 'Group results by file',
-              type: 'boolean',
-            })
-            .check((argv) => {
-              if (!argv.command && !argv.input) {
-                throw new Error('Either [command] or --input must be provided');
-              }
-              return true;
-            });
-        },
-        async (argv) => {
-          // Context not needed for analyze command currently
-          const context = {} as CliContext;
-
-          const options: AnalyzeOptions = {
-            color: !argv.noColor,
-            command: argv.command,
-            cwd: argv.cwd || process.cwd(),
-            filterFile: argv.filterFile,
-            groupByFile: argv.groupByFile,
-            input: argv.input,
-            minPercent: argv.minPercent,
-            top: argv.top,
-          };
-
-          process.exitCode = await analyzeCommand(context, options);
-        },
-      )
-      .command(
-        'test <framework> [files..]',
-        'Run test files as benchmarks (captures tests from Jest, Mocha, node:test, or AVA)',
-        (yargs) => {
-          return yargs
-            .positional('framework', {
-              choices: ['ava', 'jest', 'mocha', 'node-test'] as const,
-              demandOption: true,
-              describe: 'Test framework to use',
-              nargs: 1,
-              type: 'string',
-            })
-            .positional('files', {
-              array: true,
-              describe: 'Test file paths or glob patterns',
-              type: 'string',
-            })
-            .option('iterations', {
-              alias: 'i',
-              default: 100,
-              description: 'Number of iterations per test',
-              type: 'number',
-            })
-            .option('warmup', {
-              alias: 'w',
-              default: 5,
-              description: 'Number of warmup iterations',
-              type: 'number',
-            })
-            .option('bail', {
-              alias: 'b',
-              default: false,
-              description: 'Stop on first failure',
-              type: 'boolean',
-            })
-            .option('quiet', {
-              alias: 'q',
-              default: false,
-              description: 'Minimal output',
-              type: 'boolean',
-            })
-            .example([
-              ['$0 test mocha test/*.spec.js', 'Run Mocha tests as benchmarks'],
-              [
-                '$0 test node-test test/*.test.js',
-                'Run node:test tests as benchmarks',
-              ],
-              [
-                '$0 test ava test/*.js --iterations 500',
-                'Run AVA tests with 500 iterations',
-              ],
-              [
-                '$0 test mocha test/unit.spec.js --json',
-                'Output results as JSON',
-              ],
-            ]);
-        },
-        async (argv) => {
-          const context = await createCliContext(argv, abortController!);
-          const options: TestOptions = {
-            bail: argv.bail,
-            cwd: argv.cwd,
-            framework: argv.framework as TestOptions['framework'],
-            iterations: argv.iterations,
-            json: argv.json,
-            noColor: argv.noColor,
-            pattern: argv.files,
-            quiet: argv.quiet,
-            verbose: argv.verbose,
-            warmup: argv.warmup,
-          };
-          const exitCode = await testCommand(context, options);
-          process.exit(exitCode);
-        },
-      )
-      .fail((msg, err, yargs) => {
-        if (err) {
-          console.error('Error:', err.message);
-          if (process.env.DEBUG) {
-            console.error(err.stack);
-          }
-          // Show help for file discovery errors (similar to usage errors)
-          if (
-            isModestBenchError(err) &&
-            err.code === ErrorCodes.FILE_DISCOVERY_FAILED
-          ) {
-            console.error();
-            yargs.showHelp();
-            process.exit(ExitCodes.DISCOVERY_ERROR);
-          }
-          process.exit(ExitCodes.RUNTIME_ERROR);
-        } else {
-          // Show help for usage errors (unknown arguments, etc.)
-          console.error(msg);
-          console.error();
-          yargs.showHelp();
-          process.exit(ExitCodes.CONFIG_ERROR);
-        }
-      })
-      .parse();
+    const cliBuilder = createCli(controller);
+    await cliBuilder.parseAsync(argv);
   } catch (error) {
+    // Handle bargs errors
+    if (error instanceof HelpError) {
+      // Help was requested or invalid args - message already printed
+      process.exit(ExitCodes.CONFIG_ERROR);
+    }
+
+    if (error instanceof BargsError) {
+      console.error('Error:', error.message);
+      process.exit(ExitCodes.CONFIG_ERROR);
+    }
+
+    // Handle bargs validation errors (thrown as plain Error, not BargsError)
+    if (
+      error instanceof Error &&
+      (error.message.startsWith('Invalid value for --') ||
+        error.message.startsWith('Missing required'))
+    ) {
+      console.error('Error:', error.message);
+      process.exit(ExitCodes.CONFIG_ERROR);
+    }
+
+    // Handle ModestBench errors
+    if (isModestBenchError(error)) {
+      console.error('Error:', error.message);
+      if (process.env.DEBUG) {
+        console.error(error.stack);
+      }
+
+      // Show help for file discovery errors
+      if (error.code === ErrorCodes.FILE_DISCOVERY_FAILED) {
+        process.exit(ExitCodes.DISCOVERY_ERROR);
+      }
+
+      process.exit(ExitCodes.RUNTIME_ERROR);
+    }
+
+    // Unexpected error
     console.error(
       'Unexpected error:',
       error instanceof Error ? error.message : String(error),
@@ -1115,7 +969,7 @@ export const main = async (
  * Create CLI context with dependency injection
  */
 const createCliContext = async (
-  options: GlobalOptions,
+  options: InferParserValues<typeof globalOptions>,
   abortController: AbortController,
   engineType: Engine = DEFAULT_ENGINE,
 ): Promise<CliContext> => {
@@ -1132,7 +986,7 @@ const createCliContext = async (
     engine.registerReporter(
       Reporters.HUMAN,
       new HumanReporter({
-        color: !options.noColor,
+        color: !options['no-color'],
         verbose: options.verbose,
       }),
     );
@@ -1162,7 +1016,7 @@ const createCliContext = async (
     engine.registerReporter(
       'nyan',
       new NyanReporter({
-        color: !options.noColor,
+        color: !options['no-color'],
       }),
     );
 

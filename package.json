@@ -121,12 +121,12 @@
     "test:watch": "npm run test:base -- --watch"
   },
   "dependencies": {
+    "@boneskull/bargs": "3.5.1",
     "cosmiconfig": "9.0.0",
     "cosmiconfig-typescript-loader": "6.2.0",
     "glob": "13.0.0",
     "minimatch": "10.1.1",
     "tinybench": "6.0.0",
-    "yargs": "18.0.0",
     "zod": "4.2.1"
   },
   "devDependencies": {
@@ -141,7 +141,6 @@
     "@types/mocha": "10.0.10",
     "@types/node": "24.10.4",
     "@types/wallabyjs": "0.0.15",
-    "@types/yargs": "17.0.35",
     "asciinema-player": "3.13.5",
     "astro": "5.16.6",
     "astro-broken-link-checker": "file:./vendor/astro-broken-link-checker",

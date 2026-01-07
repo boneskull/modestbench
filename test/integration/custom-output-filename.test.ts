@@ -16,11 +16,14 @@ describe('Custom output filename', () => {
   });
 
   it('should error when using --output-file with multiple reporters', async () => {
+    // Note: bargs uses repeated options for arrays, not comma-separated
     const result = await runCommand([
       'run',
       fixtures.simpleReturn42,
       '--reporter',
-      'json,csv',
+      'json',
+      '--reporter',
+      'csv',
       '--output-file',
       'custom.json',
     ]);
