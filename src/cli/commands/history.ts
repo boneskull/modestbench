@@ -22,6 +22,7 @@ import {
   parseDate,
 } from '../../services/history/query.js';
 import { TrendAnalysisService } from '../../services/history/trend-analysis.js';
+import { formatBytes } from '../../utils/reporter-utils.js';
 
 /**
  * Base options shared by all history subcommands
@@ -93,22 +94,6 @@ interface HistoryTrendsOptions extends BaseHistoryOptions {
   tags?: string[] | undefined;
   until?: string | undefined;
 }
-
-/**
- * Format bytes in human-readable format
- */
-const formatBytes = (bytes: number): string => {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let size = bytes;
-  let unitIndex = 0;
-
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-
-  return `${size.toFixed(1)} ${units[unitIndex]}`;
-};
 
 /**
  * Resolve a partial run ID to a full ID by checking prefix match

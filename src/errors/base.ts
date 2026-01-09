@@ -6,6 +6,7 @@
  */
 
 import { SITE_URL } from '../constants.js';
+import { isError } from '../utils/type-guards.js';
 
 /**
  * Base URL for error documentation
@@ -149,14 +150,4 @@ export const isModestBenchError = (
     typeof (error as { code: unknown }).code === 'string' &&
     (error as { code: string }).code.startsWith('ERR_MB_')
   );
-};
-
-/**
- * Type guard to check if an error is a standard Error
- *
- * @param error - The error to check
- * @returns `true` if the error is an `Error`
- */
-export const isError = (error: unknown): error is Error => {
-  return error instanceof Error;
 };

@@ -8,8 +8,8 @@
  */
 
 import { ABORT_TIMEOUT, ExitCodes } from '../constants.js';
-import { isError } from '../errors/base.js';
 import { isModestBenchError, UnknownError } from '../errors/index.js';
+import { isError } from '../utils/type-guards.js';
 
 /**
  * Handle process signals gracefully
@@ -65,5 +65,12 @@ export const setupSignalHandlers = (abortController: AbortController): void => {
  * @returns The exit code
  */
 const computeExitCode = (signal: NodeJS.Signals): number => {
-  return 128 + (signal === 'SIGINT' ? 2 : signal === 'SIGQUIT' ? 3 : 15);
+  switch (signal) {
+    case 'SIGINT':
+      return 130; // 128 + 2
+    case 'SIGQUIT':
+      return 131; // 128 + 3
+    default:
+      return 143; // 128 + 15 (SIGTERM)
+  }
 };
