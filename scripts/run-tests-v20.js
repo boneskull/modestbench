@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { globSync } from 'glob';
+import { execFileSync } from 'node:child_process';
+
 /**
  * Test runner for Node.js v20
  *
@@ -7,7 +9,6 @@ import { globSync } from 'glob';
  * script uses the `glob` package to find test files and passes them to `node
  * --test`.
  */
-import { execFileSync } from 'node:child_process';
 
 const pattern = process.argv[2] || 'test/**/*.test.ts';
 const files = globSync(pattern);
