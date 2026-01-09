@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.1](https://github.com/boneskull/modestbench/compare/modestbench-v0.9.0...modestbench-v0.9.1) (2026-01-09)
+
+
+### Bug Fixes
+
+* **cli:** migrate to @boneskull/bargs ([#224](https://github.com/boneskull/modestbench/issues/224)) ([8b480b5](https://github.com/boneskull/modestbench/commit/8b480b5fe7f708ad096b88c25db0c332f5a04fef))
+* **deps:** update dependency zod to v4.2.0 ([#203](https://github.com/boneskull/modestbench/issues/203)) ([49a9538](https://github.com/boneskull/modestbench/commit/49a9538dfeeb36ce54b695946ee4b6f49a4690cb))
+* **deps:** update dependency zod to v4.2.1 ([#207](https://github.com/boneskull/modestbench/issues/207)) ([149b853](https://github.com/boneskull/modestbench/commit/149b85398fb2611b790de1ee0eb7afa2efb305b3))
+
 ## [0.9.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.8.0...modestbench-v0.9.0) (2025-12-18)
 
 
