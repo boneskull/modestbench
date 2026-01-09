@@ -1,6 +1,6 @@
 {
   "name": "modestbench",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "type": "module",
   "description": "A full-ass benchmarking framework for Node.js",
   "repository": {
