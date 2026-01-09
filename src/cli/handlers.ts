@@ -48,10 +48,11 @@ export const setupSignalHandlers = (abortController: AbortController): void => {
       process.exit(ExitCodes.RUNTIME_ERROR);
     })
     .once('unhandledRejection', (reason) => {
-      const wrappedError = new UnknownError(
-        isError(reason) ? reason.message : String(reason),
-        { cause: reason },
-      );
+      const wrappedError: Error = isModestBenchError(reason)
+        ? reason
+        : new UnknownError(isError(reason) ? reason.message : String(reason), {
+            cause: reason,
+          });
       console.error(`${wrappedError}`);
       process.exit(ExitCodes.RUNTIME_ERROR);
     });
