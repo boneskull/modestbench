@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { map, merge, opt, pos } from '@boneskull/bargs';
+import { camelCaseValues, map, merge, opt, pos } from '@boneskull/bargs';
 
 /**
  * Parser for `history list` command
@@ -115,32 +115,36 @@ export const historyTrendsParser = merge(
 /**
  * Parser for `history clean` command
  *
- * Includes validation requiring at least one cleanup criterion.
+ * Includes validation requiring at least one cleanup criterion. Uses
+ * camelCaseValues transform for cleaner property access.
  */
 export const historyCleanParser = map(
-  opt.options({
-    'max-age': opt.number({
-      description: 'Remove runs older than this many days',
+  map(
+    opt.options({
+      'max-age': opt.number({
+        description: 'Remove runs older than this many days',
+      }),
+      'max-runs': opt.number({
+        description: 'Keep only this many most recent runs',
+      }),
+      'max-size': opt.number({
+        description: 'Keep history under this size in bytes',
+      }),
+      yes: opt.boolean({
+        aliases: ['y'],
+        description: 'Confirm cleanup without prompting',
+      }),
     }),
-    'max-runs': opt.number({
-      description: 'Keep only this many most recent runs',
-    }),
-    'max-size': opt.number({
-      description: 'Keep history under this size in bytes',
-    }),
-    yes: opt.boolean({
-      aliases: ['y'],
-      description: 'Confirm cleanup without prompting',
-    }),
-  }),
-  ({ positionals, values }) => {
-    if (!values['max-age'] && !values['max-runs'] && !values['max-size']) {
-      throw new Error(
-        'At least one cleanup criterion must be specified (--max-age, --max-runs, or --max-size)',
-      );
-    }
-    return { positionals, values };
-  },
+    ({ positionals, values }) => {
+      if (!values['max-age'] && !values['max-runs'] && !values['max-size']) {
+        throw new Error(
+          'At least one cleanup criterion must be specified (--max-age, --max-runs, or --max-size)',
+        );
+      }
+      return { positionals, values };
+    },
+  ),
+  camelCaseValues,
 );
 
 /**
