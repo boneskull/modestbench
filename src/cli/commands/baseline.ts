@@ -11,6 +11,10 @@ import type { CliContext } from '../index.js';
 
 import { BaselineStorageService } from '../../services/baseline-storage.js';
 import { createTaskId } from '../../types/index.js';
+import {
+  formatDuration,
+  formatOpsPerSecond,
+} from '../../utils/reporter-utils.js';
 
 /**
  * Options for baseline analyze command
@@ -61,38 +65,6 @@ interface BaselineShowOptions extends BaselineBaseOptions {
   format?: 'human' | 'json' | undefined;
   name: string;
 }
-
-/**
- * Format duration in human-readable format
- */
-const formatDuration = (nanoseconds: number): string => {
-  if (nanoseconds < 1000) {
-    return `${nanoseconds.toFixed(2)}ns`;
-  }
-  if (nanoseconds < 1_000_000) {
-    return `${(nanoseconds / 1000).toFixed(2)}μs`;
-  }
-  if (nanoseconds < 1_000_000_000) {
-    return `${(nanoseconds / 1_000_000).toFixed(2)}ms`;
-  }
-  return `${(nanoseconds / 1_000_000_000).toFixed(2)}s`;
-};
-
-/**
- * Format operations per second
- */
-const formatOpsPerSec = (ops: number): string => {
-  if (ops < 1000) {
-    return `${ops.toFixed(2)} ops/sec`;
-  }
-  if (ops < 1_000_000) {
-    return `${(ops / 1000).toFixed(2)}K ops/sec`;
-  }
-  if (ops < 1_000_000_000) {
-    return `${(ops / 1_000_000).toFixed(2)}M ops/sec`;
-  }
-  return `${(ops / 1_000_000_000).toFixed(2)}B ops/sec`;
-};
 
 /**
  * Format date in readable format
@@ -337,7 +309,9 @@ export const handleShowCommand = async (
         for (const [taskId, data] of tasks) {
           console.log(`    ${taskId}`);
           console.log(`      Mean:    ${formatDuration(data.mean)}`);
-          console.log(`      Ops/sec: ${formatOpsPerSec(data.opsPerSecond)}`);
+          console.log(
+            `      Ops/sec: ${formatOpsPerSecond(data.opsPerSecond)}`,
+          );
           if (data.p99) {
             console.log(`      P99:     ${formatDuration(data.p99)}`);
           }
