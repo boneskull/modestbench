@@ -103,7 +103,7 @@ export const createCli = (abortController: AbortController) => {
           verbose: values.verbose,
           warmup: values.warmup,
         });
-        process.exit(exitCode);
+        process.exitCode = exitCode;
       },
       'Run benchmark files',
     )
@@ -127,7 +127,7 @@ export const createCli = (abortController: AbortController) => {
                 until: values.until,
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'List recent benchmark runs',
           )
@@ -143,7 +143,7 @@ export const createCli = (abortController: AbortController) => {
                 runId,
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Show detailed results for a specific run',
           )
@@ -160,7 +160,7 @@ export const createCli = (abortController: AbortController) => {
                 runId2,
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Compare two benchmark runs',
           )
@@ -181,7 +181,7 @@ export const createCli = (abortController: AbortController) => {
                 until: values.until,
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Show performance trends over time',
           )
@@ -199,7 +199,7 @@ export const createCli = (abortController: AbortController) => {
                 quiet: values.quiet,
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Clean up old benchmark history',
           )
@@ -244,7 +244,7 @@ export const createCli = (abortController: AbortController) => {
                 runId: values.runId,
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Save a benchmark run as a baseline',
           )
@@ -259,7 +259,7 @@ export const createCli = (abortController: AbortController) => {
                 quiet: Boolean(values.quiet),
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'List all saved baselines',
           )
@@ -276,7 +276,7 @@ export const createCli = (abortController: AbortController) => {
                 quiet: Boolean(values.quiet),
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Show baseline details',
           )
@@ -292,7 +292,7 @@ export const createCli = (abortController: AbortController) => {
                 quiet: Boolean(values.quiet),
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Delete a baseline',
           )
@@ -308,7 +308,7 @@ export const createCli = (abortController: AbortController) => {
                 runs: values.runs,
                 verbose: values.verbose,
               });
-              process.exit(exitCode);
+              process.exitCode = exitCode;
             },
             'Analyze history and suggest performance budgets',
           ),
@@ -379,7 +379,7 @@ export const createCli = (abortController: AbortController) => {
           warmup: values.warmup,
         };
         const exitCode = await testCommand(context, options);
-        process.exit(exitCode);
+        process.exitCode = exitCode;
       },
       'Run test files as benchmarks',
     )
