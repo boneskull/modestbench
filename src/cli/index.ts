@@ -21,7 +21,11 @@ import {
   pos,
 } from '@boneskull/bargs';
 import { realpathSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+
+const cjsRequire = createRequire(import.meta.url);
+const packageJson = cjsRequire('../../package.json') as { version: string };
 
 import type {
   BenchmarkEngine,
@@ -429,7 +433,6 @@ const initParser = merge(
       description: 'Configuration file format',
     }),
     examples: opt.boolean({
-      default: true,
       description: 'Include example benchmark files',
     }),
     force: opt.boolean({
@@ -578,6 +581,7 @@ const createCli = (abortController: AbortController) => {
   return bargs('modestbench', {
     description: 'A modern benchmark runner for Node.js',
     theme: synthwaveTheme,
+    version: packageJson.version,
   })
     .globals(globalOptions)
     .command(
@@ -865,30 +869,10 @@ const createCli = (abortController: AbortController) => {
 
         process.exitCode = await analyzeCommand(context, options);
       },
-      'Analyze code execution and identify benchmark candidates',
-    )
-    .command(
-      'profile',
-      analyzeParser,
-      async ({ positionals, values }) => {
-        const [command] = positionals;
-        // Context not needed for profile command (alias of analyze)
-        const context = {} as CliContext;
-
-        const options: AnalyzeOptions = {
-          color: !values['no-color'],
-          command,
-          cwd: values.cwd || process.cwd(),
-          filterFile: values['filter-file'],
-          groupByFile: values['group-by-file'],
-          input: values.input,
-          minPercent: values['min-percent'],
-          top: values.top,
-        };
-
-        process.exitCode = await analyzeCommand(context, options);
+      {
+        aliases: ['profile'],
+        description: 'Analyze code execution and identify benchmark candidates',
       },
-      'Alias for "analyze" command',
     )
     .command(
       'test',
