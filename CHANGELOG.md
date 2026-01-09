@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2](https://github.com/boneskull/modestbench/compare/modestbench-v0.9.1...modestbench-v0.9.2) (2026-01-09)
+
+
+### Bug Fixes
+
+* **cli:** better handling of unhandledRejections ([d830782](https://github.com/boneskull/modestbench/commit/d83078298d7bb9edb737c605f03230240de33647))
+* **cli:** use process.exitCode instead of process.exit() in async handlers ([45f0565](https://github.com/boneskull/modestbench/commit/45f0565b8b1e0fc74f231c37ad352c9756ddc7a7))
+
 ## [0.9.1](https://github.com/boneskull/modestbench/compare/modestbench-v0.9.0...modestbench-v0.9.1) (2026-01-09)
 
 
