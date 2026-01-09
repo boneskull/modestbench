@@ -24,7 +24,7 @@ describe('Profile Command Integration', () => {
 
       // Run profile command using fixture
       const output = execSync(
-        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${fixtures.profileHotFunction}"`,
+        `node ${join(__dirname, '../../dist/cli/index.js')} analyze "node ${fixtures.profileHotFunction}"`,
         {
           cwd: tmpDir,
           encoding: 'utf-8',
@@ -56,7 +56,7 @@ describe('Profile Command Integration', () => {
       );
 
       const output = execSync(
-        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${fixtures.profileMultiFunction}" --group-by-file`,
+        `node ${join(__dirname, '../../dist/cli/index.js')} analyze "node ${fixtures.profileMultiFunction}" --group-by-file`,
         {
           cwd: tmpDir,
           encoding: 'utf-8',
@@ -83,7 +83,7 @@ describe('Profile Command Integration', () => {
 
       // Run with high threshold - should filter out most functions
       const output = execSync(
-        `node ${join(__dirname, '../../dist/cli/index.js')} profile "node ${fixtures.profileHotFunction}" --min-percent 50`,
+        `node ${join(__dirname, '../../dist/cli/index.js')} analyze "node ${fixtures.profileHotFunction}" --min-percent 50`,
         {
           cwd: tmpDir,
           encoding: 'utf-8',

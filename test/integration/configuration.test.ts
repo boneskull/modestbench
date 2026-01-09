@@ -270,8 +270,9 @@ export default {
       );
 
       // Pass explicit iterations to prevent test harness from adding default
+      // Note: negative values must use --option=-1 format for parseArgs
       const result = await runCommand(
-        ['run', '--config', invalidConfig, '--iterations', '-1'],
+        ['run', '--config', invalidConfig, '--iterations=-1'],
         tempDir,
       );
 
