@@ -86,13 +86,13 @@ export const createCli = (abortController: AbortController) => {
           cwd: values.cwd,
           engine: values.engine,
           exclude: values.exclude,
-          excludeTags: values['exclude-tag'],
+          excludeTags: values.excludeTag,
           iterations: values.iterations,
           json: values.json,
-          jsonPretty: values['json-pretty'],
-          noColor: values['no-color'],
+          jsonPretty: values.jsonPretty,
+          noColor: values.noColor,
           outputDir: values.output,
-          outputFile: values['output-file'],
+          outputFile: values.outputFile,
           pattern,
           progress: values.progress,
           quiet: values.quiet,
@@ -193,9 +193,9 @@ export const createCli = (abortController: AbortController) => {
               const exitCode = await handleCleanCommand(context, {
                 confirm: values.yes,
                 cwd: values.cwd,
-                maxAge: values['max-age'],
-                maxRuns: values['max-runs'],
-                maxSize: values['max-size'],
+                maxAge: values.maxAge,
+                maxRuns: values.maxRuns,
+                maxSize: values.maxSize,
                 quiet: values.quiet,
                 verbose: values.verbose,
               });
@@ -241,7 +241,7 @@ export const createCli = (abortController: AbortController) => {
                 default: values.default,
                 name,
                 quiet: Boolean(values.quiet),
-                runId: values['run-id'],
+                runId: values.runId,
                 verbose: values.verbose,
               });
               process.exit(exitCode);
@@ -321,7 +321,7 @@ export const createCli = (abortController: AbortController) => {
         const [type] = positionals;
         const context = await createCliContext(values, abortController);
         const exitCode = await initCommand(context, {
-          configType: values['config-type'],
+          configType: values.configType,
           cwd: values.cwd,
           examples: values.examples,
           force: values.force,
@@ -343,13 +343,13 @@ export const createCli = (abortController: AbortController) => {
         const context = {} as CliContext;
 
         const options: AnalyzeOptions = {
-          color: !values['no-color'],
+          color: !values.noColor,
           command,
           cwd: values.cwd || process.cwd(),
-          filterFile: values['filter-file'],
-          groupByFile: values['group-by-file'],
+          filterFile: values.filterFile,
+          groupByFile: values.groupByFile,
           input: values.input,
-          minPercent: values['min-percent'],
+          minPercent: values.minPercent,
           top: values.top,
         };
 
@@ -372,7 +372,7 @@ export const createCli = (abortController: AbortController) => {
           framework,
           iterations: values.iterations,
           json: values.json,
-          noColor: values['no-color'],
+          noColor: values.noColor,
           pattern: files,
           quiet: values.quiet,
           verbose: values.verbose,

@@ -7,33 +7,38 @@
  * @packageDocumentation
  */
 
-import { merge, opt, pos } from '@boneskull/bargs';
+import { camelCaseValues, map, merge, opt, pos } from '@boneskull/bargs';
 
 /**
  * Parser for `baseline set` command
+ *
+ * Uses camelCaseValues transform for cleaner property access.
  */
-export const baselineSetParser = merge(
-  opt.options({
-    branch: opt.string({
-      description: 'Git branch name',
+export const baselineSetParser = map(
+  merge(
+    opt.options({
+      branch: opt.string({
+        description: 'Git branch name',
+      }),
+      commit: opt.string({
+        description: 'Git commit SHA (40 characters)',
+      }),
+      default: opt.boolean({
+        description: 'Set as default baseline',
+      }),
+      'run-id': opt.string({
+        description: 'Specific run ID to save (default: most recent)',
+      }),
     }),
-    commit: opt.string({
-      description: 'Git commit SHA (40 characters)',
-    }),
-    default: opt.boolean({
-      description: 'Set as default baseline',
-    }),
-    'run-id': opt.string({
-      description: 'Specific run ID to save (default: most recent)',
-    }),
-  }),
-  pos.positionals(
-    pos.string({
-      description: 'Name for the baseline',
-      name: 'name',
-      required: true,
-    }),
+    pos.positionals(
+      pos.string({
+        description: 'Name for the baseline',
+        name: 'name',
+        required: true,
+      }),
+    ),
   ),
+  camelCaseValues,
 );
 
 /**

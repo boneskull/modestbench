@@ -6,7 +6,7 @@
  * @packageDocumentation
  */
 
-import { map, merge, opt, pos } from '@boneskull/bargs';
+import { camelCaseValues, map, merge, opt, pos } from '@boneskull/bargs';
 
 import { DEFAULT_REPORTER, Engines, Reporters } from '../../constants.js';
 
@@ -96,15 +96,23 @@ const runParserBase = merge(
 );
 
 /**
- * Parser for `run` command with validation
+ * Parser for `run` command with validation and camelCase values
  *
- * Validates that --output-file is only used with a single reporter.
+ * Validates that --output-file is only used with a single reporter. Uses
+ * camelCaseValues transform for cleaner property access.
  */
-export const runParser = map(runParserBase, ({ positionals, values }) => {
-  if (values.reporter && values.reporter.length > 1 && values['output-file']) {
-    throw new Error(
-      '--output-file can only be used with a single reporter. Use --output <dir> for multiple reporters.',
-    );
-  }
-  return { positionals, values };
-});
+export const runParser = map(
+  map(runParserBase, ({ positionals, values }) => {
+    if (
+      values.reporter &&
+      values.reporter.length > 1 &&
+      values['output-file']
+    ) {
+      throw new Error(
+        '--output-file can only be used with a single reporter. Use --output <dir> for multiple reporters.',
+      );
+    }
+    return { positionals, values };
+  }),
+  camelCaseValues,
+);

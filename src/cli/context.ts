@@ -64,7 +64,7 @@ export const createCliContext = async (
     engine.registerReporter(
       Reporters.HUMAN,
       new HumanReporter({
-        color: !options['no-color'],
+        color: !options.noColor,
         verbose: options.verbose,
       }),
     );
@@ -94,7 +94,7 @@ export const createCliContext = async (
     engine.registerReporter(
       'nyan',
       new NyanReporter({
-        color: !options['no-color'],
+        color: !options.noColor,
       }),
     );
 

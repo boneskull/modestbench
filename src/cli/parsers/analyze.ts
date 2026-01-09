@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import { map, merge, opt, pos } from '@boneskull/bargs';
+import { camelCaseValues, map, merge, opt, pos } from '@boneskull/bargs';
 
 /**
  * Base parser for `analyze` command options and positionals
@@ -44,17 +44,18 @@ const analyzeParserBase = merge(
 );
 
 /**
- * Parser for `analyze` command with validation
+ * Parser for `analyze` command with validation and camelCase values
  *
- * Validates that either a command or --input is provided.
+ * Validates that either a command or --input is provided. Uses camelCaseValues
+ * transform for cleaner property access.
  */
 export const analyzeParser = map(
-  analyzeParserBase,
-  ({ positionals, values }) => {
+  map(analyzeParserBase, ({ positionals, values }) => {
     const [command] = positionals;
     if (!command && !values.input) {
       throw new Error('Either [command] or --input must be provided');
     }
     return { positionals, values };
-  },
+  }),
+  camelCaseValues,
 );
