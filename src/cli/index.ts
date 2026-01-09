@@ -21,11 +21,7 @@ import {
   pos,
 } from '@boneskull/bargs';
 import { realpathSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-
-const cjsRequire = createRequire(import.meta.url);
-const packageJson = cjsRequire('../../package.json') as { version: string };
 
 import type {
   BenchmarkEngine,
@@ -581,7 +577,6 @@ const createCli = (abortController: AbortController) => {
   return bargs('modestbench', {
     description: 'A modern benchmark runner for Node.js',
     theme: synthwaveTheme,
-    version: packageJson.version,
   })
     .globals(globalOptions)
     .command(

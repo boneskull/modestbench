@@ -121,7 +121,7 @@
     "test:watch": "npm run test:base -- --watch"
   },
   "dependencies": {
-    "@boneskull/bargs": "3.6.1",
+    "@boneskull/bargs": "3.6.2",
     "cosmiconfig": "9.0.0",
     "cosmiconfig-typescript-loader": "6.2.0",
     "glob": "13.0.0",
