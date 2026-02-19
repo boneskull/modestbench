@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.9.2...modestbench-v0.9.3) (2026-02-19)
+
+
+### Bug Fixes
+
+* **deps:** upgrade minimatch to v10.2.1 ([#228](https://github.com/boneskull/modestbench/issues/228)) ([72baac5](https://github.com/boneskull/modestbench/commit/72baac5de0459b06c55663b538c477c190e282da))
+
 ## [0.9.2](https://github.com/boneskull/modestbench/compare/modestbench-v0.9.1...modestbench-v0.9.2) (2026-01-09)
 
 
