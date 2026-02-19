@@ -125,7 +125,7 @@
     "cosmiconfig": "9.0.0",
     "cosmiconfig-typescript-loader": "6.2.0",
     "glob": "13.0.0",
-    "minimatch": "10.1.1",
+    "minimatch": "10.2.1",
     "tinybench": "6.0.0",
     "zod": "4.2.1"
   },
@@ -169,6 +169,9 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.50.1",
     "zshy": "0.6.0"
+  },
+  "overrides": {
+    "minimatch": "$minimatch"
   },
   "publishConfig": {
     "access": "public",
