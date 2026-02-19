@@ -152,13 +152,18 @@ export async function checkLinksInHtml(
 }
 
 function isValidUrl(url) {
-  // Skip mailto:, tel:, javascript:, and empty links
+  // Normalize URL for scheme checks
+  const trimmedUrl = url.trim();
+  const lowerUrl = trimmedUrl.toLowerCase();
+  // Skip mailto:, tel:, javascript:, data:, vbscript:, fragment-only, and empty links
   return !(
-    url.startsWith('mailto:') ||
-    url.startsWith('tel:') ||
-    url.startsWith('javascript:') ||
-    url.startsWith('#') ||
-    url.trim() === ''
+    lowerUrl.startsWith('mailto:') ||
+    lowerUrl.startsWith('tel:') ||
+    lowerUrl.startsWith('javascript:') ||
+    lowerUrl.startsWith('data:') ||
+    lowerUrl.startsWith('vbscript:') ||
+    trimmedUrl.startsWith('#') ||
+    trimmedUrl === ''
   );
 }
 
