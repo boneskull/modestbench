@@ -21,7 +21,6 @@ import type {
   CapturedSuite,
   CapturedTest,
   CapturedTestFile,
-  SuiteHooks,
   TestFrameworkAdapter,
 } from './types.js';
 
@@ -367,7 +366,7 @@ const toCapturedTestFile = (
 const toImmutableSuite = (suite: MutableCapturedSuite): CapturedSuite => {
   return {
     children: suite.children.map(toImmutableSuite),
-    hooks: suite.hooks as SuiteHooks,
+    hooks: suite.hooks,
     name: suite.name,
     tests: suite.tests.map(toImmutableTest),
   };
