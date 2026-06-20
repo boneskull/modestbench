@@ -406,6 +406,6 @@ export class ModestBenchConfigurationManager implements ConfigurationManager {
       }
     }
 
-    return normalized as Partial<ModestBenchConfig>;
+    return normalized;
   }
 }

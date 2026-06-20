@@ -432,5 +432,5 @@ export const brand = <T, TBrand extends string>(value: T): Brand<T, TBrand> => {
 export const unbrand = <T, TBrand extends string>(
   value: Brand<T, TBrand>,
 ): T => {
-  return value as T;
+  return value;
 };

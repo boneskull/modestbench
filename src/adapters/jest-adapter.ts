@@ -155,9 +155,9 @@ const createMockExpect = (): ((value: unknown) => unknown) => {
 
   // Chainable assertion mock
   const assertionChain: Record<string, unknown> = {
-    not: {} as Record<string, unknown>,
-    rejects: {} as Record<string, unknown>,
-    resolves: {} as Record<string, unknown>,
+    not: {},
+    rejects: {},
+    resolves: {},
   };
 
   // Common matchers - all return the chain for further chaining

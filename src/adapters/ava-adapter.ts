@@ -224,7 +224,7 @@ const createMockContext = (): AvaExecutionContext => {
     snapshot: noop,
     teardown: noop,
     throws: () => undefined,
-    throwsAsync: noopAsync as () => Promise<unknown>,
+    throwsAsync: noopAsync,
     timeout: noop,
     true: noop,
     truthy: noop,
@@ -323,9 +323,7 @@ const installAvaMocks = (state: CaptureState): void => {
   ): void => {
     const { name, wrappedFn } = parseTestArgs(titleOrMacroOrFn, rest);
     state.tests.push({
-      fn: wrappedFn as unknown as (
-        t: AvaExecutionContext,
-      ) => Promise<void> | void,
+      fn: wrappedFn,
       name,
     });
   };

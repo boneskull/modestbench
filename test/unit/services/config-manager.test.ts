@@ -208,7 +208,7 @@ describe('ModestBenchConfigurationManager', () => {
 
     it('should respect explicit limitBy from CLI', () => {
       const manager = new ModestBenchConfigurationManager();
-      const merged = manager.merge({ limitBy: 'any' as any });
+      const merged = manager.merge({ limitBy: 'any' });
       const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { iterations: 1000, 'limit-by': 'any', time: 5000 },
@@ -235,10 +235,7 @@ describe('ModestBenchConfigurationManager', () => {
     it('should prefer CLI limitBy over file config', () => {
       const manager = new ModestBenchConfigurationManager();
       // Merge with CLI value taking precedence
-      const merged = manager.merge(
-        { limitBy: 'time' },
-        { limitBy: 'any' as any },
-      );
+      const merged = manager.merge({ limitBy: 'time' }, { limitBy: 'any' });
       const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { limitBy: 'any' },
@@ -251,7 +248,7 @@ describe('ModestBenchConfigurationManager', () => {
 
     it('should not change limitBy if already set in merged config and present in fileConfig', () => {
       const manager = new ModestBenchConfigurationManager();
-      const merged = manager.merge({ limitBy: 'any' as any });
+      const merged = manager.merge({ limitBy: 'any' });
       const result = ModestBenchConfigurationManager.applySmartDefaults(
         merged,
         { iterations: 1000, time: 5000 },

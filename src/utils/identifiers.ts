@@ -27,7 +27,6 @@ export function createTaskId(
   suiteName: string,
   taskName: string,
 ): TaskId;
-
 /**
  * Create a TaskId from a single string
  *
@@ -37,7 +36,6 @@ export function createTaskId(
  * @returns A branded TaskId in the format `{filePath}/{suiteName}/{taskName}`
  */
 export function createTaskId(taskId: string): TaskId;
-
 /**
  * Create a TaskId from file, suite, and task names
  *
