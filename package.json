@@ -159,7 +159,7 @@
     "markdownlint-cli2-formatter-pretty": "0.0.9",
     "mocha": "11.7.5",
     "npm-run-all2": "8.0.4",
-    "prettier": "3.8.4",
+    "prettier": "3.8.5",
     "prettier-plugin-astro": "0.14.1",
     "prettier-plugin-jsdoc": "1.8.0",
     "prettier-plugin-pkg": "0.21.2",
