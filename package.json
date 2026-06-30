@@ -157,7 +157,7 @@
     "lint-staged": "16.2.7",
     "markdownlint-cli2": "0.20.0",
     "markdownlint-cli2-formatter-pretty": "0.0.10",
-    "mocha": "11.7.5",
+    "mocha": "11.7.6",
     "npm-run-all2": "8.0.4",
     "prettier": "3.8.5",
     "prettier-plugin-astro": "0.14.1",
