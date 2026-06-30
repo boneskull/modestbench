@@ -130,7 +130,7 @@
     "zod": "4.2.1"
   },
   "devDependencies": {
-    "@astrojs/mdx": "4.3.13",
+    "@astrojs/mdx": "4.3.14",
     "@astrojs/starlight": "0.37.1",
     "@commitlint/cli": "20.2.0",
     "@commitlint/config-conventional": "20.2.0",
