@@ -122,7 +122,7 @@
   },
   "dependencies": {
     "@boneskull/bargs": "3.6.2",
-    "cosmiconfig": "9.0.0",
+    "cosmiconfig": "9.0.2",
     "cosmiconfig-typescript-loader": "6.2.0",
     "glob": "13.0.0",
     "minimatch": "10.2.3",
