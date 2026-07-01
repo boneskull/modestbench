@@ -124,7 +124,7 @@
     "@boneskull/bargs": "3.6.2",
     "cosmiconfig": "9.0.2",
     "cosmiconfig-typescript-loader": "6.2.0",
-    "glob": "13.0.0",
+    "glob": "13.0.6",
     "minimatch": "10.2.3",
     "tinybench": "6.0.0",
     "zod": "4.2.1"
