@@ -132,8 +132,8 @@
   "devDependencies": {
     "@astrojs/mdx": "4.3.14",
     "@astrojs/starlight": "0.37.1",
-    "@commitlint/cli": "20.2.0",
-    "@commitlint/config-conventional": "20.2.0",
+    "@commitlint/cli": "20.5.3",
+    "@commitlint/config-conventional": "20.5.3",
     "@eslint/js": "9.39.4",
     "@jest/globals": "30.2.0",
     "@pasqal-io/starlight-client-mermaid": "0.1.0",
