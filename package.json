@@ -141,7 +141,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "24.10.4",
     "@types/wallabyjs": "0.0.15",
-    "asciinema-player": "3.13.5",
+    "asciinema-player": "3.16.0",
     "astro": "5.16.6",
     "astro-broken-link-checker": "file:./vendor/astro-broken-link-checker",
     "ava": "6.4.1",
