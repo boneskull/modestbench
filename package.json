@@ -123,7 +123,7 @@
   "dependencies": {
     "@boneskull/bargs": "3.6.2",
     "cosmiconfig": "9.0.2",
-    "cosmiconfig-typescript-loader": "6.2.0",
+    "cosmiconfig-typescript-loader": "6.3.0",
     "glob": "13.0.6",
     "minimatch": "10.2.5",
     "tinybench": "6.0.2",
