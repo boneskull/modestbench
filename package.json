@@ -163,7 +163,7 @@
     "prettier-plugin-astro": "0.14.1",
     "prettier-plugin-jsdoc": "1.8.0",
     "prettier-plugin-pkg": "0.21.2",
-    "prettier-plugin-sort-json": "4.1.1",
+    "prettier-plugin-sort-json": "4.2.0",
     "tsd": "0.33.0",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
