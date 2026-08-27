@@ -21,6 +21,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/prepare
+        with:
+          build: false
       - name: Run commitlint
         uses: wagoid/commitlint-github-action@b948419dd99f3fd78a6548d48f94e3df7f6bf3ed # v6
         env:
