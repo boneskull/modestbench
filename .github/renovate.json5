@@ -10,7 +10,22 @@
     'helpers:pinGitHubActionDigests',
     ':configMigration',
     ':automergeDigest',
-    ':automergeMinor',
+  ],
+  packageRules: [
+    {
+      matchManagers: ['npm'],
+      patch: {
+        automerge: true,
+      },
+      minor: {
+        automerge: true,
+      },
+      pin: {
+        automerge: true,
+      },
+      separateMinorPatch: true,
+      matchDepTypes: ['devDependencies'],
+    },
   ],
   labels: ['dependencies'],
   ignorePaths: [
