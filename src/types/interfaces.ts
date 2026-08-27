@@ -276,47 +276,48 @@ export interface Reporter {
   /**
    * Called when budget evaluation completes
    */
-  onBudgetResult?(summary: BudgetSummary): Promise<void> | void;
+  onBudgetResult?(this: Reporter, summary: BudgetSummary): Promise<void> | void;
 
   /**
    * Called when benchmark run completes
    */
-  onEnd(run: BenchmarkRun): Promise<void> | void;
+  onEnd(this: Reporter, run: BenchmarkRun): Promise<void> | void;
 
   /**
    * Called when an error occurs
    */
-  onError(error: Error): Promise<void> | void;
+  onError(this: Reporter, error: Error): Promise<void> | void;
 
   /**
    * Called when a file completes
    */
-  onFileEnd?(result: FileResult): Promise<void> | void;
+  onFileEnd?(this: Reporter, result: FileResult): Promise<void> | void;
 
   /**
    * Called when a file starts execution
    */
-  onFileStart?(file: string): Promise<void> | void;
+  onFileStart?(this: Reporter, file: string): Promise<void> | void;
 
   /**
    * Called for progress updates
    */
-  onProgress?(state: ProgressState): Promise<void> | void;
+  onProgress?(this: Reporter, state: ProgressState): Promise<void> | void;
 
   /**
    * Called when benchmark run starts
    */
-  onStart(run: BenchmarkRun): Promise<void> | void;
+  onStart(this: Reporter, run: BenchmarkRun): Promise<void> | void;
 
   /**
    * Called when a suite completes
    */
-  onSuiteEnd?(result: SuiteResult): Promise<void> | void;
+  onSuiteEnd?(this: Reporter, result: SuiteResult): Promise<void> | void;
 
   /**
    * Called before a suite starts, providing task names for pre-calculation
    */
   onSuiteInit?(
+    this: Reporter,
     suite: string,
     taskNames: readonly string[],
   ): Promise<void> | void;

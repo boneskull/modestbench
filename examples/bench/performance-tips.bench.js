@@ -9,11 +9,12 @@ const iterationState = {
 // Shared state for Optimization Examples suite
 const optimizationState = {
   dataset: /** @type {{ id: number; name: string; value: number }[]} */ ([]),
-  processData: /**
-   * @type {(
-   *   data: { id: number; name: string; value: number }[],
-   * ) => string[]}
-   */ (() => []),
+  processData:
+    /**
+     * @type {(
+     *   data: { id: number; name: string; value: number }[],
+     * ) => string[]}
+     */ (() => []),
 };
 
 // Shared state for Sorting Algorithms suite

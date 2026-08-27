@@ -38,8 +38,7 @@ export interface AdapterCommandOptions {
 }
 
 export type AdapterFramework =
-  | (typeof globalAdapters)[number]
-  | keyof typeof adapterPaths;
+  (typeof globalAdapters)[number] | keyof typeof adapterPaths;
 
 /**
  * Check if a framework uses global injection (no loader needed)

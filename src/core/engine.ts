@@ -613,13 +613,16 @@ export abstract class ModestBenchEngine implements BenchmarkEngine {
   ): Promise<void> {
     for (const reporter of reporters) {
       try {
-        const reporterMethod = reporter[method];
-        if (typeof reporterMethod === 'function') {
+        if (typeof reporter[method] === 'function') {
           const result = (
-            reporterMethod as (...args: unknown[]) => unknown
+            reporter[method] as (...args: unknown[]) => unknown
           ).call(reporter, ...args);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          if (result && typeof (result as any).then === 'function') {
+          if (
+            result &&
+            typeof result === 'object' &&
+            'then' in result &&
+            typeof result.then === 'function'
+          ) {
             await (result as Promise<void>);
           }
         }

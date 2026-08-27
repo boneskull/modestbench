@@ -177,8 +177,7 @@ const installNodeTestMocks = (state: CaptureState): void => {
     (
       nameOrOptions: string | { name?: string; only?: boolean; skip?: boolean },
       fnOrOptions?:
-        | (() => Promise<void> | void)
-        | { only?: boolean; skip?: boolean },
+        (() => Promise<void> | void) | { only?: boolean; skip?: boolean },
       maybeFn?: () => Promise<void> | void,
     ): Promise<void> => {
       let name: string;

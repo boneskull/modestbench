@@ -219,10 +219,12 @@ export const loadReporter = async (
     let instance: unknown;
 
     try {
-      instance = new (exported as new (
-        options: Record<string, unknown>,
-        context: ReporterContext,
-      ) => unknown)(options, context);
+      instance = new (
+        exported as new (
+          options: Record<string, unknown>,
+          context: ReporterContext,
+        ) => unknown
+      )(options, context);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new ReporterLoadError(

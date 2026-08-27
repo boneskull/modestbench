@@ -197,17 +197,21 @@ export class CompositeReporter extends BaseReporter {
   private async broadcastAsync(
     method: keyof Reporter,
 
-    ...args: any[]
+    ...args: unknown[]
   ): Promise<void> {
     const promises = this.reporters.map(async (reporter) => {
       try {
-        const reporterMethod = reporter[method];
-        if (typeof reporterMethod === 'function') {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-          const result = (reporterMethod as any)(...args);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          if (result && typeof result.then === 'function') {
-            await result;
+        if (typeof reporter[method] === 'function') {
+          const result = (
+            reporter[method] as (...args: unknown[]) => unknown
+          ).call(reporter, ...args);
+          if (
+            result &&
+            typeof result === 'object' &&
+            'then' in result &&
+            typeof result.then === 'function'
+          ) {
+            await (result as Promise<void>);
           }
         }
       } catch (error) {
