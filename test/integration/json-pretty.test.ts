@@ -60,7 +60,7 @@ describe('JSON reporter prettyPrint configuration', () => {
 
       // Should still be valid JSON
       const data = JSON.parse(jsonContent);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data, 'to have keys', ['meta', 'run', 'statistics']);
     });
   });
@@ -88,7 +88,7 @@ describe('JSON reporter prettyPrint configuration', () => {
 
       // Should still be valid JSON
       const data = JSON.parse(jsonContent);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data, 'to have keys', ['meta', 'run', 'statistics']);
     });
   });

@@ -51,7 +51,7 @@ describe('modestbench init command - integration', () => {
       const config = JSON.parse(content);
 
       // Verify basic structure
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(config, 'to satisfy', {
         iterations: expect.it('to be a number'),
         pattern: expect.it('to be truthy'),

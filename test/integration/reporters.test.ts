@@ -90,7 +90,7 @@ describe('Multiple reporter output formats', () => {
       const data = JSON.parse(jsonContent);
 
       // Should have expected JSON structure
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data, 'to satisfy', {
         meta: {
           format: 'modestbench-json',
@@ -123,15 +123,15 @@ describe('Multiple reporter output formats', () => {
       const data = JSON.parse(jsonContent);
 
       // Should include comprehensive metadata
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data, 'to have key', 'meta');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data, 'to have key', 'run');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data, 'to have key', 'statistics');
 
       // Should have benchmark run data
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data.run, 'to satisfy', {
         files: expect.it('to be an array'),
         id: expect.it('to be truthy'),
@@ -349,9 +349,9 @@ describe('Multiple reporter output formats', () => {
       // Verify custom filename was used
       const content = await readFile(customFile, 'utf-8');
       const data = JSON.parse(content);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data.meta, 'to be defined');
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data.run, 'to be defined');
     });
   });

@@ -68,9 +68,9 @@ describe('Custom output filename', () => {
     const content = await readFile(outputPath, 'utf-8');
     const data = JSON.parse(content);
     // Check for valid JSON structure
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     expect(data.meta, 'to be defined');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     expect(data.run, 'to be defined');
   });
 
@@ -92,9 +92,9 @@ describe('Custom output filename', () => {
     const content = await readFile(customFile, 'utf-8');
     const data = JSON.parse(content);
     // Check for valid JSON structure
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     expect(data.meta, 'to be defined');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
     expect(data.run, 'to be defined');
   });
 
@@ -133,7 +133,7 @@ describe('Custom output filename', () => {
       expect(result.exitCode, 'to equal', 0);
       const content = await readFile(absolutePath, 'utf-8');
       const data = JSON.parse(content);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data.meta, 'to be defined');
     });
 
@@ -153,7 +153,7 @@ describe('Custom output filename', () => {
       const outputPath = join(tempDir, 'subdir', 'custom.json');
       const content = await readFile(outputPath, 'utf-8');
       const data = JSON.parse(content);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data.meta, 'to be defined');
     });
 
@@ -173,7 +173,7 @@ describe('Custom output filename', () => {
       const outputPath = join(tempDir, 'short-flag.json');
       const content = await readFile(outputPath, 'utf-8');
       const data = JSON.parse(content);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       expect(data.meta, 'to be defined');
     });
   });
