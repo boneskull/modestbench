@@ -155,7 +155,7 @@
     "jest": "30.4.2",
     "knip": "5.88.1",
     "lint-staged": "16.4.0",
-    "markdownlint-cli2": "0.23.0",
+    "markdownlint-cli2": "0.23.2",
     "markdownlint-cli2-formatter-pretty": "0.0.10",
     "mocha": "11.7.6",
     "npm-run-all2": "8.0.4",
