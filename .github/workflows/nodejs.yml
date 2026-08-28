@@ -18,18 +18,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - node-version: '20'
           - node-version: '22'
           - node-version: '24'
+          - node-version: '26'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/prepare
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Test (Node 20)
-        if: matrix.node-version == '20'
-        run: node scripts/run-tests-v20.js 'test/**/*.test.ts'
       - name: Test
-        if: matrix.node-version != '20'
         run: npm test
