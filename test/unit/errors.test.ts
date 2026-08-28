@@ -92,6 +92,7 @@ describe('ModestBenchError base class', () => {
 
   it('should be instanceof ModestBenchError', () => {
     const error = new TestError('Test message');
+    // @ts-expect-error - https://github.com/boneskull/bupkis/pull/549
     expect(error, 'to be a', ModestBenchError);
   });
 });
@@ -162,6 +163,7 @@ describe('ModestBenchAggregateError base class', () => {
 
   it('should be instanceof ModestBenchAggregateError', () => {
     const error = new TestAggregateError([], 'Test message');
+    // @ts-expect-error - https://github.com/boneskull/bupkis/pull/549
     expect(error, 'to be a', ModestBenchAggregateError);
   });
 });
