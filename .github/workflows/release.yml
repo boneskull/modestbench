@@ -19,16 +19,11 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-      # enable for publishing
       id-token: write
     steps:
       - name: Create Release
         if: ${{ github.event_name != 'workflow_dispatch' }}
         id: release
         uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
-      - if: ${{ steps.release.outputs.release_created || github.event_name == 'workflow_dispatch'  }}
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - if: ${{ steps.release.outputs.release_created || github.event_name == 'workflow_dispatch'  }}
         uses: ./.github/actions/publish
