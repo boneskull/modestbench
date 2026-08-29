@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.0.0](https://github.com/boneskull/modestbench/compare/modestbench-v0.9.3...modestbench-v1.0.0) (2026-08-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* The minimum Node.js version supported is now v22.22.2.
+
+### Bug Fixes
+
+* **deps:** update dependency cosmiconfig to v9.0.2 ([#260](https://github.com/boneskull/modestbench/issues/260)) ([e038503](https://github.com/boneskull/modestbench/commit/e038503b2e8b3ec3f27c5d90338b5d53cb40ac02))
+* **deps:** update dependency cosmiconfig-typescript-loader to v6.3.0 ([#281](https://github.com/boneskull/modestbench/issues/281)) ([a4a417d](https://github.com/boneskull/modestbench/commit/a4a417d4fc45f3900ca84bd608a11eb11b40b7d9))
+* **deps:** update dependency glob to v13.0.6 ([#261](https://github.com/boneskull/modestbench/issues/261)) ([2bb5e2c](https://github.com/boneskull/modestbench/commit/2bb5e2c070ac3bdfc382f2882517a4cec1f571b9))
+* **deps:** update dependency minimatch to v10.2.3 [security] ([#248](https://github.com/boneskull/modestbench/issues/248)) ([e7d8603](https://github.com/boneskull/modestbench/commit/e7d86031a6565e716de0723a44463bb3cf92fa6d))
+* **deps:** update dependency minimatch to v10.2.5 ([#262](https://github.com/boneskull/modestbench/issues/262)) ([a8e5cb8](https://github.com/boneskull/modestbench/commit/a8e5cb8c655cfea006e8e1704ad6e2f24ca7afcf))
+* **deps:** update dependency tinybench to v6.0.2 ([#263](https://github.com/boneskull/modestbench/issues/263)) ([3e6d0ca](https://github.com/boneskull/modestbench/commit/3e6d0ca731cded713e6ba0762d224fe9f5f85151))
+* **deps:** update dependency zod to v4.4.3 ([#283](https://github.com/boneskull/modestbench/issues/283)) ([4887a28](https://github.com/boneskull/modestbench/commit/4887a286281950313ad62f3b561841f878c0b9e0))
+
+
+### Miscellaneous Chores
+
+* update engines ([127ae5a](https://github.com/boneskull/modestbench/commit/127ae5ab72500e214bf56218c932cbdda2f58a72))
+
 ## [0.9.3](https://github.com/boneskull/modestbench/compare/modestbench-v0.9.2...modestbench-v0.9.3) (2026-02-19)
 
 
