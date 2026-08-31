@@ -126,7 +126,7 @@
     "cosmiconfig-typescript-loader": "6.3.0",
     "glob": "13.0.6",
     "minimatch": "10.2.5",
-    "tinybench": "6.0.2",
+    "tinybench": "6.1.4",
     "zod": "4.4.3"
   },
   "devDependencies": {
