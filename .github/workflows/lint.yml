@@ -1,3 +1,15 @@
+name: Lint
+
+on:
+  push:
+    paths-ignore:
+      - '.husky/**'
+      - '**/CHANGELOG.md'
+  pull_request:
+    paths-ignore:
+      - '.husky/**'
+      - '**/CHANGELOG.md'
+
 permissions:
   contents: read
 
@@ -7,14 +19,33 @@ concurrency:
 
 jobs:
   lint:
+    name: Run linters
     env:
       FORCE_COLOR: '1'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/prepare
-      - run: npm run lint
-
-name: Lint
-
-on: [push, pull_request]
+      - parallel:
+          - name: ESLint
+            run: npm run lint:eslint
+          - name: markdownlint
+            run: npm run lint:markdown
+          - name: cspell
+            run: npm run lint:spelling
+          - name: Type check
+            run: npm run lint:types
+          - name: Format check
+            run: npm run lint:prettier
+          - name: Knip
+            run: npm run lint:knip
+          - name: Engine check
+            run: npm run lint:engines
+          - name: Run zizmor
+            uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+            with:
+              persona: pedantic
+              advanced-security: 'false'
+              annotations: 'true'

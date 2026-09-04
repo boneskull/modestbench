@@ -4,7 +4,8 @@ description: Publish to npm
 inputs:
   token:
     description: 'npm token'
-    required: true
+    required: false
+    default: ''
 
 runs:
   steps:
@@ -12,16 +13,16 @@ runs:
     # see https://docs.npmjs.com/generating-provenance-statements
     - name: Checkout Repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    - name: Setup Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
       with:
-        node-version: 24.18.0
-        registry-url: https://registry.npmjs.org
-    - name: Install & Build
-      uses: bahmutov/npm-install@20216767ca67f0f7b4d095dc5859c5700a6581cb # v1.12.1
+        persist-credentials: false
+    - uses: ./.github/actions/prepare
     - name: Publish to npm
       env:
-        NODE_AUTH_TOKEN: ${{ inputs.token }}
-      run: npm publish --provenance --access public --registry https://registry.npmjs.org
+        INPUT_TOKEN: ${{ inputs.token }}
+      run: |
+        if [ -n "$INPUT_TOKEN" ]; then
+          export NODE_AUTH_TOKEN="${INPUT_TOKEN}"
+        fi
+        npm publish --provenance --access public --registry https://registry.npmjs.org
       shell: bash
   using: composite
